@@ -675,8 +675,18 @@ export const todaySchema = z.object({
   /** The start of the day split over the days left, rounded down. */
   todayAllowance: moneySchema,
   leftToday: moneySchema,
-  /** Available now split over the days left, rounded down. */
+  /** `dailyBase` split over the days left, rounded down. */
   liveDaily: moneySchema,
+  /** What the daily number divides (docs/domain.md "Daily usable"). */
+  dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']),
+  /** Set-aside budgets' holds, kept out of the daily number. */
+  held: moneySchema,
+  /**
+   * The figure `liveDaily` splits: `available − held` in the free-money
+   * mode, `available` in pool-minus-bills, the daily budgets' left in
+   * daily-budgets.
+   */
+  dailyBase: moneySchema,
   /** Spending since the cycle opened, today included. */
   cycleSpent: moneySchema,
   /**

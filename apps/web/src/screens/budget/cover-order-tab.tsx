@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { GridList, GridListItem, useDragAndDrop } from 'react-aria-components';
+import {
+  Button,
+  GridList,
+  GridListItem,
+  useDragAndDrop,
+} from 'react-aria-components';
 import type { BudgetStatusView, CoverPreviewView } from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
@@ -123,6 +128,15 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
                   className="border-b outline-none focus-visible:bg-card data-[dragging]:bg-card data-[drop-target]:bg-card"
                 >
                   <div className="flex min-h-row items-center gap-2 px-3">
+                    {/* Keyboard and screen reader users pick a row up with
+                        this; it shows only while it has focus, so there is
+                        no drag handle to see. */}
+                    <Button
+                      slot="drag"
+                      className="sr-only focus-visible:not-sr-only focus-visible:text-small focus-visible:text-primary"
+                    >
+                      ⠿
+                    </Button>
                     <span className="num w-5 text-text-muted">{index + 1}</span>
                     <span className="min-w-0 flex-1 truncate font-sans">
                       {name}
@@ -202,7 +216,7 @@ function NextTile({ data }: { data: BudgetStatusView }) {
           <p className="font-sans text-small text-text-muted">
             {t('budgetBudgets.next.intro')}
           </p>
-          <div className="grid grid-cols-1 gap-2 medium:grid-cols-3">
+          <div className="grid grid-cols-1 items-end gap-2 medium:grid-cols-3">
             <ChoiceField
               label={t('budgetBudgets.next.budget')}
               value={budgetId}
@@ -218,9 +232,13 @@ function NextTile({ data }: { data: BudgetStatusView }) {
               onChange={setAccountId}
             />
             <TextField
-              label={t('budgetBudgets.next.amount', {
-                currency: account?.currency ?? '',
-              })}
+              label={
+                account === undefined
+                  ? t('budgetBudgets.next.amountPlain')
+                  : t('budgetBudgets.next.amount', {
+                      currency: account.currency,
+                    })
+              }
               value={amount}
               onChange={setAmount}
               inputMode="decimal"

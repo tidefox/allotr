@@ -26,8 +26,9 @@ import { t } from '@/messages/t';
 // row is a `label · value` control that opens a menu (choices) or a sheet
 // (typed values). Nothing here is a native input styled as a control.
 
+// The control keeps its full width when it fits; the hint gives way first.
 const rowColumns = [
-  { width: 'minmax(0,1fr)' },
+  { width: 'minmax(0,max-content)' },
   { width: 'minmax(0,1fr)', from: 'medium' },
 ] as const;
 

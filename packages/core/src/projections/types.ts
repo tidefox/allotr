@@ -185,6 +185,8 @@ export type DailyFigures = Readonly<{
   free: Money;
   /** What the daily number divides (docs/domain.md "Daily usable"). */
   dailyMode: DailyMode;
+  /** The figure `liveDaily` splits over the days left, by `dailyMode`. */
+  dailyBase: Money;
   /**
    * The part of `spentToday` that counted against the daily number: not
    * what was paid out of a set-aside budget's hold. Equals `spentToday`

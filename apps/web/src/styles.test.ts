@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   DEFAULT_PALETTE_THEME_ID,
   findPaletteTheme,
@@ -115,5 +116,38 @@ describe('styles.css', () => {
     expect(css).toContain("--font-ui: 'Geist Variable'");
     expect(css).toContain("--font-num: 'Geist Mono Variable'");
     expect(css).toContain('--font-sans: var(--font-num);');
+  });
+});
+
+// React Aria marks states with data attributes that Tailwind has no variant
+// for, and Tailwind drops a class with an unknown variant silently.
+const reactAriaStates = [
+  'selected',
+  'pressed',
+  'hovered',
+  'focused',
+  'entering',
+  'exiting',
+  'dragging',
+  'drop-target',
+  'allows-dragging',
+  'pending',
+  'expanded',
+  'resizing',
+  'outside-month',
+  'unavailable',
+] as const;
+
+function sources(dir: URL): string[] {
+  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .map((f) => readFileSync(join(dir.pathname, f), 'utf8'));
+}
+
+describe('state variants', () => {
+  const code = sources(new URL('./', import.meta.url)).join('\n');
+  it.each(reactAriaStates)('declares %s: wherever a class uses it', (state) => {
+    const used = new RegExp(`[\\s'"\`:]${state}:[a-z!\\[-]`).test(code);
+    if (used) expect(css).toContain(`@custom-variant ${state} (`);
   });
 });

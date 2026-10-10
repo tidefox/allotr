@@ -25,14 +25,17 @@ async function apiSignIn(page: Page, origin: string) {
 }
 
 async function tooSmall(page: Page) {
-  return page
-    .locator('main a, main button, main [role=button]')
-    .evaluateAll((els) =>
-      els
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.width > 0 && (r.width < 24 || r.height < 24))
-        .map((r) => `${String(r.width)}x${String(r.height)}`),
-    );
+  return (
+    page
+      // The drag button shows only on keyboard focus.
+      .locator('main a, main button:not([slot=drag]), main [role=button]')
+      .evaluateAll((els) =>
+        els
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0 && (r.width < 24 || r.height < 24))
+          .map((r) => `${String(r.width)}x${String(r.height)}`),
+      )
+  );
 }
 
 async function choose(page: Page, label: string, option: string) {
@@ -163,7 +166,11 @@ test('the cover order moves a source and previews an overspend', async ({
   });
   const rows = list.getByRole('row');
   await expect(rows.first()).toBeVisible();
-  const first = (await rows.first().innerText()).split('\n')[1] ?? '';
+  // The row reads "1", then the name (a hidden drag button may come first).
+  const parts = (await rows.first().innerText())
+    .split('\n')
+    .map((part) => part.trim());
+  const first = parts[parts.indexOf('1') + 1] ?? '';
   await rows
     .first()
     .getByRole('button', {

@@ -18,9 +18,11 @@ import { t } from '@/messages/t';
 // row with its control on the right, a confirm sheet for destructive actions,
 // a secret text field and a download link in the bracket style.
 
+// The label (which may be a menu button) keeps its full width when it fits;
+// the hint gives way first.
 const settingColumns: readonly RowColumn[] = [
-  { width: 'minmax(0, 1fr)' },
-  { width: 'minmax(0, 1.4fr)', from: 'medium' },
+  { width: 'minmax(0, max-content)' },
+  { width: 'minmax(0, 1fr)', from: 'medium' },
   { width: 'auto' },
 ];
 
@@ -53,7 +55,9 @@ export function SettingRow({
         <span key="hint" className="font-ui text-small text-text-muted">
           {hint}
         </span>,
-        control,
+        <span key="control" className="flex justify-end">
+          {control}
+        </span>,
       ]}
     />
   );

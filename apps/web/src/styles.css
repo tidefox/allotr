@@ -7,6 +7,13 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /*
+ * React Aria states. Tailwind has no built-in variant for these, and an
+ * unknown variant drops its class without a warning.
+ */
+@custom-variant selected (&[data-selected]);
+@custom-variant pressed (&[data-pressed]);
+
+/*
  * Allotr terminal design system (ADRs 0016, 0026, 0028; docs/ui.md).
  *
  * Colour: every theme resolves to the same roles, each fitted to WCAG 2.2 AA
@@ -307,6 +314,9 @@ html::-webkit-scrollbar {
 
 /* Scroll containers hide the native bar; OverlayScrollbar draws the thumb. */
 .scroll {
+  /* The containing block of anything absolute inside, so the scroller clips
+     it; otherwise a hidden table or label stretches the whole page. */
+  position: relative;
   overflow: auto;
   scrollbar-width: none;
   overscroll-behavior: contain;

@@ -30,7 +30,8 @@ const columns: readonly RowColumn[] = [
   { width: 'minmax(0, 1fr)' },
   { width: '6rem', from: 'medium' },
   { width: '4.5rem', from: 'wide' },
-  { width: 'auto' },
+  // A floor, so columns line up from row to row; a bigger amount still fits.
+  { width: 'minmax(7.5rem, auto)' },
   { width: '2rem' },
 ];
 

@@ -280,7 +280,13 @@ export const en = {
       colSpent: 'Spent',
       colPace: 'Even pace',
       today: 'today',
-      formula: '{available} available ÷ {days} days left = {daily} a day',
+      formula: {
+        free: '{base} free after budgets ÷ {days} days left = {daily} a day',
+        'pool-minus-bills':
+          '{base} available ÷ {days} days left = {daily} a day',
+        'daily-budgets':
+          '{base} left in daily budgets ÷ {days} days left = {daily} a day',
+      },
       noCycle: 'No days in this cycle yet.',
     },
     needsAttention: {

@@ -179,10 +179,11 @@ function HowItWorks() {
         <p className="num text-small text-text-muted">…</p>
       ) : (
         <p className="num truncate text-base">
-          {t('budgetPools.how.formula', {
+          {t(`budgetPools.how.formula.${view.dailyMode}`, {
             onBudget: money(view.onBudget),
             bills: money(view.reserved),
-            free: money(view.available),
+            held: money(view.held),
+            base: money(view.dailyBase),
             days: view.daysLeft,
             daily: money(view.liveDaily),
           })}

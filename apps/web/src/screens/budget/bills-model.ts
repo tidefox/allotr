@@ -34,7 +34,10 @@ export type BillsView = Readonly<{
   next: DueItem | null;
   /** Active bills with no due date this cycle. */
   later: readonly BillView[];
+  /** Days in the cycle, payday not included, as the dashboard counts them. */
+  cycleLength: number;
   timeline: Readonly<{
+    /** Cycle days plus payday, which closes the axis. */
     days: number;
     today: number;
     events: readonly TimelineEvent[];
@@ -92,6 +95,7 @@ export function billsView(
     paid,
     next: upcoming[0] ?? null,
     later: bills.filter((bill) => bill.active && !inCycle.has(bill.id)),
+    cycleLength: Math.max(1, days - 1),
     timeline: {
       days,
       today: Math.min(days - 1, Math.max(0, daysBetween(opened, today.today))),

@@ -183,6 +183,9 @@ export async function todayFigures(
     todayAllowance: figures.todayAllowance,
     leftToday: figures.leftToday,
     liveDaily: figures.liveDaily,
+    dailyMode: figures.dailyMode,
+    held: figures.held,
+    dailyBase: figures.dailyBase,
     cycleSpent: figures.cycleSpent,
     paceSpent: figures.paceSpent,
     allocation: {

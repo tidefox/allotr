@@ -14,7 +14,7 @@ import {
 } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useState, type SyntheticEvent } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import {
   Input,
   TextField as AriaTextField,
@@ -45,7 +45,7 @@ import {
   type DraftCheck,
   type ThemeDraft,
 } from '@/features/themes/draft';
-import { takeDraft } from '@/features/themes/import-handoff';
+import { clearDraft, peekDraft } from '@/features/themes/import-handoff';
 import { failureText, ROLE_GROUPS, roleLabel } from '@/features/themes/labels';
 import { IconCheckLine, IconPaletteLine } from '@/generated/icons';
 import {
@@ -777,7 +777,8 @@ function Notice({ children }: { children: string }) {
 // (`?from=` is not routed yet), or by default the one in use for the light slot.
 function NewTheme({ userId }: { userId: string }) {
   const { customPalettes, customThemes, appearance } = useTheme();
-  const [imported] = useState(takeDraft);
+  const [imported] = useState(peekDraft);
+  useEffect(clearDraft, []);
   if (customThemes === undefined)
     return <Notice>{t('themeEditor.loading')}</Notice>;
   const starts = [...PALETTE_THEMES, ...customPalettes];

@@ -29426,6 +29426,46 @@
                         "currency"
                       ]
                     },
+                    "dailyMode": {
+                      "type": "string",
+                      "enum": [
+                        "free",
+                        "pool-minus-bills",
+                        "daily-budgets"
+                      ]
+                    },
+                    "held": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dailyBase": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "cycleSpent": {
                       "type": "object",
                       "properties": {
@@ -29697,6 +29737,9 @@
                     "todayAllowance",
                     "leftToday",
                     "liveDaily",
+                    "dailyMode",
+                    "held",
+                    "dailyBase",
                     "cycleSpent",
                     "paceSpent",
                     "allocation",

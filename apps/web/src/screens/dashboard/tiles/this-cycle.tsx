@@ -38,7 +38,7 @@ export function ThisCycleTile() {
     return <SkeletonTile rows={5} span={2} />;
   }
 
-  const { available, liveDaily, daysLeft, paceSpent } = today.data;
+  const { dailyMode, dailyBase, liveDaily, daysLeft, paceSpent } = today.data;
   const { budget } = days.data;
   const series = days.data.days;
   const view = cycleView(series);
@@ -62,8 +62,8 @@ export function ThisCycleTile() {
           },
         ]),
   ];
-  const formula = t('dashboardTiles.thisCycle.formula', {
-    available: money(available),
+  const formula = t(`dashboardTiles.thisCycle.formula.${dailyMode}`, {
+    base: money(dailyBase),
     days: daysLeft,
     daily: money(liveDaily),
   });

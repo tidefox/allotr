@@ -18,8 +18,12 @@ export const budgetPools = {
   how: {
     title: 'How the daily number works',
     subtitle: 'on-budget money only',
-    formula:
-      'on-budget {onBudget} − bills {bills} = free {free} ÷ {days} days = {daily}/day',
+    formula: {
+      free: 'on-budget {onBudget} − bills {bills} − budgets {held} = free {base} ÷ {days} days = {daily}/day',
+      'pool-minus-bills':
+        'on-budget {onBudget} − bills {bills} = {base} ÷ {days} days = {daily}/day',
+      'daily-budgets': 'daily budgets left {base} ÷ {days} days = {daily}/day',
+    },
     body: 'Only pools that count add to the on-budget total. Bills set aside for the cycle come off first, and what is left is shared over the days until payday. Savings are never included.',
   },
 } as const;
