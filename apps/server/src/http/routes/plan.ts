@@ -65,7 +65,7 @@ const fundRoute = createRoute({
   path: '/v1/insights/emergency-fund',
   tags: ['Insights'],
   summary: 'Emergency fund progress',
-  description: `Savings (accounts that do not count toward the daily number) against a target of \`emergencyMonths\` months of average expenses, with the usual three and six months. The average is per cycle over up to three past cycles. ${figures}`,
+  description: `Savings (accounts that do not count toward the daily number) against a target of \`emergencyMonths\` months of average expenses, with the usual three and six months. The average is per cycle over up to three past cycles. \`addedThisCycle\` is what the fund gained since the day before the open cycle opened, and \`cyclesToTarget\` how many whole cycles the target is away if every cycle adds that much (0 once reached, null with no target or nothing added). ${figures}`,
   responses: { 200: json(emergencyFundSchema, 'The figures.'), ...signedIn },
 });
 
@@ -74,7 +74,7 @@ const worthRoute = createRoute({
   path: '/v1/insights/net-worth',
   tags: ['Insights'],
   summary: 'Net worth and its daily series',
-  description: `Every account, savings included, with debts counted by their sign. \`days\` (default 30) sets the length of the series, which ends today. ${figures}`,
+  description: `Every account, savings included, with debts counted by their sign. \`days\` (default 30) sets the length of the series, which ends today. \`change\` is \`amount\` less net worth at the end of the day before the series starts. ${figures}`,
   request: { query: netWorthQuerySchema },
   responses: { 200: json(netWorthSchema, 'The figures.'), ...signedIn },
 });

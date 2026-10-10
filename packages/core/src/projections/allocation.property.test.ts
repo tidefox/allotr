@@ -17,11 +17,11 @@ import {
   type Account,
   type Transaction,
 } from '../ledger/types.ts';
-import { cycleAllocation } from './allocation.ts';
+import { cycleAllocation, reservedParts } from './allocation.ts';
 import { dailyFiguresOn } from './daily.ts';
 import { billId, type ExchangeRate, type LedgerView } from './types.ts';
 
-// The five parts of the cycle allocation always add up to its start, whatever
+// The six parts of the cycle allocation always add up to its start, whatever
 // the ledger holds (docs/domain.md "Cycle allocation"). fast-check prints the
 // seed of any failure.
 
@@ -171,7 +171,14 @@ describe('cycle allocation properties', () => {
     fc.assert(
       fc.property(viewArb(allAccounts), todayArb, (view, today) => {
         const a = cycleAllocation(view, today);
-        const parts = [a.paidBills, a.savings, a.spent, a.reserved, a.free];
+        const parts = [
+          a.paidBills,
+          a.savings,
+          a.spent,
+          a.reserved,
+          a.free,
+          a.other,
+        ];
         for (const part of [a.start, ...parts]) {
           expect(Number.isSafeInteger(part.amountMinor)).toBe(true);
           expect(part.currency).toBe(usd);
@@ -179,6 +186,18 @@ describe('cycle allocation properties', () => {
         expect(a.start.amountMinor).toBe(
           parts.reduce((sum, part) => sum + part.amountMinor, 0),
         );
+      }),
+    );
+  });
+
+  it('splits the reserve into bills and what is owed, adding up to reserved', () => {
+    fc.assert(
+      fc.property(viewArb(usdAccounts), todayArb, (view, today) => {
+        const parts = reservedParts(view, today);
+        expect(parts.bills.amountMinor + parts.ious.amountMinor).toBe(
+          dailyFiguresOn(view, today).reserved.amountMinor,
+        );
+        expect(parts.ious.amountMinor).toBeGreaterThanOrEqual(0);
       }),
     );
   });

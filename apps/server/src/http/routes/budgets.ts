@@ -46,7 +46,7 @@ const statusRoute = createRoute({
   path: '/v1/budgets',
   tags,
   summary: 'Budgets for the current period, with free money',
-  description: `${figures} An entry counts toward at most one budget: a tag budget wins over a category budget, and a child category over its parent. Daily budgets stay in the daily number; set-aside ones, the Buffer included, are held out of it.`,
+  description: `${figures} An entry counts toward at most one budget: a tag budget wins over a category budget, and a child category over its parent. \`parents\` adds up the category budgets under each parent category that has a budget on one of its children (planned, spent and left, in the default currency). Daily budgets stay in the daily number; set-aside ones, the Buffer included, are held out of it.`,
   responses: {
     200: json(budgetStatusSchema, 'The budgets in use and what is free.'),
     ...signedIn,

@@ -2,6 +2,7 @@ import {
   accountId,
   cyclesOf,
   emergencyFund,
+  netWorthChange,
   netWorthOn,
   netWorthSeries,
   paydayPlan,
@@ -190,12 +191,18 @@ export async function getNetWorth(
   const { view, today } = await read(db, userId, now);
   const now_ = netWorthOn(view, today);
   const series = netWorthSeries(view, addDays(today, -(days - 1)), today);
+  const change = netWorthChange(view, today, days);
   return {
     today,
     amount: now_.amount,
+    change: change.change,
     series: series.points,
     missingRates: [
-      ...new Set([...now_.missingRates, ...series.missingRates]),
+      ...new Set([
+        ...now_.missingRates,
+        ...series.missingRates,
+        ...change.missingRates,
+      ]),
     ].sort(),
   };
 }

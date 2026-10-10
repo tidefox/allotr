@@ -10,6 +10,7 @@ import {
   leftTodayChange,
   opening,
   poolsOn,
+  reconcileDue,
   totalOn,
   transfer,
   writeOff,
@@ -170,6 +171,13 @@ async function views(
       archived: row.archived === 1,
       createdAt: row.created_at,
       lastReconciledOn: reconciled.get(row.id) ?? null,
+      reconcileDue: reconcileDue(
+        {
+          archived: row.archived === 1,
+          lastReconciledOn: reconciled.get(row.id) ?? null,
+        },
+        today,
+      ),
     };
   });
 }
@@ -202,7 +210,25 @@ export function listAccounts(
       );
       return { amount: figure.amount, missingRates: [...figure.missingRates] };
     };
-    return { accounts, totals: { on: total('on'), off: total('off') } };
+    const credit = totalOn(
+      rates,
+      accounts
+        .filter((a) => !a.archived && a.kind === 'liability')
+        .map((a) => a.balance),
+      settings.defaultCurrency,
+      today,
+    );
+    return {
+      accounts,
+      totals: {
+        on: total('on'),
+        off: total('off'),
+        creditOwed: {
+          amount: credit.amount,
+          missingRates: [...credit.missingRates],
+        },
+      },
+    };
   });
 }
 

@@ -27,6 +27,13 @@ type Status = {
   periodRule: string;
   daysLeft: number;
   budgets: Budget[];
+  parents: {
+    categoryId: string;
+    budgetIds: string[];
+    planned: Money;
+    spent: Money;
+    left: Money;
+  }[];
   available: Money;
   held: Money;
   free: Money;
@@ -485,5 +492,69 @@ describe('validation', () => {
       amount: usd(1_000),
     });
     expect(stolen.status).toBe(404);
+  });
+});
+
+describe('parent category totals', () => {
+  it('add up the budgets under a parent, and skip categories with no child budget', async () => {
+    const make = async (name: string, parentId?: string) =>
+      (
+        (
+          await h.bob.post('/v1/categories', {
+            name,
+            kind: 'expense',
+            ...(parentId === undefined ? {} : { parentId }),
+          })
+        ).body as { id: string }
+      ).id;
+    const home = await make('Home');
+    const repairs = await make('Repairs', home);
+    const garden = await make('Garden', home);
+    const hobby = await make('Hobby');
+    const card = (
+      (
+        await h.bob.post('/v1/accounts', {
+          name: 'Everyday',
+          currency: 'USD',
+          openingBalance: usd(500_000),
+        })
+      ).body as { id: string }
+    ).id;
+    const plan = async (name: string, categoryId: string, amount: number) =>
+      (
+        (
+          await h.bob.post('/v1/budgets', {
+            name,
+            target: { kind: 'category', categoryId },
+            amount: usd(amount),
+          })
+        ).body as { budgets: Budget[] }
+      ).budgets.find((b) => b.name === name)?.id ?? '';
+    const repairsBudget = await plan('Repairs', repairs, 20_000);
+    const gardenBudget = await plan('Garden', garden, 10_000);
+    await plan('Hobby', hobby, 5_000);
+    for (const [categoryId, amountMinor] of [
+      [repairs, 3_000],
+      [garden, 1_000],
+    ] as const) {
+      const response = await h.bob.post('/v1/transactions', {
+        kind: 'expense',
+        accountId: card,
+        amount: usd(amountMinor),
+        categoryId,
+        occurredOn: '2026-03-15',
+      });
+      expect(response.status).toBe(201);
+    }
+    const { parents } = await status(h.bob);
+    expect(parents).toEqual([
+      {
+        categoryId: home,
+        budgetIds: [repairsBudget, gardenBudget],
+        planned: usd(30_000),
+        spent: usd(4_000),
+        left: usd(26_000),
+      },
+    ]);
   });
 });

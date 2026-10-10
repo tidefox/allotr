@@ -1,9 +1,10 @@
 import { currencyCode, money, parseRate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import { budgetSwitch, transfer } from '../ledger/build.ts';
+import { lend } from '../ledger/ious.ts';
 import { reverse } from '../ledger/reverse.ts';
 import { food, meta } from '../ledger/testing.ts';
-import { cycleAllocation } from './allocation.ts';
+import { cycleAllocation, reservedParts } from './allocation.ts';
 import { dailyFiguresOn } from './daily.ts';
 import {
   card,
@@ -72,6 +73,7 @@ describe('cycleAllocation', () => {
       spent: usd(4000),
       reserved: usd(8000),
       free: usd(268000),
+      other: usd(0),
       missingRates: [],
     });
   });
@@ -152,6 +154,7 @@ describe('cycleAllocation', () => {
       spent: usd(0),
       reserved: usd(0),
       free: usd(350000),
+      other: usd(0),
       missingRates: [],
     });
   });
@@ -192,13 +195,54 @@ describe('cycleAllocation', () => {
     expect(a.spent).toEqual(usd(4000 + 1200));
     expect(a.free).toEqual(dailyFiguresOn(v, today).available);
     expect(a.missingRates).toEqual([]);
-    const sum = [a.paidBills, a.savings, a.spent, a.reserved, a.free].reduce(
-      (total, part) => total + part.amountMinor,
-      0,
-    );
+    const sum = [
+      a.paidBills,
+      a.savings,
+      a.spent,
+      a.reserved,
+      a.free,
+      a.other,
+    ].reduce((total, part) => total + part.amountMinor, 0);
     expect(a.start.amountMinor).toBe(sum);
 
     const missing = cycleAllocation(view(euros, { bills: [paidRent] }), today);
     expect(missing.missingRates).toEqual(['EUR']);
+  });
+
+  it('puts money lent under other, not savings', () => {
+    const loan = lend(chart, meta('2026-03-06'), {
+      accountId: card,
+      owed: [usd(2500)],
+    });
+    const a = cycleAllocation(
+      view([...ledger, loan], { bills: [paidRent] }),
+      today,
+    );
+    expect(a.savings).toEqual(usd(50000));
+    expect(a.other).toEqual(usd(2500));
+    expect(a.free).toEqual(usd(276000 - 2500));
+  });
+
+  it('does not count a payment out of savings as savings', () => {
+    const a = cycleAllocation(
+      view([...ledger, spend('2026-03-06', 3000, food, savings)], {
+        bills: [paidRent],
+      }),
+      today,
+    );
+    expect(a.savings).toEqual(usd(50000));
+    expect(a.other).toEqual(usd(0));
+  });
+});
+
+describe('reservedParts', () => {
+  it('splits the reserve into bills and what is owed, adding up to reserved', () => {
+    const v = view(ledger, { bills: [paidRent, power] });
+    const parts = reservedParts(v, today);
+    expect(parts.bills).toEqual(usd(8000));
+    expect(parts.ious).toEqual(usd(0));
+    expect(parts.bills.amountMinor + parts.ious.amountMinor).toBe(
+      dailyFiguresOn(v, today).reserved.amountMinor,
+    );
   });
 });

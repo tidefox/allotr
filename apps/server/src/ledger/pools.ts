@@ -21,8 +21,6 @@ import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
 import { getAccount } from './accounts.ts';
-import { readLedgerSettings } from './ledger-settings.ts';
-import { loadRates } from './rates.ts';
 import { loadView } from './today.ts';
 import { uniquely } from './sqlite-errors.ts';
 import {
@@ -69,7 +67,9 @@ async function readPools(
   now: Date,
   includeArchived: boolean,
 ): Promise<PoolListView> {
-  const [rows, setup, chart, settings, rates, today] = await Promise.all([
+  // One load of the ledger view serves the pool placement, the balances and
+  // the cycle figures.
+  const [rows, loaded, today] = await Promise.all([
     trx
       .selectFrom('pools')
       .select(columns)
@@ -77,25 +77,15 @@ async function readPools(
       .orderBy('position')
       .orderBy('id')
       .execute(),
-    loadPoolSetup(trx, userId),
-    loadChart(trx, userId),
-    readLedgerSettings(trx, userId),
-    loadRates(trx, userId),
+    loadView(trx, userId),
     userToday(trx, userId, now),
   ]);
-  const ledger = await loadLedger(trx, userId, chart);
-  const view = {
-    chart,
-    ledger,
-    pools: setup,
-    settings: { countSavingsInDaily: settings.countSavingsInDaily },
-  };
+  const { view } = loaded;
+  const { chart, ledger, rates, settings } = view;
+  const countSavingsInDaily = settings.countSavingsInDaily === true;
   const placed = poolsOn(view, today);
   const balances = accountBalances(ledger);
-  const cycleFigures = poolCycleFigures(
-    (await loadView(trx, userId)).view,
-    today,
-  );
+  const cycleFigures = poolCycleFigures(view, today);
   const open = new Set(
     [...chart.values()].filter((a) => !a.archived).map((a) => a.id),
   );
@@ -127,7 +117,7 @@ async function readPools(
         name: row.name,
         kind: toPool(row).kind,
         countsTowardDaily: row.counts_toward_daily === 1,
-        counts: poolCounts(toPool(row), settings.countSavingsInDaily),
+        counts: poolCounts(toPool(row), countSavingsInDaily),
         defaultFor:
           row.default_for === 'on' || row.default_for === 'off'
             ? row.default_for
@@ -147,7 +137,7 @@ async function readPools(
               },
       };
     });
-  return { pools, countSavingsInDaily: settings.countSavingsInDaily };
+  return { pools, countSavingsInDaily };
 }
 
 async function findOwned(db: Db, userId: string, id: string) {

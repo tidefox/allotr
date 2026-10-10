@@ -4,7 +4,11 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { Transaction, TransactionId } from '../ledger/types.ts';
+import type {
+  CategoryId,
+  Transaction,
+  TransactionId,
+} from '../ledger/types.ts';
 import {
   budgetPeriodOn,
   heldBy,
@@ -43,6 +47,19 @@ export type BudgetLineStatus = Readonly<{
   held: Money;
 }>;
 
+/**
+ * A parent category's budgets added up: the budgets on its children and on
+ * the parent itself, in the default currency.
+ */
+export type ParentBudgetTotals = Readonly<{
+  categoryId: CategoryId;
+  /** The budgets counted, in the order of `lines`. */
+  budgetIds: readonly BudgetId[];
+  planned: Money;
+  spent: Money;
+  left: Money;
+}>;
+
 /** How much of the period's shortfall was covered, and by whom. */
 export type CoveredFigures = Readonly<{
   /** Spending past what its own budget had left, or in no budget at all. */
@@ -60,6 +77,11 @@ export type BudgetStatus = Readonly<{
   /** Days left in the cycle, as for the daily number. */
   daysLeft: number;
   lines: readonly BudgetLineStatus[];
+  /**
+   * Totals for each parent category that has a budget on at least one of its
+   * children, summing every category budget under it.
+   */
+  parents: readonly ParentBudgetTotals[];
   /** Counted accounts less unpaid reserved bills. */
   available: Money;
   /** Set-aside budgets' holds, Buffer included. */
@@ -79,6 +101,47 @@ export type BudgetStatus = Readonly<{
   covered: CoveredFigures;
   missingRates: readonly CurrencyCode[];
 }>;
+
+/** Sums the category budgets under each parent that has a child budget. */
+export function parentBudgetTotals(
+  view: LedgerView,
+  lines: readonly BudgetLineStatus[],
+): ParentBudgetTotals[] {
+  const categories = view.budgets?.categories;
+  if (categories === undefined) return [];
+  const currency = view.settings.defaultCurrency;
+  const groups = new Map<
+    CategoryId,
+    { hasChild: boolean; lines: BudgetLineStatus[] }
+  >();
+  for (const line of lines) {
+    const target = line.budget.target;
+    if (target.kind !== 'category') continue;
+    const parent = categories.get(target.categoryId)?.parent ?? null;
+    const key = parent ?? target.categoryId;
+    const group = groups.get(key) ?? { hasChild: false, lines: [] };
+    group.hasChild ||= parent !== null;
+    group.lines.push(line);
+    groups.set(key, group);
+  }
+  const total = (
+    group: readonly BudgetLineStatus[],
+    pick: (l: BudgetLineStatus) => Money,
+  ) =>
+    money(
+      group.reduce((sum, l) => sum + pick(l).amountMinor, 0),
+      currency,
+    );
+  return [...groups]
+    .filter(([, group]) => group.hasChild)
+    .map(([categoryId, group]) => ({
+      categoryId,
+      budgetIds: group.lines.map((l) => l.budget.id),
+      planned: total(group.lines, (l) => l.planned),
+      spent: total(group.lines, (l) => l.spent),
+      left: total(group.lines, (l) => l.left),
+    }));
+}
 
 /** Budget figures as of `today`, from the same ledger the daily number reads. */
 export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
@@ -118,6 +181,7 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
     period: fold?.period ?? budgetPeriodOn(view, today, today),
     daysLeft: daily.daysLeft,
     lines,
+    parents: parentBudgetTotals(view, lines),
     available: daily.available,
     held: daily.held,
     free: daily.free,

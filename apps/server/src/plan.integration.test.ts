@@ -233,6 +233,10 @@ describe('insights', () => {
       // $800 plus the $200 moved to savings at payday.
       saved: usd(100_000),
       progressBasisPoints: 6_535,
+      // The $200 moved to savings at payday opened this cycle.
+      addedThisCycle: usd(20_000),
+      // (153,000 - 100,000) / 20,000 = 2.65 cycles, rounded up.
+      cyclesToTarget: 3,
     });
     await h.alice.patch('/v1/settings/ledger', { emergencyMonths: 6 });
     expect(
@@ -250,11 +254,21 @@ describe('insights', () => {
     const body = response.body as {
       today: string;
       amount: Money;
+      change: Money;
       series: { date: string; amount: Money }[];
     };
     // $3,000 + $800 + $4,000 paychecks less $1,070 spent.
     expect(body.amount).toEqual(usd(300_000 + 80_000 + 400_000 - 107_000));
     expect(body.series).toHaveLength(10);
+    // The change runs from the end of the day before the first point, which
+    // is the first point of a series one day longer.
+    const longer = (await h.alice.get('/v1/insights/net-worth?days=11'))
+      .body as { series: { amount: Money }[] };
+    expect(body.change).toEqual(
+      usd(
+        body.amount.amountMinor - (longer.series[0]?.amount.amountMinor ?? 0),
+      ),
+    );
     expect(body.series.at(-1)).toEqual({
       date: '2026-04-02',
       amount: body.amount,

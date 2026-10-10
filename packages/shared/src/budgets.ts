@@ -92,6 +92,21 @@ export const budgetStatusSchema = z.object({
   periodRule: budgetPeriodRuleSchema,
   daysLeft: z.int(),
   budgets: z.array(budgetSchema),
+  /**
+   * Totals for each parent category with a budget on at least one of its
+   * children, summing every category budget under it (children and the
+   * parent's own), in the default currency.
+   */
+  parents: z.array(
+    z.object({
+      categoryId: idSchema,
+      /** The budgets counted, in the order of `budgets`. */
+      budgetIds: z.array(idSchema),
+      planned: moneySchema,
+      spent: moneySchema,
+      left: moneySchema,
+    }),
+  ),
   /** Counted accounts less unpaid reserved bills. */
   available: moneySchema,
   /** Set-aside budgets' holds, Buffer included. */

@@ -32,6 +32,7 @@ describe('allocationSegments', () => {
         spent: m(300),
         reserved: m(200),
         free: m(450),
+        other: m(0),
       },
       labels,
     );
