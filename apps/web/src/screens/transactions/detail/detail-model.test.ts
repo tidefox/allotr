@@ -62,6 +62,8 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],
+    billId: null,
+    billName: null,
     ...overrides,
   };
 }

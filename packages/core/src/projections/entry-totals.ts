@@ -60,17 +60,40 @@ function add(
   sums.set(currency, current);
 }
 
-function totalsOf(count: number, sums: Sums): EntryTotals {
+/**
+ * Totals from sums that were added up elsewhere, such as by the database:
+ * one `spent` and `income` (both positive) per currency, any order. The
+ * same shape and ordering as {@link entryTotals} gives.
+ */
+export function totalsFromSums(
+  count: number,
+  sums: readonly Readonly<{
+    currency: CurrencyCode;
+    spent: number;
+    income: number;
+  }>[],
+): EntryTotals {
   return {
     count,
     byCurrency: [...sums]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([currency, { spent, income }]) => ({
+      .sort((a, b) => a.currency.localeCompare(b.currency))
+      .map(({ currency, spent, income }) => ({
         spent: money(spent, currency),
         income: money(income, currency),
         net: money(income - spent, currency),
       })),
   };
+}
+
+function totalsOf(count: number, sums: Sums): EntryTotals {
+  return totalsFromSums(
+    count,
+    [...sums].map(([currency, { spent, income }]) => ({
+      currency,
+      spent,
+      income,
+    })),
+  );
 }
 
 type Leg = Readonly<{
@@ -123,7 +146,30 @@ export function entryTotals(
   return totalsOf(entries.length, sums);
 }
 
-function compareKeys(
+/**
+ * The groups an entry is counted in: its day, or the category of each of
+ * its spent or income legs (so a split is in several), else its own
+ * category (null for none). The keys {@link entryGroupTotals} files it
+ * under, deduplicated, in leg order.
+ */
+export function entryGroupKeys(
+  chart: Chart,
+  entry: TotalsEntry,
+  grouping: EntryGrouping,
+): (string | null)[] {
+  if (grouping === 'day') return [entry.occurredOn];
+  const entryLegs = legs(chart, entry);
+  return [
+    ...new Set<string | null>(
+      entryLegs.length === 0
+        ? [entry.categoryId]
+        : entryLegs.map((leg) => leg.categoryId),
+    ),
+  ];
+}
+
+/** Orders group keys as {@link entryGroupTotals} does. */
+export function compareGroupKeys(
   grouping: EntryGrouping,
   a: string | null,
   b: string | null,
@@ -158,22 +204,16 @@ export function entryGroupTotals(
     return found;
   };
   for (const entry of entries) {
-    const entryLegs = legs(chart, entry);
     const keyOf = (leg: Leg) =>
       grouping === 'day' ? entry.occurredOn : leg.categoryId;
-    const keys = new Set<string | null>(
-      grouping === 'day'
-        ? [entry.occurredOn]
-        : entryLegs.length === 0
-          ? [entry.categoryId]
-          : entryLegs.map(keyOf),
-    );
-    for (const key of keys) group(key).count += 1;
-    for (const leg of entryLegs) {
+    for (const key of entryGroupKeys(chart, entry, grouping)) {
+      group(key).count += 1;
+    }
+    for (const leg of legs(chart, entry)) {
       add(group(keyOf(leg)).sums, leg.currency, leg.field, leg.amountMinor);
     }
   }
   return [...groups]
-    .sort(([a], [b]) => compareKeys(grouping, a, b))
+    .sort(([a], [b]) => compareGroupKeys(grouping, a, b))
     .map(([key, { count, sums }]) => ({ key, ...totalsOf(count, sums) }));
 }

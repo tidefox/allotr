@@ -253,6 +253,54 @@ export function budgetCovers(
     .reverse();
 }
 
+/** One expense line of an entry and how its budget stood after it. */
+export type EntryBudgetLine = Readonly<{
+  /** The budget that counted the line; null when none did. */
+  budgetId: BudgetId | null;
+  /** The budget period the entry's date falls in. */
+  period: BudgetPeriod;
+  loan: boolean;
+  amount: Money;
+  /** What its own budget paid. */
+  own: Money;
+  covers: readonly Readonly<{ source: CoverSource; amount: Money }>[];
+  uncovered: Money;
+  overridden: boolean;
+  /** What its budget had left right after this line; null with no budget. */
+  leftAfter: Money | null;
+}>;
+
+/**
+ * The budget figures of one entry, in any period: for each expense line
+ * that was counted, what its budget had left just after it, and who
+ * covered the part past that. Empty when the entry is not counted (an
+ * income, a transfer, spending from a savings account, or an undone entry),
+ * or there are no budgets.
+ */
+export function entryBudgetLines(
+  view: LedgerView,
+  today: LocalDate,
+  entryId: TransactionId,
+): EntryBudgetLine[] {
+  const fold = budgetFold(view, today);
+  if (fold === null) return [];
+  const m = (amount: bigint) =>
+    money(Number(amount), view.settings.defaultCurrency);
+  return fold.spend
+    .filter((l) => l.entryId === entryId)
+    .map((l) => ({
+      budgetId: l.budgetId,
+      period: budgetPeriodOn(view, l.date, today),
+      loan: l.loan,
+      amount: m(l.amount),
+      own: m(l.own),
+      covers: l.covers.map((c) => ({ source: c.source, amount: m(c.amount) })),
+      uncovered: m(l.uncovered),
+      overridden: l.overridden,
+      leftAfter: l.leftAfter === null ? null : m(l.leftAfter),
+    }));
+}
+
 /** What recording an expense would take, before it is saved. */
 export type CoverPreview = Readonly<{
   /** False when no budget counts it: paid from a savings account, say. */

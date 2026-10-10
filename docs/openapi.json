@@ -5090,6 +5090,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -5110,7 +5124,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     }
                   },
@@ -14086,6 +14102,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -14106,7 +14136,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "ious": {
@@ -14520,6 +14552,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -14540,7 +14586,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "ious": {
@@ -16025,6 +16073,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -16045,7 +16107,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "ious": {
@@ -16825,6 +16889,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -16845,7 +16923,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "transaction": {
@@ -17047,6 +17127,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -17067,7 +17161,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "ious": {
@@ -17482,6 +17578,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -17502,7 +17612,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "transaction": {
@@ -17704,6 +17816,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -17724,7 +17850,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "ious": {
@@ -18465,6 +18593,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -18485,7 +18627,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "iou": {
@@ -24281,8 +24425,23 @@
         "tags": [
           "Transactions"
         ],
-        "summary": "List entries, newest first",
+        "summary": "List entries",
         "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "date-desc",
+                "date-asc",
+                "amount-desc",
+                "amount-asc"
+              ],
+              "default": "date-desc"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
           {
             "schema": {
               "type": "string",
@@ -24617,6 +24776,29 @@
                               "minLength": 1,
                               "maxLength": 64
                             }
+                          },
+                          "billId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "billName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "groupKeys": {
+                            "type": "array",
+                            "items": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -24637,7 +24819,10 @@
                           "replacedById",
                           "impliedRate",
                           "budgetSwitch",
-                          "tagIds"
+                          "tagIds",
+                          "billId",
+                          "billName",
+                          "groupKeys"
                         ]
                       }
                     },
@@ -25627,6 +25812,20 @@
                         "minLength": 1,
                         "maxLength": 64
                       }
+                    },
+                    "billId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "billName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -25647,7 +25846,9 @@
                     "replacedById",
                     "impliedRate",
                     "budgetSwitch",
-                    "tagIds"
+                    "tagIds",
+                    "billId",
+                    "billName"
                   ]
                 }
               }
@@ -25856,6 +26057,20 @@
                         "minLength": 1,
                         "maxLength": 64
                       }
+                    },
+                    "billId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "billName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -25876,7 +26091,9 @@
                     "replacedById",
                     "impliedRate",
                     "budgetSwitch",
-                    "tagIds"
+                    "tagIds",
+                    "billId",
+                    "billName"
                   ]
                 }
               }
@@ -26166,6 +26383,7 @@
           "Transactions"
         ],
         "summary": "One entry",
+        "description": "With the budget figures the entry had, in whatever period it falls in: what its budget had left right after it, and who covered any part past that.",
         "parameters": [
           {
             "schema": {
@@ -26382,6 +26600,193 @@
                         "minLength": 1,
                         "maxLength": 64
                       }
+                    },
+                    "billId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "billName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "budget": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "period": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string",
+                              "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                            },
+                            "to": {
+                              "type": "string",
+                              "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "budgetId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "budgetName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "loan": {
+                                "type": "boolean"
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "own": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "covers": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "source": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "amountMinor": {
+                                          "type": "integer"
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]{3}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "amountMinor",
+                                        "currency"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "source",
+                                    "name",
+                                    "amount"
+                                  ]
+                                }
+                              },
+                              "uncovered": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "overridden": {
+                                "type": "boolean"
+                              },
+                              "leftAfter": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "budgetId",
+                              "budgetName",
+                              "loan",
+                              "amount",
+                              "own",
+                              "covers",
+                              "uncovered",
+                              "overridden",
+                              "leftAfter"
+                            ]
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": [
+                        "period",
+                        "lines"
+                      ]
                     }
                   },
                   "required": [
@@ -26402,7 +26807,10 @@
                     "replacedById",
                     "impliedRate",
                     "budgetSwitch",
-                    "tagIds"
+                    "tagIds",
+                    "billId",
+                    "billName",
+                    "budget"
                   ]
                 }
               }
@@ -26815,6 +27223,20 @@
                         "minLength": 1,
                         "maxLength": 64
                       }
+                    },
+                    "billId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "billName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -26835,7 +27257,9 @@
                     "replacedById",
                     "impliedRate",
                     "budgetSwitch",
-                    "tagIds"
+                    "tagIds",
+                    "billId",
+                    "billName"
                   ]
                 }
               }
@@ -27342,6 +27766,20 @@
                         "minLength": 1,
                         "maxLength": 64
                       }
+                    },
+                    "billId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "billName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -27362,7 +27800,9 @@
                     "replacedById",
                     "impliedRate",
                     "budgetSwitch",
-                    "tagIds"
+                    "tagIds",
+                    "billId",
+                    "billName"
                   ]
                 }
               }
@@ -28143,6 +28583,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -28163,7 +28617,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "replacement": {
@@ -28365,6 +28821,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -28385,7 +28855,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     }
                   },
@@ -28901,6 +29373,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -28921,7 +29407,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     },
                     "replacement": {
@@ -29123,6 +29611,20 @@
                             "minLength": 1,
                             "maxLength": 64
                           }
+                        },
+                        "billId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "billName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -29143,7 +29645,9 @@
                         "replacedById",
                         "impliedRate",
                         "budgetSwitch",
-                        "tagIds"
+                        "tagIds",
+                        "billId",
+                        "billName"
                       ]
                     }
                   },
@@ -33023,6 +33527,74 @@
                         ]
                       }
                     },
+                    "spendingTotal": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "incomeTotal": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "days": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "dailyAverage": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "saved": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -33133,6 +33705,11 @@
                     "to",
                     "spending",
                     "income",
+                    "spendingTotal",
+                    "incomeTotal",
+                    "days",
+                    "dailyAverage",
+                    "saved",
                     "missingRates"
                   ]
                 }

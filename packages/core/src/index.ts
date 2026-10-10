@@ -135,8 +135,11 @@ export {
 } from './projections/plan.ts';
 export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';
 export {
+  compareGroupKeys,
+  entryGroupKeys,
   entryGroupTotals,
   entryTotals,
+  totalsFromSums,
   type CurrencyTotals,
   type EntryGroupTotals,
   type EntryGrouping,
@@ -183,7 +186,9 @@ export {
   budgetCovers,
   budgetStatus,
   coverPreview,
+  entryBudgetLines,
   type BudgetCover,
+  type EntryBudgetLine,
   type BudgetLineStatus,
   type BudgetStatus,
   type CoveredFigures,
@@ -250,7 +255,9 @@ export {
   type GroupTotals,
 } from './projections/history.ts';
 export {
+  categoryGroupsTotal,
   categoryTotalsBetween,
+  dailyAverage,
   rollUpCategories,
   type CategoryGroup,
   type SummaryCategoryNode,
@@ -289,6 +296,7 @@ export { savingsRate } from './projections/savings-rate.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,
+  savedBetween,
   type CategoryTotal,
   type CycleSnapshot,
   type Leftover,

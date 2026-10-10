@@ -7,6 +7,7 @@ import {
   listTransactionsQuerySchema,
   moveTransactionBodySchema,
   reverseTransactionBodySchema,
+  transactionDetailSchema,
   transactionListSchema,
   transactionSchema,
 } from '@allotr/shared';
@@ -14,13 +15,13 @@ import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
   createTransaction,
   editTransaction,
-  getTransaction,
   listTransactions,
   moveTransaction,
   restoreTransaction,
   revertTransaction,
   reverseTransaction,
 } from '../../ledger/transactions.ts';
+import { getTransactionDetail } from '../../ledger/transaction-budget.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {
@@ -46,7 +47,7 @@ const listRoute = createRoute({
   method: 'get',
   path: '/v1/transactions',
   tags,
-  summary: 'List entries, newest first',
+  summary: 'List entries',
   request: { query: listTransactionsQuerySchema },
   responses: {
     200: json(transactionListSchema, 'One page of entries.'),
@@ -82,9 +83,11 @@ const getRoute = createRoute({
   path: '/v1/transactions/{id}',
   tags,
   summary: 'One entry',
+  description:
+    'With the budget figures the entry had, in whatever period it falls in: what its budget had left right after it, and who covered any part past that.',
   request: { params: idParamSchema },
   responses: {
-    200: json(transactionSchema, 'The entry.'),
+    200: json(transactionDetailSchema, 'The entry.'),
     ...signedIn,
     404: notFound,
   },
@@ -224,7 +227,10 @@ export function registerTransactionRoutes(
 
   app.openapi(getRoute, async (c) => {
     const { id } = c.req.valid('param');
-    return c.json(await getTransaction(db, c.get('user').id, id), 200);
+    return c.json(
+      await getTransactionDetail(db, c.get('user').id, id, now()),
+      200,
+    );
   });
 
   app.openapi(reverseRoute, async (c) => {

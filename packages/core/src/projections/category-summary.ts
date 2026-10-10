@@ -1,10 +1,12 @@
 import {
+  daysBetween,
   money,
   type CurrencyCode,
   type LocalDate,
   type Money,
 } from '@allotr/shared';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
+import { perDay } from './daily.ts';
 import { totalOn } from './rates.ts';
 import { byCategory, type CategoryTotal } from './snapshot.ts';
 import type { LedgerView } from './types.ts';
@@ -109,4 +111,31 @@ export function categoryTotalsBetween(
     .filter(({ amount }) => amount.amountMinor !== 0)
     .sort(bigger);
   return { totals, missingRates: [...missing].sort() };
+}
+
+/** The sum of the groups' amounts, in `currency` (zero when there are none). */
+export function categoryGroupsTotal(
+  groups: readonly CategoryGroup[],
+  currency: CurrencyCode,
+): Money {
+  return money(
+    groups.reduce((sum, group) => sum + group.amount.amountMinor, 0),
+    currency,
+  );
+}
+
+/**
+ * A period's average per day: `total` over the days of the period so far,
+ * from `range.from` to the earlier of `range.to` and `today`, counting both
+ * ends (at least one). Rounds down, as the daily number does, so it never
+ * promises more than there is; the spare minor units are in the total.
+ */
+export function dailyAverage(
+  total: Money,
+  range: Readonly<{ from: LocalDate; to: LocalDate }>,
+  today: LocalDate,
+): Readonly<{ days: number; average: Money }> {
+  const last = range.to < today ? range.to : today;
+  const days = Math.max(1, daysBetween(range.from, last) + 1);
+  return { days, average: perDay(total, days) };
 }

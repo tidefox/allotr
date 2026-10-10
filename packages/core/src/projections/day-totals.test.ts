@@ -43,8 +43,12 @@ describe('dayNetTotals', () => {
       { date: '2026-04-03', net: dollars(0), missingRates: [] },
     ]);
     // Filtered to one account, the list shows only its side.
-    expect(dayNetTotals(chart, [moved], [], usd, cash)[0]?.net).toEqual(
+    expect(dayNetTotals(chart, [moved], [], usd, [cash])[0]?.net).toEqual(
       dollars(4000),
+    );
+    // Both accounts filtered: both sides count and net to nothing again.
+    expect(dayNetTotals(chart, [moved], [], usd, [card, cash])[0]?.net).toEqual(
+      dollars(0),
     );
   });
 

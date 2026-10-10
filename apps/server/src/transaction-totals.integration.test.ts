@@ -149,6 +149,73 @@ describe('transaction totals', () => {
     ]);
   });
 
+  it('gives every row the group keys its totals are filed under', async () => {
+    const categories = (await h.alice.get('/v1/categories')).body as {
+      categories: { id: string; kind: string }[];
+    };
+    const salary =
+      categories.categories.find((c) => c.kind === 'income')?.id ?? '';
+    const post = async (body: Record<string, unknown>) => {
+      const response = await h.alice.post('/v1/transactions', body);
+      expect(response.status).toBe(201);
+    };
+    await post({
+      kind: 'expense',
+      accountId: everyday,
+      amount: usd(900),
+      lines: [
+        { categoryId: groceries, amount: usd(600) },
+        { categoryId: dining, amount: usd(300) },
+      ],
+      occurredOn: '2026-04-07',
+      note: 'Split',
+    });
+    await post({
+      kind: 'income',
+      accountId: everyday,
+      amount: usd(5000),
+      categoryId: salary,
+      occurredOn: '2026-04-07',
+    });
+    // Walk every page: the rows' keys count to exactly the groups' counts,
+    // and every page carries the same whole-set totals.
+    for (const group of ['category', 'day'] as const) {
+      const counts = new Map<string | null, number>();
+      let cursor: string | null = null;
+      let first: List | undefined;
+      do {
+        const query: string = `?group=${group}&limit=2${cursor === null ? '' : `&cursor=${cursor}`}`;
+        const response = await h.alice.get(`/v1/transactions${query}`);
+        const page = response.body as List & {
+          transactions: { groupKeys: (string | null)[] }[];
+          nextCursor: string | null;
+        };
+        first ??= page;
+        expect(page.totals).toEqual(first.totals);
+        expect(page.groups).toEqual(first.groups);
+        for (const row of page.transactions) {
+          for (const key of row.groupKeys) {
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+          }
+        }
+        cursor = page.nextCursor;
+      } while (cursor !== null);
+      expect(new Map(first.groups.map((g) => [g.key, g.count]))).toEqual(
+        counts,
+      );
+    }
+    const { groups } = await list(h.alice, '?group=category');
+    const byKey = new Map(groups.map((g) => [g.key, g]));
+    expect(byKey.get(salary)?.byCurrency).toEqual([
+      { spent: usd(0), income: usd(5000), net: usd(5000) },
+    ]);
+    // The split counts in both of its categories.
+    expect(byKey.get(dining)?.count).toBe(2);
+    expect(byKey.get(dining)?.byCurrency[0]?.spent).toEqual(usd(3300));
+    const plain = await list(h.alice);
+    expect(plain.transactions[0]).toMatchObject({ groupKeys: [] });
+  });
+
   it('lets an undo cancel its entry', async () => {
     const undone = await h.alice.post(
       `/v1/transactions/${lunchId}/reverse`,

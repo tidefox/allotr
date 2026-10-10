@@ -10,7 +10,7 @@ import type { ExchangeRate } from './types.ts';
 // spending counts against the day, income for it, a transfer between the
 // user's accounts nets to nothing, and an undo cancels its entry. With an
 // account, only that account's postings count, as a list filtered by it
-// shows.
+// shows; with several, the postings of any of them count.
 
 export type DayTotal = Readonly<{
   date: LocalDate;
@@ -30,7 +30,7 @@ export function dayNetTotals(
   entries: readonly Entry[],
   rates: readonly ExchangeRate[],
   target: CurrencyCode,
-  account?: AccountId,
+  accounts?: readonly AccountId[],
 ): DayTotal[] {
   const byDay = new Map<LocalDate, Money[]>();
   for (const entry of entries) {
@@ -38,7 +38,9 @@ export function dayNetTotals(
     for (const posting of entry.postings) {
       const owner = chart.get(posting.accountId);
       if (owner === undefined || owner.systemRole !== null) continue;
-      if (account !== undefined && posting.accountId !== account) continue;
+      if (accounts !== undefined && !accounts.includes(posting.accountId)) {
+        continue;
+      }
       amounts.push(posting.amount);
     }
     byDay.set(entry.occurredOn, amounts);
