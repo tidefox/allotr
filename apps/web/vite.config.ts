@@ -31,7 +31,7 @@ export default defineConfig({
           groups: [
             {
               name: 'vendor',
-              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|react-aria-components|react-aria|react-stately|@react-aria|@react-stately|@react-types|@internationalized|@swc|zod|tailwind-merge|clsx|class-variance-authority|use-sync-external-store|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
+              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|zod|tailwind-merge|clsx|class-variance-authority|use-sync-external-store|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
             },
           ],
         },
