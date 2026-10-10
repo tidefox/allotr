@@ -5,7 +5,9 @@ import { expense } from '../ledger/build.ts';
 import { food, meta } from '../ledger/testing.ts';
 import { categoryId } from '../ledger/types.ts';
 import {
+  categoryGroupsTotal,
   categoryTotalsBetween,
+  dailyAverage,
   rollUpCategories,
   type SummaryCategoryNode,
 } from './category-summary.ts';
@@ -151,5 +153,63 @@ describe('categoryTotalsBetween', () => {
       'expenses',
     );
     expect(withRate.totals).toEqual([{ categoryId: fun, amount: usd(1100) }]);
+  });
+});
+
+describe('categoryGroupsTotal', () => {
+  it('sums the groups, and is zero for none', () => {
+    const groups = rollUpCategories(
+      [
+        { categoryId: groceries, amount: usd(30000) },
+        { categoryId: fun, amount: usd(20000) },
+      ],
+      parents,
+    );
+    expect(categoryGroupsTotal(groups, currencyCode('USD'))).toEqual(
+      usd(50000),
+    );
+    expect(categoryGroupsTotal([], currencyCode('USD'))).toEqual(usd(0));
+  });
+});
+
+describe('dailyAverage', () => {
+  const march = { from: day('2026-03-01'), to: day('2026-03-31') };
+
+  it('divides a finished period by all its days, rounding down', () => {
+    expect(dailyAverage(usd(31000), march, day('2026-04-15'))).toEqual({
+      days: 31,
+      average: usd(1000),
+    });
+    expect(dailyAverage(usd(31030), march, day('2026-04-15')).average).toEqual(
+      usd(1000),
+    );
+  });
+
+  it('divides a running period by the days so far, today included', () => {
+    expect(dailyAverage(usd(9000), march, day('2026-03-09'))).toEqual({
+      days: 9,
+      average: usd(1000),
+    });
+  });
+
+  it('counts at least one day, even before the period starts', () => {
+    expect(dailyAverage(usd(500), march, day('2026-02-20')).days).toBe(1);
+  });
+
+  it('never promises more than the total (property)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 100_000_000 }),
+        fc.integer({ min: 0, max: 40 }),
+        (total, elapsed) => {
+          const today = day(
+            `2026-03-${String(Math.min(elapsed, 30) + 1).padStart(2, '0')}`,
+          );
+          const { days, average } = dailyAverage(usd(total), march, today);
+          expect(average.amountMinor * days).toBeLessThanOrEqual(total);
+          expect((average.amountMinor + 1) * days).toBeGreaterThan(total);
+        },
+      ),
+    );
   });
 });

@@ -9,6 +9,7 @@ import { budgetGroupBalances, type GroupBalances } from '../ledger/balances.ts';
 import { groupsOn } from './pools.ts';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
+import { totalOn } from './rates.ts';
 import { availableSums, policiesOf } from './daily.ts';
 import type { Settlement } from './policies.ts';
 import type { Cycle, LedgerView } from './types.ts';
@@ -68,6 +69,76 @@ export function byCategory(
     );
 }
 
+/**
+ * The budget-group balances at the end of the day before `from` and at the
+ * end of `lastDay`. An account opened during the period brings money that
+ * was already there, not income or savings: its opening entry (and any undo
+ * of it) counts toward the opening balances.
+ */
+function periodBalances(
+  view: LedgerView,
+  from: LocalDate,
+  lastDay: LocalDate,
+): Readonly<{ opening: GroupBalances; closing: GroupBalances }> {
+  const inPeriod = view.ledger.filter(
+    (t) => t.occurredOn >= from && t.occurredOn <= lastDay,
+  );
+  const openingDay = addDays(from, -1);
+  const openings = new Set(
+    inPeriod.filter((t) => t.kind === 'opening').map((t) => t.id),
+  );
+  const opening = budgetGroupBalances(
+    view.chart,
+    view.ledger.flatMap((t) => {
+      if (t.occurredOn < from) return [t];
+      const opens =
+        openings.has(t.id) ||
+        (t.reversesId !== null && openings.has(t.reversesId));
+      return opens && t.occurredOn <= lastDay
+        ? [{ ...t, occurredOn: openingDay }]
+        : [];
+    }),
+    openingDay,
+    groupsOn(view, openingDay),
+  );
+  const closing = budgetGroupBalances(
+    view.chart,
+    view.ledger,
+    lastDay,
+    groupsOn(view, lastDay),
+  );
+  return { opening, closing };
+}
+
+/**
+ * What the period added to the off-budget accounts, in the default
+ * currency at the rate on `to` (the net change, so withdrawals count
+ * against it; an account opened in the period adds nothing). Currencies
+ * without a rate are left out and named.
+ */
+export function savedBetween(
+  view: LedgerView,
+  range: Readonly<{ from: LocalDate; to: LocalDate }>,
+): Readonly<{ saved: Money; missingRates: readonly CurrencyCode[] }> {
+  const { opening, closing } = periodBalances(view, range.from, range.to);
+  const currencies = [
+    ...new Set([...opening.off.keys(), ...closing.off.keys()]),
+  ];
+  const figure = totalOn(
+    view.rates,
+    currencies.map((currency) =>
+      money(
+        (closing.off.get(currency)?.amountMinor ?? 0) -
+          (opening.off.get(currency)?.amountMinor ?? 0),
+        currency,
+      ),
+    ),
+    view.settings.defaultCurrency,
+    range.to,
+  );
+  return { saved: figure.amount, missingRates: figure.missingRates };
+}
+
 export function cycleSnapshot(
   view: LedgerView,
   cycle: Cycle,
@@ -95,33 +166,7 @@ export function cycleSnapshot(
       ),
     );
 
-  // An account opened during the cycle brings money that was already
-  // there, not income or savings: its opening entry (and any undo of it)
-  // counts toward the opening balances.
-  const openingDay = addDays(cycle.openedOn, -1);
-  const openings = new Set(
-    inCycle.filter((t) => t.kind === 'opening').map((t) => t.id),
-  );
-  const opening = budgetGroupBalances(
-    view.chart,
-    view.ledger.flatMap((t) => {
-      if (t.occurredOn < cycle.openedOn) return [t];
-      const opens =
-        openings.has(t.id) ||
-        (t.reversesId !== null && openings.has(t.reversesId));
-      return opens && t.occurredOn <= lastDay
-        ? [{ ...t, occurredOn: openingDay }]
-        : [];
-    }),
-    openingDay,
-    groupsOn(view, openingDay),
-  );
-  const closing = budgetGroupBalances(
-    view.chart,
-    view.ledger,
-    lastDay,
-    groupsOn(view, lastDay),
-  );
+  const { opening, closing } = periodBalances(view, cycle.openedOn, lastDay);
   const policies = policiesOf(view);
   const leftover = [...availableSums(view, cycles, lastDay)]
     .sort(([a], [b]) => a.localeCompare(b))
