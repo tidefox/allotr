@@ -1,2 +1,27 @@
-// Messages for the themeEditor screen (WP10). Spread into `en` as `themeEditor`.
-export const themeEditor = {} as const;
+// Messages for the theme editor screen (WP10, docs/ui.md §6). Spread into
+// `en` as `themeEditor`. Role, group and contrast wording is `themes.*`.
+export const themeEditor = {
+  loading: 'Loading…',
+  notFound: 'This palette no longer exists.',
+  back: 'Back to App',
+  theme: { title: 'Palette', subtitle: 'name and scheme' },
+  preview: { title: 'Preview', subtitle: 'live' },
+  contrast: { title: 'Contrast' },
+  neutrals: { title: 'Neutrals', subtitle: 'crust to text' },
+  accents: { title: 'Accents', subtitle: 'up to {limit}' },
+  hues: { title: 'Hues', subtitle: 'which accent plays each' },
+  fromPalette: 'Take {name} from the palette',
+  fromPaletteTitle: 'Colour from the palette',
+  colourChoice: '{name} · {color}',
+  addAccent: 'add accent',
+  removeAccent: 'remove',
+  slotFrom: 'from',
+  fit: 'fit',
+  reset: 'reset',
+  save: 'save',
+  saveAndUse: 'save and use',
+  cancel: 'cancel',
+  saving: 'saving…',
+  fixName: 'Enter a name for the palette.',
+  hexLabel: '{name} hex',
+} as const;
