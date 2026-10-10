@@ -154,7 +154,10 @@ column setting, 4 from 1500.
   still named in full for assistive technology. Sidebar: icon, full label
   and key number, selected = filled full width.
 - **Status line** (≥ 600): mode block (filled), cycle day, payday, currency
-  code, key hints, sync state.
+  code, key hints, sync state. When a new service worker is waiting, an
+  `update` item shows before the sync state: "new version ready" with
+  `[reload]` and `[later]`. Reloading is the user's choice, so a typed entry is
+  never thrown away.
 - **Overlay scrollbar.** Hide the native bar. Draw a 4 px thumb (7 px on hover
   or drag) over the right edge, which can be dragged, and clicking the track
   scrolls a page. It takes no width.
@@ -244,7 +247,7 @@ emergency fund · net worth (2 wide).
 | Tile | Content | Data |
 |---|---|---|
 | this cycle | Key figures (spent, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
-| needs attention | Tag, text, action, ⋮ | `/v1/today` attention items, `/v1/reminders` |
+| needs attention | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
 | cycle allocation | Allocation component | `/v1/today` `allocation` **(API +: segment shares; until then the bar sizes each part against the start)** |
 | budgets | Category tree with bar, spent and left | `/v1/budgets` **(API +: parent budgets and their totals; until then a flat list)** |
@@ -264,6 +267,9 @@ emergency fund · net worth (2 wide).
   the pool's balance. Credit accounts are their own group below the pools
   and appear only under All and Credit; On budget and Off budget show the
   pools of that kind.
+- The list tile's title bar has `[+ account]`, which opens a sheet with the
+  name, currency, whether it counts toward today (on budget) or is savings
+  (off budget) and an optional opening balance. The new account opens.
 - Each account row: icon, name, sparkline (the last 30 days, fetched when the
   row scrolls into view; from 600 px), reconciled date (from 1000 px),
   balance, ⋮ (reconcile, transfer from here, rename, move to another pool,
@@ -289,6 +295,16 @@ emergency fund · net worth (2 wide).
   this entry (bar), cover, source, history, other entries from the same
   payee, then edit · split · cover · delete.
 - Lists over 200 rows are virtualised.
+- Moving within a day: when grouped by day, rows of a day with more than one
+  entry can be dragged (long press on touch) to change their place; there is
+  no visible handle. The drag key appears on focus, and the detail has
+  `[move up]` and `[move down]`. The day that continues on an unloaded page
+  is not movable. The server refuses a move that would break the time order
+  of timed entries. A move never changes a date.
+- Split with people: an expense in a category has `[split with people]` in its
+  detail. A sheet takes each person's name (with names used before as taps)
+  and amount, filled as an even share until typed; the server keeps the rest
+  as the user's share and replaces the entry (an undo plus the split).
 
 ### Budget `/budget/…`
 
@@ -320,7 +336,8 @@ money (default currency, display mode **(planned, 0029)**, payday rule,
 budget period, daily number, exchange rates) · categories (a tree with fold,
 drag, `[+ sub]`, rename, icon & colour, move under, merge, archive) ·
 policies · app (palette, interface: density, fonts **(planned)**, motion, key
-hints; tabs, top bar and layouts **(planned)**) · account (sign-in, two-factor,
+hints; notifications: opt in to Web Push on this device, off until asked,
+with a test; tabs, top bar and layouts **(planned)**) · account (sign-in, two-factor,
 sessions, invites) · data (export, import, delete account).
 
 Every value row opens a menu or form. There are no inline native controls.

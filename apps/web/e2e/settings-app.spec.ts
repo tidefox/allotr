@@ -257,3 +257,89 @@ test('density and key hints are kept on this device', async ({
   await noSmallTargets(page.locator('main'));
   await expectAccessible(page);
 });
+
+/** A headless browser starts with notifications blocked; ask-first instead. */
+async function askable(page: Page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+  });
+}
+
+test('notifications are off until asked, with the privacy note and a keyboard path', async ({
+  page,
+  baseURL,
+}) => {
+  await askable(page);
+  await signIn(page, baseURL ?? '');
+  await page.goto('/settings/app');
+  const tile = page.getByRole('region', {
+    name: t('settingsApp.notifications.title'),
+  });
+  await expect(tile).toBeVisible();
+  await expect(tile).toContainText("browser vendor's push service");
+  await expect(
+    tile.getByText(t('settingsApp.notifications.off')),
+  ).toBeVisible();
+  const turnOn = tile.getByRole('button', {
+    name: t('settingsApp.notifications.turnOn'),
+  });
+  await expect(turnOn).toBeEnabled();
+  await turnOn.focus();
+  await expect(turnOn).toBeFocused();
+  // Nothing was subscribed by looking at the screen.
+  const subscriptions = await page.request.get('/v1/push/subscriptions');
+  expect(
+    ((await subscriptions.json()) as { subscriptions: unknown[] })
+      .subscriptions,
+  ).toEqual([]);
+  await noSidewaysScroll(page);
+  await noSmallTargets(tile);
+  await expectAccessible(page);
+});
+
+test('a browser without push says so instead of offering it', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, 'PushManager');
+  });
+  await page.goto('/settings/app');
+  const tile = page.getByRole('region', {
+    name: t('settingsApp.notifications.title'),
+  });
+  await expect(
+    tile.getByText(t('settingsApp.notifications.unsupported')),
+  ).toBeVisible();
+  await expect(
+    tile.getByRole('button', { name: t('settingsApp.notifications.turnOn') }),
+  ).toHaveCount(0);
+  await expectAccessible(page);
+});
+
+test('a server that cannot give its push key says so, and retry asks again', async ({
+  page,
+  baseURL,
+}) => {
+  await askable(page);
+  await signIn(page, baseURL ?? '');
+  await page.route('**/v1/push/config', (route) =>
+    route.fulfill({ status: 404, json: { code: 'not_found', title: 'Gone' } }),
+  );
+  await page.goto('/settings/app');
+  const tile = page.getByRole('region', {
+    name: t('settingsApp.notifications.title'),
+  });
+  await expect(
+    tile.getByText(t('settingsApp.notifications.serverOff')),
+  ).toBeVisible();
+  await page.unroute('**/v1/push/config');
+  await tile
+    .getByRole('button', { name: t('settingsApp.notifications.retry') })
+    .click();
+  await expect(
+    tile.getByRole('button', { name: t('settingsApp.notifications.turnOn') }),
+  ).toBeEnabled();
+  await expectAccessible(page);
+});

@@ -125,3 +125,34 @@ test('a pool is switched in and out of the daily number by keyboard', async ({
   await expect(travel).toHaveAttribute('aria-pressed', 'true');
   await expectAccessible(page);
 });
+
+test('every unread reminder is marked read at once, by keyboard', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  // The scheduler records the weekly review within a second or two.
+  await expect
+    .poll(async () => {
+      const response = await page.request.get('/v1/reminders');
+      return ((await response.json()) as { unread: number }).unread;
+    })
+    .toBeGreaterThan(0);
+
+  await page.goto('/');
+  const tile = page.getByRole('region', {
+    name: t('dashboardTiles.needsAttention.title'),
+  });
+  const markAll = tile.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.markAllRead'),
+  });
+  await expect(markAll).toBeVisible();
+  await expectAccessible(page);
+
+  await markAll.focus();
+  await page.keyboard.press('Enter');
+  await expect(markAll).toBeHidden();
+  const after = await page.request.get('/v1/reminders');
+  expect(((await after.json()) as { unread: number }).unread).toBe(0);
+  await expectAccessible(page);
+});
