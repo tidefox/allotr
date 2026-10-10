@@ -138,9 +138,11 @@ describe('recording entries', () => {
       }),
     ]);
     expect(await balance(h.alice, card)).toBe(200000 - 4250);
-    expect((await h.alice.get(`/v1/transactions/${entry.id}`)).body).toEqual(
-      entry,
-    );
+    // The detail view adds the budget figures; none without budgets.
+    expect((await h.alice.get(`/v1/transactions/${entry.id}`)).body).toEqual({
+      ...entry,
+      budget: null,
+    });
   });
 
   it('records income and a transfer', async () => {
@@ -366,6 +368,7 @@ describe('undo and edit', () => {
     const stored = (await h.alice.get(`/v1/transactions/${id}`)).body as Entry;
     expect(stored).toEqual({
       ...(original.body as Entry),
+      budget: null,
       reversedById: reversal.id,
     });
 

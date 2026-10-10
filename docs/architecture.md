@@ -180,7 +180,21 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   the same figures per day (newest first) or category. Totals are never
   summed across currencies or converted; transfers, loans and repayments are
   neither spent nor income, an undo cancels its entry, and a split counts
-  each line in its own category. An expense
+  each line in its own category. The totals are added up by SQL aggregate
+  queries over the matching entry IDs (`transaction-totals.ts`), never by
+  loading the filtered set, to the rules of `entryTotals` and
+  `entryGroupTotals` in `packages/core` (the integration tests hold the two
+  to the same figures). `dayTotals` nets only the postings of the filtered
+  accounts when `accountId` lists any. With `group=`, each listed entry has
+  `groupKeys`, the group keys it is counted in (`entryGroupKeys` in core),
+  so a list sectioned like `groups` agrees with them. Every entry carries
+  `billId` and `billName` when it paid a bill (`bill_payments.transaction_id`;
+  unmarking the payment clears them). `GET /v1/transactions/{id}` also
+  returns `budget`: for each counted expense line, what its budget had left
+  right after it (`leftAfter`), what its own budget paid and who covered the
+  rest, for the period the entry's date falls in (`entryBudgetLines` in core,
+  from the same fold as `/v1/budgets`; null for an income, a transfer,
+  savings spending or an undone entry). An expense
   or income takes either `categoryId` or a split, `lines: [{categoryId,
   amount}]` (2–20 distinct categories adding up to the amount, or to
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split
@@ -198,8 +212,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   transaction, refused as `reconcile_stale` when `expectedDifference` no
   longer holds, or recorded as a match when the difference is now zero.
   Accounts report `lastReconciledOn`.
-  `GET /v1/transactions` pages newest first (by date, then the user's
-  order within the day, `sortRank`) and filters by date range,
+  `GET /v1/transactions` pages newest first by default (by date, then the
+  user's order within the day, `sortRank`); `sort=date-asc` reverses it and
+  `sort=amount-desc|amount-asc` order by the entry's largest posting
+  magnitude in minor units (not converted across currencies), ties newest
+  first. Every order is total, and a cursor only fits the sort it came
+  from (`invalid_cursor` otherwise). It filters by date range,
   account, category (with its subcategories, matching any line of a
   split), tag, note text, payee (`payee`: the whole note compared as
   `/v1/reports/payees` compares it, through a `payee_key` SQLite function
@@ -300,7 +318,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   category (subcategories counted in their parent, like the groups) for the N
   consecutive cycles or months ending with the selected one, oldest first
   (`categorySeries` in `packages/core`). Each point equals the single-period
-  figure for that period; `totals` is the spent per period.
+  figure for that period; `totals` is the spent per period. The summary also
+  carries `spendingTotal`, `incomeTotal`, `days` (the period's days so far,
+  today included, at least 1), `dailyAverage` (spending over `days`, rounded
+  down) and `saved` (what the period added to the off-budget accounts, from
+  `savedBetween` in core, as a cycle's `savingsNetChange`). Both reports
+  resolve their period with one helper (`report-period.ts`).
 - `GET /v1/reports/payees?period=&cycle=&month=&limit=` gives the top payees
   for the same periods (`limit` 1 to 100, default 10) as the `topPayees`
   projection in `packages/core`. The ledger has no payee field: a payee is an

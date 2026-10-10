@@ -1,20 +1,19 @@
 import {
+  categoryGroupsTotal,
   categoryId,
   categorySeries,
   categoryTotalsBetween,
   cyclePeriods,
-  cyclesOf,
+  dailyAverage,
   monthPeriods,
   rollUpCategories,
+  savedBetween,
   type CategoryId,
   type CategoryGroup,
   type CategorySeries,
   type SeriesPeriod,
 } from '@allotr/core';
 import {
-  addDays,
-  lastDayOfMonth,
-  localDate,
   localDateIn,
   type CategorySeriesView,
   type CategorySummaryView,
@@ -22,12 +21,13 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
 import { mergeTargets } from './cycles.ts';
+import { resolveReportPeriod } from './report-period.ts';
 import { loadView } from './today.ts';
 
 // Category summaries (FR-W2): spending and income per top-level category for
-// a payday cycle or a calendar month, computed from the ledger on each read.
+// a payday cycle or a calendar month, computed from the ledger on each read,
+// with the period's totals, daily average and what it added to savings.
 
 type Query = Readonly<{
   period: 'cycle' | 'month';
@@ -75,31 +75,17 @@ export async function categorySummary(
         .execute(),
     }));
   const today = localDateIn(now, loaded.timeZone);
-  let from: LocalDate;
-  let to: LocalDate;
-  let periods: SeriesPeriod[];
-  if (query.period === 'month') {
-    const month = query.month ?? today.slice(0, 7);
-    from = localDate(`${month}-01`);
-    to = lastDayOfMonth(from);
-    periods = monthPeriods(month, query.series ?? 0);
-  } else {
-    const cycles = cyclesOf(loaded.view, today);
-    const cycle =
-      query.cycle === undefined
-        ? cycles.at(-1)
-        : cycles.find((c) => c.openedOn === query.cycle);
-    if (cycle === undefined) {
-      throw new RequestProblem(
-        404,
-        'cycle_not_found',
-        `No cycle opened on ${query.cycle ?? 'that day'}.`,
-      );
-    }
-    from = cycle.openedOn;
-    to = cycle.closedOn === null ? today : addDays(cycle.closedOn, -1);
-    periods = cyclePeriods(cycles, cycle.openedOn, query.series ?? 0, today);
-  }
+  const range = resolveReportPeriod(loaded.view, today, query);
+  const { from, to } = range;
+  const periods: SeriesPeriod[] =
+    range.kind === 'month'
+      ? monthPeriods(range.month, query.series ?? 0)
+      : cyclePeriods(
+          range.cycles,
+          range.cycle.openedOn,
+          query.series ?? 0,
+          today,
+        );
   const parentOf = new Map<CategoryId, CategoryId | null>(
     parents.map((row) => [
       categoryId(row.id),
@@ -118,14 +104,29 @@ export async function categorySummary(
     'income',
     merged,
   );
+  const currency = loaded.view.settings.defaultCurrency;
+  const spendingGroups = rollUpCategories(spending.totals, parentOf);
+  const incomeGroups = rollUpCategories(income.totals, parentOf);
+  const spendingTotal = categoryGroupsTotal(spendingGroups, currency);
+  const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
+  const savings = savedBetween(loaded.view, { from, to });
   return {
     period: query.period,
     from,
     to,
-    spending: view(rollUpCategories(spending.totals, parentOf)),
-    income: view(rollUpCategories(income.totals, parentOf)),
+    spending: view(spendingGroups),
+    income: view(incomeGroups),
+    spendingTotal,
+    incomeTotal: categoryGroupsTotal(incomeGroups, currency),
+    days,
+    dailyAverage: average,
+    saved: savings.saved,
     missingRates: [
-      ...new Set([...spending.missingRates, ...income.missingRates]),
+      ...new Set([
+        ...spending.missingRates,
+        ...income.missingRates,
+        ...savings.missingRates,
+      ]),
     ].sort(),
     ...(query.series === undefined
       ? {}

@@ -275,6 +275,14 @@ export const transactionSchema = z.object({
     .object({ accountId: idSchema, budgetGroup: budgetGroupSchema })
     .nullable(),
   tagIds: z.array(idSchema),
+  /**
+   * The bill this entry paid, when it was marked as paying one (a payment
+   * recorded with the mark, or an entry linked to it); else null. An entry
+   * pays at most one bill due date, and unmarking the payment clears this.
+   */
+  billId: idSchema.nullable(),
+  /** The name of that bill; null with `billId`. */
+  billName: z.string().nullable(),
 });
 export type TransactionView = z.infer<typeof transactionSchema>;
 
@@ -378,7 +386,24 @@ const idListSchema = z
   .transform((value) => value.split(','))
   .pipe(z.array(idSchema).min(1).max(50));
 
+/**
+ * The order of a list. `date-desc` (default) is newest first, then the
+ * latest place in the day first; `date-asc` the reverse. `amount-desc` and
+ * `amount-asc` order by the entry's size, the largest posting magnitude in
+ * minor units of its own currency (amounts in different currencies are
+ * compared as written, never converted); ties go newest first. Every order
+ * is total, so cursors page through it without gaps or repeats.
+ */
+export const transactionSortSchema = z.enum([
+  'date-desc',
+  'date-asc',
+  'amount-desc',
+  'amount-asc',
+]);
+export type TransactionSort = z.infer<typeof transactionSortSchema>;
+
 export const listTransactionsQuerySchema = z.object({
+  sort: transactionSortSchema.default('date-desc'),
   from: localDateSchema.optional(),
   to: localDateSchema.optional(),
   /** Entries touching any of these accounts (comma-separated). */
@@ -456,15 +481,25 @@ export const entryGroupTotalsSchema = entryTotalsSchema.extend({
   key: z.string().nullable(),
 });
 
+export const transactionListItemSchema = transactionSchema.extend({
+  /**
+   * With `group=day|category`, the keys of the `groups` this entry is
+   * counted in (a split is in each of its categories; none for an entry
+   * with no category is `[null]`), so a list sectioned like `groups`
+   * agrees with their totals. Empty for `group=none`.
+   */
+  groupKeys: z.array(z.string().nullable()),
+});
+
 export const transactionListSchema = z.object({
-  transactions: z.array(transactionSchema),
+  transactions: z.array(transactionListItemSchema),
   /** Pass as `cursor` for the next, older page; null on the last one. */
   nextCursor: z.string().nullable(),
   /**
    * For each day on this page, newest first: the net change the day's
    * matching entries (all of them, not only this page's) made to the
-   * user's own accounts, or to the filtered account, in the default
-   * currency at that day's rate.
+   * user's own accounts, or to the filtered accounts (only their own
+   * postings), in the default currency at that day's rate.
    */
   dayTotals: z.array(
     z.object({
@@ -784,6 +819,23 @@ export const categorySummarySchema = z.object({
   to: localDateSchema,
   spending: z.array(categoryGroupSchema),
   income: z.array(categoryGroupSchema),
+  /** All spending in the period: the sum of the `spending` groups. */
+  spendingTotal: moneySchema,
+  /** All income in the period: the sum of the `income` groups. */
+  incomeTotal: moneySchema,
+  /**
+   * Days the average runs over: from `from` to the earlier of `to` and
+   * today, both counted (at least 1), so a running period is not diluted
+   * by days that have not happened.
+   */
+  days: z.int().min(1),
+  /** `spendingTotal` per day over `days`, rounded down. */
+  dailyAverage: moneySchema,
+  /**
+   * What the period added to the off-budget accounts (net of withdrawals;
+   * an account opened in the period adds nothing), at the rate on `to`.
+   */
+  saved: moneySchema,
   /** Currencies without a rate on `to`, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
   /** Only when `series` was requested. */

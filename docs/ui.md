@@ -278,16 +278,20 @@ emergency fund · net worth (2 wide).
 
 - The title strip holds search, a period menu and a filter menu.
 - Chip bar for active filters.
-- The list tile has a summary line **(API +: totals for the filtered set)**
-  and day headers with day totals **(API +)**, or groups by category, or none.
-- Rows: time, icon, payee (with a `bill` tag **(API +: entries do not say
-  which bill they paid)**), `parent › category`, account, amount.
-- The list is newest first; the API has no sort order, so there is no sort
-  menu yet **(API +)**. The filter menu takes several accounts and
-  categories (comma-separated `accountId` and `categoryId`).
-- Detail: icon and payee, amount, date, category path, account, budget after
-  this entry (bar), cover, source, history, other entries from the same
-  payee, then edit · split · cover · delete.
+- The list tile has a summary line (`totals`) and day headers with day totals
+  (`dayTotals`, over exactly the filtered accounts), or groups by category
+  (`groups`, with each row's `groupKeys` saying which groups it is counted in,
+  so a split shows under each of its categories), or none.
+- Rows: time, icon, payee (with a `bill` tag from `billId` / `billName`),
+  `parent › category`, account, amount.
+- The sort menu sends `sort=date-desc|date-asc|amount-desc|amount-asc`. The
+  filter menu takes several accounts and categories (comma-separated
+  `accountId` and `categoryId`).
+- Detail (`GET /v1/transactions/{id}`): icon and payee, amount, date,
+  category path, account, budget after this entry (bar, from `budget.lines[].leftAfter`
+  against the budget's amount), cover (`budget.lines[].covers`, in any
+  period), source, history, other entries from the same payee, then edit ·
+  split · cover · delete.
 - Lists over 200 rows are virtualised.
 
 ### Budget `/budget/…`
@@ -369,7 +373,12 @@ property tests:
    never converted or summed across currencies. The filter menu's type radio
    is `type=expense|income|transfer`, and "same payee" is `payee=` (the
    report's own key, so it lists exactly the entries a payee was counted
-   for).
+   for). Totals are added up by the database, not by loading the filtered
+   entries. Follow-ups, all shipped: `dayTotals` nets exactly the filtered
+   accounts; `sort=`; `billId` / `billName` on every entry; `groupKeys` per
+   row; the detail's `budget` figures; and on `/v1/reports/categories`
+   `spendingTotal`, `incomeTotal`, `days`, `dailyAverage` (over the days so
+   far) and `saved`.
 4. **Top payees** for a period (count and total) (`/v1/reports/payees`).
 5. **Category series across cycles** for trends (on `/v1/reports/categories`
    with a range).

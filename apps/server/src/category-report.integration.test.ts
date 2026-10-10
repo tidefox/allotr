@@ -17,6 +17,11 @@ type Summary = {
   to: string;
   spending: Group[];
   income: Group[];
+  spendingTotal: Money;
+  incomeTotal: Money;
+  days: number;
+  dailyAverage: Money;
+  saved: Money;
   missingRates: string[];
   series?: {
     periods: { from: string; to: string }[];
@@ -116,6 +121,56 @@ describe('GET /v1/reports/categories', () => {
       eatingOut,
       food,
     ]);
+  });
+
+  it('totals the period, averages it per day so far and counts what was saved', async () => {
+    const savings = await h.alice.post('/v1/accounts', {
+      name: 'Rainy day',
+      currency: 'USD',
+      budgetGroup: 'off',
+      openingBalance: usd(0),
+      openedOn: '2026-03-15',
+    });
+    expect(savings.status).toBe(201);
+    const saved = await h.alice.post('/v1/transactions', {
+      kind: 'transfer',
+      fromAccountId: (
+        (await h.alice.get('/v1/accounts')).body as {
+          accounts: { id: string; name: string }[];
+        }
+      ).accounts.find((a) => a.name === 'Everyday')?.id,
+      toAccountId: (savings.body as { id: string }).id,
+      sent: usd(4000),
+      occurredOn: '2026-03-16',
+    });
+    expect(saved.status).toBe(201);
+    const before = clock;
+    clock = new Date('2026-03-20T12:00:00Z');
+    const running = (
+      await h.alice.get('/v1/reports/categories?period=month&month=2026-03')
+    ).body as Summary;
+    // 20 March is the 20th day: 6,700 spent over 20 days, rounded down.
+    expect(running).toMatchObject({
+      spendingTotal: usd(6700),
+      incomeTotal: usd(0),
+      days: 20,
+      dailyAverage: usd(335),
+      saved: usd(4000),
+    });
+    clock = new Date('2026-04-10T12:00:00Z');
+    const done = (
+      await h.alice.get('/v1/reports/categories?period=month&month=2026-03')
+    ).body as Summary;
+    expect(done).toMatchObject({
+      days: 31,
+      dailyAverage: usd(216),
+      saved: usd(4000),
+    });
+    const february = (
+      await h.alice.get('/v1/reports/categories?period=month&month=2026-02')
+    ).body as Summary;
+    expect(february).toMatchObject({ days: 28, saved: usd(0) });
+    clock = before;
   });
 
   it('leaves out entries dated outside the month', async () => {
