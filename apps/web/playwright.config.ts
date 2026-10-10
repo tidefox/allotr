@@ -25,7 +25,7 @@ const sizes = [
   },
 ];
 // The per-screen specs return with their screens (WP3 onwards).
-const specs = [
+const allSpecs = [
   'smoke',
   'shell',
   'keys',
@@ -47,7 +47,29 @@ const specs = [
   'settings-categories',
 ];
 
-const projects = sizes.flatMap((size, i) =>
+// Every listed spec boots its own server per size whatever `--project` says,
+// so narrow a run with E2E_SPECS=shell,keys and E2E_SIZES=phone,desktop.
+const pick = <T>(
+  all: T[],
+  env: string | undefined,
+  key: (item: T) => string,
+) => {
+  const wanted = env
+    ?.split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  if (wanted === undefined || wanted.length === 0) return all;
+  const unknown = wanted.filter(
+    (name) => !all.some((item) => key(item) === name),
+  );
+  if (unknown.length > 0)
+    throw new Error(`Unknown e2e filter: ${unknown.join(', ')}`);
+  return all.filter((item) => wanted.includes(key(item)));
+};
+const specs = pick(allSpecs, process.env.E2E_SPECS, (spec) => spec);
+const pickedSizes = pick(sizes, process.env.E2E_SIZES, (size) => size.name);
+
+const projects = pickedSizes.flatMap((size, i) =>
   specs.map((spec, j) => ({
     name: `${size.name} ${spec}`,
     port: Number(process.env.E2E_PORT_BASE ?? 4173) + i * specs.length + j,
