@@ -1,2 +1,79 @@
-// Messages for the settingsPolicies screen (WP10). Spread into `en` as `settingsPolicies`.
-export const settingsPolicies = {} as const;
+// Messages for the Settings policies tab (WP10). Spread into `en` as
+// `settingsPolicies`. Shared buttons live in `settingsMoney.common`.
+export const settingsPolicies = {
+  payday: {
+    title: 'Payday plan',
+    subtitle: 'what is set aside and how long it lasts',
+    payFirst: 'Pay yourself first',
+    payFirstHint: 'The savings line comes first on the payday sheet.',
+    payFirstTitle: 'Pay yourself first',
+    kind: 'Savings line',
+    kinds: {
+      none: 'No savings line',
+      fixed: 'A fixed amount',
+      percent: 'A share of the paycheck',
+    },
+    summary: {
+      none: 'none',
+      fixed: '{amount} per paycheck',
+      percent: '{percent}% of the paycheck',
+    },
+    fixed: 'Amount per paycheck',
+    percent: 'Percent of the paycheck',
+    invalid: 'Enter a number such as 10 or 12.5 for a percent, or an amount.',
+    months: 'Emergency fund target',
+    monthsValue: {
+      one: '{count} month',
+      other: '{count} months',
+    },
+    monthsHint: 'Months of average expenses.',
+    monthsTitle: 'Emergency fund target',
+    monthsLabel: 'Months',
+    monthsInvalid: 'Enter a whole number from 1 to 24.',
+    writeOff: 'IOU write-off offer',
+    writeOffValue: {
+      one: 'after {count} day',
+      other: 'after {count} days',
+    },
+    writeOffHint: 'Counted from the due date, or the day it was recorded.',
+    writeOffTitle: 'Offer a write-off after',
+    writeOffLabel: 'Days',
+    writeOffInvalid: 'Enter a whole number of days from 1 to 3650.',
+  },
+  entries: {
+    title: 'Entries',
+    subtitle: 'what a new entry asks for',
+    times: 'Time of day',
+    timesHint: 'Times already recorded stay either way.',
+    timesOptions: {
+      off: 'Off',
+      optional: 'Optional',
+      'prefill-now': 'Fill in the current time',
+    },
+  },
+  reports: {
+    title: 'Reports',
+    subtitle: 'kept per user, on every device',
+    period: 'Summary period',
+    periodHint: 'What category summaries cover.',
+    periods: { cycle: 'Payday cycle', month: 'Calendar month' },
+    cards: 'Category cards',
+    cardsHint: 'How many subcategories each card lists.',
+    cardsOptions: { top: 'Top two', all: 'Every subcategory' },
+  },
+  tags: {
+    title: 'Tags',
+    subtitle: 'free-form labels for entries',
+    add: 'tag',
+    addTitle: 'New tag',
+    renameTitle: 'Rename {name}',
+    name: 'Name',
+    nameInvalid: 'Enter a name of up to 100 characters.',
+    submitAdd: 'Add tag',
+    rename: 'rename',
+    renameLabel: 'Rename tag {name}',
+    none: 'No tags yet. Tags you add here can be picked when you log an entry.',
+    listLabel: 'Tags',
+    deleteNote: 'Tags cannot be deleted yet.',
+  },
+} as const;
