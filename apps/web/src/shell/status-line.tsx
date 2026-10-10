@@ -38,7 +38,10 @@ export function StatusLine() {
           <span>{today.onBudget.currency}</span>
         </>
       )}
-      <span className="hidden min-w-0 flex-1 truncate text-text-muted wide:inline">
+      <span
+        data-key-hints
+        className="hidden min-w-0 flex-1 truncate text-text-muted wide:inline"
+      >
         {t('shell.status.keys')}
       </span>
       <span role="status" className="ml-auto flex items-center gap-1">

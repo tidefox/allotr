@@ -339,3 +339,14 @@ html::-webkit-scrollbar {
     grid-template-columns: var(--cols-wide);
   }
 }
+
+/* Key hints off (Settings, App): the status line hints and the keys on menu rows. */
+:root[data-hints='off'] kbd,
+:root[data-hints='off'] [data-key-hints] {
+  display: none;
+}
+
+/* Comfortable density (Settings, App): taller rows; phones already use them. */
+:root[data-density='comfortable'] {
+  --h-row: 2.25rem;
+}
