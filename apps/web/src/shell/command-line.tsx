@@ -4,7 +4,12 @@ import { Input, TextField } from 'react-aria-components';
 import { Amount } from '@/components/amount';
 import { MenuButton, MenuRadioItem } from '@/components/menu';
 import { ResultLine } from '@/components/states';
-import { IconArrowDownLine, IconArrowUpLine } from '@/generated/icons';
+import {
+  IconArrowDownLine,
+  IconArrowLeftRightLine,
+  IconArrowUpLine,
+} from '@/generated/icons';
+import { iouQueryKeys } from '@/lib/ious';
 import {
   accountsQuery,
   entryQueryKeys,
@@ -28,8 +33,8 @@ import { submitLine } from './command/submit.ts';
 //
 // A typed line becomes a draft the user confirms (rule 6); the parser
 // endpoint is not there yet, so a submit answers with a note (submit.ts).
-// Logging with the structured forms comes with the + new forms, which call
-// `showLogged()` and get the result line below for free.
+// The + new forms call `showLogged()` and get the result line below, with
+// an undo that reverses the entry.
 
 export function CommandLine() {
   const { intoAccountId, logged } = useCommandState();
@@ -52,7 +57,7 @@ export function CommandLine() {
     mutationFn: (id: string) => reverseTransaction(id),
     onSuccess: () => {
       dismissLogged();
-      for (const queryKey of entryQueryKeys)
+      for (const queryKey of [...entryQueryKeys, ...iouQueryKeys])
         void queryClient.invalidateQueries({ queryKey });
     },
     onError: () => {
@@ -75,6 +80,8 @@ export function CommandLine() {
             icon={
               logged.kind === 'income' ? (
                 <IconArrowUpLine className="size-4 shrink-0 text-positive" />
+              ) : logged.kind === 'transfer' ? (
+                <IconArrowLeftRightLine className="size-4 shrink-0" />
               ) : (
                 <IconArrowDownLine className="size-4 shrink-0 text-negative" />
               )

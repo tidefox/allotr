@@ -43,6 +43,9 @@ import {
 
 const locale = 'en';
 
+/** What the server made for a new loan: the entry and its IOUs. */
+export type CreatedIous = Awaited<ReturnType<typeof createIou>>;
+
 export type IouFlow =
   | Readonly<{ kind: 'loan' }>
   | Readonly<{ kind: 'repay' | 'writeoff' | 'due'; iou: IouView }>;
@@ -68,9 +71,12 @@ function titleOf(flow: IouFlow): string {
 export function IouSheet({
   flow,
   onClose,
+  onRecorded,
 }: {
   flow: IouFlow | null;
   onClose: () => void;
+  /** A new loan or borrow was recorded: the entry the server made. */
+  onRecorded?: (created: CreatedIous) => void;
 }) {
   return (
     <Sheet
@@ -81,12 +87,22 @@ export function IouSheet({
       title={flow === null ? '' : titleOf(flow)}
       closeLabel={t('budgetGoalsIous.close')}
     >
-      {flow === null ? null : <Forms flow={flow} onClose={onClose} />}
+      {flow === null ? null : (
+        <Forms flow={flow} onClose={onClose} onRecorded={onRecorded} />
+      )}
     </Sheet>
   );
 }
 
-function Forms({ flow, onClose }: { flow: IouFlow; onClose: () => void }) {
+function Forms({
+  flow,
+  onClose,
+  onRecorded,
+}: {
+  flow: IouFlow;
+  onClose: () => void;
+  onRecorded: ((created: CreatedIous) => void) | undefined;
+}) {
   const today = useQuery(todayQuery).data?.today;
   const accounts = useQuery(accountsQuery).data?.accounts;
   const categories = useQuery(categoriesQuery).data?.categories;
@@ -98,7 +114,14 @@ function Forms({ flow, onClose }: { flow: IouFlow; onClose: () => void }) {
     );
   switch (flow.kind) {
     case 'loan':
-      return <LoanForm accounts={accounts} today={today} onClose={onClose} />;
+      return (
+        <LoanForm
+          accounts={accounts}
+          today={today}
+          onClose={onClose}
+          onRecorded={onRecorded}
+        />
+      );
     case 'repay':
       return (
         <RepayForm
@@ -124,14 +147,17 @@ function Forms({ flow, onClose }: { flow: IouFlow; onClose: () => void }) {
   }
 }
 
-function useIouChange<A, R>(run: (args: A) => Promise<R>, onDone: () => void) {
+function useIouChange<A, R>(
+  run: (args: A) => Promise<R>,
+  onDone: (result: R) => void,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: run,
-    onSuccess: () => {
+    onSuccess: (result) => {
       for (const queryKey of iouQueryKeys)
         void queryClient.invalidateQueries({ queryKey });
-      onDone();
+      onDone(result);
     },
   });
 }
@@ -196,10 +222,12 @@ function LoanForm({
   accounts,
   today,
   onClose,
+  onRecorded,
 }: {
   accounts: readonly AccountView[];
   today: LocalDate;
   onClose: () => void;
+  onRecorded: ((created: CreatedIous) => void) | undefined;
 }) {
   const open = accounts.filter((a) => !a.archived);
   const [direction, setDirection] = useState<IouDirectionView>('owed-to-me');
@@ -215,7 +243,10 @@ function LoanForm({
   const [key] = useState(() => randomId());
   const create = useIouChange(
     (body: Parameters<typeof createIou>[0]) => createIou(body, key),
-    onClose,
+    (created) => {
+      onRecorded?.(created);
+      onClose();
+    },
   );
   const currency = open.find((a) => a.id === accountId)?.currency ?? 'USD';
 

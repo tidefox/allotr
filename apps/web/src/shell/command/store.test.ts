@@ -31,6 +31,18 @@ describe('focusCommandLine', () => {
   });
 });
 
+describe('new form preset', () => {
+  it('keeps a transfer source until the form closes', () => {
+    openNewForm('transfer', { fromAccountId: 'acc_2' });
+    expect(getCommandState()).toMatchObject({
+      newForm: 'transfer',
+      newFormPreset: { fromAccountId: 'acc_2' },
+    });
+    closeNewForm();
+    expect(getCommandState().newFormPreset).toEqual({});
+  });
+});
+
 describe('command state', () => {
   it('keeps the account, result and open form, and tells subscribers', () => {
     const listener = vi.fn();

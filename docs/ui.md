@@ -144,8 +144,12 @@ column setting, 4 from 1500.
   - `›` prompt and an input for the grammar ([grammar.md](grammar.md)).
   - Key hints (≥ 600).
   - An account menu ("into Daily card").
-  - A filled **+ new** menu: expense, income, transfer, split with people,
-    payday, bill, IOU.
+  - A filled **+ new** menu: expense, income, transfer, split (one amount
+    across categories), payday, bill, IOU. Expense, income, transfer and
+    split open a form in a bottom sheet over the quick entry draft; the
+    "into" account and "transfer from here" preset its account. Payday and
+    IOU open the Budget screen's sheets. Bill has no create form yet and
+    leads to the Bills tab.
   - After logging, a result line slides up over the content with the amount,
     category, account, "left today" and **undo**.
 - **Navigation.** Phone: square bar fixed to the bottom, five equal buttons,

@@ -8,7 +8,7 @@ import { useSyncExternalStore } from 'react';
 //   registerCommandInput()  the input registers itself on mount
 //   useCommandState()       the "into" account, the last logged entry and
 //                           the open + new form
-//   openNewForm(kind)       the one seam the structured forms replace later
+//   openNewForm(kind, preset?)  opens a + new form, optionally preset
 
 /** The + new menu, in order (docs/ui.md §3). */
 export const NEW_FORM_KINDS = [
@@ -32,11 +32,18 @@ export interface LoggedEntry {
   readonly categoryLabel: string | null;
 }
 
+/** What a + new form can be opened with. */
+export interface NewFormPreset {
+  /** A transfer's source account ("transfer from here"). */
+  readonly fromAccountId?: string;
+}
+
 export interface CommandState {
   /** The account the next entry goes into; null for the default one. */
   readonly intoAccountId: string | null;
   readonly logged: LoggedEntry | null;
   readonly newForm: NewFormKind | null;
+  readonly newFormPreset: NewFormPreset;
 }
 
 interface Focusable {
@@ -47,6 +54,7 @@ const initial: CommandState = {
   intoAccountId: null,
   logged: null,
   newForm: null,
+  newFormPreset: {},
 };
 
 let state: CommandState = initial;
@@ -96,13 +104,16 @@ export function dismissLogged(): void {
   if (state.logged !== null) update({ logged: null });
 }
 
-/** Opens the form for a + new item. The structured forms land here later. */
-export function openNewForm(kind: NewFormKind): void {
-  update({ newForm: kind });
+/** Opens the form for a + new item. */
+export function openNewForm(
+  kind: NewFormKind,
+  preset: NewFormPreset = {},
+): void {
+  update({ newForm: kind, newFormPreset: preset });
 }
 
 export function closeNewForm(): void {
-  if (state.newForm !== null) update({ newForm: null });
+  if (state.newForm !== null) update({ newForm: null, newFormPreset: {} });
 }
 
 /** Back to the initial state, for tests. */

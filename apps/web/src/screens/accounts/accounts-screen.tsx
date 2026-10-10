@@ -136,7 +136,8 @@ export function AccountsScreen() {
   }, [accounts.data, worth.data, today.data]);
 
   const act = (action: RowAction, account: AccountView) => {
-    if (action === 'transfer') openNewForm('transfer');
+    if (action === 'transfer')
+      openNewForm('transfer', { fromAccountId: account.id });
     else setOpen({ action, account });
   };
   const closeSheet = () => {
