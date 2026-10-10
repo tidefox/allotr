@@ -71,6 +71,7 @@ import {
   editedTransactionSchema,
   instanceSettingsPatchSchema,
   instanceSettingsSchema,
+  importResultSchema,
   inviteSchema,
   inviteStatusSchema,
   exchangeRateListSchema,
@@ -619,6 +620,13 @@ export const endpoints = {
     method: 'DELETE',
     path: '/v1/push/subscriptions',
     response: z.unknown(),
+  }),
+  importBundle: endpoint({
+    method: 'POST',
+    path: '/v1/import',
+    // The server checks the bundle; the browser only forwards the file.
+    body: z.unknown(),
+    response: importResultSchema,
   }),
   pushTest: endpoint({
     method: 'POST',
