@@ -40,6 +40,11 @@ export const accountSchema = z.object({
    * adjustment that was not undone since.
    */
   lastReconciledOn: localDateSchema.nullable(),
+  /**
+   * An open account never reconciled, or not for more than 30 days before
+   * the user's today.
+   */
+  reconcileDue: z.boolean(),
 });
 export type AccountView = z.infer<typeof accountSchema>;
 
@@ -57,7 +62,16 @@ export const accountListSchema = z.object({
    * Open accounts' balances per budget group, in the default currency at
    * today's rates. Savings are never added to the on-budget total.
    */
-  totals: z.object({ on: figureSchema, off: figureSchema }),
+  totals: z.object({
+    on: figureSchema,
+    off: figureSchema,
+    /**
+     * Open credit (liability) accounts' balances summed in the default
+     * currency, so negative while money is owed. Currencies without a rate
+     * are left out and listed in `missingRates`, as in every total.
+     */
+    creditOwed: figureSchema,
+  }),
 });
 export type AccountListView = z.infer<typeof accountListSchema>;
 
@@ -634,7 +648,7 @@ export const cycleSchema = z.object({
 
 /**
  * How the open cycle's on-budget money divides (docs/domain.md "Cycle
- * allocation"), in the default currency. The five parts always add up to
+ * allocation"), in the default currency. The six parts always add up to
  * `start` exactly; `savings` is negative when more came back from savings
  * than went.
  */
@@ -643,7 +657,10 @@ export const cycleAllocationSchema = z.object({
   start: moneySchema,
   /** Linked bill payments this cycle. */
   paidBills: moneySchema,
-  /** Left the budget without being spent or paying a bill. */
+  /**
+   * Money moved to savings: transfers into off-budget accounts and accounts
+   * moved into a savings pool. Negative when more came back than went.
+   */
   savings: moneySchema,
   /** Spending other than linked bill payments. */
   spent: moneySchema,
@@ -651,6 +668,11 @@ export const cycleAllocationSchema = z.object({
   reserved: moneySchema,
   /** On-budget money less `reserved`: the `available` figure. */
   free: moneySchema,
+  /**
+   * What the other parts do not explain: money lent, conversions and the
+   * like. Often zero; may be negative.
+   */
+  other: moneySchema,
 });
 export type CycleAllocationView = z.infer<typeof cycleAllocationSchema>;
 
@@ -669,6 +691,10 @@ export const todaySchema = z.object({
   onBudget: moneySchema,
   /** Unpaid reserved bills now; always exactly `onBudget − available`. */
   reserved: moneySchema,
+  /** The part of `reserved` that is unpaid bills. */
+  reservedBills: moneySchema,
+  /** The part of `reserved` that is owed to people (IOUs); `reservedBills + reservedIous = reserved`. */
+  reservedIous: moneySchema,
   /** Available before today's spending. */
   startOfDay: moneySchema,
   spentToday: moneySchema,
@@ -694,7 +720,7 @@ export const todaySchema = z.object({
    * adjustments, which still lower `available`: what the pace reads.
    */
   paceSpent: moneySchema,
-  /** The open cycle's on-budget start split into five parts. */
+  /** The open cycle's on-budget start split into six parts. */
   allocation: cycleAllocationSchema,
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(

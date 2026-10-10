@@ -9,7 +9,7 @@ import { accountBalances } from '../ledger/balances.ts';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
 import { budgetStatus } from './budget-status.ts';
 import { countedSpendLines, type BudgetId, type TagId } from './budgets.ts';
-import { cyclesOf } from './cycles.ts';
+import { cycleOn, cyclesOf } from './cycles.ts';
 import { dailyFiguresOn, paceExclusions } from './daily.ts';
 import { groupsOn } from './pools.ts';
 import { cycleSnapshot } from './snapshot.ts';
@@ -228,8 +228,32 @@ export type EmergencyFund = Readonly<{
   progressBasisPoints: number;
   /** How many months of expenses the savings cover; null without history. */
   monthsCovered: number | null;
+  /**
+   * What the fund gained since the day before the open cycle opened: its
+   * balance now less its balance then (may be negative).
+   */
+  addedThisCycle: Money;
+  /**
+   * Whole cycles until `saved` reaches `target` if every cycle adds what
+   * this one has so far (rounded up); 0 once the target is reached; null
+   * when the target is unknown or nothing has been added this cycle.
+   */
+  cyclesToTarget: number | null;
   missingRates: readonly CurrencyCode[];
 }>;
+
+/** What the accounts outside the daily number held at the end of `date`. */
+function savedOn(view: LedgerView, date: LocalDate) {
+  const groups = groupsOn(view, date);
+  return totalOn(
+    view.rates,
+    [...accountBalances(view.ledger, date)].flatMap(([id, balance]) =>
+      groups.get(id) === 'off' ? [balance] : [],
+    ),
+    view.settings.defaultCurrency,
+    date,
+  );
+}
 
 /** Savings against a target of months of average expenses. */
 export function emergencyFund(
@@ -239,16 +263,11 @@ export function emergencyFund(
   const currency = view.settings.defaultCurrency;
   const average = averageSpending(view, today);
   const months = view.settings.emergencyMonths ?? 3;
-  const groups = groupsOn(view, today);
-  const balances = accountBalances(view.ledger, today);
-  const saved = totalOn(
-    view.rates,
-    [...balances].flatMap(([id, balance]) =>
-      groups.get(id) === 'off' ? [balance] : [],
-    ),
-    currency,
-    today,
-  );
+  const saved = savedOn(view, today);
+  const opened = cycleOn(cyclesOf(view, today), today).openedOn;
+  const before = savedOn(view, addDays(opened, -1));
+  const added =
+    BigInt(saved.amount.amountMinor) - BigInt(before.amount.amountMinor);
   const monthly = average.total;
   const target = monthly * BigInt(months);
   const savedMinor = BigInt(saved.amount.amountMinor);
@@ -275,8 +294,40 @@ export function emergencyFund(
       monthly <= 0n
         ? null
         : Math.floor((Number(savedMinor) * 10) / Number(monthly)) / 10,
+    addedThisCycle: money(Number(added), currency),
+    cyclesToTarget:
+      target <= 0n
+        ? null
+        : savedMinor >= target
+          ? 0
+          : added <= 0n
+            ? null
+            : Number((target - savedMinor + added - 1n) / added),
     missingRates: [
-      ...new Set([...average.missingRates, ...saved.missingRates]),
+      ...new Set([
+        ...average.missingRates,
+        ...saved.missingRates,
+        ...before.missingRates,
+      ]),
+    ].sort(),
+  };
+}
+
+/** Net worth at the end of `date` against the end of the day before the `days` days ending today. */
+export function netWorthChange(
+  view: LedgerView,
+  today: LocalDate,
+  days: number,
+): Readonly<{ change: Money; missingRates: readonly CurrencyCode[] }> {
+  const now = netWorthOn(view, today);
+  const then = netWorthOn(view, addDays(today, -days));
+  return {
+    change: money(
+      now.amount.amountMinor - then.amount.amountMinor,
+      view.settings.defaultCurrency,
+    ),
+    missingRates: [
+      ...new Set([...now.missingRates, ...then.missingRates]),
     ].sort(),
   };
 }

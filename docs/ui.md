@@ -246,20 +246,20 @@ emergency fund · net worth (2 wide).
 | this cycle | Key figures (spent, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
 | needs attention | Tag, text, action, ⋮ | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
-| cycle allocation | Allocation component | `/v1/today` `allocation` **(API +: segment shares; until then the bar sizes each part against the start)** |
-| budgets | Category tree with bar, spent and left | `/v1/budgets` **(API +: parent budgets and their totals; until then a flat list)** |
+| cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; segment shares are a ratio of two server figures) |
+| budgets | Category tree with bar, spent and left | `/v1/budgets` (`parents`: totals per parent category) |
 | next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
 | pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
-| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` **(API +: this cycle and at this rate; until then left out)** |
-| net worth | Figure, change, area chart | `/v1/insights/net-worth` **(API +: change over the period; until then the starting figure)** |
+| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
+| net worth | Figure, change, area chart | `/v1/insights/net-worth` (`change`) |
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
 - Stats: net worth (primary) · savings & invest (the off-budget total) ·
   credit owed · to reconcile (accounts never reconciled, or not for 30 days).
-  Credit owed shows the one credit account's balance, or how many credit
-  accounts there are, and has no limit bar **(API +: a credit total and
-  limits; until then no sum is made in the browser)**.
+  Credit owed is `totals.creditOwed` on `/v1/accounts` and to reconcile
+  counts `reconcileDue` accounts; neither is summed in the browser. Credit
+  limits are not in the API yet, so there is no limit bar.
 - A list tile with a tree: pools → accounts, each pool folding and showing
   the pool's balance. Credit accounts are their own group below the pools
   and appear only under All and Credit; On budget and Off budget show the
@@ -359,10 +359,10 @@ with the figure computed in `packages/core` as a pure function and covered by
 property tests:
 
 1. **Cycle allocation**: the cycle's on-budget start split into paid bills,
-   moved to savings, spent, bills set aside and free (on `/v1/today` or
-   `/v1/cycles/{openedOn}`).
+   moved to savings, spent, bills set aside and free (on `/v1/today`). **Shipped**, with an `other` part for what the five do
+   not explain.
 2. **Pool cycle figures**: per on-budget pool, its cycle start and what is
-   left (on `/v1/pools`).
+   left (on `/v1/pools`). **Shipped.**
 3. **Transaction totals**: count, spent, income and net for the filtered set,
    plus per-day (or per-group) totals (on `/v1/transactions`).
    Shipped as `totals` and, with `group=day|category`, `groups`: per currency,
@@ -374,10 +374,12 @@ property tests:
 5. **Category series across cycles** for trends (on `/v1/reports/categories`
    with a range).
 6. **Interface preferences** for account-wide layouts (planned, ADR 0029).
-7. **Dashboard figures** not yet sent: allocation segment shares, parent
-   budgets with their totals, the emergency fund's "this cycle" and "at this
-   rate", and net worth's change over the period. Until they exist the tiles
-   leave the figure out or show the nearest server figure (§6).
+7. **Dashboard figures.** Shipped: the allocation's `savings` (only money
+   moved to savings) and `other` parts, `reservedBills` and `reservedIous`
+   on `/v1/today`; `parents` totals on `/v1/budgets`; `addedThisCycle` and
+   `cyclesToTarget` on the emergency fund; `change` on net worth; and on
+   `/v1/accounts` `reconcileDue` per account and `totals.creditOwed`.
+   Segment shares stay a ratio of two server figures (§6).
 
 ## 9. Accessibility
 

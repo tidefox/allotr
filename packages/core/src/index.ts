@@ -99,8 +99,13 @@ export {
 export { cycleOn, cyclesOf } from './projections/cycles.ts';
 export {
   cycleAllocation,
+  reservedParts,
   type CycleAllocation,
 } from './projections/allocation.ts';
+export {
+  reconcileDue,
+  reconcileEveryDays,
+} from './projections/reconcile-due.ts';
 export { lastWorkingDayOfMonth, nextPayday } from './projections/payday.ts';
 export {
   availableOn,
@@ -114,6 +119,7 @@ export {
 } from './projections/daily.ts';
 export {
   emergencyFund,
+  netWorthChange,
   netWorthOn,
   netWorthSeries,
   paydayPlan,

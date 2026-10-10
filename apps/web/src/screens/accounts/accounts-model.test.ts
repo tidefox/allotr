@@ -25,6 +25,7 @@ function account(patch: Partial<AccountView> & { id: string }): AccountView {
     archived: false,
     createdAt: '2026-01-01T00:00:00.000Z',
     lastReconciledOn: null,
+    reconcileDue: false,
     ...patch,
   };
 }

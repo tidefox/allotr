@@ -6,6 +6,7 @@ import { food } from '../ledger/testing.ts';
 import { transactionId, type Transaction } from '../ledger/types.ts';
 import {
   emergencyFund,
+  netWorthChange,
   netWorthOn,
   netWorthSeries,
   paydayPlan,
@@ -136,6 +137,52 @@ describe('plan properties', () => {
           );
           expect(fund.targetHigh.amountMinor).toBe(
             fund.targetLow.amountMinor * 2,
+          );
+        },
+      ),
+    );
+  });
+
+  it('reaches the target in whole cycles at the rate of this cycle, or says nothing', () => {
+    fc.assert(
+      fc.property(
+        fc.array(spendArb, { maxLength: 10 }),
+        todayArb,
+        (spends, today) => {
+          const fund = emergencyFund(view(ledgerOf(spends)), today);
+          const { saved, target, addedThisCycle: added } = fund;
+          if (fund.cyclesToTarget === null) {
+            expect(target.amountMinor <= 0 || added.amountMinor <= 0).toBe(
+              true,
+            );
+          } else if (saved.amountMinor >= target.amountMinor) {
+            expect(fund.cyclesToTarget).toBe(0);
+          } else {
+            const n = fund.cyclesToTarget;
+            expect(
+              saved.amountMinor + n * added.amountMinor,
+            ).toBeGreaterThanOrEqual(target.amountMinor);
+            expect(
+              saved.amountMinor + (n - 1) * added.amountMinor,
+            ).toBeLessThan(target.amountMinor);
+          }
+        },
+      ),
+    );
+  });
+
+  it('measures net worth change as today less the day before the window', () => {
+    fc.assert(
+      fc.property(
+        fc.array(spendArb, { maxLength: 10 }),
+        todayArb,
+        fc.integer({ min: 1, max: 60 }),
+        (spends, today, days) => {
+          const v = view(ledgerOf(spends));
+          const { change } = netWorthChange(v, today, days);
+          expect(change.amountMinor).toBe(
+            netWorthOn(v, today).amount.amountMinor -
+              netWorthOn(v, addDays(today, -days)).amount.amountMinor,
           );
         },
       ),

@@ -29,7 +29,7 @@ const todayRoute = createRoute({
   tags: ['Today'],
   summary: "Today's figures",
   description:
-    "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. `allocation` splits the open cycle's on-budget start into bills paid, money moved to savings, spending, bills set aside and free money; the five parts add up to `start` exactly.",
+    "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. `allocation` splits the open cycle's on-budget start into bills paid, money moved to savings (transfers into off-budget accounts and accounts moved into a savings pool), spending, money set aside, free money and `other` (what none of those explain, such as money lent; often zero, may be negative); the six parts add up to `start` exactly. `reserved` is the money set aside for bills and for what is owed to people; `reservedBills` and `reservedIous` are its two parts and add up to it.",
   responses: {
     200: json(todaySchema, "Today's figures."),
     ...signedIn,

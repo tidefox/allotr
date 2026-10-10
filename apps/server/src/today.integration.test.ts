@@ -29,7 +29,11 @@ type Today = {
     spent: Money;
     reserved: Money;
     free: Money;
+    other: Money;
   };
+  reserved: Money;
+  reservedBills: Money;
+  reservedIous: Money;
   billsDue: {
     billId: string;
     name: string;
@@ -131,6 +135,8 @@ describe('today for a new user', () => {
       available: usd(0),
       onBudget: usd(0),
       reserved: usd(0),
+      reservedBills: usd(0),
+      reservedIous: usd(0),
       startOfDay: usd(0),
       spentToday: usd(0),
       todayAllowance: usd(0),
@@ -148,6 +154,7 @@ describe('today for a new user', () => {
         spent: usd(0),
         reserved: usd(0),
         free: usd(0),
+        other: usd(0),
       },
       billsDue: [],
       cycleBills: [],
@@ -624,8 +631,50 @@ describe('cycle allocation', () => {
       spent: usd(3000),
       reserved: usd(0),
       free: usd(77000),
+      other: usd(0),
     });
     expect(figures.available).toEqual(figures.allocation.free);
+  });
+
+  it('keeps money lent under other, and splits the reserve into bills and what is owed', async () => {
+    const card = await openAccount(own.bob, 'Card', usd(100000));
+    const lent = await own.bob.post('/v1/ious', {
+      direction: 'owed-to-me',
+      accountId: card,
+      people: [{ person: 'Sam Example', amount: usd(4000) }],
+    });
+    expect(lent.status).toBe(201);
+    const borrowed = await own.bob.post('/v1/ious', {
+      direction: 'owed-by-me',
+      accountId: card,
+      people: [{ person: 'Alex Example', amount: usd(6000) }],
+    });
+    expect(borrowed.status).toBe(201);
+    const bill = await own.bob.post('/v1/bills', {
+      name: 'Rent',
+      amount: usd(30000),
+      accountId: card,
+      dueDay: 20,
+    });
+    expect(bill.status).toBe(201);
+    const figures = await today(own.bob);
+    // Lending is neither spending nor savings; the borrowed 6,000 came in
+    // as cash but is reserved, with the 30,000 rent.
+    expect(figures.allocation).toMatchObject({
+      savings: usd(0),
+      spent: usd(0),
+    });
+    expect(figures.reservedBills).toEqual(usd(30000));
+    expect(figures.reservedIous).toEqual(usd(6000));
+    expect(figures.reserved).toEqual(usd(36000));
+    const a = figures.allocation;
+    expect(
+      [a.paidBills, a.savings, a.spent, a.reserved, a.free, a.other].reduce(
+        (sum, part) => sum + part.amountMinor,
+        0,
+      ),
+    ).toBe(a.start.amountMinor);
+    expect(a.other.amountMinor).not.toBe(0);
   });
 });
 

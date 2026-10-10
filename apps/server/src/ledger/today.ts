@@ -2,6 +2,7 @@ import {
   categoryId,
   cycleAllocation,
   dailyFigures,
+  reservedParts,
   transactionId,
   type CategoryId,
   type LedgerView,
@@ -165,6 +166,7 @@ export async function todayFigures(
     }));
   const figures = dailyFigures(view, now, timeZone);
   const allocation = cycleAllocation(view, figures.today);
+  const reservedSplit = reservedParts(view, figures.today);
   return {
     today: figures.today,
     cycle: {
@@ -178,6 +180,8 @@ export async function todayFigures(
     available: figures.available,
     onBudget: figures.onBudget,
     reserved: figures.reserved,
+    reservedBills: reservedSplit.bills,
+    reservedIous: reservedSplit.ious,
     startOfDay: figures.startOfDay,
     spentToday: figures.spentToday,
     todayAllowance: figures.todayAllowance,
@@ -195,6 +199,7 @@ export async function todayFigures(
       spent: allocation.spent,
       reserved: allocation.reserved,
       free: allocation.free,
+      other: allocation.other,
     },
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,

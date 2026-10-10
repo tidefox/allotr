@@ -217,9 +217,24 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   its payment day, and currencies left out for lack of a rate), computed
   from the ledger on every request. `onBudget` and `reserved` split
   `available` for charts; `reserved` is always exactly
-  `onBudget − available`. `allocation` splits the cycle's on-budget start
-  into `paidBills`, `savings`, `spent`, `reserved` and `free`, which add up
-  to `start` exactly (domain.md "Cycle allocation").
+  `onBudget − available`. `reservedBills` and `reservedIous` split
+  `reserved` into unpaid bills and what is owed to people. `allocation`
+  splits the cycle's on-budget start into `paidBills`, `savings` (money
+  actually moved to savings), `spent`, `reserved`, `free` and `other` (what
+  none of those explain, such as money lent), which add up to `start`
+  exactly (domain.md "Cycle allocation").
+- `GET /v1/accounts` marks each account `reconcileDue` (open, and never
+  reconciled or not for more than 30 days before the user's today;
+  `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit
+  accounts' balances summed in the default currency (negative while money
+  is owed), with `missingRates` like the other totals.
+- `GET /v1/budgets` adds `parents`: for each parent category with a budget
+  on at least one child, the planned, spent and left totals of the category
+  budgets under it, in the default currency.
+- `GET /v1/insights/emergency-fund` adds `addedThisCycle` (the fund's gain
+  since the cycle opened) and `cyclesToTarget` (cycles to the target at that
+  rate; null when undefined). `GET /v1/insights/net-worth` adds `change`
+  over the requested `days`.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme

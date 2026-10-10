@@ -455,3 +455,36 @@ describe('golden: a month of budgets', () => {
     expect(forward?.unbudgeted).toBe(1_000n);
   });
 });
+
+describe('parent category totals', () => {
+  const groceriesBudget = budget(
+    'groceries',
+    { kind: 'category', categoryId: groceries },
+    40_000,
+  );
+  const ledger = [
+    spend('2026-03-03', 12_000, groceries),
+    spend('2026-03-04', 3_000, food),
+    spend('2026-03-05', 10_000, travel),
+  ];
+
+  it('adds the child budgets and the parent own budget under the parent', () => {
+    const v = withBudgets(ledger, [foodBudget, groceriesBudget, travelBudget]);
+    const { parents, lines } = budgetStatus(v, today);
+    const under = lines.filter((l) => l.budget.id !== 'travel');
+    expect(parents).toEqual([
+      {
+        categoryId: food,
+        budgetIds: ['food', 'groceries'],
+        planned: usd(130_000),
+        spent: usd(under.reduce((n, l) => n + l.spent.amountMinor, 0)),
+        left: usd(under.reduce((n, l) => n + l.left.amountMinor, 0)),
+      },
+    ]);
+  });
+
+  it('has no parent row without a budget on a child', () => {
+    const v = withBudgets(ledger, [foodBudget, travelBudget]);
+    expect(budgetStatus(v, today).parents).toEqual([]);
+  });
+});

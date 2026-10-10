@@ -532,22 +532,30 @@ paid_bills = linked bill payments this cycle, less their undos
 spent      = other spending this cycle, less undos        # cycle_spent − paid_bills
 reserved   = on_budget(today) − available(today)          # unpaid bills + owed
 free       = available(today)
-savings    = start − paid_bills − spent − reserved − free
+savings    = money moved into off-budget accounts and savings pools this cycle
+other      = start − paid_bills − savings − spent − reserved − free
 ```
 
 - `start` is the same opening balance and income a closed cycle's snapshot
   shows, so an account opened during the cycle counts from the start, not as
   income. Income counts whichever account it lands in.
-- `savings` is what is left to explain: money that left the on-budget
-  accounts without being spent or paying a bill, such as a transfer to a
-  savings account, an account moved to a savings pool, or a loan (which
-  lowers the allowance like a transfer, ADR 0024). It is negative when more
-  came back from savings than went.
+- `savings` is money actually moved to savings: what on-budget accounts gave
+  to transfers that reach an off-budget account (entries that also touch
+  Expenses or Income are spending or income, not savings), plus the balance
+  of an account the day it joined a savings pool, less that of one that left.
+  It is negative when more came back from savings than went.
+- `other` is what is left to explain: money lent (which lowers the allowance
+  like a transfer, ADR 0024), borrowed cash, conversions and anything else
+  that changed the on-budget total without being spent, saved or a bill.
+  Often zero; it may be negative.
 - `spent` leaves out the same linked bill payments pace leaves out, but
   keeps reconcile adjustments, so `paid_bills + spent` equals `cycle_spent`.
 - `reserved` includes what the user owes people, as `available` does.
+  `/v1/today` also sends its two parts, `reservedBills` and `reservedIous`
+  (the Payables balances turned positive); `reservedBills` is
+  `reserved − reservedIous`, so the two add up to `reserved` exactly.
 - `free` is `available`: budget holds are not taken off.
-- The parts are converted one by one and `start` is their sum, so the five
+- The parts are converted one by one and `start` is their sum, so the six
   always add up to `start` exactly. Currencies without a rate are left out
   and listed in `missingRates`. Any part can be negative (overspending).
 

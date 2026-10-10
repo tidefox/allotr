@@ -239,6 +239,10 @@ async function readStatus(
       restored: line.restored,
       held: line.held,
     })),
+    parents: status.parents.map((parent) => ({
+      ...parent,
+      budgetIds: [...parent.budgetIds],
+    })),
     available: status.available,
     held: status.held,
     free: status.free,
