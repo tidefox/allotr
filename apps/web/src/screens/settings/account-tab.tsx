@@ -7,7 +7,7 @@ import { Grid, Tile } from '@/components/layout';
 import { sessionQuery, signOut } from '@/lib/session';
 import { t } from '@/messages/t';
 import { InstanceTile, InvitesTile } from './instance-tiles.tsx';
-import { FailureLine, SettingRow } from './settings-parts.tsx';
+import { FailureLine, SettingRow } from './setting-parts.tsx';
 import { SessionsTile } from './sessions-tile.tsx';
 import { TwoFactorTile } from './two-factor-tile.tsx';
 import { useRegion } from './use-region.ts';

@@ -8,7 +8,7 @@ import { ApiError, call } from '@/lib/api';
 import { endpoints } from '@/lib/endpoints';
 import { t } from '@/messages/t';
 import { importedCounts, kilobytes, parseImportFile } from './account-model.ts';
-import { FailureLine, SettingRow } from './settings-parts.tsx';
+import { FailureLine, SettingRow } from './setting-parts.tsx';
 
 type Picked =
   | { kind: 'file'; name: string; bytes: number; value: unknown }

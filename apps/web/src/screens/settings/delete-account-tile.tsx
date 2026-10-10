@@ -13,7 +13,7 @@ import {
   FailureLine,
   SecretField,
   SettingRow,
-} from './settings-parts.tsx';
+} from './setting-parts.tsx';
 
 function DeleteSheet({
   session,

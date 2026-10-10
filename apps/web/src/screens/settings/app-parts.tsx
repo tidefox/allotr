@@ -30,8 +30,8 @@ export function BracketLink({
   );
 }
 
-/** A label on the left, its control on the right; wraps on a narrow tile. */
-export function SettingRow({
+/** A label on the left, its control on the right; the text truncates first. */
+export function PreferenceRow({
   label,
   hint,
   children,
@@ -41,14 +41,14 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-row flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-3 py-1">
+    <div className="flex min-h-row items-center justify-between gap-x-3 border-b px-3 py-1">
       <div className="min-w-0">
-        <p className="text-small">{label}</p>
+        <p className="truncate text-small">{label}</p>
         {hint === undefined ? null : (
-          <p className="font-ui text-tiny text-text-muted">{hint}</p>
+          <p className="truncate font-ui text-tiny text-text-muted">{hint}</p>
         )}
       </div>
-      {children}
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }

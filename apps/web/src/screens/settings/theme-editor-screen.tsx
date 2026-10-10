@@ -62,7 +62,7 @@ import {
   TextField,
   ChoiceField,
 } from '@/screens/transactions/detail/fields.tsx';
-import { BracketLink, Swatch, SettingRow } from './app-parts.tsx';
+import { BracketLink, Swatch, PreferenceRow } from './app-parts.tsx';
 import {
   blockedReason,
   colorChoices,
@@ -184,7 +184,7 @@ function NeutralsTile({
         ))}
       </div>
       {NEUTRAL_SLOTS.map((slot) => (
-        <SettingRow key={slot} label={slot}>
+        <PreferenceRow key={slot} label={slot}>
           <HexField
             label={slot}
             value={draft.neutrals[slot]}
@@ -197,7 +197,7 @@ function NeutralsTile({
               });
             }}
           />
-        </SettingRow>
+        </PreferenceRow>
       ))}
     </Tile>
   );
@@ -313,7 +313,7 @@ function HuesTile({
         {t('themes.huesHint')}
       </p>
       {CANONICAL_HUES.map((hue) => (
-        <SettingRow key={hue} label={t(`themes.hueNames.${hue}`)}>
+        <PreferenceRow key={hue} label={t(`themes.hueNames.${hue}`)}>
           <MenuButton
             label={t(`themes.hueNames.${hue}`)}
             value={draft.hues[hue]}
@@ -336,7 +336,7 @@ function HuesTile({
               />
             ))}
           </MenuButton>
-        </SettingRow>
+        </PreferenceRow>
       ))}
     </Tile>
   );

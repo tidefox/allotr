@@ -13,7 +13,7 @@ import {
 } from '@/lib/session';
 import { t } from '@/messages/t';
 import { byRecentActivity, deviceName } from './account-model.ts';
-import { ConfirmSheet, Notice } from './settings-parts.tsx';
+import { ConfirmSheet, Notice } from './setting-parts.tsx';
 import { refreshSession } from './two-factor-tile.tsx';
 
 const columns: readonly RowColumn[] = [
