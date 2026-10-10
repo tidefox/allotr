@@ -2,6 +2,7 @@ import { daysBetween } from '@allotr/shared';
 import { useIsFetching, useQuery } from '@tanstack/react-query';
 import { formatDay } from '@/features/today/format';
 import { todayQuery } from '@/lib/ledger';
+import { useLedgerReady } from '@/lib/session';
 import { useOnline } from '@/lib/online';
 import { t } from '@/messages/t';
 
@@ -10,7 +11,8 @@ import { t } from '@/messages/t';
 // the cycle day is counted here from the server's dates.
 
 export function StatusLine() {
-  const today = useQuery(todayQuery).data;
+  const ready = useLedgerReady();
+  const today = useQuery({ ...todayQuery, enabled: ready }).data;
   const online = useOnline();
   const fetching = useIsFetching() > 0;
   const sync = !online ? 'offline' : fetching ? 'syncing' : 'synced';

@@ -3,7 +3,11 @@ import type {
   InstanceSettingsPatch,
   SignUpBody,
 } from '@allotr/shared';
-import { queryOptions, type QueryClient } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useQuery,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { ApiError, call } from './api.ts';
 import { endpoints } from './endpoints.ts';
 
@@ -138,4 +142,13 @@ export function inviteQuery(token: string) {
 
 export function acceptInvite(token: string, body: SignUpBody) {
   return call(endpoints.acceptInvite, { params: { token }, body });
+}
+
+/**
+ * Whether the ledger may be read: signed in and not held to two-factor
+ * enrolment. Until then the server refuses ledger reads, so shell queries wait.
+ */
+export function useLedgerReady(): boolean {
+  const session = useQuery(sessionQuery);
+  return session.data?.twoFactorRequired === false;
 }

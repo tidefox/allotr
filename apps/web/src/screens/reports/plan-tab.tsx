@@ -13,10 +13,13 @@ import { budgetsQuery } from '@/lib/budgets';
 import { cyclesQuery } from '@/lib/ledger';
 import { netWorthQuery } from '@/lib/plan';
 import { t } from '@/messages/t';
-import { netWorthChart } from '../dashboard/tiles/net-worth-model.ts';
+import {
+  netWorthChart,
+  worthDays,
+} from '@/features/net-worth/model';
 import { recentCycles } from './cycles-model.ts';
 import { PeriodMenu } from './period-menu.tsx';
-import { budgetRows, rateColumns, worthDays } from './plan-model.ts';
+import { budgetRows, rateColumns } from './plan-model.ts';
 import { useReportRange } from './use-report-range.ts';
 
 const locale = 'en';

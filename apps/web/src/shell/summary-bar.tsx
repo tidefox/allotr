@@ -8,6 +8,7 @@ import { formatDay } from '@/features/today/format';
 import { poolsQuery } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
+import { useLedgerReady } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { barFraction } from './summary-math.ts';
@@ -41,8 +42,9 @@ function Item({
 }
 
 export function SummaryBar() {
-  const today = useQuery(todayQuery);
-  const pools = useQuery(poolsQuery);
+  const ready = useLedgerReady();
+  const today = useQuery({ ...todayQuery, enabled: ready });
+  const pools = useQuery({ ...poolsQuery, enabled: ready });
   const data = today.data;
 
   return (

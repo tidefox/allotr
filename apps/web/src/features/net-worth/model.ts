@@ -1,4 +1,8 @@
-import type { NetWorthView } from '@allotr/shared';
+import {
+  daysBetween,
+  type LocalDate,
+  type NetWorthView,
+} from '@allotr/shared';
 import type { ChartTick } from '@/charts/chart';
 import type { Point } from '@/charts/math';
 import { formatDay } from '@/features/today/format';
@@ -38,4 +42,21 @@ export function netWorthChart(
     label: formatDay(series[value]?.date ?? first.date, locale),
   }));
   return { points, yTicks, xTicks };
+}
+
+export const MIN_WORTH_DAYS = 7;
+export const MAX_WORTH_DAYS = 731;
+
+/**
+ * Days the net worth chart covers: from the period's first day through
+ * today, kept within what the API allows. Calendar days only.
+ */
+export function worthDays(
+  from: LocalDate | undefined,
+  today: LocalDate,
+): number {
+  if (from === undefined) return MAX_WORTH_DAYS;
+  const span = daysBetween(from, today) + 1;
+  if (!Number.isFinite(span)) return MIN_WORTH_DAYS;
+  return Math.min(MAX_WORTH_DAYS, Math.max(MIN_WORTH_DAYS, span));
 }
