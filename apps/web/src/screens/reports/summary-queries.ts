@@ -1,18 +1,10 @@
 import { queryOptions } from '@tanstack/react-query';
-import { payeeReportSchema } from '@allotr/shared';
-import { call, endpoint } from '@/lib/api';
+import { call } from '@/lib/api';
 import { endpoints } from '@/lib/endpoints';
 import type { ReportParams } from './summary-model.ts';
 
 // The summary and trends tabs' reads. They sit under ['today'] so a new
-// entry refreshes them. The payee report has no entry in lib/endpoints.ts
-// yet, so it is declared here.
-
-const payeesEndpoint = endpoint({
-  method: 'GET',
-  path: '/v1/reports/payees',
-  response: payeeReportSchema,
-});
+// entry refreshes them.
 
 function query(params: ReportParams) {
   return {
@@ -37,7 +29,7 @@ export function reportPayeesQuery(params: ReportParams) {
   return queryOptions({
     queryKey: ['today', 'report-payees', params],
     queryFn: () =>
-      call(payeesEndpoint, {
+      call(endpoints.payeeReport, {
         query: { ...query(params), limit: TOP_PAYEES },
       }),
   });

@@ -194,6 +194,7 @@ export const en = {
       label: 'Filter',
       type: 'Type',
       types: { expense: 'Expense', income: 'Income', transfer: 'Transfer' },
+      payee: 'Payee “{name}”',
       categories: 'Categories',
       accounts: 'Accounts',
       remove: 'Remove {label}',

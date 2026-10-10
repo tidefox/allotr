@@ -80,6 +80,7 @@ export function TransactionsScreen() {
   const filter: LedgerFilter = {
     ...range,
     q: view.q,
+    payee: view.payee,
     type: view.type,
     group: view.group,
     accountId: view.accounts.length === 0 ? undefined : view.accounts.join(','),
@@ -101,6 +102,14 @@ export function TransactionsScreen() {
     if (allCategories === undefined || allAccounts === undefined) return [];
     return [
       ...(view.q === undefined ? [] : [{ key: 'q', label: `“${view.q}”` }]),
+      ...(view.payee === undefined
+        ? []
+        : [
+            {
+              key: 'payee',
+              label: t('transactions.filter.payee', { name: view.payee }),
+            },
+          ]),
       ...(view.type === undefined
         ? []
         : [
@@ -122,6 +131,7 @@ export function TransactionsScreen() {
 
   const removeChip = (key: string) => {
     if (key === 'q') change({ q: undefined });
+    else if (key === 'payee') change({ payee: undefined });
     else if (key === 'type') change({ type: undefined });
     else if (key.startsWith('category:') && allCategories !== undefined) {
       change({
@@ -251,6 +261,7 @@ export function TransactionsScreen() {
               onClear={() => {
                 change({
                   q: undefined,
+                  payee: undefined,
                   type: undefined,
                   categories: [],
                   accounts: [],
