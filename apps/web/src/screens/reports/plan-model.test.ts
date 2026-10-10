@@ -1,10 +1,6 @@
-import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import type { BudgetView, CycleSummaryView, LocalDate } from '@allotr/shared';
-import {
-  budgetRows,
-  rateColumns,
-} from './plan-model.ts';
+import type { BudgetView, CycleSummaryView } from '@allotr/shared';
+import { budgetRows, rateColumns } from './plan-model.ts';
 
 const usd = (amountMinor: number) =>
   ({ amountMinor, currency: 'USD' }) as BudgetView['left'];
@@ -24,8 +20,6 @@ function budget(
     overflow: usd(overflow),
   } as BudgetView;
 }
-
-const day = (s: string) => s as LocalDate;
 
 describe('budgetRows', () => {
   it('sizes each bar from spent against what it had', () => {

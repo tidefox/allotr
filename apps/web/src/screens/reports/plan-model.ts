@@ -1,4 +1,4 @@
-import type { BudgetView, CycleSummaryView, LocalDate } from '@allotr/shared';
+import type { BudgetView, CycleSummaryView } from '@allotr/shared';
 import type { ColumnDatum } from '@/charts/columns';
 import { formatDay } from '@/features/today/format';
 import { spentShare } from '@/features/budget/share';

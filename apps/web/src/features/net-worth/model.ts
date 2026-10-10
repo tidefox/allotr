@@ -1,8 +1,4 @@
-import {
-  daysBetween,
-  type LocalDate,
-  type NetWorthView,
-} from '@allotr/shared';
+import { daysBetween, type LocalDate, type NetWorthView } from '@allotr/shared';
 import type { ChartTick } from '@/charts/chart';
 import type { Point } from '@/charts/math';
 import { formatDay } from '@/features/today/format';

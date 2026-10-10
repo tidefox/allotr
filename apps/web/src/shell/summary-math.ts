@@ -5,5 +5,7 @@
  */
 export function barFraction(part: number, whole: number): number {
   if (!(whole > 0) || !(part > 0)) return 0;
+  // Two infinite figures have no ratio; draw them as a full bar.
+  if (!Number.isFinite(whole)) return Number.isFinite(part) ? 0 : 1;
   return Math.min(1, part / whole);
 }
