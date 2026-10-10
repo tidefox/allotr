@@ -29,8 +29,6 @@ export const settingsCategories = {
   none: 'No categories yet',
   noneHint: 'Add one with + category above.',
   hint: 'Drag a row to reorder it, or press and hold on a touch screen. The arrows, or Move up and Move down in the row menu, do the same.',
-  failed: 'Could not load categories.',
-  retry: 'Try again',
   saveFailed: 'Could not save the order. It was put back.',
   up: 'Move {name} up',
   down: 'Move {name} down',
@@ -87,7 +85,6 @@ export const settingsCategories = {
     noParents: 'There is no other top-level category of this kind.',
     save: 'Move',
     saving: 'Moving…',
-    failed: 'Could not move the category.',
   },
   archive: {
     title: 'Archive {name}',
@@ -105,7 +102,6 @@ export const settingsCategories = {
     merge: 'Merge',
     working: 'Working…',
     failed: 'Could not archive the category.',
-    cancel: 'Cancel',
   },
   tags: {
     title: 'Tags',

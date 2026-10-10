@@ -12,7 +12,6 @@ export const budgetPools = {
   balance: 'Balance',
   left: '{left} left of {start}',
   leftLabel: 'Left of {name} this cycle',
-  accounts: 'Accounts',
   noAccounts: 'No accounts in this pool.',
   sparkline: '{name} balance, last 30 days',
   savingsNote: 'Savings never count unless you turn that on in Settings.',
@@ -47,7 +46,6 @@ export const budgetBills = {
     subtitle: 'unpaid this cycle',
     empty: 'Nothing left to pay',
     emptyHint: 'Every bill due this cycle is paid.',
-    due: 'due {date}',
     setAsideOf: '{reserve} set aside of {amount}',
     setAsideLabel: 'Set aside for {name}',
   },
@@ -55,7 +53,6 @@ export const budgetBills = {
     title: 'Paid this cycle',
     empty: 'Nothing paid yet',
     emptyHint: 'Bills you pay this cycle show up here.',
-    on: 'paid {date}',
   },
   later: {
     title: 'Not due this cycle',

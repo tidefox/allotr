@@ -42,11 +42,3 @@ export function pushSupport(env: {
   if (env.permission === 'denied') return { state: 'blocked' };
   return { state: 'available', permission: env.permission };
 }
-
-export function currentSupport(): PushSupport {
-  return pushSupport({
-    hasWorker: 'serviceWorker' in navigator,
-    hasPush: 'PushManager' in window,
-    permission: 'Notification' in window ? Notification.permission : undefined,
-  });
-}

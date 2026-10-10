@@ -6,7 +6,6 @@ export const budgetGoalsIous = {
   cancel: 'Cancel',
   retry: 'Try again',
   loadFailed: 'This could not be loaded.',
-  save: 'Save',
   saving: 'Saving…',
   goals: {
     title: 'Goals',
@@ -21,7 +20,6 @@ export const budgetGoalsIous = {
     emptyHint:
       'A goal earmarks part of a savings pool or account. It never changes what you can spend today.',
     by: 'by {date}',
-    noDate: 'no date',
     savedOf: 'of {target}',
     left: '{amount} to go',
     reached: 'Goal reached',
@@ -38,7 +36,6 @@ export const budgetGoalsIous = {
       day: 'Day',
       value: 'Held',
       today: 'today',
-      target: 'target',
       noDate: 'Set a date to see the line to your target.',
     },
     form: {
@@ -52,7 +49,6 @@ export const budgetGoalsIous = {
       datePlaceholder: 'YYYY-MM-DD',
       none: 'Every savings pool and account already has a goal.',
       submit: 'Add goal',
-      failed: 'The goal could not be saved.',
       errors: {
         name: 'Give the goal a name.',
         where: 'Pick where the goal is held.',
@@ -68,7 +64,6 @@ export const budgetGoalsIous = {
     hideSettled: 'hide settled',
     empty: 'Nobody owes anything',
     emptyHint: 'Lend or borrow money and the people involved show up here.',
-    emptyFiltered: 'Nobody here',
     stats: {
       owesYou: 'Owed to you',
       owesYouSub: 'in the default currency',
@@ -80,8 +75,6 @@ export const budgetGoalsIous = {
       overdueNone: 'none',
       overdueSub: 'past their due date',
     },
-    missingRates:
-      'Left out of the totals, no rate to {currency}: {currencies}.',
     owesYouTag: 'owes you',
     youOweTag: 'you owe',
     settledTag: '✓ settled',
@@ -91,13 +84,10 @@ export const budgetGoalsIous = {
     detailTitle: 'Person',
     pickOne: 'Pick a person to see their history.',
     closeDetail: 'Close',
-    back: 'Back to people',
-    outstanding: 'Outstanding',
     lent: 'Lent {amount} on {date}',
     borrowed: 'Borrowed {amount} on {date}',
     dueOn: 'due {date}',
     noDue: 'no due date',
-    settledOn: 'settled',
     history: 'History',
     noPayments: 'No payments yet',
     repaid: 'Repaid',
@@ -110,8 +100,6 @@ export const budgetGoalsIous = {
     dueDate: 'due date',
     writeOff: 'write off',
     actionFor: '{action} {person}',
-    failed: 'This could not be done.',
-    hasPayments: 'It has payments. Delete those first.',
     sheets: {
       loan: 'New IOU',
       repay: 'Repayment from {person}',
@@ -172,8 +160,6 @@ export const budgetGoalsIous = {
     planned: 'planned {amount}',
     suggested: 'suggested {amount}',
     confirm: 'Confirm plan',
-    failed: 'The plan could not be saved.',
-    invalid: 'Check the amounts in the marked lines.',
     amountError: 'Not an amount.',
   },
   weekly: {

@@ -31,7 +31,6 @@ export const settingsAccount = {
     passwordIntroOff:
       'Signing in will no longer ask for a code. Enter your password to confirm.',
     passwordIntroOn: 'Enter your password to get a key and backup codes.',
-    scanTitle: 'Scan and verify',
   },
   sessions: {
     title: 'Sessions',
@@ -49,7 +48,6 @@ export const settingsAccount = {
     title: 'Instance',
     subtitle: 'administrators',
     registration: 'Registration',
-    registrationHint: 'Who can create an account.',
     twoFactor: 'Require two-factor',
     twoFactorHint: 'Everyone must set it up, and nobody can turn it off.',
     themeUrl: 'Theme import from a URL',

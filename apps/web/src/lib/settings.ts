@@ -78,11 +78,6 @@ export const ratesQuery = queryOptions({
 
 /** Bills and rates feed the reserve and the conversions in every figure. */
 export const billQueryKeys = [['bills'], ...figureQueryKeys] as const;
-/** Paying a bill can record an entry, or undo the one it recorded. */
-export const billPaymentQueryKeys = [
-  ...billQueryKeys,
-  ['transactions'],
-] as const;
 export const rateQueryKeys = [['rates'], ...figureQueryKeys] as const;
 
 export function createBill(body: CreateBillBody) {

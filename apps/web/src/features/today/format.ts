@@ -1,4 +1,4 @@
-import { formatMoney, money, type LocalDate, type Money } from '@allotr/shared';
+import type { LocalDate } from '@allotr/shared';
 
 const dayFormatters = new Map<string, Intl.DateTimeFormat>();
 
@@ -14,14 +14,6 @@ export function formatDay(date: LocalDate, locale: string): string {
     dayFormatters.set(locale, formatter);
   }
   return formatter.format(new Date(`${date}T00:00:00Z`));
-}
-
-/** Money without its sign, for text that already says in or out. */
-export function formatAbs(amount: Money, locale: string): string {
-  return formatMoney(
-    money(Math.abs(amount.amountMinor), amount.currency),
-    locale,
-  );
 }
 
 const longFormatters = new Map<string, Intl.DateTimeFormat>();

@@ -13,17 +13,6 @@ export const remindersQuery = queryOptions({
   refetchInterval: 5 * 60 * 1000,
 });
 
-export const pushConfigQuery = queryOptions({
-  queryKey: ['push', 'config'],
-  queryFn: () => call(endpoints.pushConfig),
-  staleTime: Infinity,
-});
-
-export const pushSubscriptionsQuery = queryOptions({
-  queryKey: ['push', 'subscriptions'],
-  queryFn: () => call(endpoints.pushSubscriptions),
-});
-
 export function markRead(ids?: readonly string[]) {
   return call(endpoints.markRemindersRead, {
     body: ids === undefined ? {} : { ids: [...ids] },
@@ -36,8 +25,4 @@ export function subscribePush(body: PushSubscriptionBody) {
 
 export function unsubscribePush(endpoint: string) {
   return call(endpoints.unsubscribePush, { query: { endpoint } });
-}
-
-export function sendTestPush() {
-  return call(endpoints.pushTest);
 }
