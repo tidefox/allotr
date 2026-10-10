@@ -160,7 +160,7 @@ export function AccountDetail({
           </BracketButton>
           <BracketButton
             onPress={() => {
-              openNewForm('transfer');
+              openNewForm('transfer', { fromAccountId: account.id });
             }}
           >
             {t('accountDetail.actions.transfer')}

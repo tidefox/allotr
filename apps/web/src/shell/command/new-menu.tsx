@@ -1,4 +1,6 @@
-import { useState, type ComponentType } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useState, type ComponentType } from 'react';
 import {
   Menu,
   MenuTrigger,
@@ -7,7 +9,6 @@ import {
 } from 'react-aria-components';
 import { MenuItem } from '@/components/menu';
 import { menuPresentation } from '@/components/menu-placement';
-import { EmptyState } from '@/components/states';
 import { Sheet } from '@/components/sheet';
 import { useFrameWidth } from '@/components/use-frame-width';
 import {
@@ -22,10 +23,16 @@ import {
   type IconProps,
 } from '@/generated/icons';
 import { cn } from '@/lib/utils';
+import { accountsQuery, categoriesQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
+import { IouSheet } from '@/screens/budget/iou-sheets.tsx';
+import { PaydaySheet } from '@/screens/budget/sheets/payday-sheet.tsx';
+import { EntryFormSheet } from './entry-form.tsx';
+import { loggedFromTransaction } from './logged.ts';
 import {
   closeNewForm,
   NEW_FORM_KINDS,
+  showLogged,
   openNewForm,
   useCommandState,
   type NewFormKind,
@@ -117,24 +124,45 @@ export function NewMenu() {
 }
 
 /**
- * Where a + new item's form opens. The structured forms arrive in later
- * work packages and replace the body here; until then each shows a note.
+ * Where a + new item's form opens: the structured entry forms here, and the
+ * payday and IOU sheets the Budget screen already has. A bill has no create
+ * form yet, so it leads to the Bills tab.
  */
 function NewFormHost() {
-  const { newForm } = useCommandState();
-  return (
-    <Sheet
-      isOpen={newForm !== null}
-      onOpenChange={(open) => {
-        if (!open) closeNewForm();
-      }}
-      title={newForm === null ? '' : t(`shell.command.kinds.${newForm}`)}
-      closeLabel={t('shell.command.close')}
-    >
-      <EmptyState
-        title={newForm === null ? '' : t(`shell.command.kinds.${newForm}`)}
-        hint={t('shell.command.formPending')}
+  const { newForm, newFormPreset, intoAccountId } = useCommandState();
+  const navigate = useNavigate();
+  const accounts = useQuery(accountsQuery).data?.accounts;
+  const categories = useQuery(categoriesQuery).data?.categories;
+
+  useEffect(() => {
+    if (newForm !== 'bill') return;
+    closeNewForm();
+    void navigate({ to: '/budget/$sub', params: { sub: 'bills' } });
+  }, [newForm, navigate]);
+
+  if (newForm === null || newForm === 'bill') return null;
+  if (newForm === 'payday') return <PaydaySheet open onClose={closeNewForm} />;
+  if (newForm === 'iou')
+    return (
+      <IouSheet
+        flow={{ kind: 'loan' }}
+        onClose={closeNewForm}
+        onRecorded={(created) => {
+          const logged = loggedFromTransaction(
+            created.transaction,
+            accounts ?? [],
+            categories ?? [],
+          );
+          if (logged !== null) showLogged(logged);
+        }}
       />
-    </Sheet>
+    );
+  return (
+    <EntryFormSheet
+      key={newForm}
+      kind={newForm}
+      preset={newFormPreset}
+      intoAccountId={intoAccountId}
+    />
   );
 }

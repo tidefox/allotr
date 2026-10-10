@@ -30,6 +30,7 @@ const allSpecs = [
   'shell',
   'keys',
   'dashboard',
+  'new-entry',
   'transactions',
   'transactions-detail',
   'accounts',
