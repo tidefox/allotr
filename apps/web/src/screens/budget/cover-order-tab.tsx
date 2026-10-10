@@ -20,7 +20,8 @@ import { accountsQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
 import { TileFailed } from '../dashboard/tiles/tile-failed.tsx';
 import { ChoiceField, TextField } from '../transactions/detail/fields.tsx';
-import { previewRequest, reorder } from './cover-order-model.ts';
+import { reorder } from '@/lib/reorder';
+import { previewRequest } from './cover-order-model.ts';
 
 // Cover order (docs/ui.md §6): who pays first when a budget overspends, as
 // a list you reorder by dragging a row or with ↑ ↓, and a preview that asks

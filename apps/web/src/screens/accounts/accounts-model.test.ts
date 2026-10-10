@@ -11,7 +11,6 @@ import {
   inFilter,
   movePools,
   needsReconcile,
-  sparkPoints,
 } from './accounts-model.ts';
 
 function account(patch: Partial<AccountView> & { id: string }): AccountView {
@@ -139,20 +138,6 @@ describe('creditStat', () => {
     });
     const second = account({ id: 'loan', kind: 'liability' });
     expect(creditStat([card, second])).toEqual({ kind: 'many', count: 2 });
-  });
-});
-
-describe('sparkPoints', () => {
-  it('numbers the days and keeps the minor units', () => {
-    expect(
-      sparkPoints([
-        { balance: money(100, 'USD') },
-        { balance: money(-5, 'USD') },
-      ]),
-    ).toEqual([
-      { x: 0, y: 100 },
-      { x: 1, y: -5 },
-    ]);
   });
 });
 

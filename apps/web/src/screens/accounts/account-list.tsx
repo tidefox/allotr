@@ -13,11 +13,11 @@ import {
   IconWallet3Line,
 } from '@/generated/icons';
 import { accountHistoryQuery } from '@/lib/ledger';
+import { sparkPoints } from '@/lib/spark-points';
 import { t } from '@/messages/t';
 import {
   CREDIT_GROUP,
   NO_POOL_GROUP,
-  sparkPoints,
   type AccountGroup,
 } from './accounts-model.ts';
 
