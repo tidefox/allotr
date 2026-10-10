@@ -19,6 +19,7 @@ const usd = (amountMinor: number) => ({ amountMinor, currency: 'USD' });
 let h: TwoUsers;
 let everyday: string;
 let savings: string;
+let wallet: string;
 let groceries: string;
 let lunchId: string;
 
@@ -42,6 +43,7 @@ beforeAll(async () => {
   };
   everyday = await open('Everyday');
   savings = await open('Savings');
+  wallet = await open('Wallet');
   const categories = (await h.alice.get('/v1/categories')).body as {
     categories: { id: string; name: string }[];
   };
@@ -75,6 +77,22 @@ beforeAll(async () => {
     sent: usd(20000),
     occurredOn: '2026-04-06',
   });
+  await post({
+    kind: 'expense',
+    accountId: wallet,
+    amount: usd(700),
+    categoryId: groceries,
+    occurredOn: '2026-04-07',
+    note: 'Wallet snack',
+  });
+  await post({
+    kind: 'expense',
+    accountId: everyday,
+    amount: usd(900),
+    categoryId: groceries,
+    occurredOn: '2026-04-07',
+    note: 'Everyday snack',
+  });
 });
 
 afterAll(async () => {
@@ -94,7 +112,7 @@ describe('day totals', () => {
   });
 
   it('counts the whole day even when the page shows part of it', async () => {
-    const first = await list(h.alice, '?limit=2');
+    const first = await list(h.alice, '?limit=4');
     expect(first.transactions.map((t) => t.occurredOn)).toContain('2026-04-05');
     expect(
       first.transactions.filter((t) => t.occurredOn === '2026-04-05'),
@@ -113,6 +131,28 @@ describe('day totals', () => {
     expect(lunch.dayTotals).toEqual([
       { date: '2026-04-05', net: usd(-1250), missingRates: [] },
     ]);
+  });
+
+  it('nets exactly the accounts of a comma-separated filter', async () => {
+    const both = await list(h.alice, `?accountId=${everyday},${wallet}`);
+    expect(both.dayTotals.find((d) => d.date === '2026-04-07')?.net).toEqual(
+      usd(-1600),
+    );
+    const pair = await list(h.alice, `?accountId=${everyday},${savings}`);
+    // The wallet's snack is not in the list, and not in the day's net.
+    expect(pair.dayTotals.find((d) => d.date === '2026-04-07')?.net).toEqual(
+      usd(-900),
+    );
+    // Both sides of the transfer are in the filter, so it nets to nothing.
+    expect(pair.dayTotals.find((d) => d.date === '2026-04-06')?.net).toEqual(
+      usd(0),
+    );
+    const one = await list(h.alice, `?accountId=${wallet}`);
+    expect(one.dayTotals.find((d) => d.date === '2026-04-07')).toEqual({
+      date: '2026-04-07',
+      net: usd(-700),
+      missingRates: [],
+    });
   });
 
   it('lets an undo cancel its entry', async () => {
