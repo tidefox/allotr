@@ -7,8 +7,6 @@ export const reportsPlan = {
     title: 'Budget against actual',
     subtitle: 'this period',
     barLabel: '{name} spent',
-    spent: 'spent',
-    planned: 'planned',
     emptyTitle: 'No budgets yet',
     emptyHint:
       'Add a budget on the Budget screen to compare it with what you spent.',
@@ -17,9 +15,6 @@ export const reportsPlan = {
     title: 'Savings rate',
     subtitle: 'per cycle',
     summary: 'Savings rate per cycle',
-    caption: 'Savings rate per cycle',
-    cycle: 'Cycle',
-    rate: 'Rate',
     emptyTitle: 'No cycles yet',
     emptyHint: 'Rates appear once a paycheck has opened a cycle.',
     none: '–',

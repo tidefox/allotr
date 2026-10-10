@@ -2,7 +2,6 @@
 // the row actions. Kept in its own file and spread into `en`, so the detail
 // side (reconcile and archive flows, in `accounts.*`) can grow separately.
 export const accountsScreen = {
-  title: 'Accounts',
   failed: 'Accounts could not be loaded.',
   retry: 'Try again',
   stats: {

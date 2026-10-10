@@ -1,5 +1,4 @@
 import type {
-  AccountView,
   CreateAccountBody,
   CreateTransactionBody,
   LocalDate,
@@ -62,40 +61,6 @@ export const cyclesQuery = queryOptions({
   queryFn: () => call(endpoints.cycles),
 });
 
-/** One cycle in detail; waits while the day it opened is not known yet. */
-export function cycleQuery(openedOn: LocalDate | undefined) {
-  return queryOptions({
-    queryKey: ['today', 'cycles', openedOn],
-    queryFn:
-      openedOn === undefined
-        ? skipToken
-        : () => call(endpoints.cycle, { params: { openedOn } }),
-  });
-}
-
-/**
- * Spending and income per top-level category for a cycle or a calendar
- * month, rolled up by the server. Under ['today'] so any new entry
- * refreshes it.
- */
-export function categorySummaryQuery(
-  period: 'cycle' | 'month',
-  openedOn: LocalDate | undefined,
-) {
-  return queryOptions({
-    queryKey: ['today', 'category-summary', period, openedOn],
-    queryFn: () =>
-      call(endpoints.categorySummary, {
-        query: {
-          period,
-          ...(period === 'cycle' && openedOn !== undefined
-            ? { cycle: openedOn }
-            : {}),
-        },
-      }),
-  });
-}
-
 /**
  * Spending per day and what falls due, from `from` through `to`. Under
  * ['today'] so any new entry refreshes it.
@@ -142,24 +107,6 @@ export function entriesOnQuery(day: LocalDate | undefined) {
             call(endpoints.transactions, {
               query: { from: day, to: day, limit: 200 },
             }),
-  });
-}
-
-/**
- * An account's entries in effect dated `from` through `to`, newest first,
- * such as those a bill's payment can link.
- */
-export function accountEntriesQuery(
-  accountId: string,
-  from: LocalDate,
-  to: LocalDate,
-) {
-  return queryOptions({
-    queryKey: ['transactions', 'account', { accountId, from, to }],
-    queryFn: () =>
-      call(endpoints.transactions, {
-        query: { accountId, from, to, undone: 'hide', limit: 200 },
-      }),
   });
 }
 
@@ -253,22 +200,6 @@ export function moveTransaction(id: string, afterId: string | null) {
 /** Opens an account; its opening balance is an entry. */
 export function createAccount(body: CreateAccountBody) {
   return call(endpoints.createAccount, { body });
-}
-
-/** Moves an account on or off budget from today: a dated entry. */
-export function switchBudgetGroup(
-  id: string,
-  budgetGroup: AccountView['budgetGroup'],
-) {
-  return call(endpoints.updateAccount, {
-    params: { id },
-    body: { budgetGroup },
-  });
-}
-
-/** Renames an account; no entry is written. */
-export function renameAccount(id: string, name: string) {
-  return call(endpoints.updateAccount, { params: { id }, body: { name } });
 }
 
 /** How a remaining balance is cleared before the account is archived. */

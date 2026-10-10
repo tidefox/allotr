@@ -3,7 +3,6 @@
 export const transactionDetail = {
   title: 'Entry',
   close: 'Close entry',
-  loading: 'Loading entry',
   failed: 'This entry could not be loaded.',
   retry: 'Try again',
   noPayee: 'No payee',
@@ -40,7 +39,6 @@ export const transactionDetail = {
   },
   history: {
     title: 'History',
-    current: 'This version',
     version: 'Version {n}',
     revert: 'Go back to this',
     deletedBy: 'Deleted',
@@ -50,7 +48,6 @@ export const transactionDetail = {
   payee: {
     title: 'Same payee',
     empty: 'No other entries from this payee.',
-    open: 'Open {payee}, {amount}',
   },
   actions: {
     edit: 'edit',
@@ -60,7 +57,6 @@ export const transactionDetail = {
     restore: 'restore',
   },
   deleted: 'Deleted. This entry no longer counts.',
-  restored: 'Restored as a copy.',
   actionFailed: 'That did not work. Try again.',
   edit: {
     title: 'Edit entry',

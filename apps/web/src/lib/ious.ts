@@ -12,24 +12,11 @@ import { endpoints } from './endpoints.ts';
 // IOUs and split bills (ADR 0024). They change free money and net worth,
 // so they sit under ['today'] and refresh with any entry.
 
-export const iousQuery = queryOptions({
-  queryKey: ['today', 'ious'],
-  queryFn: () => call(endpoints.ious),
-});
-
 /** Open and settled ones, so a settled IOU's payments can be undone. */
 export const allIousQuery = queryOptions({
   queryKey: ['today', 'ious', 'all'],
   queryFn: () => call(endpoints.ious, { query: { status: 'all' } }),
 });
-
-/** Names used before, for autocomplete. */
-export function peopleQuery(query: string) {
-  return queryOptions({
-    queryKey: ['today', 'ious', 'people', query],
-    queryFn: () => call(endpoints.iouPeople, { query: { query, limit: 8 } }),
-  });
-}
 
 /** What an IOU change touches: figures, entries and balances. */
 export const iouQueryKeys = [
@@ -45,10 +32,6 @@ export function createIou(body: CreateIouBody, idempotencyKey?: string) {
       ? {}
       : { headers: { 'idempotency-key': idempotencyKey } }),
   });
-}
-
-export function previewIouCover(body: CreateIouBody) {
-  return call(endpoints.iouCoverPreview, { body });
 }
 
 export function repayIous(body: RepaymentBody) {

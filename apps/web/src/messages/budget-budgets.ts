@@ -1,8 +1,6 @@
 // The Budget screen's budgets and cover order sub-tabs (docs/ui.md §6).
 // Kept in its own file and spread into `en`.
 export const budgetBudgets = {
-  loadFailed: 'Budgets could not be loaded.',
-  retry: 'Try again',
   cancel: 'Cancel',
   tree: {
     title: 'Budgets',
@@ -12,8 +10,6 @@ export const budgetBudgets = {
     addSubOf: 'Add a budget under {name}',
     fold: 'Fold {name}',
     barLabel: '{name} spent',
-    spent: 'spent',
-    left: 'left',
     actionsOf: 'Actions for {name}',
     emptyTitle: 'No budgets yet',
     emptyHint:
@@ -22,7 +18,6 @@ export const budgetBudgets = {
     totalHeld: 'Held for set-aside',
     totalUnbudgeted: 'Spent outside any budget',
     totalFree: 'Free to spend',
-    header: 'No budget of its own',
   },
   menu: {
     edit: 'Edit',
@@ -72,7 +67,6 @@ export const budgetBudgets = {
     fromBudgets: 'From other budgets',
     uncovered: 'Not covered',
     nextTitle: 'Next in line',
-    nextHint: 'The first source to cover the next overspend.',
     order: 'Cover order',
     none: 'Nothing was overspent this period.',
   },
@@ -98,15 +92,12 @@ export const budgetBudgets = {
     account: 'Paid from',
     accountPick: 'Pick an account',
     amount: 'Amount ({currency})',
-    covers: 'Covered by',
     own: 'Its own budget',
     uncovered: 'Not covered',
-    uncoveredNote: 'The daily number would go lower.',
     reachesSetAside: 'This reaches into set-aside money.',
     notCounted: 'No budget counts this, so nothing would be covered.',
     noOverspend: 'No overspend: its own budget pays all of it.',
     leftToday: 'Left today',
-    failed: 'The preview is not available right now.',
     noBudgets: 'Add a budget first.',
   },
 } as const;

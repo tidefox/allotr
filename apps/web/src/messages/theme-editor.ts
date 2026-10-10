@@ -4,7 +4,7 @@ export const themeEditor = {
   loading: 'Loading…',
   notFound: 'This palette no longer exists.',
   back: 'Back to App',
-  theme: { title: 'Palette', subtitle: 'name and scheme' },
+  theme: { title: 'Palette' },
   preview: { title: 'Preview', subtitle: 'live' },
   contrast: { title: 'Contrast' },
   neutrals: { title: 'Neutrals', subtitle: 'crust to text' },
@@ -22,6 +22,5 @@ export const themeEditor = {
   saveAndUse: 'save and use',
   cancel: 'cancel',
   saving: 'saving…',
-  fixName: 'Enter a name for the palette.',
   hexLabel: '{name} hex',
 } as const;

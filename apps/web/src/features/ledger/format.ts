@@ -1,8 +1,4 @@
-import {
-  formatMoney,
-  type LocalDate,
-  type TransactionView,
-} from '@allotr/shared';
+import type { LocalDate, TransactionView } from '@allotr/shared';
 import { t } from '@/messages/t';
 import type { LedgerRow } from './rows.ts';
 
@@ -46,13 +42,6 @@ export function formatMoment(
         timeZone,
       }),
   ).format(new Date(iso));
-}
-
-export function rowAmount(row: LedgerRow, locale: string): string | null {
-  if (row.amount === null) return null;
-  return formatMoney(row.amount, locale, {
-    signDisplay: row.moves ? 'never' : 'exceptZero',
-  });
 }
 
 /** Category, else note, else the kind; an undo says what it undoes. */

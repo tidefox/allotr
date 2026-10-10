@@ -1,12 +1,14 @@
 # Third-party notices
 
+## Colour palettes
+
 Allotr ships these colour palettes under their original names
 ([ADR 0017](docs/adr/0017-third-party-palettes.md)). The colours are in
 `packages/shared/src/theme/families/`. When a theme is resolved, Allotr may
 shift a colour's lightness so it meets WCAG 2.2 AA contrast; the palettes
 themselves are stored as published.
 
-## Catppuccin
+### Catppuccin
 
 - Themes: Catppuccin Latte, Frappé, Macchiato and Mocha
 - Source: <https://github.com/catppuccin/palette>
@@ -36,7 +38,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Nord
+### Nord
 
 - Themes: Nord
 - Source: <https://github.com/nordtheme/nord>
@@ -66,7 +68,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Solarized
+### Solarized
 
 - Themes: Solarized Light and Solarized Dark
 - Source: <https://github.com/altercation/solarized>
@@ -94,7 +96,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## Gruvbox
+### Gruvbox
 
 - Themes: Gruvbox Light and Gruvbox Dark
 - Source: <https://github.com/morhetz/gruvbox>
@@ -126,7 +128,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Dracula
+### Dracula
 
 - Themes: Dracula and Alucard
 - Source: <https://github.com/dracula/dracula-theme>
@@ -156,7 +158,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Tokyo Night
+### Tokyo Night
 
 - Themes: Tokyo Night Day, Night, Storm and Moon
 - Source: <https://github.com/folke/tokyonight.nvim>
@@ -368,7 +370,7 @@ Colours are taken from the generated palettes in `extras/lua/`. The project ship
    limitations under the License.
 ```
 
-## Rosé Pine
+### Rosé Pine
 
 - Themes: Rosé Pine, Rosé Pine Moon and Rosé Pine Dawn
 - Source: <https://github.com/rose-pine/palette>
@@ -397,3 +399,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Web app libraries
+
+### Remix Icon
+
+- Use: the interface icons, compiled to SVG components at build time by
+  `apps/web/scripts/generate-icons.ts` (pinned to 4.5.0)
+- Source: <https://github.com/Remix-Design/RemixIcon>
+- Licence: Apache License 2.0, <https://www.apache.org/licenses/LICENSE-2.0>
+
+### React Aria Components
+
+- Use: the accessible primitives behind menus, sheets, fields and tables
+- Source: <https://github.com/adobe/react-spectrum>
+- Licence: Apache License 2.0, copyright 2019 Adobe,
+  <https://www.apache.org/licenses/LICENSE-2.0>
+
+### Geist and Geist Mono
+
+- Use: the bundled typefaces, via `@fontsource-variable/geist` and
+  `@fontsource-variable/geist-mono`
+- Source: <https://github.com/vercel/geist-font>
+- Licence: SIL Open Font License 1.1

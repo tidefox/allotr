@@ -11,19 +11,8 @@ import {
   type ErrorComponentProps,
   type RouterHistory,
 } from '@tanstack/react-router';
-import { Dashboard } from './screens/dashboard/dashboard.tsx';
-import { AccountsScreen } from './screens/accounts/accounts-screen.tsx';
 import { validateAccountsSearch } from './screens/accounts/search-params.ts';
-import { BudgetScreen } from './screens/budget/budget-screen.tsx';
-import { ReportsScreen } from './screens/reports/reports-screen.tsx';
 import { validateReportsSearch } from './screens/reports/reports-search.ts';
-import { SettingsScreen } from './screens/settings/settings-screen.tsx';
-import { ThemeEditorScreen } from './screens/settings/theme-editor-screen.tsx';
-import { InviteScreen } from './screens/auth/invite-screen.tsx';
-import { OnboardingScreen } from './screens/auth/onboarding-screen.tsx';
-import { SetupScreen } from './screens/auth/setup-screen.tsx';
-import { SignInScreen } from './screens/auth/sign-in-screen.tsx';
-import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
 import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
 import { AuthPlaceholder } from './screens/auth-placeholder.tsx';
 import { AppShell } from './shell/app-shell.tsx';
@@ -39,6 +28,52 @@ import { t } from '@/messages/t';
 // The route tree (docs/ui.md §6). Screens are placeholders until their work
 // packages land; the guards, sub-tab addresses and old-address redirects are
 // final.
+
+// Screens load on demand so the first page carries only the shell.
+const Dashboard = lazyRouteComponent(
+  () => import('./screens/dashboard/dashboard.tsx'),
+  'Dashboard',
+);
+const AccountsScreen = lazyRouteComponent(
+  () => import('./screens/accounts/accounts-screen.tsx'),
+  'AccountsScreen',
+);
+const BudgetScreen = lazyRouteComponent(
+  () => import('./screens/budget/budget-screen.tsx'),
+  'BudgetScreen',
+);
+const ReportsScreen = lazyRouteComponent(
+  () => import('./screens/reports/reports-screen.tsx'),
+  'ReportsScreen',
+);
+const SettingsScreen = lazyRouteComponent(
+  () => import('./screens/settings/settings-screen.tsx'),
+  'SettingsScreen',
+);
+const ThemeEditorScreen = lazyRouteComponent(
+  () => import('./screens/settings/theme-editor-screen.tsx'),
+  'ThemeEditorScreen',
+);
+const InviteScreen = lazyRouteComponent(
+  () => import('./screens/auth/invite-screen.tsx'),
+  'InviteScreen',
+);
+const OnboardingScreen = lazyRouteComponent(
+  () => import('./screens/auth/onboarding-screen.tsx'),
+  'OnboardingScreen',
+);
+const SetupScreen = lazyRouteComponent(
+  () => import('./screens/auth/setup-screen.tsx'),
+  'SetupScreen',
+);
+const SignInScreen = lazyRouteComponent(
+  () => import('./screens/auth/sign-in-screen.tsx'),
+  'SignInScreen',
+);
+const TransactionsScreen = lazyRouteComponent(
+  () => import('./screens/transactions/transactions-screen.tsx'),
+  'TransactionsScreen',
+);
 
 export type RouterContext = { queryClient: QueryClient };
 

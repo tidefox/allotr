@@ -6,13 +6,6 @@ import {
   type SubTabScreen,
 } from '../nav-items.ts';
 
-/** Routes outside the shell; everything else requires a session. */
-export const publicPaths = [
-  '/sign-in',
-  '/onboarding',
-  '/invite/$token',
-] as const;
-
 /** Signed-in routes that are not in the nav but still get axe checks. */
 export const extraShellPaths = [
   '/settings/money',

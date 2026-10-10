@@ -23,7 +23,6 @@ export const accountDetail = {
   groups: { on: 'On budget', off: 'Off budget' },
   history: {
     title: 'Balance',
-    subtitle: 'last {days} days',
     summary: 'Balance of {name}, last {days} days: from {start} to {end}.',
     caption: 'Balance by day',
     day: 'Day',

@@ -29,6 +29,5 @@ export const reportsCalendar = {
     paydayName: 'Paycheck expected',
     iouOwedToMe: 'IOU, owed to you',
     iouOwedByMe: 'IOU, you owe',
-    open: 'Open {name}',
   },
 } as const;
