@@ -41,6 +41,7 @@ const specs = [
   'reports-plan',
   'reports-summary',
   'settings-money',
+  'auth',
 ];
 
 const projects = sizes.flatMap((size, i) =>

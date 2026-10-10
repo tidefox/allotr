@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { Frame } from '@/components/layout';
+import { AuthTile } from './auth/auth-tile.tsx';
 
 /**
- * The sign-in, onboarding, invite and setup screens are restyled in the
- * settings work package; until then each is a centred heading so the route
- * guards can be tested.
+ * The router's error and not-found pages share the sign-in tile: a heading
+ * and whatever the caller puts under it.
  */
 export function AuthPlaceholder({
   title,
@@ -13,12 +12,5 @@ export function AuthPlaceholder({
   title: string;
   children?: ReactNode;
 }) {
-  return (
-    <Frame className="grid min-h-dvh place-items-center">
-      <main id="content" className="border bg-canvas px-6 py-5">
-        <h1 className="text-big font-semibold">{title}</h1>
-        {children}
-      </main>
-    </Frame>
-  );
+  return <AuthTile title={title}>{children}</AuthTile>;
 }
