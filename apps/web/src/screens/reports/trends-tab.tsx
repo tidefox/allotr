@@ -25,8 +25,8 @@ const locale = 'en';
 
 const versusColumns = [
   { width: 'minmax(0,1fr)' },
-  { width: '5.5rem' },
-  { width: '5.5rem', from: 'medium' },
+  { width: '6.5rem' },
+  { width: '6.5rem', from: 'medium' },
   { width: '4rem' },
 ] as const;
 
@@ -186,24 +186,27 @@ export function TrendsTab() {
             data={totals.columns}
             label={t('reportsSummary.trends.totalsSummary', { count })}
           />
-          <table className="sr-only">
-            <caption>{t('reportsSummary.trends.totalsCaption')}</caption>
-            <thead>
-              <tr>
-                <th>{t('reportsSummary.trends.period')}</th>
-                <th>{t('reportsSummary.trends.spent')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {totals.rows.map((cells) => (
-                <tr key={cells[0]}>
-                  {cells.map((cell, i) => (
-                    <td key={i}>{cell}</td>
-                  ))}
+          {/* A table ignores its own size, so the wrapper hides it. */}
+          <div className="sr-only">
+            <table>
+              <caption>{t('reportsSummary.trends.totalsCaption')}</caption>
+              <thead>
+                <tr>
+                  <th>{t('reportsSummary.trends.period')}</th>
+                  <th>{t('reportsSummary.trends.spent')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {totals.rows.map((cells) => (
+                  <tr key={cells[0]}>
+                    {cells.map((cell, i) => (
+                      <td key={i}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Tile>
       </Grid>
     </>

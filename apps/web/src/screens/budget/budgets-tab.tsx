@@ -188,7 +188,9 @@ function BudgetRow({
   const { budget } = entry;
   const name = (
     <span className="flex min-w-0 items-center gap-2">
-      {entry.icon === null ? null : (
+      {entry.icon === null ? (
+        <span aria-hidden="true" className="size-4 shrink-0" />
+      ) : (
         <CategoryIcon name={entry.icon} color={entry.colour} />
       )}
       <span className="truncate font-sans">{entry.name}</span>

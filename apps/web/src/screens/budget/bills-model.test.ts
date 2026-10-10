@@ -74,6 +74,8 @@ describe('billsView', () => {
       labels,
     );
     expect(view.timeline.days).toBe(31);
+    // The subtitle counts the cycle as the dashboard does: payday is not in it.
+    expect(view.cycleLength).toBe(30);
     expect(view.timeline.today).toBe(9);
     expect(view.timeline.events.map((e) => [e.kind, e.day])).toEqual([
       ['bill', 4],

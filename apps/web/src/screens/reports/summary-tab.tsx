@@ -250,7 +250,9 @@ function CategoryLine({
   const share = sharePercent(row.fraction);
   const cells = [
     <span key="name" className="flex min-w-0 items-center gap-2">
-      {row.icon === null ? null : (
+      {row.icon === null ? (
+        <span aria-hidden="true" className="size-4 shrink-0" />
+      ) : (
         <CategoryIcon name={row.icon} color={seriesNumber(row.colour)} />
       )}
       <span className="truncate font-sans">{row.name}</span>
@@ -439,25 +441,28 @@ function DaysTile({ params }: { params: ReportParams }) {
                 : t('reportsSummary.days.summaryPlain')
             }
           />
-          <table className="sr-only">
-            <caption>{t('reportsSummary.days.caption')}</caption>
-            <thead>
-              <tr>
-                <th>{t('reportsSummary.days.day')}</th>
-                <th>{t('reportsSummary.days.spent')}</th>
-                <th>{t('reportsSummary.days.over')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chart.rows.map((cells) => (
-                <tr key={cells[0]}>
-                  {cells.map((cell, i) => (
-                    <td key={i}>{cell}</td>
-                  ))}
+          {/* A table ignores its own size, so the wrapper hides it. */}
+          <div className="sr-only">
+            <table>
+              <caption>{t('reportsSummary.days.caption')}</caption>
+              <thead>
+                <tr>
+                  <th>{t('reportsSummary.days.day')}</th>
+                  <th>{t('reportsSummary.days.spent')}</th>
+                  <th>{t('reportsSummary.days.over')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {chart.rows.map((cells) => (
+                  <tr key={cells[0]}>
+                    {cells.map((cell, i) => (
+                      <td key={i}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </Tile>

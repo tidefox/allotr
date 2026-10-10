@@ -230,35 +230,46 @@ export function Chart({
         aria-hidden="true"
         className="relative mt-2 h-4 font-num text-[0.6875rem] text-text-muted"
       >
-        {xTicks.map((t) => (
-          <span
-            key={t.value}
-            className="absolute -translate-x-1/2 whitespace-nowrap"
-            style={{ left: `${String(toPercent(t.value, x, 'x'))}%` }}
-          >
-            {t.label}
-          </span>
-        ))}
+        {xTicks.map((t) => {
+          const left = toPercent(t.value, x, 'x');
+          return (
+            <span
+              key={t.value}
+              className={cn(
+                'absolute whitespace-nowrap',
+                // Labels at the ends stay inside the plot instead of being
+                // cut off by the tile.
+                left >= 99.5 ? '-translate-x-full' : '-translate-x-1/2',
+              )}
+              style={{ left: `${String(left)}%` }}
+            >
+              {t.label}
+            </span>
+          );
+        })}
       </div>
-      <table className="sr-only">
-        <caption>{table.caption}</caption>
-        <thead>
-          <tr>
-            {table.headers.map((h) => (
-              <th key={h}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {table.rows.map((row, i) => (
-            <tr key={i}>
-              {row.map((cell, j) => (
-                <td key={j}>{cell}</td>
+      {/* A table ignores its own size, so the wrapper hides it. */}
+      <div className="sr-only">
+        <table>
+          <caption>{table.caption}</caption>
+          <thead>
+            <tr>
+              {table.headers.map((h) => (
+                <th key={h}>{h}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {table.rows.map((row, i) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  <td key={j}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

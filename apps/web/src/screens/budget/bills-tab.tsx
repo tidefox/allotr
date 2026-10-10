@@ -136,7 +136,7 @@ export function BillsTab() {
         title={t('budgetBills.timeline.title')}
         subtitle={t('budgetBills.timeline.subtitle', {
           day: view.timeline.today + 1,
-          length: view.timeline.days,
+          length: view.cycleLength,
         })}
         span="full"
         primary

@@ -92,6 +92,7 @@ export const budgetBudgets = {
     account: 'Paid from',
     accountPick: 'Pick an account',
     amount: 'Amount ({currency})',
+    amountPlain: 'Amount',
     own: 'Its own budget',
     uncovered: 'Not covered',
     reachesSetAside: 'This reaches into set-aside money.',

@@ -14,7 +14,8 @@ import { budgetRows } from './budgets.ts';
 const columns = [
   { width: 'minmax(0,1fr)' },
   { width: '5rem', from: 'medium' },
-  { width: '5.5rem' },
+  // Fixed, so bars line up from row to row; fits "$9,999.99 left".
+  { width: '8rem' },
 ] as const;
 
 export function BudgetsTile() {
@@ -64,7 +65,10 @@ export function BudgetsTile() {
             columns={columns}
             cells={[
               <span key="n" className="flex min-w-0 items-center gap-2">
-                {row.icon === null ? null : (
+                {row.icon === null ? (
+                  // Keeps names lined up with the rows that have an icon.
+                  <span aria-hidden="true" className="size-4 shrink-0" />
+                ) : (
                   <CategoryIcon name={row.icon} color={row.colour} />
                 )}
                 <span className="truncate font-sans">{row.name}</span>
@@ -77,9 +81,9 @@ export function BudgetsTile() {
                   name: row.name,
                 })}
               />,
-              <span key="l" className="flex flex-col items-end leading-tight">
+              <span key="l" className="flex items-baseline justify-end gap-1">
                 <Amount amount={row.left} />
-                <span className="text-tiny text-text-muted">
+                <span className="text-small text-text-muted">
                   {t('dashboardTiles.budgets.left')}
                 </span>
               </span>,

@@ -117,6 +117,9 @@ async function today(client: TestClient = h.alice) {
     liveDaily: Money;
     leftToday: Money;
     available: Money;
+    dailyMode: string;
+    held: Money;
+    dailyBase: Money;
   };
 }
 
@@ -198,7 +201,13 @@ describe('daily and set-aside budgets', () => {
     });
     expect(s.held).toEqual(usd(30_000));
     expect(s.free).toEqual(usd(458_000));
-    expect((await today()).liveDaily).toEqual(usd(26_941));
+    expect(await today()).toMatchObject({
+      dailyMode: 'free',
+      held: usd(30_000),
+      // What the daily number splits is free money, not what is available.
+      dailyBase: usd(458_000),
+      liveDaily: usd(26_941),
+    });
   });
 
   it('lets spending inside the hold leave the daily number alone', async () => {

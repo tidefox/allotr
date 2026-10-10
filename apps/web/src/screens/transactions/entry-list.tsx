@@ -16,7 +16,8 @@ const columns: readonly RowColumn[] = [
   { width: 'minmax(0, 1.4fr)' },
   { width: 'minmax(0, 1fr)', from: 'medium' },
   { width: 'minmax(0, 0.7fr)', from: 'wide' },
-  { width: 'auto' },
+  // A floor, so columns line up from row to row; a bigger amount still fits.
+  { width: 'minmax(7.5rem, auto)' },
 ];
 
 function kindOf(row: TxRow): AmountKind {

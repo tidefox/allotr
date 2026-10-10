@@ -136,6 +136,9 @@ describe('today for a new user', () => {
       todayAllowance: usd(0),
       leftToday: usd(0),
       liveDaily: usd(0),
+      dailyMode: 'free',
+      held: usd(0),
+      dailyBase: usd(0),
       cycleSpent: usd(0),
       paceSpent: usd(0),
       allocation: {

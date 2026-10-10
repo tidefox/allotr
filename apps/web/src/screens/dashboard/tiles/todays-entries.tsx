@@ -24,7 +24,8 @@ const columns: readonly RowColumn[] = [
   { width: '2.75rem' },
   { width: 'minmax(0, 1fr)' },
   { width: 'minmax(0, 0.8fr)', from: 'medium' },
-  { width: 'auto' },
+  // A floor, so columns line up from row to row; a bigger amount still fits.
+  { width: 'minmax(7.5rem, auto)' },
 ];
 
 // Today's entries (docs/ui.md §6): time, icon, payee, category, amount.

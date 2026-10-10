@@ -558,6 +558,7 @@ export function dailyFiguresOn(
     held: base.held,
     free: base.free,
     dailyMode: base.mode,
+    dailyBase: base.available,
     dailySpentToday: base.spentToday,
     missingRates: [
       ...new Set([
