@@ -65,6 +65,7 @@ export const updateStore = {
     return () => listeners.delete(listener);
   },
   getSnapshot: () => waiting,
+  offer: setWaiting,
   dismiss: () => {
     setWaiting(null);
   },
@@ -74,7 +75,7 @@ export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   const container = navigator.serviceWorker;
   const registration = await container.register('/sw.js', { scope: '/' });
-  watchForUpdates(registration, container, setWaiting);
+  watchForUpdates(registration, container, updateStore.offer);
   // An installed app can stay open for days: look for a new version
   // whenever it comes back to the foreground.
   document.addEventListener('visibilitychange', () => {

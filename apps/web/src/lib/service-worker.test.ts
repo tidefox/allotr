@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   applyUpdate,
+  updateStore,
   watchForUpdates,
   type ContainerLike,
   type RegistrationLike,
@@ -82,5 +83,22 @@ describe('applyUpdate', () => {
     container.dispatchEvent(new Event('controllerchange'));
     container.dispatchEvent(new Event('controllerchange'));
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('updateStore', () => {
+  it('shares the waiting worker with subscribers until it is dismissed', () => {
+    const worker = new FakeWorker();
+    const listener = vi.fn();
+    const off = updateStore.subscribe(listener);
+    updateStore.offer(worker);
+    expect(updateStore.getSnapshot()).toBe(worker);
+    updateStore.dismiss();
+    expect(updateStore.getSnapshot()).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(2);
+    off();
+    updateStore.offer(worker);
+    expect(listener).toHaveBeenCalledTimes(2);
+    updateStore.dismiss();
   });
 });

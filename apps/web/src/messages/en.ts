@@ -373,6 +373,9 @@ export const en = {
       synced: 'synced',
       syncing: 'syncing',
       offline: 'offline',
+      update: 'new version ready',
+      reload: 'reload',
+      later: 'later',
     },
     slots: {
       summary: 'Summary',
@@ -452,6 +455,7 @@ export const en = {
     create: {
       name: 'Name',
       currency: 'Currency',
+      group: 'Counts toward',
       balance: 'Opening balance in {currency}',
       balanceHint: 'Optional. Negative for money owed, such as a card.',
       save: 'Add account',
