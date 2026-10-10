@@ -40,6 +40,7 @@ const specs = [
   'reports-calendar',
   'reports-plan',
   'reports-summary',
+  'settings-categories',
 ];
 
 const projects = sizes.flatMap((size, i) =>
