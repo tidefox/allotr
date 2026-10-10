@@ -86,3 +86,17 @@ describe('viewOf and searchOf', () => {
     });
   });
 });
+
+describe('payee', () => {
+  it('is kept as the report names it and dropped when empty or not text', () => {
+    expect(validateTransactionsSearch({ payee: '  Corner Cafe ' }).payee).toBe(
+      'Corner Cafe',
+    );
+    expect(validateTransactionsSearch({ payee: '  ' }).payee).toBeUndefined();
+    expect(validateTransactionsSearch({ payee: 4 }).payee).toBeUndefined();
+  });
+  it('round-trips through the view', () => {
+    const search = validateTransactionsSearch({ payee: 'Corner Cafe' });
+    expect(searchOf(viewOf(search)).payee).toBe('Corner Cafe');
+  });
+});

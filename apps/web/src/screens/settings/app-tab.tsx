@@ -33,7 +33,7 @@ import {
   themeFileName,
   themeFileText,
 } from './app-model.ts';
-import { BracketLink, SettingRow, Swatches } from './app-parts.tsx';
+import { BracketLink, PreferenceRow, Swatches } from './app-parts.tsx';
 import { useThemeImport } from './use-theme-import.ts';
 
 // Settings, App (docs/ui.md §6): the palette for each mode, the user's own
@@ -66,7 +66,7 @@ function SlotMenu({
   const current = slotPaletteTheme(appearance[scheme], scheme, custom);
   const label = t(`settingsApp.palette.${scheme}`);
   return (
-    <SettingRow label={label}>
+    <PreferenceRow label={label}>
       <MenuButton
         label={t('settingsApp.palette.pick', {
           scheme: t(`themes.schemes.${scheme}`),
@@ -92,7 +92,7 @@ function SlotMenu({
           />
         ))}
       </MenuButton>
-    </SettingRow>
+    </PreferenceRow>
   );
 }
 
@@ -105,7 +105,7 @@ function PaletteTile({ custom }: { custom: readonly PaletteTheme[] }) {
       subtitle={t('settingsApp.palette.subtitle')}
       bodyClassName="px-0 pb-0"
     >
-      <SettingRow
+      <PreferenceRow
         label={t('settingsApp.palette.mode')}
         hint={t('settingsApp.palette.modeHint')}
       >
@@ -118,7 +118,7 @@ function PaletteTile({ custom }: { custom: readonly PaletteTheme[] }) {
           value={mode}
           onChange={setMode}
         />
-      </SettingRow>
+      </PreferenceRow>
       {THEME_SCHEMES.map((scheme) => (
         <SlotMenu key={scheme} scheme={scheme} custom={custom} />
       ))}
@@ -455,7 +455,7 @@ function OnOffPref({
 }) {
   const [value, setValue] = useDevicePref(pref);
   return (
-    <SettingRow label={label} hint={hint}>
+    <PreferenceRow label={label} hint={hint}>
       {disabled ? (
         <span className="text-small text-text-muted">
           {t('settingsApp.interface.off')}
@@ -468,7 +468,7 @@ function OnOffPref({
           onChange={setValue}
         />
       )}
-    </SettingRow>
+    </PreferenceRow>
   );
 }
 
@@ -485,7 +485,7 @@ function InterfaceTile() {
       subtitle={t('settingsApp.interface.subtitle')}
       bodyClassName="px-0 pb-0"
     >
-      <SettingRow label={t('settingsApp.interface.density')}>
+      <PreferenceRow label={t('settingsApp.interface.density')}>
         <ToggleGroup
           label={t('settingsApp.interface.density')}
           options={(['comfortable', 'compact'] as const).map((id) => ({
@@ -495,8 +495,8 @@ function InterfaceTile() {
           value={density}
           onChange={setDensity}
         />
-      </SettingRow>
-      <SettingRow label={t('settingsApp.interface.motion')}>
+      </PreferenceRow>
+      <PreferenceRow label={t('settingsApp.interface.motion')}>
         <ToggleGroup
           label={t('settingsApp.interface.motion')}
           options={(['system', 'full', 'reduced', 'off'] as const).map(
@@ -508,13 +508,13 @@ function InterfaceTile() {
           value={motion}
           onChange={setMotion}
         />
-      </SettingRow>
+      </PreferenceRow>
       <OnOffPref
         pref="hints"
         label={t('settingsApp.interface.hints')}
         hint={t('settingsApp.interface.hintsHint')}
       />
-      <SettingRow
+      <PreferenceRow
         label={t('settingsApp.interface.shortcuts')}
         hint={t('settings.shortcutsHint')}
       >
@@ -527,7 +527,7 @@ function InterfaceTile() {
             setShortcuts(next === 'on');
           }}
         />
-      </SettingRow>
+      </PreferenceRow>
       {canVibrate() ? (
         <OnOffPref pref="haptics" label={t('settingsApp.interface.haptics')} />
       ) : null}
@@ -554,11 +554,11 @@ function PlannedTile() {
       bodyClassName="px-0 pb-0"
     >
       {items.map((item) => (
-        <SettingRow key={item} label={t(`settingsApp.planned.${item}`)}>
+        <PreferenceRow key={item} label={t(`settingsApp.planned.${item}`)}>
           <span className="text-small text-text-muted">
             {t('settingsApp.planned.note')}
           </span>
-        </SettingRow>
+        </PreferenceRow>
       ))}
     </Tile>
   );

@@ -11,6 +11,7 @@ import {
   reverseTransaction,
   todayQuery,
 } from '@/lib/ledger';
+import { useLedgerReady } from '@/lib/session';
 import { t } from '@/messages/t';
 import { NewMenu } from './command/new-menu.tsx';
 import {
@@ -32,8 +33,9 @@ import { submitLine } from './command/submit.ts';
 
 export function CommandLine() {
   const { intoAccountId, logged } = useCommandState();
-  const accounts = useQuery(accountsQuery);
-  const today = useQuery(todayQuery);
+  const ready = useLedgerReady();
+  const accounts = useQuery({ ...accountsQuery, enabled: ready });
+  const today = useQuery({ ...todayQuery, enabled: ready });
   const queryClient = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const [line, setLine] = useState('');

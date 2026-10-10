@@ -28,6 +28,8 @@ const MAX_IDS = 50;
 
 export interface TransactionsSearch {
   q?: string | undefined;
+  /** Entries of one payee, by the key the payee report ranks by. */
+  payee?: string | undefined;
   period?: Period | undefined;
   type?: EntryType | undefined;
   categories?: string[] | undefined;
@@ -65,6 +67,13 @@ const text = (value: unknown) => {
   return trimmed === '' ? undefined : trimmed;
 };
 
+/** A payee as the report names it; notes can run longer than a search. */
+const payee = (value: unknown) => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim().slice(0, 500);
+  return trimmed === '' ? undefined : trimmed;
+};
+
 const id = (value: unknown) => {
   const parsed = idSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
@@ -79,6 +88,7 @@ export function validateTransactionsSearch(
   const group = oneOf(GROUPS, search.group);
   return {
     q: text(search.q),
+    payee: payee(search.payee),
     period: period === DEFAULT_PERIOD ? undefined : period,
     type: oneOf(TYPES, search.type),
     categories: ids(search.categories),
@@ -91,6 +101,7 @@ export function validateTransactionsSearch(
 /** The view a search describes, with defaults filled in. */
 export interface TransactionsView {
   q: string | undefined;
+  payee: string | undefined;
   period: Period;
   type: EntryType | undefined;
   categories: readonly string[];
@@ -102,6 +113,7 @@ export interface TransactionsView {
 export function viewOf(search: TransactionsSearch): TransactionsView {
   return {
     q: search.q,
+    payee: search.payee,
     period: search.period ?? DEFAULT_PERIOD,
     type: search.type,
     categories: search.categories ?? [],
@@ -116,6 +128,7 @@ export function searchOf(view: Partial<TransactionsView>): TransactionsSearch {
   const merged = { ...viewOf({}), ...view };
   return {
     q: merged.q === '' ? undefined : merged.q,
+    payee: merged.payee === '' ? undefined : merged.payee,
     period: merged.period === DEFAULT_PERIOD ? undefined : merged.period,
     type: merged.type,
     categories:

@@ -14,8 +14,8 @@ import { poolQueryKeys, poolsQuery, updatePool } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
 import { accountHistoryQuery, accountsQuery, todayQuery } from '@/lib/ledger';
 import { cn } from '@/lib/utils';
+import { sparkPoints } from '@/lib/spark-points';
 import { t } from '@/messages/t';
-import { sparkPoints } from '../accounts/accounts-model.ts';
 import { poolTiles, type PoolTile } from './pools-model.ts';
 
 const locale = 'en';

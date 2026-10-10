@@ -7,7 +7,7 @@ import { sessionQuery } from '@/lib/session';
 import { t } from '@/messages/t';
 import { DeleteAccountTile } from './delete-account-tile.tsx';
 import { ImportTile } from './import-tile.tsx';
-import { BracketLink, Notice, SettingRow } from './settings-parts.tsx';
+import { BracketLink, Notice, SettingRow } from './setting-parts.tsx';
 
 const formats = exportFormatSchema.options;
 

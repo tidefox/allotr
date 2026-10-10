@@ -206,7 +206,8 @@ column setting, 4 from 1500.
 - **Filters.** A filter menu with type (radio), category tree (checkbox, where
   a parent sets all its children) and accounts (checkbox). Active filters
   show as chips and in the button's count badge. Period, group by and sort
-  are separate menus.
+  are separate menus. A payee filter (`?payee=`, the key the payee report
+  ranks by) is set by the Reports › Summary payee rows and shows as a chip.
 - **Moving items.** No visible handles. Drag the item itself (a row, a tab,
   a tile's title bar) with a mouse. On touch, long-press for 400 ms (with a
   short vibration where supported), then drag. Arrow buttons or "move
@@ -243,7 +244,7 @@ emergency fund · net worth (2 wide).
 
 | Tile | Content | Data |
 |---|---|---|
-| this cycle | Key figures (spent, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
+| this cycle | Key figures (spent day-to-day, which leaves bills out, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
 | needs attention | Tag, text, action, ⋮ | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
 | cycle allocation | Allocation component | `/v1/today` `allocation` **(API +: segment shares; until then the bar sizes each part against the start)** |

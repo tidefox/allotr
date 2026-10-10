@@ -13,11 +13,11 @@ import {
 } from '@/lib/session';
 import { t } from '@/messages/t';
 import { byRecentActivity, deviceName } from './account-model.ts';
-import { ConfirmSheet, Notice } from './settings-parts.tsx';
+import { ConfirmSheet, Notice } from './setting-parts.tsx';
 import { refreshSession } from './two-factor-tile.tsx';
 
 const columns: readonly RowColumn[] = [
-  { width: 'minmax(0, 1fr)' },
+  { width: 'minmax(8rem, 1fr)' },
   { width: 'minmax(0, 11rem)', from: 'medium' },
   { width: '8rem', from: 'wide' },
   { width: 'auto' },
@@ -98,12 +98,15 @@ export function SessionsTile({
               key={device.id}
               columns={columns}
               cells={[
-                <span key="name" className="flex items-center gap-2">
-                  <span className="truncate">{name}</span>
+                <span key="name" className="flex min-w-0 items-center gap-2">
+                  {/* The name has priority: the tag is clipped before it. */}
+                  <span className="max-w-full shrink-0 truncate">{name}</span>
                   {current ? (
-                    <Tag tone="positive">
-                      {t('settings.security.thisDevice')}
-                    </Tag>
+                    <span className="min-w-0 overflow-hidden">
+                      <Tag tone="positive">
+                        {t('settings.security.thisDevice')}
+                      </Tag>
+                    </span>
                   ) : null}
                 </span>,
                 <span key="when" className="font-ui text-text-muted">

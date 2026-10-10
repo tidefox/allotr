@@ -8,7 +8,7 @@ import { formatDay } from '@/features/today/format';
 import { formatMoney } from '@/lib/format-money';
 import { netWorthQuery } from '@/lib/plan';
 import { t } from '@/messages/t';
-import { netWorthChart } from './net-worth-model.ts';
+import { netWorthChart } from '@/features/net-worth/model';
 import { TileFailed } from './tile-failed.tsx';
 
 const locale = 'en';

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { localDate, type Money } from '@allotr/shared';
 import { Amount } from '@/components/amount';
@@ -25,6 +26,7 @@ import {
 import { seriesNumber } from '@/lib/category-style';
 import { t } from '@/messages/t';
 import { PeriodMenu } from './period-menu.tsx';
+import type { ReportPeriod } from './reports-search.ts';
 import { reportPayeesQuery, reportCategoriesQuery } from './summary-queries.ts';
 import {
   budgetsByCategory,
@@ -110,7 +112,7 @@ export function SummaryTab() {
       <StatsRow params={params} />
       <Grid>
         <CategoriesTile params={params} />
-        <PayeesTile params={params} />
+        <PayeesTile params={params} period={period} />
         <DaysTile params={params} />
       </Grid>
     </>
@@ -298,7 +300,14 @@ function CategoryLine({
   );
 }
 
-function PayeesTile({ params }: { params: ReportParams }) {
+function PayeesTile({
+  params,
+  period,
+}: {
+  params: ReportParams;
+  period: ReportPeriod;
+}) {
+  const navigate = useNavigate();
   const payees = useQuery(reportPayeesQuery(params));
   if (payees.isError) {
     return (
@@ -341,6 +350,15 @@ function PayeesTile({ params }: { params: ReportParams }) {
               <Row
                 key={p.payee}
                 columns={payeeColumns}
+                onPress={() => {
+                  void navigate({
+                    to: '/transactions',
+                    search: {
+                      payee: p.payee,
+                      ...(period === 'cycle' ? {} : { period }),
+                    },
+                  });
+                }}
                 cells={[
                   <span key="n" className="font-sans">
                     {p.payee}

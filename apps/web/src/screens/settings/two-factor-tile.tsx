@@ -23,7 +23,7 @@ import {
   Notice,
   SecretField,
   SettingRow,
-} from './settings-parts.tsx';
+} from './setting-parts.tsx';
 
 export async function refreshSession(queryClient: QueryClient) {
   await Promise.all([

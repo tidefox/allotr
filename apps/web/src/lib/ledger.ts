@@ -122,6 +122,8 @@ export interface LedgerFilter {
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
   q?: string | undefined;
+  /** One payee, by the key the payee report ranks by. */
+  payee?: string | undefined;
   /** Deleted (undone) entries and their undos: hidden unless shown. */
   undone?: 'show' | 'hide' | undefined;
 }

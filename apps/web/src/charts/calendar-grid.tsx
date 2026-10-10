@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CalendarDayView, LocalDate } from '@allotr/shared';
-import { formatMoney, formatMoneyShort } from '@/lib/format-money';
+import { ToggleGroup } from '@/components/buttons';
+import { formatMoney } from '@/lib/format-money';
 import type { CurrencyDisplay } from '@/lib/format-money';
 import { cn } from '@/lib/utils';
 import { leadingBlanks, type MonthRange } from '@/features/calendar/model';
@@ -94,22 +95,15 @@ export function CalendarGrid(props: CalendarGridProps) {
   return (
     <div className={cn('grid gap-2', className)}>
       <div className="flex justify-end gap-px px-3 pt-2">
-        {(['grid', 'table'] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={view === v}
-            onClick={() => {
-              setView(v);
-            }}
-            className={cn(
-              'h-8 border border-outline px-2 text-[11px]',
-              view === v ? 'bg-primary text-on-primary' : 'bg-canvas text-text',
-            )}
-          >
-            {v === 'grid' ? gridLabel : tableLabel}
-          </button>
-        ))}
+        <ToggleGroup
+          label={`${gridLabel} / ${tableLabel}`}
+          options={[
+            { id: 'grid', label: gridLabel },
+            { id: 'table', label: tableLabel },
+          ]}
+          value={view}
+          onChange={setView}
+        />
       </div>
       {view === 'grid' ? (
         <div
@@ -120,7 +114,7 @@ export function CalendarGrid(props: CalendarGridProps) {
           {weekdays.map((name) => (
             <div
               key={name}
-              className="bg-chrome py-1 text-center text-[11px] text-text-muted"
+              className="bg-chrome py-1 text-center text-tiny text-text-muted"
             >
               {name}
             </div>
@@ -158,12 +152,12 @@ export function CalendarGrid(props: CalendarGridProps) {
                 }}
               >
                 <span className="flex items-center justify-between">
-                  <span className="num bg-canvas px-0.5 text-[11px] text-text">
+                  <span className="num bg-canvas px-0.5 text-tiny text-text">
                     {Number(day.date.slice(8))}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="num bg-canvas px-0.5 text-[11px] text-text-muted"
+                    className="num bg-canvas px-0.5 text-tiny text-text-muted"
                   >
                     {marks.join(' ')}
                   </span>
@@ -171,9 +165,9 @@ export function CalendarGrid(props: CalendarGridProps) {
                 {day.spent === null || day.spent.amountMinor === 0 ? null : (
                   <span
                     aria-hidden="true"
-                    className="num self-start truncate bg-canvas px-0.5 text-[11px] text-text"
+                    className="num self-start truncate bg-canvas px-0.5 text-tiny text-text"
                   >
-                    {formatMoneyShort(day.spent, locale)}
+                    {formatMoney(day.spent, mode, locale)}
                   </span>
                 )}
               </button>
@@ -191,7 +185,7 @@ export function CalendarGrid(props: CalendarGridProps) {
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">{month.month}</caption>
           <thead>
-            <tr className="bg-chrome text-[11px] text-text-muted">
+            <tr className="bg-chrome text-tiny text-text-muted">
               <th scope="col" className="px-3 py-1 font-normal">
                 {headers.date}
               </th>

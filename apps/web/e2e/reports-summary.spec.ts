@@ -125,6 +125,13 @@ test('the summary tab shows figures, categories, payees and days', async ({
   await noSidewaysScroll(page);
   expect(await tooSmall(page)).toEqual([]);
   await expectAccessible(page);
+
+  // A payee row opens the entries list filtered to that payee.
+  await payees.getByText('Corner market').click();
+  await expect(page).toHaveURL(/\/transactions\?.*payee=Corner/);
+  await expect(
+    page.getByText(t('transactions.filter.payee', { name: 'Corner market' })),
+  ).toBeVisible();
 });
 
 test('a category folds away its children by keyboard', async ({

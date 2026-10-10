@@ -30,7 +30,7 @@ import { categoriesQuery, tagsQuery } from '@/lib/ledger';
 import { categoryQueryKeys, invalidate, updateCategory } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { TileFailed } from '../dashboard/tiles/tile-failed.tsx';
-import { reorder } from '../budget/cover-order-model.ts';
+import { reorder } from '@/lib/reorder';
 import {
   categoryRows,
   positionChanges,

@@ -55,6 +55,7 @@ import {
   categorySchema,
   createCategoryBodySchema,
   categorySummarySchema,
+  payeeReportSchema,
   cycleDayListSchema,
   accountHistorySchema,
   cycleDetailSchema,
@@ -662,6 +663,11 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/reports/categories',
     response: categorySummarySchema,
+  }),
+  payeeReport: endpoint({
+    method: 'GET',
+    path: '/v1/reports/payees',
+    response: payeeReportSchema,
   }),
   cycleDays: endpoint({
     method: 'GET',

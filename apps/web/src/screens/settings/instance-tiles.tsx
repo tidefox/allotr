@@ -24,7 +24,7 @@ import {
   Notice,
   SecretField,
   SettingRow,
-} from './settings-parts.tsx';
+} from './setting-parts.tsx';
 
 const modes = registrationModeSchema.options;
 const lifetimes = [1, 7, 30] as const;

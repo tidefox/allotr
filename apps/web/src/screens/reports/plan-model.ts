@@ -1,4 +1,4 @@
-import type { BudgetView, CycleSummaryView, LocalDate } from '@allotr/shared';
+import type { BudgetView, CycleSummaryView } from '@allotr/shared';
 import type { ColumnDatum } from '@/charts/columns';
 import { formatDay } from '@/features/today/format';
 import { spentShare } from '@/features/budget/share';
@@ -6,7 +6,7 @@ import { t } from '@/messages/t';
 import { formatRate, fractionsOf } from './cycles-model.ts';
 
 // What the plan tab shows: budgets against what was spent, the savings rate
-// per cycle and the span of the net worth chart. All amounts are the
+// per cycle. All amounts are the
 // server's; fractions only size bars.
 
 export type BudgetRow = Readonly<{
@@ -48,27 +48,4 @@ export function rateColumns(
     xLabel: formatDay(cycle.openedOn, locale),
     color: 'series-3',
   }));
-}
-
-export const MIN_WORTH_DAYS = 7;
-export const MAX_WORTH_DAYS = 731;
-
-const DAY_MS = 86_400_000;
-
-/**
- * Days the net worth chart covers: from the period's first day through
- * today, kept within what the API allows. Calendar days only.
- */
-export function worthDays(
-  from: LocalDate | undefined,
-  today: LocalDate,
-): number {
-  if (from === undefined) return MAX_WORTH_DAYS;
-  const span =
-    Math.round(
-      (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
-        DAY_MS,
-    ) + 1;
-  if (!Number.isFinite(span)) return MIN_WORTH_DAYS;
-  return Math.min(MAX_WORTH_DAYS, Math.max(MIN_WORTH_DAYS, span));
 }
