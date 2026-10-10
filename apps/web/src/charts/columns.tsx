@@ -60,7 +60,7 @@ export function Columns({
                 width: `${String(slot.width)}%`,
               }}
             >
-              <span className="truncate text-center font-num text-[0.6875rem] text-text">
+              <span className="truncate text-center font-num text-tiny text-text">
                 {d.valueLabel}
               </span>
               <div
@@ -78,7 +78,7 @@ export function Columns({
           return (
             <span
               key={d.id}
-              className="absolute truncate text-center font-num text-[0.6875rem] text-text-muted"
+              className="absolute truncate text-center font-num text-tiny text-text-muted"
               style={{
                 left: `${String(slot.x)}%`,
                 width: `${String(slot.width)}%`,

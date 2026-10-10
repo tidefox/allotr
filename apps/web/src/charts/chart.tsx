@@ -119,7 +119,7 @@ export function Chart({
     >
       <div
         aria-hidden="true"
-        className="relative w-10 font-num text-[0.6875rem] text-text-muted"
+        className="relative w-10 font-num text-tiny text-text-muted"
       >
         {yTicks.map((t) => (
           <span
@@ -191,7 +191,7 @@ export function Chart({
         {today ? (
           <span
             aria-hidden="true"
-            className="absolute top-0 -translate-x-1/2 bg-canvas px-1 font-num text-[0.6875rem] text-text"
+            className="absolute top-0 -translate-x-1/2 bg-canvas px-1 font-num text-tiny text-text"
             style={{ left: `${String(toPercent(today.x, x, 'x'))}%` }}
           >
             {today.label}
@@ -212,7 +212,7 @@ export function Chart({
               />
               {s.endLabel === undefined ? null : (
                 <span
-                  className="absolute -translate-y-full whitespace-nowrap bg-canvas px-1 font-num text-[0.6875rem] text-text"
+                  className="absolute -translate-y-full whitespace-nowrap bg-canvas px-1 font-num text-tiny text-text"
                   style={{
                     right: `${String(100 - g.end.x)}%`,
                     top: `${String(g.end.y)}%`,
@@ -228,7 +228,7 @@ export function Chart({
       <span aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="relative mt-2 h-4 font-num text-[0.6875rem] text-text-muted"
+        className="relative mt-2 h-4 font-num text-tiny text-text-muted"
       >
         {xTicks.map((t) => {
           const left = toPercent(t.value, x, 'x');

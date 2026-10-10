@@ -71,7 +71,7 @@ export function Allocation({
           ))}
         </div>
       ) : null}
-      <p className="num text-right text-[11px] text-text">
+      <p className="num text-right text-tiny text-text">
         {leftLabel} {formatMoney(left.amount, mode, locale)} {ofLabel}{' '}
         {formatMoney(left.of, mode, locale)}
       </p>
@@ -83,14 +83,14 @@ export function Allocation({
                 aria-hidden="true"
                 className={cn('size-2 shrink-0', seriesBg[s.color])}
               />
-              <span className="truncate text-[11px] text-text-muted">
+              <span className="truncate text-tiny text-text-muted">
                 {s.label}
               </span>
             </div>
             <div className="num truncate text-text">
               {formatMoney(s.amount, mode, locale)}
             </div>
-            <div className="num text-[11px] text-text-muted">
+            <div className="num text-tiny text-text-muted">
               {percent(s.fraction)}
             </div>
           </li>

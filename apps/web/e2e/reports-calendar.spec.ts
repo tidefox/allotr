@@ -109,9 +109,9 @@ test('the calendar shows the month, a picked day and opens its entry', async ({
   await expect(heat).toHaveAttribute('aria-pressed', 'false');
 
   // The table view lists every day.
-  await month.getByRole('button', { name: t('reportsCalendar.table') }).click();
+  await month.getByRole('radio', { name: t('reportsCalendar.table') }).click();
   await expect(month.getByRole('table')).toBeVisible();
-  await month.getByRole('button', { name: t('reportsCalendar.grid') }).click();
+  await month.getByRole('radio', { name: t('reportsCalendar.grid') }).click();
 
   // Stepping back a month: its first day has nothing on it.
   await month

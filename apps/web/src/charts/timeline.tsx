@@ -108,7 +108,7 @@ export function Timeline({
             style={{ left: `${String(pos(day, days))}%` }}
           >
             <div className="h-1.5 w-px bg-outline" />
-            <div className="num pt-0.5 text-[11px] whitespace-nowrap text-text-muted compact:hidden">
+            <div className="num pt-0.5 text-tiny whitespace-nowrap text-text-muted compact:hidden">
               {dayLabel(day)}
             </div>
           </div>
@@ -156,7 +156,7 @@ export function Timeline({
               />
               <span
                 className={cn(
-                  'num text-[11px] whitespace-nowrap compact:hidden',
+                  'num text-tiny whitespace-nowrap compact:hidden',
                   muted ? 'text-text-muted' : 'text-text',
                 )}
               >
