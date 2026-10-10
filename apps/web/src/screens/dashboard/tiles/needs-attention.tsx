@@ -90,6 +90,10 @@ export function NeedsAttentionTile() {
     mutationFn: (id: string) => markRead([id]),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reminders'] }),
   });
+  const readAll = useMutation({
+    mutationFn: () => markRead(undefined),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reminders'] }),
+  });
   const title = t('dashboardTiles.needsAttention.title');
 
   if (today.isError || reminders.isError) {
@@ -117,6 +121,18 @@ export function NeedsAttentionTile() {
     <Tile
       title={title}
       subtitle={items.length === 0 ? undefined : String(items.length)}
+      actions={
+        items.some((item) => item.kind === 'reminder') ? (
+          <BracketButton
+            isDisabled={readAll.isPending}
+            onPress={() => {
+              readAll.mutate();
+            }}
+          >
+            {t('dashboardTiles.needsAttention.markAllRead')}
+          </BracketButton>
+        ) : undefined
+      }
       bodyClassName="px-0 pb-0"
     >
       {items.length === 0 ? (

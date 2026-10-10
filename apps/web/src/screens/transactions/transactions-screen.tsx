@@ -27,6 +27,7 @@ import {
 } from './filter-model.ts';
 import { sections, summaryParts } from './list-model.ts';
 import { periodRange } from './period.ts';
+import { reorderableDays, stepsFor } from './reorder-model.ts';
 import {
   searchOf,
   validateTransactionsSearch,
@@ -34,6 +35,7 @@ import {
   type TransactionsView,
 } from './search-params.ts';
 import { TransactionsToolbar } from './toolbar.tsx';
+import { useDayMove } from './use-day-move.ts';
 
 const locale = 'en';
 
@@ -162,6 +164,16 @@ export function TransactionsScreen() {
     });
   }, [pages, allAccounts, allCategories, view.group]);
 
+  const movable = useMemo(
+    () => reorderableDays(model ?? [], view.group, list.hasNextPage),
+    [model, view.group, list.hasNextPage],
+  );
+  const dayMove = useDayMove(
+    (id) =>
+      model?.flatMap((section) => section.rows).find((row) => row.id === id)
+        ?.payee ?? '',
+  );
+
   const select = (entry: string | undefined) => {
     change({ entry });
   };
@@ -226,14 +238,23 @@ export function TransactionsScreen() {
         onLoadMore={() => {
           if (!list.isFetchingNextPage) void list.fetchNextPage();
         }}
+        movable={movable}
+        moving={dayMove.busy}
+        onMove={dayMove.move}
       />
     );
   }
 
+  const steps = stepsFor(model ?? [], movable, view.entry);
   const detail =
     view.entry === undefined ? null : (
       <EntryDetail
         entryId={view.entry}
+        order={
+          steps === null
+            ? undefined
+            : { ...steps, busy: dayMove.busy, onMove: dayMove.move }
+        }
         onOpen={select}
         onClose={() => {
           select(undefined);
@@ -268,6 +289,17 @@ export function TransactionsScreen() {
                 });
               }}
             />
+            {dayMove.problem === null ? null : (
+              <p
+                role="alert"
+                className="border-b px-3 py-2 text-small text-negative"
+              >
+                {dayMove.problem}
+              </p>
+            )}
+            <p role="status" className="sr-only">
+              {dayMove.announcement}
+            </p>
             {body}
           </Tile>
         }

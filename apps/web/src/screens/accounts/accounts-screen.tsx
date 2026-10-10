@@ -26,6 +26,7 @@ import { AccountDetail } from './detail/account-detail.tsx';
 import { ArchiveSheet } from './detail/archive-sheet.tsx';
 import { ReconcileSheet } from './detail/reconcile-sheet.tsx';
 import { MoveSheet } from './move-sheet.tsx';
+import { NewAccountSheet } from './new-account-sheet.tsx';
 import { RenameSheet } from './rename-sheet.tsx';
 import { validateAccountsSearch } from './search-params.ts';
 
@@ -59,6 +60,7 @@ export function AccountsScreen() {
   const worth = useQuery(netWorthQuery(30));
   const today = useQuery(todayQuery);
   const [open, setOpen] = useState<Open | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const select = (account: string | undefined) => {
     const search = account === undefined ? {} : { account };
@@ -201,6 +203,15 @@ export function AccountsScreen() {
           <Tile
             title={t('accountsScreen.list.title')}
             subtitle={t('accountsScreen.list.subtitle')}
+            actions={
+              <BracketButton
+                onPress={() => {
+                  setAdding(true);
+                }}
+              >
+                {t('accountsScreen.add.action')}
+              </BracketButton>
+            }
             bodyClassName="px-0 pb-0"
           >
             {body}
@@ -234,6 +245,17 @@ export function AccountsScreen() {
           {detail}
         </Sheet>
       )}
+      {adding ? (
+        <NewAccountSheet
+          onClose={() => {
+            setAdding(false);
+          }}
+          onCreated={(account) => {
+            setAdding(false);
+            select(account.id);
+          }}
+        />
+      ) : null}
       {open?.action === 'rename' ? (
         <RenameSheet account={open.account} onClose={closeSheet} />
       ) : null}

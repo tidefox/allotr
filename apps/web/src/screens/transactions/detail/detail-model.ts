@@ -29,6 +29,8 @@ export interface EntryDetailModel {
   superseded: boolean;
   canEdit: boolean;
   canSplit: boolean;
+  /** A logged expense in a category can be split with people. */
+  canIou: boolean;
   canCover: boolean;
   canDelete: boolean;
   canRestore: boolean;
@@ -70,6 +72,7 @@ export function entryDetail(
     superseded,
     canEdit: editable,
     canSplit: editable && entry.kind !== 'transfer',
+    canIou: editable && entry.kind === 'expense' && entry.categoryId !== null,
     canCover: live && entry.kind === 'expense',
     canDelete: live && real,
     // Only an undone entry that was not already brought back.

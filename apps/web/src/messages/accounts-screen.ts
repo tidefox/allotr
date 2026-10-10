@@ -74,5 +74,11 @@ export const accountsScreen = {
       'This moves it off budget: its balance counts as savings and leaves what you can spend.',
     noOther: 'There is no other pool to move it to.',
   },
+  add: {
+    action: '+ account',
+    title: 'New account',
+    loading: 'Loading…',
+    failed: 'The form could not be loaded. Try again.',
+  },
   cancel: 'Cancel',
 } as const;

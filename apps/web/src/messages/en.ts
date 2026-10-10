@@ -151,6 +151,11 @@ export const en = {
     },
   },
   transactions: {
+    reorder: {
+      day: 'Entries of {day}',
+      moved: '{name} moved to {position} of {count}.',
+      hint: 'Drag an entry, or press its drag key, to change its place in the day.',
+    },
     list: {
       title: 'Entries',
       failed: 'Could not load entries.',
@@ -309,6 +314,7 @@ export const en = {
       actionOpen: 'Open',
       more: 'More actions for this item',
       markRead: 'Mark read',
+      markAllRead: 'mark all read',
     },
     todaysEntries: {
       title: 'Today’s entries',
@@ -373,6 +379,9 @@ export const en = {
       synced: 'synced',
       syncing: 'syncing',
       offline: 'offline',
+      update: 'new version ready',
+      reload: 'reload',
+      later: 'later',
     },
     slots: {
       summary: 'Summary',
@@ -452,6 +461,7 @@ export const en = {
     create: {
       name: 'Name',
       currency: 'Currency',
+      group: 'Counts toward',
       balance: 'Opening balance in {currency}',
       balanceHint: 'Optional. Negative for money owed, such as a card.',
       save: 'Add account',

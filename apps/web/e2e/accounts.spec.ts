@@ -181,3 +181,43 @@ test('moving an account to another pool regroups it, by keyboard', async ({
     }),
   ).toBeVisible();
 });
+
+test('+ account opens a sheet, adds an account and refuses a taken name', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  const add = page.getByRole('button', {
+    name: t('accountsScreen.add.action'),
+  });
+  await expect(add).toBeVisible();
+  await add.click();
+
+  const sheet = page.getByRole('dialog', {
+    name: t('accountsScreen.add.title'),
+  });
+  await expect(sheet).toBeVisible();
+  const name = sheet.getByRole('textbox', { name: t('accounts.create.name') });
+  await expect(name).toBeFocused();
+  await expectAccessible(page);
+
+  // An empty name is refused before anything is sent.
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(
+    sheet.getByText(t('accounts.create.errors.nameRequired')),
+  ).toBeVisible();
+
+  // A name another open account has is refused by the server.
+  await name.fill('Nest egg');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(
+    sheet.getByText(t('accounts.create.errors.nameTaken')),
+  ).toBeVisible();
+
+  await name.fill('Holiday jar');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(sheet).toBeHidden();
+  await expect(rowOf(page, 'Holiday jar')).toBeVisible();
+  await expect(page).toHaveURL(/account=/);
+});

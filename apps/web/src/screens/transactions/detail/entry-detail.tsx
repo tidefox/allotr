@@ -15,9 +15,12 @@ import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon } from '@/components/states';
 import {
+  IconArrowDownLine,
+  IconArrowUpLine,
   IconCloseLine,
   IconDeleteBinLine,
   IconEditLine,
+  IconGroupLine,
   IconHistoryLine,
   IconMoneyDollarCircleLine,
   IconScissorsCutLine,
@@ -50,6 +53,8 @@ import {
   type EntryDetailModel,
 } from './detail-model.ts';
 import { EditSheet } from './edit-sheet.tsx';
+import { IouSheet } from './iou-sheet.tsx';
+import type { Move } from '../reorder-model.ts';
 
 const locale = 'en';
 
@@ -63,10 +68,13 @@ export function EntryDetail({
   entryId,
   onClose,
   onOpen,
+  order,
 }: {
   entryId: string;
   onClose: () => void;
   onOpen?: (id: string) => void;
+  /** The entry's place in its day, when the list can move it. */
+  order?: DayOrder | undefined;
 }) {
   const entry = useQuery(entryQuery(entryId));
   const accounts = useQuery(allAccountsQuery);
@@ -120,8 +128,17 @@ export function EntryDetail({
       categories={categories.data.categories}
       closeButton={closeButton}
       onOpen={onOpen ?? onClose}
+      order={order}
     />
   );
+}
+
+/** Moves within the entry's day; null for a step past an edge. */
+export interface DayOrder {
+  up: Move | null;
+  down: Move | null;
+  busy: boolean;
+  onMove: (move: Move) => void;
 }
 
 function DetailBody({
@@ -130,7 +147,9 @@ function DetailBody({
   categories,
   closeButton,
   onOpen,
+  order,
 }: {
+  order: DayOrder | undefined;
   entry: TransactionView;
   model: EntryDetailModel;
   categories: readonly CategoryView[];
@@ -138,7 +157,9 @@ function DetailBody({
   onOpen: (id: string) => void;
 }) {
   const queryClient = useQueryClient();
-  const [sheet, setSheet] = useState<'edit' | 'split' | 'cover' | null>(null);
+  const [sheet, setSheet] = useState<'edit' | 'split' | 'iou' | 'cover' | null>(
+    null,
+  );
   const { row } = model;
   const refresh = () => {
     for (const queryKey of entryQueryKeys)
@@ -269,6 +290,16 @@ function DetailBody({
             {t('transactionDetail.actions.split')}
           </BracketButton>
         ) : null}
+        {model.canIou ? (
+          <BracketButton
+            icon={IconGroupLine}
+            onPress={() => {
+              setSheet('iou');
+            }}
+          >
+            {t('transactionDetail.actions.iou')}
+          </BracketButton>
+        ) : null}
         {model.canCover && covered ? (
           <BracketButton
             onPress={() => {
@@ -278,6 +309,28 @@ function DetailBody({
             {t('transactionDetail.actions.cover')}
           </BracketButton>
         ) : null}
+        {order === undefined ? null : (
+          <>
+            <BracketButton
+              icon={IconArrowUpLine}
+              isDisabled={order.up === null || order.busy}
+              onPress={() => {
+                if (order.up !== null) order.onMove(order.up);
+              }}
+            >
+              {t('transactionDetail.order.up')}
+            </BracketButton>
+            <BracketButton
+              icon={IconArrowDownLine}
+              isDisabled={order.down === null || order.busy}
+              onPress={() => {
+                if (order.down !== null) order.onMove(order.down);
+              }}
+            >
+              {t('transactionDetail.order.down')}
+            </BracketButton>
+          </>
+        )}
         {model.canDelete ? (
           <BracketButton
             tone="destructive"
@@ -316,6 +369,18 @@ function DetailBody({
         <EditSheet
           entry={entry}
           split={sheet === 'split'}
+          onClose={() => {
+            setSheet(null);
+          }}
+          onSaved={(id) => {
+            setSheet(null);
+            onOpen(id);
+          }}
+        />
+      ) : null}
+      {sheet === 'iou' && model.canIou ? (
+        <IouSheet
+          entry={entry}
           onClose={() => {
             setSheet(null);
           }}
