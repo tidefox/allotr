@@ -151,6 +151,11 @@ export const en = {
     },
   },
   transactions: {
+    reorder: {
+      day: 'Entries of {day}',
+      moved: '{name} moved to {position} of {count}.',
+      hint: 'Drag an entry, or press its drag key, to change its place in the day.',
+    },
     list: {
       title: 'Entries',
       failed: 'Could not load entries.',
@@ -308,6 +313,7 @@ export const en = {
       actionOpen: 'Open',
       more: 'More actions for this item',
       markRead: 'Mark read',
+      markAllRead: 'mark all read',
     },
     todaysEntries: {
       title: 'Today’s entries',

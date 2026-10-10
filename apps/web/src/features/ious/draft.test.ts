@@ -12,6 +12,7 @@ import {
   fillEven,
   ownShareOf,
   parseEntryDate,
+  toConvertBody,
   toLoanBody,
   toSplitBody,
 } from './draft.ts';
@@ -221,5 +222,60 @@ describe('parseEntryDate', () => {
       ok: true,
       date: recorded,
     });
+  });
+});
+
+describe('toConvertBody', () => {
+  it('fills untyped amounts with an even share of the bill', () => {
+    const result = toConvertBody(
+      usd(9000),
+      [
+        { ...emptyPerson, person: ' Sam ' },
+        { ...emptyPerson, person: 'Alex' },
+      ],
+      'en',
+    );
+    expect(result).toEqual({
+      ok: true,
+      body: {
+        people: [
+          { person: 'Sam', amount: usd(3000) },
+          { person: 'Alex', amount: usd(3000) },
+        ],
+      },
+    });
+  });
+
+  it('keeps an amount the user typed', () => {
+    const result = toConvertBody(
+      usd(9000),
+      [
+        { person: 'Sam', amount: '50.00', dueOn: '', edited: true },
+        { ...emptyPerson, person: 'Alex' },
+      ],
+      'en',
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      body: {
+        people: [
+          { person: 'Sam', amount: usd(5000) },
+          { person: 'Alex', amount: usd(2000) },
+        ],
+      },
+    });
+  });
+
+  it('points at the person with no name or no usable amount', () => {
+    expect(
+      toConvertBody(usd(9000), [{ ...emptyPerson, amount: '1.00' }], 'en'),
+    ).toMatchObject({ ok: false, errors: { 0: 'person' } });
+    expect(
+      toConvertBody(
+        usd(9000),
+        [{ person: 'Sam', amount: 'lots', dueOn: '', edited: true }],
+        'en',
+      ),
+    ).toMatchObject({ ok: false, errors: { 0: 'amount' } });
   });
 });

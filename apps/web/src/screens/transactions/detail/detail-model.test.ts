@@ -113,6 +113,7 @@ describe('entryDetail', () => {
       accounts: ['Everyday'],
       canEdit: true,
       canSplit: true,
+      canIou: true,
       canCover: true,
       canDelete: true,
       canRestore: false,
@@ -135,6 +136,7 @@ describe('entryDetail', () => {
     expect(entryDetail(income, accounts, categories)).toMatchObject({
       canEdit: true,
       canSplit: true,
+      canIou: false,
       canCover: false,
     });
     const transfer = entry({
@@ -157,6 +159,7 @@ describe('entryDetail', () => {
     });
     const model = entryDetail(transfer, accounts, categories);
     expect(model.canSplit).toBe(false);
+    expect(model.canIou).toBe(false);
     expect(model.canEdit).toBe(true);
     expect(model.accounts).toEqual(['Everyday', 'Savings']);
   });

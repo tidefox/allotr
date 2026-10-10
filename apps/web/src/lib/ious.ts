@@ -18,6 +18,14 @@ export const allIousQuery = queryOptions({
   queryFn: () => call(endpoints.ious, { query: { status: 'all' } }),
 });
 
+/** Names used before, for suggestions while one is typed. */
+export function peopleQuery(query: string) {
+  return queryOptions({
+    queryKey: ['today', 'ious', 'people', query],
+    queryFn: () => call(endpoints.iouPeople, { query: { query, limit: 8 } }),
+  });
+}
+
 /** What an IOU change touches: figures, entries and balances. */
 export const iouQueryKeys = [
   ['today'],

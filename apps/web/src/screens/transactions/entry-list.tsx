@@ -1,4 +1,10 @@
 import { useEffect, useRef } from 'react';
+import {
+  Button,
+  GridList,
+  GridListItem,
+  useDragAndDrop,
+} from 'react-aria-components';
 import { Amount, type AmountKind } from '@/components/amount';
 import { BracketButton, Chip } from '@/components/buttons';
 import { Row } from '@/components/row';
@@ -10,6 +16,7 @@ import { seriesNumber } from '@/lib/category-style';
 import { t } from '@/messages/t';
 import type { FilterChip } from './filter-model.ts';
 import type { TxRow, TxSection } from './list-model.ts';
+import { dropMove, type Move } from './reorder-model.ts';
 
 const columns: readonly RowColumn[] = [
   { width: '2.75rem' },
@@ -25,6 +32,39 @@ function kindOf(row: TxRow): AmountKind {
   return (row.amount?.amountMinor ?? 0) < 0 ? 'expense' : 'income';
 }
 
+function rowCells(row: TxRow) {
+  const colour =
+    row.style === null ? undefined : seriesNumber(row.style.colour);
+  return [
+    <span key="time" className="num text-text-muted">
+      {row.time ?? t('transactions.list.noTime')}
+    </span>,
+    <span key="payee" className="flex items-center gap-2">
+      {row.style?.icon == null ? (
+        <IconMoneyDollarCircleLine
+          aria-hidden="true"
+          className="size-4 shrink-0 text-text-muted"
+        />
+      ) : (
+        <CategoryIcon
+          name={row.style.icon}
+          {...(colour === undefined ? {} : { color: colour })}
+        />
+      )}
+      <span className="truncate font-sans">{row.payee}</span>
+    </span>,
+    <span key="category" className="font-sans text-text-muted">
+      {row.category ?? ''}
+    </span>,
+    <span key="account" className="font-sans text-text-muted">
+      {row.account}
+    </span>,
+    row.amount === null ? null : (
+      <Amount key="amount" amount={row.amount} kind={kindOf(row)} />
+    ),
+  ];
+}
+
 function EntryRow({
   row,
   selected,
@@ -34,8 +74,6 @@ function EntryRow({
   selected: boolean;
   onSelect: (id: string) => void;
 }) {
-  const colour =
-    row.style === null ? undefined : seriesNumber(row.style.colour);
   return (
     <Row
       tall
@@ -45,35 +83,81 @@ function EntryRow({
       onPress={() => {
         onSelect(row.id);
       }}
-      cells={[
-        <span key="time" className="num text-text-muted">
-          {row.time ?? t('transactions.list.noTime')}
-        </span>,
-        <span key="payee" className="flex items-center gap-2">
-          {row.style?.icon == null ? (
-            <IconMoneyDollarCircleLine
-              aria-hidden="true"
-              className="size-4 shrink-0 text-text-muted"
-            />
-          ) : (
-            <CategoryIcon
-              name={row.style.icon}
-              {...(colour === undefined ? {} : { color: colour })}
-            />
-          )}
-          <span className="truncate font-sans">{row.payee}</span>
-        </span>,
-        <span key="category" className="font-sans text-text-muted">
-          {row.category ?? ''}
-        </span>,
-        <span key="account" className="font-sans text-text-muted">
-          {row.account}
-        </span>,
-        row.amount === null ? null : (
-          <Amount key="amount" amount={row.amount} kind={kindOf(row)} />
-        ),
-      ]}
+      cells={rowCells(row)}
     />
+  );
+}
+
+/**
+ * One day's rows as a list that can be reordered (docs/ui.md §5, moving
+ * items): drag a row with the mouse, long-press then drag on touch, or
+ * focus a row, press → to reach its drag key and use the arrows. There is
+ * no visible handle. The entry's own detail has move up and move down.
+ */
+function MovableDay({
+  label,
+  rows,
+  selectedId,
+  busy,
+  onSelect,
+  onMove,
+}: {
+  label: string;
+  rows: readonly TxRow[];
+  selectedId: string | undefined;
+  busy: boolean;
+  onSelect: (id: string) => void;
+  onMove: (move: Move) => void;
+}) {
+  const ids = rows.map((row) => row.id);
+  const { dragAndDropHooks } = useDragAndDrop({
+    isDisabled: busy,
+    getItems: (keys) => [...keys].map((key) => ({ 'text/plain': String(key) })),
+    onReorder: (event) => {
+      const move = dropMove(
+        ids,
+        new Set([...event.keys].map(String)),
+        String(event.target.key),
+        event.target.dropPosition === 'before' ? 'before' : 'after',
+      );
+      if (move !== null) onMove(move);
+    },
+  });
+  return (
+    <GridList
+      aria-label={label}
+      dragAndDropHooks={dragAndDropHooks}
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={selectedId === undefined ? [] : [selectedId]}
+      onSelectionChange={(keys) => {
+        const [first] = keys === 'all' ? [] : [...keys];
+        if (first !== undefined) onSelect(String(first));
+      }}
+    >
+      {rows.map((row) => (
+        <GridListItem
+          key={row.id}
+          id={row.id}
+          textValue={row.payee}
+          className="press relative block cursor-pointer outline-none data-[dragging]:bg-card data-[drop-target]:bg-card"
+        >
+          <Button
+            slot="drag"
+            className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-0 focus-visible:right-0 focus-visible:z-10 focus-visible:bg-chrome focus-visible:px-2 focus-visible:text-small focus-visible:text-primary"
+          >
+            ⠿
+          </Button>
+          <Row
+            tall
+            className="cv-row"
+            columns={columns}
+            selected={row.id === selectedId}
+            cells={rowCells(row)}
+          />
+        </GridListItem>
+      ))}
+    </GridList>
   );
 }
 
@@ -120,6 +204,9 @@ export function EntryList({
   hasMore,
   loadingMore,
   onLoadMore,
+  movable,
+  moving,
+  onMove,
 }: {
   summary: readonly string[];
   sections: readonly TxSection[];
@@ -129,6 +216,10 @@ export function EntryList({
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** The days whose rows can be dragged (section keys). */
+  movable: ReadonlySet<string>;
+  moving: boolean;
+  onMove: (move: Move) => void;
 }) {
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -181,14 +272,27 @@ export function EntryList({
                 )}
               </h3>
             )}
-            {section.rows.map((row) => (
-              <EntryRow
-                key={row.id}
-                row={row}
-                selected={row.id === selectedId}
+            {movable.has(section.key) ? (
+              <MovableDay
+                label={t('transactions.reorder.day', {
+                  day: section.title ?? '',
+                })}
+                rows={section.rows}
+                selectedId={selectedId}
+                busy={moving}
                 onSelect={onSelect}
+                onMove={onMove}
               />
-            ))}
+            ) : (
+              section.rows.map((row) => (
+                <EntryRow
+                  key={row.id}
+                  row={row}
+                  selected={row.id === selectedId}
+                  onSelect={onSelect}
+                />
+              ))
+            )}
           </section>
         ))
       )}

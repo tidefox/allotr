@@ -55,6 +55,30 @@ export const settingsApp = {
     on: 'On',
     off: 'Off',
   },
+  notifications: {
+    title: 'Notifications',
+    subtitle: 'on this device',
+    privacy:
+      "Off until you turn it on. Notifications go through your browser vendor's push service, which sees that a notification was sent but not your figures. Reminders still appear in the app without it.",
+    unsupported: 'This browser cannot show notifications for installed apps.',
+    blocked: 'Notifications are blocked for this site in the browser settings.',
+    serverOff: 'This server cannot send notifications right now.',
+    retry: 'try again',
+    push: 'Push notifications',
+    on: 'On for this device',
+    off: 'Off for this device',
+    turnOn: 'turn on',
+    turnOff: 'turn off',
+    test: 'send test',
+    testSent: 'A test notification was sent.',
+    testNone: 'The test notification could not be delivered.',
+    problems: {
+      refused: 'Permission was not given, so nothing was turned on.',
+      'no-worker':
+        'The app is not installed as an offline app in this browser yet. Try again after a reload.',
+      invalid: 'The browser gave a subscription Allotr could not use.',
+    },
+  },
   planned: {
     title: 'Planned',
     subtitle: 'ADR 0029',

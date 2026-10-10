@@ -34,6 +34,7 @@ import {
   themeFileText,
 } from './app-model.ts';
 import { BracketLink, SettingRow, Swatches } from './app-parts.tsx';
+import { NotificationsTile } from './notifications-tile.tsx';
 import { useThemeImport } from './use-theme-import.ts';
 
 // Settings, App (docs/ui.md §6): the palette for each mode, the user's own
@@ -571,6 +572,7 @@ export function AppTab() {
     <Grid className="min-h-full content-start">
       <PaletteTile custom={customPalettes} />
       <InterfaceTile />
+      <NotificationsTile />
       <ThemesTile
         userId={session?.user.id ?? ''}
         customThemes={customThemes}
