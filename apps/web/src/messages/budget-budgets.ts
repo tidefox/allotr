@@ -76,7 +76,6 @@ export const budgetBudgets = {
   },
   order: {
     title: 'cover order',
-    subtitle: 'first to last',
     listLabel: 'Cover order',
     intro:
       'When a budget runs out, money is taken from these, top first. Drag a row (long-press on touch), or use ↑ ↓. Bills are never used.',

@@ -9,10 +9,6 @@ export const budgetGoalsIous = {
   saving: 'Saving…',
   goals: {
     title: 'goals',
-    subtitle: {
-      one: '{count} goal',
-      other: '{count} goals',
-    },
     addShort: 'goal',
     addLabel: 'Add a goal',
     actionsOf: 'Actions for {name}',
@@ -71,7 +67,6 @@ export const budgetGoalsIous = {
     youOweTag: 'you owe',
     settledTag: 'settled',
     overdueTag: '{count}d late',
-    writeOffTag: 'write-off',
     openMany: '{count} open',
     detailTitle: 'person',
     pickOne: 'no person selected',
