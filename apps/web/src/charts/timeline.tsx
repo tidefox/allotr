@@ -58,9 +58,9 @@ export function anchorOf(day: number, days: number): 'start' | 'mid' | 'end' {
 
 // The column's edge (start, end) or centre (mid) sits on the day.
 const COLUMN = {
-  start: '-translate-x-[3px] items-start',
+  start: 'items-start',
   mid: '-translate-x-1/2 items-center',
-  end: '-translate-x-[calc(100%-3px)] items-end',
+  end: '-translate-x-full items-end',
 } as const;
 
 // The locked design's four lanes (`up`, `dn`, `up2`, `dn2`) around the axis
