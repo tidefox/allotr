@@ -214,27 +214,27 @@ column setting, 4 from 1500.
 
 | Component | Spec |
 |---|---|
-| **Tile** (`pane`) | `canvas` background. A title bar on `chrome`: a muted icon, the title (semibold) and a muted subtitle on one truncated line, actions on the right. The body starts 8 px below it and is padded 0 12 10. Focused or primary tiles get a 3 px `primary` inset on the title bar and a `primary` title. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. |
+| **Tile** (`pane`) | `canvas` background. A title bar on `chrome`: a muted icon, the title (semibold) and a muted subtitle on one truncated line, actions on the right. The body starts 8 px below it and is padded 0 12 10. Focused or primary tiles get a 3 px `primary` inset on the title bar and a `primary` title. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. A tile spans 1 or 2 columns, `w3` (3 columns from 1500 px, the full width below) or the full width, and 1 or 2 rows (`h2`, from two columns). |
 | **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000). |
 | **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
 | **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`. |
 | **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
-| **Bracket button** | `[pay]`, with no space inside the brackets, in the surrounding text size. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
+| **Bracket button** | `[pay]`, with no space inside the brackets, in the surrounding text size. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. Links (`[all]`, `[history]`) use the same face. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
-| **Menu button** | Bordered, with label · value · ▾. Opens a menu. |
+| **Menu button** | Bordered, with label · value · ▾. Opens a menu. The strip variant is a full-height `hbtn`; the bracket variant is `[⋮]`, named by its label. |
 | **Toggle group** | Bordered segments. The pressed segment is filled `primary`. |
 | **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative` and `positive` colour the label and border; muted text has an `outline` border; `warning` colours the border and keeps a `text` label. |
 | **Chip** | A filter chip with a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
 | **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
-| **Bar** | Exact width on a `card` track. A 1 px `text` tick at even pace (days elapsed ÷ cycle length). Over budget fills `negative`. |
+| **Bar** | Exact width on a `card` track, filled `primary` or a category's series colour. A 1 px `text` tick at even pace (days elapsed ÷ period length) reaching 3 px past the track above and below. Over budget fills `negative`. |
 | **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
 | **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
-| **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (6 columns, 3 on phone) shows the amount and the share. |
+| **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A 22 px bar; a `text` bracket under the last two reads "on-budget left $X of $Y". Below, a legend strip of seamed cells running to the tile edges (`minmax(130px, 1fr)` columns, 3 on phone): swatch, label, amount (17 px semibold, free money in `positive`) and share. Fills: bills paid `outline`, savings and spent series colours, set aside `reserved`, free `success`. |
 | **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge and a larger figure: `positive` (the figure in `positive` too) or `primary`. |
 | **Key figures** | One line of up to 4 label-over-figure pairs, each as wide as its content (gap 26 px) and truncated with "…". |
 | **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone. |
-| **Chart** | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace) and a vertical "today" line. Base heights grow ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px, and charts fill their tile. |
+| **Chart** | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace), which can end in a marker and label like a series, and a dotted `outline` "today" line. End labels sit right of a point in the left 70 % and above-left further right. A legend line below names the marks (solid, dashed, tick). A chart takes a design height (×0.75 on phone, ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px) and can grow to fill its tile. |
 | **Columns** | Bar columns with value labels above, x labels below, and a 1 px baseline. |
 | **Sparkline** | 20–28 px tall, monotone line, no axes. |
 | **Timeline** | A cycle-day axis with ticks and date labels. Events alternate above and below on two levels: bills (`warning`, paid ones muted), payday (`positive`). A "today" marker and an elapsed fill (`primary`). Labels are hidden on phone. |
@@ -290,7 +290,7 @@ change (§8).
 ### Dashboard `/`
 
 Default tiles, in order: this cycle (2 × 2) · needs attention · today's
-entries · cycle allocation (full width) · budgets · next 7 days · pools ·
+entries · cycle allocation (`w3`) · budgets · next 7 days · pools ·
 emergency fund · net worth (2 wide). While a user is held to two-factor
 enrolment no tile mounts: the screen shows a note and a link to the account
 settings, so no ledger read is made that the server would refuse.

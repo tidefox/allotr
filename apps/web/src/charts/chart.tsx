@@ -369,7 +369,7 @@ export function ChartLegend({
               'mr-[5px] inline-block',
               item.mark === 'tick' ? 'h-2.5 w-px' : 'h-0.5 w-2.5',
               item.mark === 'dash'
-                ? 'bg-[repeating-linear-gradient(90deg,currentColor_0_3px,transparent_3px_5px)]'
+                ? 'bg-[repeating-linear-gradient(90deg,currentColor_0_3px,var(--canvas)_3px_5px)]'
                 : item.color,
             )}
           />

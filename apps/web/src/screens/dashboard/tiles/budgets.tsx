@@ -178,16 +178,19 @@ function BudgetLine({
             </span>
           ) : null}
         </span>,
-        <Bar
-          key="b"
-          value={row.fraction}
-          over={row.over}
-          pace={row.setAside ? undefined : pace}
-          fillClassName={
-            seriesBg[`series-${String(row.colour)}` as SeriesColor]
-          }
-          label={t('dashboardTiles.budgets.barLabel', { name: row.name })}
-        />,
+        // Room for the pace tick, which reaches past the track; a row cell
+        // clips what overflows it.
+        <div key="b" className="py-[3px]">
+          <Bar
+            value={row.fraction}
+            over={row.over}
+            pace={row.setAside ? undefined : pace}
+            fillClassName={
+              seriesBg[`series-${String(row.colour)}` as SeriesColor]
+            }
+            label={t('dashboardTiles.budgets.barLabel', { name: row.name })}
+          />
+        </div>,
         <span
           key="s"
           className={cn(
