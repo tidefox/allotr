@@ -31,7 +31,7 @@ export const settingsPolicies = {
     monthsTitle: 'emergency fund target',
     monthsLabel: 'Months',
     monthsInvalid: 'Enter a whole number from 1 to 24.',
-    writeOff: 'iOU write-off offer',
+    writeOff: 'iou write-off offer',
     writeOffValue: {
       one: 'after {count} day',
       other: 'after {count} days',

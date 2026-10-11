@@ -11,16 +11,17 @@ import {
 import type { UpdateLedgerSettingsBody } from '@allotr/shared';
 import {
   BracketButton,
+  Brackets,
   PrimaryButton,
   SettingRowFace,
   Tag,
+  bracketClass,
   settingRowClass,
 } from '@/components/buttons';
 import { MenuButton, MenuRadioItem, MenuSection } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { Sheet } from '@/components/sheet';
-import { IconEditLine } from '@/generated/icons';
 import { budgetQueryKeys } from '@/lib/budgets';
 import { ledgerSettingsQuery } from '@/lib/ledger';
 import { describeProblem, errorMessage } from '@/lib/problem';
@@ -251,15 +252,9 @@ export function BracketLink({
         ? {}
         : { 'aria-label': accessibleName })}
       {...(download ? { download: true } : {})}
-      className="press inline-flex min-h-hit min-w-hit items-center gap-1 px-1 text-small text-primary"
+      className={bracketClass}
     >
-      <span aria-hidden="true" className="text-outline">
-        [
-      </span>
-      <span>{label}</span>
-      <span aria-hidden="true" className="text-outline">
-        ]
-      </span>
+      <Brackets>{label}</Brackets>
     </Link>
   );
 }

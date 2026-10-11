@@ -1,7 +1,7 @@
 import type { PaletteTheme, Role } from '@allotr/shared';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { Checkbox } from 'react-aria-components';
+import { CheckboxButton, CheckboxField } from 'react-aria-components';
 import { IconCheckboxBlankLine, IconCheckboxLine } from '@/generated/icons';
 import { Brackets, bracketClass } from '@/components/buttons';
 import { cn } from '@/lib/utils';
@@ -108,15 +108,17 @@ export function CheckControl({
 }) {
   const Icon = checked ? IconCheckboxLine : IconCheckboxBlankLine;
   return (
-    <Checkbox
+    <CheckboxField
       aria-label={label}
       isSelected={checked}
       onChange={onChange}
-      className="press inline-flex min-h-hit items-center gap-1.5 whitespace-nowrap text-text-muted"
+      className="inline-flex"
     >
-      <Icon aria-hidden="true" className="size-4 text-primary" />
-      {text}
-    </Checkbox>
+      <CheckboxButton className="press inline-flex min-h-hit items-center gap-1.5 whitespace-nowrap text-text-muted">
+        <Icon aria-hidden="true" className="size-4 text-primary" />
+        {text}
+      </CheckboxButton>
+    </CheckboxField>
   );
 }
 

@@ -66,7 +66,7 @@ export function PoliciesTab() {
   return (
     <Stack className="min-h-full">
       <Tile title={t('settingsPolicies.title')} icon={IconSettings3Line}>
-        <div className="-mx-3 -my-2 flex flex-col">
+        <div className="-mx-3 -mb-2.5 flex flex-col">
           <PlanRows settings={settings.data} />
           <EntriesRows settings={settings.data} />
           <ReportsRows settings={settings.data} />

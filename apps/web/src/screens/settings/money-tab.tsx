@@ -80,7 +80,7 @@ export function MoneyTab() {
   return (
     <Stack className="min-h-full">
       <Tile title={t('settingsMoney.title')} icon={IconCoinsLine}>
-        <div className="-mx-3 -my-2 flex flex-col">
+        <div className="-mx-3 -mb-2.5 flex flex-col">
           <RegionRows settings={settings.data} />
           <PaydayRows settings={settings.data} />
           <PlanRows settings={settings.data} />

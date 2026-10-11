@@ -70,13 +70,6 @@ type Open =
   | Readonly<{ sheet: 'archive' | 'merge'; category: CategoryView }>
   | Readonly<{ sheet: 'tag'; tag: TagView | null }>;
 
-const columns = [
-  { width: 'minmax(0,1fr)' },
-  { width: '4.5rem' },
-  { width: '5rem', from: 'medium' },
-  { width: '2rem' },
-] as const;
-
 // Categories (docs/ui.md §6): a tree per kind, with tags beside it. Drag a
 // row (press and hold on touch) or use the arrows to reorder it among its
 // siblings; everything else is in the row's menu. The server decides what
