@@ -1,4 +1,4 @@
-import { addDays, money } from '@allotr/shared';
+import { addDays, currencyCode, money } from '@allotr/shared';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { food } from '../ledger/testing.ts';
@@ -142,10 +142,10 @@ describe('categorySeries', () => {
         });
         for (const g of series.groups) {
           expect(g.points).toHaveLength(periods.length);
-          expect(g.average).toEqual(averageOf(g.points, usd(0).currency));
+          expect(g.average).toEqual(averageOf(g.points, currencyCode('USD')));
         }
         expect(series.totalAverage).toEqual(
-          averageOf(series.totals, usd(0).currency),
+          averageOf(series.totals, currencyCode('USD')),
         );
       }),
     );
@@ -153,18 +153,22 @@ describe('categorySeries', () => {
 });
 
 describe('averageOf', () => {
+  const USD = currencyCode('USD');
+  const JPY = currencyCode('JPY');
+  const KWD = currencyCode('KWD');
+
   it('rounds down, counts zero periods and is zero with no points', () => {
-    expect(averageOf([usd(100), usd(0), usd(1)], 'USD')).toEqual(usd(33));
-    expect(averageOf([usd(-1), usd(0)], 'USD')).toEqual(usd(-1));
-    expect(averageOf([], 'USD')).toEqual(usd(0));
+    expect(averageOf([usd(100), usd(0), usd(1)], USD)).toEqual(usd(33));
+    expect(averageOf([usd(-1), usd(0)], USD)).toEqual(usd(-1));
+    expect(averageOf([], USD)).toEqual(usd(0));
   });
 
   it('keeps whole minor units in 0 and 3 digit currencies', () => {
-    expect(averageOf([money(5, 'JPY'), money(0, 'JPY')], 'JPY')).toEqual(
-      money(2, 'JPY'),
+    expect(averageOf([money(5, JPY), money(0, JPY)], JPY)).toEqual(
+      money(2, JPY),
     );
-    expect(averageOf([money(2_001, 'KWD'), money(0, 'KWD')], 'KWD')).toEqual(
-      money(1_000, 'KWD'),
+    expect(averageOf([money(2_001, KWD), money(0, KWD)], KWD)).toEqual(
+      money(1_000, KWD),
     );
   });
 
@@ -178,7 +182,7 @@ describe('averageOf', () => {
         (values) => {
           const avg = averageOf(
             values.map((v) => usd(v)),
-            'USD',
+            USD,
           ).amountMinor;
           const sum = values.reduce((a, b) => a + b, 0);
           expect(avg).toBeGreaterThanOrEqual(Math.min(...values));
