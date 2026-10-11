@@ -239,7 +239,7 @@ test('an entry moves up and down within its day by keyboard', async ({
     'Queue one',
   ]);
 
-  await page.goto(`/transactions?q=Queue&entry=${two}`);
+  await page.goto(`/transactions?entry=${two}`);
   const detail = page
     .getByRole('region', { name: t('transactionDetail.title') })
     .last();
@@ -277,18 +277,22 @@ test('dragging a row changes its place in the day', async ({
     email: account.email,
     password: account.password,
   });
-  await page.goto('/transactions?q=Queue');
+  // (Moves are off under a filter, so the list is not searched.)
+  await page.goto('/transactions');
   const rows = page
     .getByRole('region', { name: t('transactions.list.title') })
     .first()
     .getByRole('row');
-  await expect(rows).toHaveCount(3);
-  await expect(rows.first()).toContainText('Queue three');
-  await rows.nth(2).dragTo(rows.nth(0), { targetPosition: { x: 60, y: 4 } });
+  const three = rows.filter({ hasText: 'Queue three' });
+  const one = rows.filter({ hasText: 'Queue one' });
+  await expect(three).toHaveCount(1);
+  await one.dragTo(three, { targetPosition: { x: 60, y: 4 } });
   await expect
     .poll(() => listedNotes(page, 'Queue'))
     .toEqual(['Queue one', 'Queue three', 'Queue two']);
-  await expect(rows.first()).toContainText('Queue one');
+  await expect(rows.filter({ hasText: 'Queue' }).first()).toContainText(
+    'Queue one',
+  );
   await expectAccessible(page);
 });
 

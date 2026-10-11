@@ -3,7 +3,6 @@ import {
   type AccountView,
   type CategoryView,
   type TransactionListView,
-  type TransactionView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
