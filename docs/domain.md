@@ -179,6 +179,12 @@ optionally a date, on one savings pool or one account in a savings pool.
   goal holds its target.
 - A goal is reached when the target holds at least its amount; remaining is
   then zero, never negative.
+- `monthlyNeeded` is what to put aside each month to reach the target by its
+  date: `remaining` over the calendar months from today's month to the
+  target's month (October to March is 5), rounded up to the next minor unit
+  so the goal is never short. The target's own month counts, so a date in the
+  current month asks for all of `remaining` (1 month). It is null with no
+  date, once the goal is reached, and when the date is before today.
 
 ## Budgets
 
@@ -232,6 +238,16 @@ corrects past and present figures through the same function.
 - **Overspending.** A budget never goes below zero. What its own budget
   could not pay is covered (see Cover and refill); `spent` still counts the
   whole entry, less any refund, and `overflow` is the part that went past.
+- **Totals and cover used.** `/v1/budgets` adds `totals`: every budget's
+  `planned`, `spent` and `left` added up once in the default currency (parent
+  totals are not counted again, and the Buffer adds what it holds to `left`),
+  and `coverUsed` on each budget: what each other source paid of its
+  shortfall in the current period, per source in cover order, leaving out
+  sources that paid nothing. Spending no budget counts (loans, entries in no
+  budget) has no budget to list under, so the `coverUsed` of all budgets plus
+  the cover of those lines is `covered.shortfall − covered.uncovered`. The
+  period is the budget period, which is a calendar month when that is the
+  setting.
 - **Free money** = `available − Σ held`, where `held` is what each set-aside
   budget has left, floored at zero, and `available` is counted accounts less
   unpaid reserved bills.
@@ -306,6 +322,9 @@ with autocomplete from earlier ones, not contacts.
   Receivables. No cash moves, so it is not spending against the day and not
   covered, but it is an expense for category reports, and it lowers net
   worth. Reminders come with the scheduler (ADR 0024).
+- **Net.** The list's `totals` carry `owedToMe`, `owedByMe` (each currency
+  converted once to the default currency) and `net = owedToMe − owedByMe`,
+  negative when the user owes more.
 - **Net worth** counts receivables and payables by their sign.
 - **Consistency.** For every currency the Receivables balance equals what the
   IOUs owed to the user have outstanding, and Payables equals what the user
@@ -481,6 +500,13 @@ live_daily       = available(now) / days_left
   pace bar sets `pace_spent / (pace_spent + available)` against the share
   of the cycle's days gone, so paying a bill or reconciling never makes the
   pace look worse.
+- **Pace difference.** `paceDiff` on `/v1/today` is the even pace by the end
+  of today less `pace_spent`: positive is under pace, negative over, zero on
+  pace. The even pace spreads `pace_spent + available` evenly over the
+  cycle's days (`floor(budget × (day + 1) / days)`, day 0 being the first
+  day), exactly the `pace` of today's row in `/v1/cycles/{openedOn}/days`,
+  so the three figures on screen agree. `days` runs to payday, or through
+  today while payday is overdue.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 
@@ -528,6 +554,8 @@ in `core`), per currency and converted once to the default currency.
 
 ```
 start     = on_budget(day before the cycle opened) + income since it opened
+paycheck   = income since the cycle opened (any category, any account)
+carried    = start − paycheck                              # what the cycle opened with
 paid_bills = linked bill payments this cycle, less their undos
 spent      = other spending this cycle, less undos        # cycle_spent − paid_bills
 reserved   = on_budget(today) − available(today)          # unpaid bills + owed
@@ -539,6 +567,10 @@ other      = start − paid_bills − savings − spent − reserved − free
 - `start` is the same opening balance and income a closed cycle's snapshot
   shows, so an account opened during the cycle counts from the start, not as
   income. Income counts whichever account it lands in.
+- `paycheck` and `carried` split `start` for the allocation tile's subtitle.
+  `carried` is `start − paycheck`, so the two always add up to `start`
+  exactly and conversion rounding lands in `carried`. `carried` is negative
+  when the accounts were overdrawn when the cycle opened.
 - `savings` is money actually moved to savings: what on-budget accounts gave
   to transfers that reach an off-budget account (entries that also touch
   Expenses or Income are spending or income, not savings), plus the balance

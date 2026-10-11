@@ -244,8 +244,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   none of those explain, such as money lent), which add up to `start`
   exactly (domain.md "Cycle allocation"). `allocation.shareBp` gives each
   part's share of `start` in basis points (largest-remainder rounding; 0
-  for a part that is not positive). `/v1/reports/categories` groups and
-  children carry `shareBp` of the period's total the same way.
+  for a part that is not positive). `allocation.paycheck` and
+  `allocation.carried` split `start` (income since the cycle opened, and the
+  rest), adding up to `start` exactly. `paceDiff` is the even pace by the end
+  of today less `paceSpent` (positive is under pace). `/v1/reports/categories`
+  groups and children carry `shareBp` of the period's total the same way.
 - `GET /v1/accounts` marks each account `reconcileDue` (open, and never
   reconciled or not for more than 30 days before the user's today;
   `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit
@@ -253,7 +256,14 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   is owed), with `missingRates` like the other totals.
 - `GET /v1/budgets` adds `parents`: for each parent category with a budget
   on at least one child, the planned, spent and left totals of the category
-  budgets under it, in the default currency.
+  budgets under it, in the default currency. It also adds `totals` (planned,
+  spent and left over every budget, each counted once) and, on each budget,
+  `coverUsed` (what each source covered of its shortfall this period, with
+  the source's name).
+- `GET /v1/ious` totals add `net` (`owedToMe − owedByMe`, default currency).
+  Goals add `monthlyNeeded` (`remaining` over the calendar months left,
+  rounded up; null with no date, once reached or after the date; domain.md
+  "Goals").
 - `GET /v1/insights/emergency-fund` adds `addedThisCycle` (the fund's gain
   since the cycle opened) and `cyclesToTarget` (cycles to the target at that
   rate; null when undefined). `GET /v1/insights/net-worth` adds `change`
@@ -338,7 +348,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   category (subcategories counted in their parent, like the groups) for the N
   consecutive cycles or months ending with the selected one, oldest first
   (`categorySeries` in `packages/core`). Each point equals the single-period
-  figure for that period; `totals` is the spent per period. The summary also
+  figure for that period; `totals` is the spent per period. Each group's
+  `average` and `totalAverage` are the mean over every period in the series
+  (the running one and empty ones included), rounded down. The summary also
   carries `spendingTotal`, `incomeTotal`, `days` (the period's days so far,
   today included, at least 1), `dailyAverage` (spending over `days`, rounded
   down) and `saved` (what the period added to the off-budget accounts, from
