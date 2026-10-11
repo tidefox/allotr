@@ -425,3 +425,64 @@ test('a repayment to a person with two IOUs settles the oldest first', async ({
     repaid: { amountMinor: 500 },
   });
 });
+
+test("an IOU's entry is deleted, unless a payment still stands", async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await signIn(page, origin);
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string }[];
+  };
+  const everyday = accounts.accounts.find((a) => a.name === 'Everyday');
+  await post(page, origin, '/v1/ious', {
+    direction: 'owed-to-me',
+    accountId: everyday?.id,
+    people: [{ person: 'Eve', amount: { amountMinor: 1_000, currency } }],
+  });
+  const remove = (person: string) =>
+    t('budgetGoalsIous.ious.actionFor', {
+      action: t('budgetGoalsIous.ious.deleteEntry'),
+      person,
+    });
+
+  await page.goto('/budget/ious');
+  // Dee has a payment on her newest IOU: the server refuses.
+  await page.getByRole('button', { name: /Dee/ }).click();
+  const dee = detail(page, 'Dee');
+  await dee
+    .getByRole('button', { name: remove('Dee') })
+    .first()
+    .click();
+  const refused = page.getByRole('dialog', {
+    name: t('budgetGoalsIous.ious.sheets.delete', { person: 'Dee' }),
+  });
+  await expect(refused).toBeVisible();
+  await expectAccessible(page);
+  await refused
+    .getByRole('button', { name: t('budgetGoalsIous.ious.form.confirmDelete') })
+    .click();
+  await expect(
+    refused.getByText(t('budgetGoalsIous.ious.form.hasPayments')),
+  ).toBeVisible();
+  await refused
+    .getByRole('button', { name: t('budgetGoalsIous.cancel') })
+    .click();
+  await expect(refused).toBeHidden();
+
+  // Eve has none: her entry goes and she leaves the list.
+  await page.goto('/budget/ious');
+  await page.getByRole('button', { name: /Eve/ }).click();
+  await detail(page, 'Eve')
+    .getByRole('button', { name: remove('Eve') })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: t('budgetGoalsIous.ious.sheets.delete', { person: 'Eve' }),
+  });
+  await sheet
+    .getByRole('button', { name: t('budgetGoalsIous.ious.form.confirmDelete') })
+    .click();
+  await expect(sheet).toBeHidden();
+  await expect(page.getByRole('button', { name: /Eve/ })).toHaveCount(0);
+});

@@ -141,43 +141,54 @@ function IouBlock({
           {describeProblem(remove.error).message}
         </p>
       ) : null}
-      {iou.settled ? null : (
-        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5">
-          <BracketButton
-            aria-label={act(
-              toMe
-                ? t('budgetGoalsIous.ious.repay')
-                : t('budgetGoalsIous.ious.payBack'),
-            )}
-            onPress={() => {
-              onFlow({ kind: 'repay', iou });
-            }}
-          >
-            {toMe
-              ? t('budgetGoalsIous.ious.repay')
-              : t('budgetGoalsIous.ious.payBack')}
-          </BracketButton>
-          <BracketButton
-            aria-label={act(t('budgetGoalsIous.ious.dueDate'))}
-            onPress={() => {
-              onFlow({ kind: 'due', iou });
-            }}
-          >
-            {t('budgetGoalsIous.ious.dueDate')}
-          </BracketButton>
-          {toMe ? (
+      <div className="flex flex-wrap items-center gap-1 px-3 py-1.5">
+        {iou.settled ? null : (
+          <>
             <BracketButton
-              tone="destructive"
-              aria-label={act(t('budgetGoalsIous.ious.writeOff'))}
+              aria-label={act(
+                toMe
+                  ? t('budgetGoalsIous.ious.repay')
+                  : t('budgetGoalsIous.ious.payBack'),
+              )}
               onPress={() => {
-                onFlow({ kind: 'writeoff', iou });
+                onFlow({ kind: 'repay', iou });
               }}
             >
-              {t('budgetGoalsIous.ious.writeOff')}
+              {toMe
+                ? t('budgetGoalsIous.ious.repay')
+                : t('budgetGoalsIous.ious.payBack')}
             </BracketButton>
-          ) : null}
-        </div>
-      )}
+            <BracketButton
+              aria-label={act(t('budgetGoalsIous.ious.dueDate'))}
+              onPress={() => {
+                onFlow({ kind: 'due', iou });
+              }}
+            >
+              {t('budgetGoalsIous.ious.dueDate')}
+            </BracketButton>
+            {toMe ? (
+              <BracketButton
+                tone="destructive"
+                aria-label={act(t('budgetGoalsIous.ious.writeOff'))}
+                onPress={() => {
+                  onFlow({ kind: 'writeoff', iou });
+                }}
+              >
+                {t('budgetGoalsIous.ious.writeOff')}
+              </BracketButton>
+            ) : null}
+          </>
+        )}
+        <BracketButton
+          tone="destructive"
+          aria-label={act(t('budgetGoalsIous.ious.deleteEntry'))}
+          onPress={() => {
+            onFlow({ kind: 'delete', iou });
+          }}
+        >
+          {t('budgetGoalsIous.ious.deleteEntry')}
+        </BracketButton>
+      </div>
     </section>
   );
 }
