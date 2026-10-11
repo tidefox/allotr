@@ -690,6 +690,17 @@ export const cycleSchema = z.object({
 export const cycleAllocationSchema = z.object({
   /** On-budget money when the cycle opened plus income since. */
   start: moneySchema,
+  /**
+   * The income recorded since the cycle opened, whichever category and
+   * account it landed in. `paycheck + carried` is `start` exactly.
+   */
+  paycheck: moneySchema,
+  /**
+   * What the cycle opened with, as `start − paycheck`. May be negative when
+   * the accounts were overdrawn, or when conversion rounding outweighs a
+   * zero balance.
+   */
+  carried: moneySchema,
   /** Linked bill payments this cycle. */
   paidBills: moneySchema,
   /**
@@ -771,6 +782,11 @@ export const todaySchema = z.object({
   paceSpent: moneySchema,
   /** The open cycle's on-budget start split into six parts. */
   allocation: cycleAllocationSchema,
+  /**
+   * Even pace by the end of today less `paceSpent`: positive is under pace,
+   * negative is over. The same pace as today's row of `/v1/cycles/.../days`.
+   */
+  paceDiff: moneySchema,
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(
     z.object({
@@ -850,10 +866,20 @@ export const categorySeriesSchema = z.object({
   periods: z.array(periodSchema),
   /** Largest total across the periods first; zero where nothing was booked. */
   groups: z.array(
-    z.object({ categoryId: idSchema.nullable(), points: z.array(moneySchema) }),
+    z.object({
+      categoryId: idSchema.nullable(),
+      points: z.array(moneySchema),
+      /**
+       * The mean of `points` over every period, the running one and zero
+       * periods included, rounded down.
+       */
+      average: moneySchema,
+    }),
   ),
   /** Everything spent per period. */
   totals: z.array(moneySchema),
+  /** The mean of `totals` over every period, rounded down. */
+  totalAverage: moneySchema,
   /** Currencies without a rate in at least one period, left out. */
   missingRates: z.array(currencyCodeSchema),
 });

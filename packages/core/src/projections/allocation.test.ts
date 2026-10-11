@@ -68,6 +68,8 @@ describe('cycleAllocation', () => {
     );
     expect(allocation).toEqual({
       start: usd(350000),
+      paycheck: usd(300000),
+      carried: usd(50000),
       paidBills: usd(20000),
       savings: usd(50000),
       spent: usd(4000),
@@ -157,6 +159,8 @@ describe('cycleAllocation', () => {
     );
     expect(allocation).toEqual({
       start: usd(350000),
+      paycheck: usd(300000),
+      carried: usd(50000),
       paidBills: usd(0),
       savings: usd(0),
       spent: usd(0),
@@ -259,6 +263,44 @@ describe('reservedParts', () => {
     expect(parts.ious).toEqual(usd(0));
     expect(parts.bills.amountMinor + parts.ious.amountMinor).toBe(
       dailyFiguresOn(v, today).reserved.amountMinor,
+    );
+  });
+});
+
+describe('cycleAllocation paycheck and carried', () => {
+  it('counts every income this cycle as the paycheck and the rest as carried', () => {
+    const v = view([
+      openingUsd('2026-02-20', 120000),
+      paycheck('2026-03-01', 250000),
+      paycheck('2026-03-05', 5000),
+      spend('2026-03-06', 1000),
+    ]);
+    const a = cycleAllocation(v, day('2026-03-10'));
+    expect(a.paycheck).toEqual(usd(255000));
+    expect(a.carried).toEqual(usd(120000));
+    expect(a.start).toEqual(usd(375000));
+  });
+
+  it('carries nothing over when the ledger starts with the cycle', () => {
+    const a = cycleAllocation(
+      view([paycheck('2026-03-01', 90000)]),
+      day('2026-03-10'),
+    );
+    expect(a.paycheck).toEqual(usd(90000));
+    expect(a.carried).toEqual(usd(0));
+  });
+
+  it('does not count an account opened in the cycle as income', () => {
+    const a = cycleAllocation(
+      view([
+        paycheck('2026-03-01', 90000),
+        openingUsd('2026-03-04', 40000, savings),
+      ]),
+      day('2026-03-10'),
+    );
+    expect(a.paycheck).toEqual(usd(90000));
+    expect(a.carried.amountMinor + a.paycheck.amountMinor).toBe(
+      a.start.amountMinor,
     );
   });
 });

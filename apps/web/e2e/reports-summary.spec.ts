@@ -230,6 +230,8 @@ test('the trends tab shows lines, comparison and totals', async ({
     name: t('reportsSummary.trends.vsTitle'),
   });
   await expect(versus.getByText('Leisure')).toBeVisible();
+  // Each row names the server's average across the periods.
+  await expect(versus.getByText(/avg \$/).first()).toBeVisible();
   // Household dwarfs the rest, so it is named under the chart instead.
   await expect(
     page.getByText(/Household \(.*\) left out of scale/),

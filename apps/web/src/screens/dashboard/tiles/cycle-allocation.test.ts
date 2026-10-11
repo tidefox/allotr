@@ -28,6 +28,8 @@ describe('allocationSegments', () => {
     const segments = allocationSegments(
       {
         start: m(1000),
+        paycheck: m(700),
+        carried: m(300),
         paidBills: m(100),
         savings: m(-50),
         spent: m(300),
@@ -68,6 +70,8 @@ describe('allocationSegments', () => {
     const segments = allocationSegments(
       {
         start: m(1000),
+        paycheck: m(700),
+        carried: m(300),
         paidBills: m(100),
         savings: m(0),
         spent: m(300),

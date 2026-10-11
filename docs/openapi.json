@@ -7257,6 +7257,25 @@
                           "reached": {
                             "type": "boolean"
                           },
+                          "monthlyNeeded": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "missingRates": {
                             "type": "array",
                             "items": {
@@ -7275,6 +7294,7 @@
                           "saved",
                           "remaining",
                           "reached",
+                          "monthlyNeeded",
                           "missingRates"
                         ]
                       }
@@ -7603,6 +7623,25 @@
                     "reached": {
                       "type": "boolean"
                     },
+                    "monthlyNeeded": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -7621,6 +7660,7 @@
                     "saved",
                     "remaining",
                     "reached",
+                    "monthlyNeeded",
                     "missingRates"
                   ]
                 }
@@ -8046,6 +8086,25 @@
                     "reached": {
                       "type": "boolean"
                     },
+                    "monthlyNeeded": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -8064,6 +8123,7 @@
                     "saved",
                     "remaining",
                     "reached",
+                    "monthlyNeeded",
                     "missingRates"
                   ]
                 }
@@ -8650,6 +8710,43 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "coverUsed": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "name",
+                                "amount"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -8667,7 +8764,8 @@
                           "overflow",
                           "coveredOut",
                           "restored",
-                          "held"
+                          "held",
+                          "coverUsed"
                         ]
                       }
                     },
@@ -8746,6 +8844,64 @@
                           "left"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "planned": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "spent": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "planned",
+                        "spent",
+                        "left"
+                      ]
                     },
                     "available": {
                       "type": "object",
@@ -8987,6 +9143,7 @@
                     "daysLeft",
                     "budgets",
                     "parents",
+                    "totals",
                     "available",
                     "held",
                     "free",
@@ -10672,6 +10829,43 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "coverUsed": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "name",
+                                "amount"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -10689,7 +10883,8 @@
                           "overflow",
                           "coveredOut",
                           "restored",
-                          "held"
+                          "held",
+                          "coverUsed"
                         ]
                       }
                     },
@@ -10768,6 +10963,64 @@
                           "left"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "planned": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "spent": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "planned",
+                        "spent",
+                        "left"
+                      ]
                     },
                     "available": {
                       "type": "object",
@@ -11009,6 +11262,7 @@
                     "daysLeft",
                     "budgets",
                     "parents",
+                    "totals",
                     "available",
                     "held",
                     "free",
@@ -11508,6 +11762,43 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "coverUsed": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "name",
+                                "amount"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -11525,7 +11816,8 @@
                           "overflow",
                           "coveredOut",
                           "restored",
-                          "held"
+                          "held",
+                          "coverUsed"
                         ]
                       }
                     },
@@ -11604,6 +11896,64 @@
                           "left"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "planned": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "spent": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "planned",
+                        "spent",
+                        "left"
+                      ]
                     },
                     "available": {
                       "type": "object",
@@ -11845,6 +12195,7 @@
                     "daysLeft",
                     "budgets",
                     "parents",
+                    "totals",
                     "available",
                     "held",
                     "free",
@@ -12474,6 +12825,43 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "coverUsed": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "name",
+                                "amount"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -12491,7 +12879,8 @@
                           "overflow",
                           "coveredOut",
                           "restored",
-                          "held"
+                          "held",
+                          "coverUsed"
                         ]
                       }
                     },
@@ -12570,6 +12959,64 @@
                           "left"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "planned": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "spent": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "planned",
+                        "spent",
+                        "left"
+                      ]
                     },
                     "available": {
                       "type": "object",
@@ -12811,6 +13258,7 @@
                     "daysLeft",
                     "budgets",
                     "parents",
+                    "totals",
                     "available",
                     "held",
                     "free",
@@ -13663,6 +14111,22 @@
                             "currency"
                           ]
                         },
+                        "net": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
                         "missingRates": {
                           "type": "array",
                           "items": {
@@ -13674,6 +14138,7 @@
                       "required": [
                         "owedToMe",
                         "owedByMe",
+                        "net",
                         "missingRates"
                       ]
                     }
@@ -20492,6 +20957,43 @@
                                   "amountMinor",
                                   "currency"
                                 ]
+                              },
+                              "coverUsed": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "source": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "amountMinor": {
+                                          "type": "integer"
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]{3}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "amountMinor",
+                                        "currency"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "source",
+                                    "name",
+                                    "amount"
+                                  ]
+                                }
                               }
                             },
                             "required": [
@@ -20509,7 +21011,8 @@
                               "overflow",
                               "coveredOut",
                               "restored",
-                              "held"
+                              "held",
+                              "coverUsed"
                             ]
                           }
                         },
@@ -20588,6 +21091,64 @@
                               "left"
                             ]
                           }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "planned": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "spent": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "left": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "planned",
+                            "spent",
+                            "left"
+                          ]
                         },
                         "available": {
                           "type": "object",
@@ -20829,6 +21390,7 @@
                         "daysLeft",
                         "budgets",
                         "parents",
+                        "totals",
                         "available",
                         "held",
                         "free",
@@ -30783,6 +31345,38 @@
                             "currency"
                           ]
                         },
+                        "paycheck": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "carried": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
                         "paidBills": {
                           "type": "object",
                           "properties": {
@@ -30925,6 +31519,8 @@
                       },
                       "required": [
                         "start",
+                        "paycheck",
+                        "carried",
                         "paidBills",
                         "savings",
                         "spent",
@@ -30932,6 +31528,22 @@
                         "free",
                         "other",
                         "shareBp"
+                      ]
+                    },
+                    "paceDiff": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
                       ]
                     },
                     "billsDue": {
@@ -31072,6 +31684,7 @@
                     "cycleSpent",
                     "paceSpent",
                     "allocation",
+                    "paceDiff",
                     "billsDue",
                     "cycleBills",
                     "missingRates"
@@ -33970,11 +34583,28 @@
                                     "currency"
                                   ]
                                 }
+                              },
+                              "average": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
                               }
                             },
                             "required": [
                               "categoryId",
-                              "points"
+                              "points",
+                              "average"
                             ]
                           }
                         },
@@ -33997,6 +34627,22 @@
                             ]
                           }
                         },
+                        "totalAverage": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
                         "missingRates": {
                           "type": "array",
                           "items": {
@@ -34009,6 +34655,7 @@
                         "periods",
                         "groups",
                         "totals",
+                        "totalAverage",
                         "missingRates"
                       ]
                     }

@@ -25,6 +25,8 @@ export type SeriesGroup = Readonly<{
   categoryId: CategoryId | null;
   /** One amount per period, oldest first, zero where nothing was booked. */
   points: readonly Money[];
+  /** `points` averaged over every period, rounded down; see `averageOf`. */
+  average: Money;
 }>;
 
 export type CategorySeries = Readonly<{
@@ -33,6 +35,8 @@ export type CategorySeries = Readonly<{
   groups: readonly SeriesGroup[];
   /** Everything spent in each period; the sum of the groups' points. */
   totals: readonly Money[];
+  /** `totals` averaged over every period, rounded down. */
+  totalAverage: Money;
   missingRates: readonly CurrencyCode[];
 }>;
 
@@ -67,6 +71,23 @@ export function monthPeriods(endMonth: string, count: number): SeriesPeriod[] {
 }
 
 /**
+ * The mean of `points` over all of them, zero periods included and the
+ * running period too, rounded down in whole minor units. Zero with no
+ * points.
+ */
+export function averageOf(
+  points: readonly Money[],
+  currency: CurrencyCode,
+): Money {
+  if (points.length === 0) return money(0, currency);
+  const sum = points.reduce((acc, p) => acc + BigInt(p.amountMinor), 0n);
+  const n = BigInt(points.length);
+  const quotient = sum / n;
+  const floored = sum % n !== 0n && sum < 0n ? quotient - 1n : quotient;
+  return money(Number(floored), currency);
+}
+
+/**
  * Spending per top-level category for each of `periods`, in the default
  * currency. `periods` must be ordered and not overlap; nothing else is
  * assumed, so months and cycles both work.
@@ -90,14 +111,14 @@ export function categorySeries(
     return rollUpCategories(spending.totals, parentOf);
   });
   const ids = new Set(perPeriod.flatMap((p) => p.map((g) => g.categoryId)));
-  const groups = [...ids].map((categoryId) => ({
-    categoryId,
-    points: perPeriod.map(
+  const groups = [...ids].map((categoryId) => {
+    const points = perPeriod.map(
       (inPeriod) =>
         inPeriod.find((g) => g.categoryId === categoryId)?.amount ??
         money(0, currency),
-    ),
-  }));
+    );
+    return { categoryId, points, average: averageOf(points, currency) };
+  });
   const sum = (points: readonly Money[]) =>
     points.reduce((acc, p) => acc + p.amountMinor, 0);
   groups.sort(
@@ -105,15 +126,17 @@ export function categorySeries(
       sum(b.points) - sum(a.points) ||
       (a.categoryId ?? '').localeCompare(b.categoryId ?? ''),
   );
+  const totals = periods.map((_, i) =>
+    money(
+      groups.reduce((acc, g) => acc + (g.points[i]?.amountMinor ?? 0), 0),
+      currency,
+    ),
+  );
   return {
     periods,
     groups,
-    totals: periods.map((_, i) =>
-      money(
-        groups.reduce((acc, g) => acc + (g.points[i]?.amountMinor ?? 0), 0),
-        currency,
-      ),
-    ),
+    totals,
+    totalAverage: averageOf(totals, currency),
     missingRates: [...missing].sort(),
   };
 }

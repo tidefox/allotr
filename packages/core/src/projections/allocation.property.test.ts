@@ -190,6 +190,21 @@ describe('cycle allocation properties', () => {
     );
   });
 
+  it('splits start into the paycheck and what was carried over, exactly', () => {
+    fc.assert(
+      fc.property(viewArb(allAccounts), todayArb, (view, today) => {
+        const a = cycleAllocation(view, today);
+        for (const part of [a.paycheck, a.carried]) {
+          expect(Number.isSafeInteger(part.amountMinor)).toBe(true);
+          expect(part.currency).toBe(usd);
+        }
+        expect(a.paycheck.amountMinor + a.carried.amountMinor).toBe(
+          a.start.amountMinor,
+        );
+      }),
+    );
+  });
+
   it('splits the reserve into bills and what is owed, adding up to reserved', () => {
     fc.assert(
       fc.property(viewArb(usdAccounts), todayArb, (view, today) => {

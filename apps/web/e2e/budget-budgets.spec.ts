@@ -111,14 +111,19 @@ test('the budgets tab shows the tree, totals and cover', async ({
   await expect(tree).toBeVisible();
   await expect(tree.getByText('Pantry', { exact: true })).toBeVisible();
   await expect(tree.getByText('Takeaway', { exact: true })).toBeVisible();
-  // The Household header carries the server's totals for both children.
-  await expect(tree.getByText('$42.00', { exact: true })).toHaveCount(2);
+  // The Household header carries the server's totals for both children,
+  // and the total row repeats the spent figure over every budget.
+  await expect(tree.getByText('$42.00', { exact: true })).toHaveCount(3);
   // Phones drop the left column, so the figure is only in the page there.
   await expect(
     tree.getByText('$508.00', { exact: true }).first(),
   ).toBeAttached();
   await expect(
     tree.getByText(t('budgetBudgets.tree.totalDaily')),
+  ).toBeVisible();
+  // The server's total row over every budget.
+  await expect(
+    tree.getByText(t('budgetBudgets.tree.total'), { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole('region', { name: t('budgetBudgets.cover.title') }),

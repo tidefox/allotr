@@ -1,6 +1,12 @@
 import { localDate, money, type CycleDayView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { cycleTicks, cycleView, daysOver } from './this-cycle-model.ts';
+import {
+  coverUsedItems,
+  cycleTicks,
+  cycleView,
+  daysOver,
+  paceFigure,
+} from './this-cycle-model.ts';
 
 const usd = (amountMinor: number) => money(amountMinor, 'USD');
 
@@ -46,11 +52,6 @@ describe('cycleView', () => {
     expect(view.length).toBe(4);
     expect(view.spent).toEqual(usd(2200));
     expect(view.pace).toEqual(usd(3000));
-    expect(view.status).toBe('under');
-  });
-
-  it('is ahead when spending passes the even pace', () => {
-    expect(cycleView([day(1, 1500, 1500, 1000)]).status).toBe('ahead');
   });
 
   it('plots only days with figures and spans the pace over the cycle', () => {
@@ -94,5 +95,57 @@ describe('cycleTicks', () => {
     expect(at(10, -1)).toEqual([0, 9]);
     expect(at(15, -1)).toEqual([0, 7, 14]);
     expect(at(0, -1)).toEqual([]);
+  });
+});
+
+describe('paceFigure', () => {
+  it('says under pace for a positive difference, with the amount unsigned', () => {
+    expect(paceFigure(usd(8061))).toEqual({
+      status: 'under',
+      amount: usd(8061),
+    });
+  });
+
+  it('says over pace for a negative difference', () => {
+    expect(paceFigure(usd(-1250))).toEqual({
+      status: 'over',
+      amount: usd(1250),
+    });
+  });
+
+  it('says on pace at zero and keeps the currency', () => {
+    expect(paceFigure(money(0, 'JPY'))).toEqual({
+      status: 'on',
+      amount: money(0, 'JPY'),
+    });
+  });
+});
+
+describe('coverUsedItems', () => {
+  it('lists each source that covered a budget, in budget order', () => {
+    expect(
+      coverUsedItems([
+        {
+          name: 'Fun',
+          coverUsed: [{ source: 'b1', name: 'Buffer', amount: usd(1000) }],
+        },
+        { name: 'Food', coverUsed: [] },
+        {
+          name: 'Travel',
+          coverUsed: [
+            { source: 'free', name: 'Free money', amount: usd(250) },
+            { source: 'b1', name: 'Buffer', amount: usd(300) },
+          ],
+        },
+      ]),
+    ).toEqual([
+      { budget: 'Fun', source: 'Buffer', amount: usd(1000) },
+      { budget: 'Travel', source: 'Free money', amount: usd(250) },
+      { budget: 'Travel', source: 'Buffer', amount: usd(300) },
+    ]);
+  });
+
+  it('is empty when nothing was covered', () => {
+    expect(coverUsedItems([{ name: 'Food', coverUsed: [] }])).toEqual([]);
   });
 });

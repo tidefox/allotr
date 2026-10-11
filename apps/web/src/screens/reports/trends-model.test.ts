@@ -33,12 +33,29 @@ const series = {
     { from: '2026-10-01', to: '2026-10-31' },
   ],
   groups: [
-    { categoryId: 'rent', points: [money(900), money(900), money(900)] },
-    { categoryId: 'food', points: [money(300), money(500), money(400)] },
-    { categoryId: 'fun', points: [money(0), money(0), money(0)] },
-    { categoryId: null, points: [money(0), money(20), money(50)] },
+    {
+      categoryId: 'rent',
+      points: [money(900), money(900), money(900)],
+      average: money(900),
+    },
+    {
+      categoryId: 'food',
+      points: [money(300), money(500), money(400)],
+      average: money(400),
+    },
+    {
+      categoryId: 'fun',
+      points: [money(0), money(0), money(0)],
+      average: money(0),
+    },
+    {
+      categoryId: null,
+      points: [money(0), money(20), money(50)],
+      average: money(23),
+    },
   ],
   totals: [money(1200), money(1420), money(1350)],
+  totalAverage: money(1323),
   missingRates: [],
 } as unknown as CategorySeriesView;
 
@@ -90,26 +107,43 @@ describe('trendLines', () => {
 });
 
 describe('versusRows', () => {
-  it('compares the last period with the one before, by comparison only', () => {
+  it('compares the last period with the server average, by comparison only', () => {
     const rows = versusRows(series, categories);
     expect(rows.map((r) => [r.key, r.movement])).toEqual([
       ['rent', 'same'],
-      ['food', 'down'],
+      ['food', 'same'],
       ['none', 'up'],
     ]);
     expect(rows[1]?.current).toEqual(money(400));
-    expect(rows[1]?.previous).toEqual(money(500));
+    expect(rows[1]?.average).toEqual(money(400));
+    expect(rows[2]?.average).toEqual(money(23));
+  });
+
+  it('moves down when the period came in under the average', () => {
+    const under = {
+      ...series,
+      groups: [
+        {
+          categoryId: 'food',
+          points: [money(300), money(500), money(250)],
+          average: money(350),
+        },
+      ],
+    } as unknown as CategorySeriesView;
+    expect(versusRows(under, categories)[0]?.movement).toBe('down');
   });
 
   it('has no movement with a single period', () => {
     const one = {
       ...series,
       periods: [{ from: '2026-10-01', to: '2026-10-31' }],
-      groups: [{ categoryId: 'food', points: [money(400)] }],
+      groups: [
+        { categoryId: 'food', points: [money(400)], average: money(400) },
+      ],
       totals: [money(400)],
     } as unknown as CategorySeriesView;
     expect(versusRows(one, categories)[0]).toMatchObject({
-      previous: null,
+      average: money(400),
       movement: null,
     });
   });

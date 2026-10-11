@@ -1,18 +1,38 @@
-import type { CycleDayView, Money } from '@allotr/shared';
+import {
+  money as moneyOf,
+  type BudgetView,
+  type CycleDayView,
+  type Money,
+} from '@allotr/shared';
 import type { Point } from '@/charts/math';
-import { paceAhead, todayRow } from '@/features/today/state';
+import { todayRow } from '@/features/today/state';
 
 // The "this cycle" tile's view model. Every amount is a figure the server
 // sent; this file only compares whole minor units and counts days.
 
-export type PaceStatus = 'under' | 'ahead';
+/**
+ * Spending against the even pace, from the server's `paceDiff` (positive is
+ * under pace). `amount` is that figure with its sign dropped, so the label
+ * carries the direction; it is not a new amount.
+ */
+export type PaceFigure = Readonly<{
+  status: 'under' | 'on' | 'over';
+  amount: Money;
+}>;
+
+export function paceFigure(paceDiff: Money): PaceFigure {
+  const { amountMinor, currency } = paceDiff;
+  return {
+    status: amountMinor > 0 ? 'under' : amountMinor < 0 ? 'over' : 'on',
+    amount: moneyOf(Math.abs(amountMinor), currency),
+  };
+}
 
 export interface CycleView {
   /** Pace spending so far: the series' last point. */
   spent: Money | null;
   /** The even-pace figure for today. */
   pace: Money | null;
-  status: PaceStatus;
   /** Days where spending passed that day's allowance. */
   daysOver: number;
   /** 1-based day of the cycle, and how many days it has. */
@@ -24,6 +44,30 @@ export interface CycleView {
   reference: { from: Point; to: Point } | null;
   /** Index of today in `days`; -1 when the series has no figures yet. */
   todayIndex: number;
+}
+
+/** What one source covered for one budget this period, the server's figure. */
+export type CoverUsedItem = Readonly<{
+  budget: string;
+  source: string;
+  amount: Money;
+}>;
+
+/**
+ * Every (budget, source) the server says covered something this period,
+ * in budget order and then cover order. Nothing is added up: each item is
+ * one server amount.
+ */
+export function coverUsedItems(
+  budgets: readonly Pick<BudgetView, 'name' | 'coverUsed'>[],
+): CoverUsedItem[] {
+  return budgets.flatMap((b) =>
+    b.coverUsed.map((used) => ({
+      budget: b.name,
+      source: used.name,
+      amount: used.amount,
+    })),
+  );
 }
 
 export function daysOver(days: readonly CycleDayView[]): number {
@@ -43,7 +87,6 @@ export function cycleView(days: readonly CycleDayView[]): CycleView {
   return {
     spent: row?.cumulativeSpent ?? null,
     pace: row?.pace ?? null,
-    status: paceAhead(days) ? 'ahead' : 'under',
     daysOver: daysOver(days),
     day: todayIndex + 1,
     length: days.length,

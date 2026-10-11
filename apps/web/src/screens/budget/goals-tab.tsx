@@ -196,6 +196,11 @@ function GoalTile({
             : date === null
               ? t('budgetGoalsIous.goals.noDate')
               : t('budgetGoalsIous.goals.by', { date }),
+          goal.monthlyNeeded === null
+            ? ''
+            : t('budgetGoalsIous.goals.perMonth', {
+                amount: formatMoney(goal.monthlyNeeded, 'symbol', locale),
+              }),
         ]
           .filter((part) => part !== '')
           .join(' · ')}

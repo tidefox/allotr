@@ -34,7 +34,8 @@ export function CycleAllocationTile() {
       title={title}
       icon={IconStackLine}
       subtitle={t('dashboardTiles.allocation.subtitle', {
-        start: formatMoney(allocation.start, 'symbol', 'en'),
+        paycheck: formatMoney(allocation.paycheck, 'symbol', 'en'),
+        carried: formatMoney(allocation.carried, 'symbol', 'en'),
       })}
       actions={
         <BracketButton

@@ -18,6 +18,7 @@ import {
   type CoverRequest,
   type CoverSource,
 } from './budgets.ts';
+import { budgetCovers, budgetStatus } from './budget-status.ts';
 import { budgetFold, dailyFiguresOn } from './daily.ts';
 import {
   card,
@@ -509,6 +510,72 @@ describe('cover properties', () => {
           }
         },
       ),
+    );
+  });
+});
+
+describe('cover used and totals properties', () => {
+  const arbs = [
+    spendsArb,
+    budgetsArb,
+    orderArb,
+    requestsArb,
+    todayArb,
+  ] as const;
+
+  it('lists what each source covered per budget, adding up to the period cover', () => {
+    fc.assert(
+      fc.property(...arbs, (spends, specs, order, requests, today) => {
+        const v = make(spends, budgetsOf(specs), {
+          coverOrder: order,
+          coverOverrides: overridesOf(spends, requests),
+        });
+        const status = budgetStatus(v, today);
+        let used = 0;
+        for (const line of status.lines) {
+          const sources = line.coverUsed.map((c) => c.source);
+          expect(new Set(sources).size).toBe(sources.length);
+          // A budget never covers its own shortfall.
+          expect(sources).not.toContain(line.budget.id);
+          for (const c of line.coverUsed) {
+            expect(c.amount.currency).toBe('USD');
+            expect(c.amount.amountMinor).not.toBe(0);
+            used += c.amount.amountMinor;
+          }
+        }
+        // Lines no budget counts (loans, uncounted spending) have no budget
+        // to list under; everything else is on a budget.
+        const unbudgeted = budgetCovers(v, today)
+          .filter((c) => c.budgetId === null)
+          .reduce(
+            (sum, c) =>
+              sum + c.covers.reduce((t, x) => t + x.amount.amountMinor, 0),
+            0,
+          );
+        expect(used + unbudgeted).toBe(
+          status.covered.shortfall.amountMinor -
+            status.covered.uncovered.amountMinor,
+        );
+      }),
+    );
+  });
+
+  it('adds every budget once, whatever the tree looks like', () => {
+    fc.assert(
+      fc.property(...arbs, (spends, specs, order, requests, today) => {
+        const v = make(spends, budgetsOf(specs), {
+          coverOrder: order,
+          coverOverrides: overridesOf(spends, requests),
+        });
+        const { totals, lines } = budgetStatus(v, today);
+        for (const key of ['planned', 'spent', 'left'] as const) {
+          expect(totals[key].amountMinor).toBe(
+            lines.reduce((sum, l) => sum + l[key].amountMinor, 0),
+          );
+          expect(totals[key].currency).toBe('USD');
+        }
+        expect(totals.left.amountMinor).toBeGreaterThanOrEqual(0);
+      }),
     );
   });
 });

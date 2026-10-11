@@ -76,6 +76,17 @@ export function daysBetween(from: LocalDate, to: LocalDate): number {
   return toEpochDay(to) - toEpochDay(from);
 }
 
+/**
+ * Calendar months from the month of `from` to the month of `to`, whatever
+ * the day of the month: October to March is 5. Negative when `to` is in an
+ * earlier month.
+ */
+export function monthsBetween(from: LocalDate, to: LocalDate): number {
+  const [fromYear, fromMonth] = from.split('-').map(Number) as [number, number];
+  const [toYear, toMonth] = to.split('-').map(Number) as [number, number];
+  return (toYear - fromYear) * 12 + (toMonth - fromMonth);
+}
+
 /** ISO weekday: 1 is Monday, 7 is Sunday. */
 export function isoWeekday(date: LocalDate): number {
   // Day 0 of the epoch, 1970-01-01, was a Thursday (4).

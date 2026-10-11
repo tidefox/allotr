@@ -19,6 +19,7 @@ export const budgetBudgets = {
     emptyTitle: 'No budgets yet',
     emptyHint:
       'A budget caps what a category can spend each period. Add one to see it here.',
+    total: 'total',
     totalDaily: 'daily budgets left',
     totalHeld: 'held for set-aside',
     totalUnbudgeted: 'spent outside any budget',

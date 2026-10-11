@@ -5,6 +5,7 @@ import {
   daysBetween,
   isoWeekday,
   lastDayOfMonth,
+  monthsBetween,
   localDate,
   localDateIn,
   localDateSchema,
@@ -152,5 +153,25 @@ describe('localTime', () => {
     expect(errorCode(() => localTimeIn(new Date(0), 'Mars/Base'))).toBe(
       'date.invalid',
     );
+  });
+});
+
+describe('monthsBetween', () => {
+  it('counts calendar months, whatever the day', () => {
+    expect(
+      monthsBetween(localDate('2026-10-31'), localDate('2027-03-01')),
+    ).toBe(5);
+    expect(
+      monthsBetween(localDate('2026-10-01'), localDate('2026-10-31')),
+    ).toBe(0);
+    expect(
+      monthsBetween(localDate('2026-12-31'), localDate('2027-01-01')),
+    ).toBe(1);
+  });
+
+  it('is negative when the target month is earlier', () => {
+    expect(
+      monthsBetween(localDate('2026-03-15'), localDate('2026-01-31')),
+    ).toBe(-2);
   });
 });

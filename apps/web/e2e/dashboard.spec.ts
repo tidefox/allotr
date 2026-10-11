@@ -121,6 +121,19 @@ test('the dashboard shows every tile with seeded data', async ({
     }),
   ).toHaveCount(0);
   await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(5);
+  // The subtitle splits the start into the server's paycheck and carried.
+  await expect(allocation.getByText(/paycheck .+ \+ carried .+/)).toBeVisible();
+  const cycle = page.getByRole('region', {
+    name: t('dashboardTiles.thisCycle.title'),
+  });
+  // The pace stat carries the server's difference as an amount.
+  await expect(
+    cycle.getByText(
+      new RegExp(
+        `^(${t('dashboardTiles.thisCycle.underPace')}|${t('dashboardTiles.thisCycle.onPace')}|${t('dashboardTiles.thisCycle.overPace')})$`,
+      ),
+    ),
+  ).toBeVisible();
   const fund = page.getByRole('region', {
     name: t('dashboardTiles.emergencyFund.title'),
   });

@@ -164,16 +164,19 @@ export interface VersusRow {
   icon: CategoryIcon | null;
   /** The selected period's spending. */
   current: Money;
-  /** The period before; null when there is none. */
-  previous: Money | null;
+  /** The server's mean over every period in the series, this one included. */
+  average: Money;
+  /** This period against the average; null with a single period. */
   movement: Movement | null;
   /** The category's spending in every period, oldest first, for a sparkline. */
   points: readonly Point[];
 }
 
 /**
- * The selected period against the one before it, per category. The server
- * sends no average across periods, so the comparison is with the last one.
+ * The selected period against the average over all periods, per category,
+ * by comparison only: the average is the server's (`average`), and the
+ * percentage in the locked design stays out because the browser may not
+ * compute one.
  */
 export function versusRows(
   series: CategorySeriesView,
@@ -185,9 +188,7 @@ export function versusRows(
   return series.groups.flatMap((group): VersusRow[] => {
     const current = group.points[last];
     if (current === undefined) return [];
-    const previous = last > 0 ? (group.points[last - 1] ?? null) : null;
-    if (current.amountMinor === 0 && (previous?.amountMinor ?? 0) === 0)
-      return [];
+    if (current.amountMinor === 0 && group.average.amountMinor === 0) return [];
     return [
       {
         key: group.categoryId ?? 'none',
@@ -201,14 +202,14 @@ export function versusRows(
             ? undefined
             : styles.get(group.categoryId)?.icon) ?? null,
         current,
-        previous,
+        average: group.average,
         points: group.points.map((p, x) => ({ x, y: p.amountMinor })),
         movement:
-          previous === null
+          last === 0
             ? null
-            : current.amountMinor > previous.amountMinor
+            : current.amountMinor > group.average.amountMinor
               ? 'up'
-              : current.amountMinor < previous.amountMinor
+              : current.amountMinor < group.average.amountMinor
                 ? 'down'
                 : 'same',
       },

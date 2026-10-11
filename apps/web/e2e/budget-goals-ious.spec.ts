@@ -111,6 +111,10 @@ test('a goal is added on a savings account and shows its progress', async ({
   await expect(tile).toBeVisible();
   await expect(tile).toContainText('2,500.00');
   await expect(tile).toContainText('10,000.00');
+  // The server's monthly amount for the dated goal.
+  await expect(tile).toContainText(
+    t('budgetGoalsIous.goals.perMonth', { amount: '' }),
+  );
   await expect(tile.getByRole('progressbar')).toBeVisible();
   await expect(tile.getByRole('img', { name: /Trip/ })).toBeVisible();
   await expectAccessible(page);
@@ -224,6 +228,9 @@ test('people owing money are listed with their IOUs', async ({
     'late',
   );
   await expect(page.getByText('40.00').first()).toBeVisible();
+  // Owed to the user ($40.00) less what they owe ($15.00): the server's net.
+  await expect(list.getByText(t('budgetGoalsIous.ious.net'))).toBeVisible();
+  await expect(list.getByText('+$25.00', { exact: true })).toBeVisible();
   await expectAccessible(page);
   await noSmallTargets(list);
 });

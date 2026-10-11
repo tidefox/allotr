@@ -107,7 +107,7 @@ const status = async () => (await h.alice.get('/v1/budgets')).body as Status;
 const open = async () =>
   (await h.alice.get('/v1/ious')).body as {
     ious: Iou[];
-    totals: { owedToMe: Money; owedByMe: Money };
+    totals: { owedToMe: Money; owedByMe: Money; net: Money };
   };
 
 let dinner: { transaction: Entry; ious: Iou[] };
@@ -169,6 +169,7 @@ describe('a split bill', () => {
     expect(list.ious).toHaveLength(2);
     expect(list.totals.owedToMe).toEqual(usd(6_000));
     expect(list.totals.owedByMe).toEqual(usd(0));
+    expect(list.totals.net).toEqual(usd(6_000));
     expect(list.ious.find((i) => i.person === 'Alex Example')).toMatchObject({
       dueOn: '2026-03-30',
       overdue: false,
@@ -450,7 +451,12 @@ describe('borrowing', () => {
     expect(mid.available).toEqual(before.available);
     expect(mid.reserved.amountMinor).toBe(before.reserved.amountMinor + 6_000);
     expect(mid.spentToday).toEqual(before.spentToday);
-    expect((await open()).totals.owedByMe).toEqual(usd(6_000));
+    const owing = (await open()).totals;
+    expect(owing.owedByMe).toEqual(usd(6_000));
+    // Owed to the user less owed by them: negative once they owe more.
+    expect(owing.net.amountMinor).toBe(
+      owing.owedToMe.amountMinor - owing.owedByMe.amountMinor,
+    );
 
     const paid = await h.alice.post('/v1/ious/repayments', {
       accountId: everyday,

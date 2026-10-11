@@ -214,6 +214,8 @@ export type IouTotals = Readonly<{
   owedToMe: Money;
   /** What the user still owes, in the default currency. */
   owedByMe: Money;
+  /** `owedToMe − owedByMe`: positive when people owe the user more. */
+  net: Money;
   missingRates: readonly CurrencyCode[];
 }>;
 
@@ -233,6 +235,7 @@ export function iouTotals(
   return {
     owedToMe: toMe.amount,
     owedByMe: byMe.amount,
+    net: money(toMe.amount.amountMinor - byMe.amount.amountMinor, target),
     missingRates: [
       ...new Set([...toMe.missingRates, ...byMe.missingRates]),
     ].sort(),

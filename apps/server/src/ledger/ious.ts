@@ -148,6 +148,7 @@ export function listIous(
       totals: {
         owedToMe: totals.owedToMe,
         owedByMe: totals.owedByMe,
+        net: totals.net,
         missingRates: [...totals.missingRates],
       },
     };

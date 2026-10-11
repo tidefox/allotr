@@ -544,3 +544,49 @@ describe('covered this period and the preview', () => {
     expect(coverPreview(v, today, fromSavings).counted).toBe(false);
   });
 });
+
+describe('cover used and totals', () => {
+  it('lists the sources that covered a budget, in cover order', () => {
+    const rent = spend('2026-03-05', 140_000, other);
+    const groceries = spend('2026-03-06', 14_000, food);
+    const v = make([rent, groceries], [foodBudget, bufferBudget]);
+    const status = budgetStatus(v, today);
+    const lineOf = (id: string) => status.lines.find((l) => l.budget.id === id);
+    // Free money was $1,300 after the rent's own cover; the Buffer covers
+    // the rest of the rent ($100) and then Food's $40.
+    expect(lineOf('food')?.coverUsed).toEqual([
+      { source: bufferBudget.id, amount: usd(4_000) },
+    ]);
+    expect(lineOf('buffer')?.coverUsed).toEqual([]);
+  });
+
+  it('leaves a budget that went over nothing but covered out of the list when it paid its own', () => {
+    const groceries = spend('2026-03-06', 4_000, food);
+    const v = make([groceries], [foodBudget, bufferBudget]);
+    expect(budgetStatus(v, today).lines.map((l) => l.coverUsed)).toEqual([
+      [],
+      [],
+    ]);
+  });
+
+  it('adds each budget once for the total row', () => {
+    const groceries = spend('2026-03-06', 14_000, food);
+    const trip = spend('2026-03-07', 5_000, travel);
+    const v = make([groceries, trip], [foodBudget, travelBudget, bufferBudget]);
+    const { totals } = budgetStatus(v, today);
+    expect(totals.planned).toEqual(usd(10_000 + 30_000 + 20_000));
+    expect(totals.spent).toEqual(usd(14_000 + 5_000));
+    // Food has nothing left, Travel $250, the Buffer its $200.
+    expect(totals.left).toEqual(usd(0 + 25_000 + 20_000));
+  });
+
+  it('is zero with no budgets', () => {
+    const { totals, lines } = budgetStatus(make([], []), today);
+    expect(lines).toEqual([]);
+    expect(totals).toEqual({
+      planned: usd(0),
+      spent: usd(0),
+      left: usd(0),
+    });
+  });
+});

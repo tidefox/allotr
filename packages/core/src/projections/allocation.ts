@@ -34,6 +34,18 @@ export type CycleAllocation = Readonly<{
    * plus the income recorded since. Always exactly the sum of the six parts.
    */
   start: Money;
+  /**
+   * The income recorded since the cycle opened, whichever category and
+   * account it landed in, converted to the default currency. Not clamped:
+   * a refund-only cycle can make it negative.
+   */
+  paycheck: Money;
+  /**
+   * What the cycle opened with: `start − paycheck`, so the two always add
+   * up to `start` exactly (conversion rounding lands here). May be
+   * negative, when the accounts were overdrawn at the cycle's start.
+   */
+  carried: Money;
   /** Linked bill payments this cycle, less their undos. */
   paidBills: Money;
   /**
@@ -180,12 +192,14 @@ export function cycleAllocation(
   const cycle = cycleOn(cycles, today);
 
   const startNative: Sums = new Map();
+  const incomeNative: Sums = new Map();
   const snapshot = cycleSnapshot(view, cycle, today, cycles);
   for (const [currency, amount] of snapshot.opening.on) {
     add(startNative, currency, BigInt(amount.amountMinor));
   }
   for (const { amount } of snapshot.income) {
     add(startNative, amount.currency, BigInt(amount.amountMinor));
+    add(incomeNative, amount.currency, BigInt(amount.amountMinor));
   }
 
   const onBudget = onBudgetSums(view, today);
@@ -222,6 +236,7 @@ export function cycleAllocation(
     (sum, figure) => sum + figure.amount.amountMinor,
     0,
   );
+  const paycheck = toFigure(view, incomeNative, today);
   const [sPaid, sSavings, sSpent, sReserved, sFree, sOther] = basisPointShares(
     [
       figures.paidBills.amount.amountMinor,
@@ -235,6 +250,11 @@ export function cycleAllocation(
   );
   return {
     start: money(total, view.settings.defaultCurrency),
+    paycheck: paycheck.amount,
+    carried: money(
+      total - paycheck.amount.amountMinor,
+      view.settings.defaultCurrency,
+    ),
     paidBills: figures.paidBills.amount,
     savings: figures.savings.amount,
     spent: figures.spent.amount,
@@ -250,7 +270,9 @@ export function cycleAllocation(
       other: sOther ?? 0,
     },
     missingRates: [
-      ...new Set(Object.values(figures).flatMap((f) => f.missingRates)),
+      ...new Set(
+        [...Object.values(figures), paycheck].flatMap((f) => f.missingRates),
+      ),
     ].sort(),
   };
 }
