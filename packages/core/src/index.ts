@@ -293,6 +293,7 @@ export {
   type ReminderKind,
 } from './projections/reminders.ts';
 export { savingsRate } from './projections/savings-rate.ts';
+export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,

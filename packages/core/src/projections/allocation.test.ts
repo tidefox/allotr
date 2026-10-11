@@ -74,6 +74,14 @@ describe('cycleAllocation', () => {
       reserved: usd(8000),
       free: usd(268000),
       other: usd(0),
+      shareBp: {
+        paidBills: 571,
+        savings: 1429,
+        spent: 114,
+        reserved: 229,
+        free: 7657,
+        other: 0,
+      },
       missingRates: [],
     });
   });
@@ -155,6 +163,14 @@ describe('cycleAllocation', () => {
       reserved: usd(0),
       free: usd(350000),
       other: usd(0),
+      shareBp: {
+        paidBills: 0,
+        savings: 0,
+        spent: 0,
+        reserved: 0,
+        free: 10000,
+        other: 0,
+      },
       missingRates: [],
     });
   });

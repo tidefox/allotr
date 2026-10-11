@@ -20,7 +20,8 @@ import type { ReportPeriod } from './reports-search.ts';
 
 // The summary tab's view model. Every amount is a figure the server sent.
 // This file only compares whole minor units and turns two of them into a
-// 0..1 fraction to place a bar; those fractions are never shown as money.
+// 0..1 fraction to place a bar; those fractions are never shown as money or
+// as a percentage (shares come from the server in basis points).
 
 export interface ReportParams {
   period: 'cycle' | 'month';
@@ -113,15 +114,6 @@ export function fractionOf(part: number, whole: number): number {
   return Math.min(1, part / whole);
 }
 
-/** "34%" or "<1%": a share of spending as text, for a column. */
-export function sharePercent(fraction: number): string {
-  if (fraction <= 0) return '0%';
-  const whole = Math.round(fraction * 100);
-  return whole < 1
-    ? t('reportsSummary.categories.lessThanOne')
-    : `${String(whole)}%`;
-}
-
 export type CategoryRole = 'parent' | 'child' | 'last-child' | 'flat';
 
 export interface CategoryRow {
@@ -131,8 +123,10 @@ export interface CategoryRow {
   role: CategoryRole;
   name: string;
   amount: Money;
-  /** Share of all spending, 0..1. */
+  /** Share of all spending, 0..1, to size the bar. */
   fraction: number;
+  /** Share of all spending in basis points, as the server computed it. */
+  shareBp: number;
   colour: SeriesColor;
   icon: CategoryIcon | null;
   /** The category's budget for this period; null when none or not comparable. */
@@ -182,10 +176,11 @@ export function categoryRows(
       icon: style?.icon ?? null,
     };
   };
-  const figures = (id: string | null, amount: Money) => {
+  const figures = (id: string | null, amount: Money, shareBp: number) => {
     const budget = id === null ? null : (budgets.get(id) ?? null);
     return {
       amount,
+      shareBp,
       fraction: fractionOf(amount.amountMinor, whole),
       budget,
       over:
@@ -207,7 +202,7 @@ export function categoryRows(
       group: key,
       name: nameOf(group.categoryId),
       ...look(group.categoryId),
-      ...figures(group.categoryId, group.amount),
+      ...figures(group.categoryId, group.amount, group.shareBp),
     };
     if (children.length === 0) return [{ ...top, role: 'flat' }];
     return [
@@ -224,7 +219,11 @@ export function categoryRows(
               })
             : nameOf(child.categoryId),
           ...look(child.categoryId),
-          ...figures(own ? null : child.categoryId, child.amount),
+          ...figures(
+            own ? null : child.categoryId,
+            child.amount,
+            child.shareBp,
+          ),
           // A child's bar is its part of all spending, like its parent's.
         };
       }),
@@ -251,6 +250,7 @@ export function shareSegments(rows: readonly CategoryRow[]): ShareSegment[] {
       id: row.key,
       label: row.name,
       fraction: row.fraction,
+      shareBp: row.shareBp,
       color: row.colour,
     }));
 }

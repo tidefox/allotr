@@ -240,7 +240,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   splits the cycle's on-budget start into `paidBills`, `savings` (money
   actually moved to savings), `spent`, `reserved`, `free` and `other` (what
   none of those explain, such as money lent), which add up to `start`
-  exactly (domain.md "Cycle allocation").
+  exactly (domain.md "Cycle allocation"). `allocation.shareBp` gives each
+  part's share of `start` in basis points (largest-remainder rounding; 0
+  for a part that is not positive). `/v1/reports/categories` groups and
+  children carry `shareBp` of the period's total the same way.
 - `GET /v1/accounts` marks each account `reconcileDue` (open, and never
   reconciled or not for more than 30 days before the user's today;
   `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit

@@ -131,6 +131,7 @@ export function ChartsGallery() {
                 label: 'Bills paid',
                 amount: money(30000, 'USD'),
                 fraction: 0.24,
+                shareBp: 2400,
                 color: 'series-3',
               },
               {
@@ -138,6 +139,7 @@ export function ChartsGallery() {
                 label: 'To savings',
                 amount: money(20000, 'USD'),
                 fraction: 0.16,
+                shareBp: 1600,
                 color: 'series-2',
               },
               {
@@ -145,6 +147,7 @@ export function ChartsGallery() {
                 label: 'Spent',
                 amount: money(27800, 'USD'),
                 fraction: 0.22,
+                shareBp: 2200,
                 color: 'series-1',
               },
               {
@@ -152,6 +155,7 @@ export function ChartsGallery() {
                 label: 'Bills set aside',
                 amount: money(41200, 'USD'),
                 fraction: 0.33,
+                shareBp: 3300,
                 color: 'series-4',
               },
               {
@@ -159,6 +163,7 @@ export function ChartsGallery() {
                 label: 'Free to spend',
                 amount: money(5000, 'USD'),
                 fraction: 0.05,
+                shareBp: 500,
                 color: 'series-5',
               },
             ]}

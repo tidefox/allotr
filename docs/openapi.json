@@ -30236,7 +30236,7 @@
           "Today"
         ],
         "summary": "Today's figures",
-        "description": "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. `allocation` splits the open cycle's on-budget start into bills paid, money moved to savings (transfers into off-budget accounts and accounts moved into a savings pool), spending, money set aside, free money and `other` (what none of those explain, such as money lent; often zero, may be negative); the six parts add up to `start` exactly. `reserved` is the money set aside for bills and for what is owed to people; `reservedBills` and `reservedIous` are its two parts and add up to it.",
+        "description": "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. `allocation` splits the open cycle's on-budget start into bills paid, money moved to savings (transfers into off-budget accounts and accounts moved into a savings pool), spending, money set aside, free money and `other` (what none of those explain, such as money lent; often zero, may be negative); the six parts add up to `start` exactly. `allocation.shareBp` gives each part's share of `start` in basis points (10 000 is all of it; 0 for a part that is not positive), rounded by largest remainder so the shares add up to 10 000 when no part is negative. `reserved` is the money set aside for bills and for what is owed to people; `reservedBills` and `reservedIous` are its two parts and add up to it.",
         "responses": {
           "200": {
             "description": "Today's figures.",
@@ -30632,6 +30632,49 @@
                             "amountMinor",
                             "currency"
                           ]
+                        },
+                        "shareBp": {
+                          "type": "object",
+                          "properties": {
+                            "paidBills": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "savings": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "spent": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "reserved": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "free": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "other": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            }
+                          },
+                          "required": [
+                            "paidBills",
+                            "savings",
+                            "spent",
+                            "reserved",
+                            "free",
+                            "other"
+                          ]
                         }
                       },
                       "required": [
@@ -30641,7 +30684,8 @@
                         "spent",
                         "reserved",
                         "free",
-                        "other"
+                        "other",
+                        "shareBp"
                       ]
                     },
                     "billsDue": {
@@ -33314,7 +33358,7 @@
           "Reports"
         ],
         "summary": "Spending and income per category for a period",
-        "description": "Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into. With `series=N` the response also has `series`: spending per top-level category (subcategories counted in their parent, as above) for the N consecutive cycles or months ending with the selected one, oldest first, each in the default currency at the rate on that period's last day. `points` and `totals` line up with `periods`; fewer periods come back when history is shorter.",
+        "description": "Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into. Every group and child has `shareBp`, its share of the period's total (`spendingTotal` for spending, `incomeTotal` for income) in basis points, 0 when not positive; groups use largest-remainder rounding and a group's children split the group's share. With `series=N` the response also has `series`: spending per top-level category (subcategories counted in their parent, as above) for the N consecutive cycles or months ending with the selected one, oldest first, each in the default currency at the rate on that period's last day. `points` and `totals` line up with `periods`; fewer periods come back when history is shorter.",
         "parameters": [
           {
             "schema": {
@@ -33410,6 +33454,11 @@
                               "currency"
                             ]
                           },
+                          "shareBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
                           "children": {
                             "type": "array",
                             "items": {
@@ -33438,11 +33487,17 @@
                                     "amountMinor",
                                     "currency"
                                   ]
+                                },
+                                "shareBp": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10000
                                 }
                               },
                               "required": [
                                 "categoryId",
-                                "amount"
+                                "amount",
+                                "shareBp"
                               ]
                             }
                           }
@@ -33450,6 +33505,7 @@
                         "required": [
                           "categoryId",
                           "amount",
+                          "shareBp",
                           "children"
                         ]
                       }
@@ -33483,6 +33539,11 @@
                               "currency"
                             ]
                           },
+                          "shareBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
                           "children": {
                             "type": "array",
                             "items": {
@@ -33511,11 +33572,17 @@
                                     "amountMinor",
                                     "currency"
                                   ]
+                                },
+                                "shareBp": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10000
                                 }
                               },
                               "required": [
                                 "categoryId",
-                                "amount"
+                                "amount",
+                                "shareBp"
                               ]
                             }
                           }
@@ -33523,6 +33590,7 @@
                         "required": [
                           "categoryId",
                           "amount",
+                          "shareBp",
                           "children"
                         ]
                       }

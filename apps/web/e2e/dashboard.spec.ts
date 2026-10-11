@@ -118,6 +118,8 @@ test('the dashboard shows every tile with seeded data', async ({
       exact: true,
     }),
   ).toBeVisible();
+  // Each part prints the server's share, so all six show a percentage.
+  await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(6);
   const fund = page.getByRole('region', {
     name: t('dashboardTiles.emergencyFund.title'),
   });

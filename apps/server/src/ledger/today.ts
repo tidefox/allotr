@@ -200,6 +200,7 @@ export async function todayFigures(
       reserved: allocation.reserved,
       free: allocation.free,
       other: allocation.other,
+      shareBp: allocation.shareBp,
     },
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,

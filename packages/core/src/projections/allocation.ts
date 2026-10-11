@@ -19,6 +19,7 @@ import {
 } from './daily.ts';
 import { cycleSnapshot } from './snapshot.ts';
 import { groupsOn } from './pools.ts';
+import { basisPointShares } from './shares.ts';
 import type { Cycle, LedgerView } from './types.ts';
 
 // How the open cycle's on-budget money divides (docs/domain.md "Cycle
@@ -54,9 +55,23 @@ export type CycleAllocation = Readonly<{
    * on-budget total. Zero when everything is explained; may be negative.
    */
   other: Money;
+  /**
+   * Each part's share of `start` in basis points (10 000 is all of it): 0
+   * for a part that is not positive, and for every part when `start` is not
+   * positive. Largest-remainder rounding, so the shares add up to 10 000
+   * whenever no part is negative.
+   */
+  shareBp: AllocationShares;
   /** Currencies without a rate to the default one, left out. */
   missingRates: readonly CurrencyCode[];
 }>;
+
+export type AllocationShares = Readonly<
+  Record<
+    'paidBills' | 'savings' | 'spent' | 'reserved' | 'free' | 'other',
+    number
+  >
+>;
 
 /**
  * Money moved into savings during `cycle` up to `today`, per currency: for
@@ -207,6 +222,17 @@ export function cycleAllocation(
     (sum, figure) => sum + figure.amount.amountMinor,
     0,
   );
+  const [sPaid, sSavings, sSpent, sReserved, sFree, sOther] = basisPointShares(
+    [
+      figures.paidBills.amount.amountMinor,
+      figures.savings.amount.amountMinor,
+      figures.spent.amount.amountMinor,
+      figures.reserved.amount.amountMinor,
+      figures.free.amount.amountMinor,
+      figures.other.amount.amountMinor,
+    ],
+    total,
+  );
   return {
     start: money(total, view.settings.defaultCurrency),
     paidBills: figures.paidBills.amount,
@@ -215,6 +241,14 @@ export function cycleAllocation(
     reserved: figures.reserved.amount,
     free: figures.free.amount,
     other: figures.other.amount,
+    shareBp: {
+      paidBills: sPaid ?? 0,
+      savings: sSavings ?? 0,
+      spent: sSpent ?? 0,
+      reserved: sReserved ?? 0,
+      free: sFree ?? 0,
+      other: sOther ?? 0,
+    },
     missingRates: [
       ...new Set(Object.values(figures).flatMap((f) => f.missingRates)),
     ].sort(),

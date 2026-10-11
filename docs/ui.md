@@ -264,7 +264,7 @@ settings, so no ledger read is made that the server would refuse.
 | this cycle | Key figures (spent day-to-day, which leaves bills out, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
 | needs attention | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
-| cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; segment shares are a ratio of two server figures) |
+| cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
 | budgets | Category tree: parent rows with the server's totals, children under them, each with bar and left | `/v1/budgets` (`parents`: totals per parent category) |
 | next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
 | pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
@@ -425,7 +425,10 @@ property tests:
    on `/v1/today`; `parents` totals on `/v1/budgets`; `addedThisCycle` and
    `cyclesToTarget` on the emergency fund; `change` on net worth; and on
    `/v1/accounts` `reconcileDue` per account and `totals.creditOwed`.
-   Segment shares stay a ratio of two server figures (§6).
+   Printed shares are server figures in basis points: `allocation.shareBp`
+   per part and `shareBp` per group and child on `/v1/reports/categories`
+   (largest-remainder rounding, so they add up to 10 000). Bar widths stay a
+   ratio of two server figures (§6).
 
 ## 9. Accessibility
 

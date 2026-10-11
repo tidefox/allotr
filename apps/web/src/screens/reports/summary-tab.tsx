@@ -25,6 +25,7 @@ import {
 } from '@/lib/ledger';
 import { seriesNumber } from '@/lib/category-style';
 import { t } from '@/messages/t';
+import { shareText } from '@/lib/share-text';
 import { PeriodMenu } from './period-menu.tsx';
 import type { ReportPeriod } from './reports-search.ts';
 import { reportPayeesQuery, reportCategoriesQuery } from './summary-queries.ts';
@@ -37,7 +38,6 @@ import {
   monthDayFigures,
   reportParams,
   shareSegments,
-  sharePercent,
   statFigures,
   visibleRows,
   type CategoryRow,
@@ -254,7 +254,7 @@ function CategoryLine({
   folded: boolean;
   onToggle: () => void;
 }) {
-  const share = sharePercent(row.fraction);
+  const share = shareText(row.shareBp);
   const cells = [
     <span key="name" className="flex min-w-0 items-center gap-2">
       {row.icon === null ? (

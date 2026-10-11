@@ -9,7 +9,8 @@ type Money = { amountMinor: number; currency: string };
 type Group = {
   categoryId: string | null;
   amount: Money;
-  children: { categoryId: string | null; amount: Money }[];
+  shareBp: number;
+  children: { categoryId: string | null; amount: Money; shareBp: number }[];
 };
 type Summary = {
   period: string;
@@ -121,6 +122,19 @@ describe('GET /v1/reports/categories', () => {
       eatingOut,
       food,
     ]);
+  });
+
+  it('gives each group and child a share of the total in basis points', async () => {
+    const body = (
+      await h.alice.get('/v1/reports/categories?period=month&month=2026-03')
+    ).body as Summary;
+    // 4,700 and 2,000 of 6,700: the shares add up to exactly 10,000.
+    expect(body.spending.map((g) => g.shareBp)).toEqual([7015, 2985]);
+    const [first] = body.spending;
+    // A group's children split the group's share.
+    expect(first?.children.reduce((sum, c) => sum + c.shareBp, 0)).toBe(7015);
+    expect(first?.children.map((c) => c.shareBp)).toEqual([4478, 1791, 746]);
+    expect(body.income).toEqual([]);
   });
 
   it('totals the period, averages it per day so far and counts what was saved', async () => {
