@@ -61,7 +61,8 @@ These always apply. Details are in `.agent/rules/`.
    → [.agent/rules/code-style.md](.agent/rules/code-style.md) ·
    [.agent/rules/testing.md](.agent/rules/testing.md)
 8. **The web UI follows the terminal design system.** Theme roles only,
-   in-app menus instead of native pickers, no money maths in the browser.
+   in-app menus instead of native pickers, no money maths in the browser
+   beyond display ratios and input aids (ADR 0030).
    → [.agent/rules/ui.md](.agent/rules/ui.md) · [docs/ui.md](docs/ui.md)
 
 ## Layout

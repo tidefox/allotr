@@ -42,3 +42,4 @@ kept in `docs/drafts/`, which git ignores.
 - [0027 Navigation v3: summary bar, sub-tabs, command line and in-app menus](0027-navigation-v3.md)
 - [0028 UI foundation v2: React Aria Components, in-house SVG charts, CSS motion, Remix Icon](0028-ui-foundation-v2.md)
 - [0029 Interface customisation, after the rebuild](0029-ui-customisation.md)
+- [0030 Display ratios and input aids in the web app](0030-display-ratios.md)
