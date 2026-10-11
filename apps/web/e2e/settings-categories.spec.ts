@@ -66,8 +66,8 @@ async function tooSmall(page: Page) {
 const inSheet = (page: Page, name: string) =>
   page.getByRole('dialog').getByRole('button', { name, exact: true });
 const region = (page: Page, name: string) => page.getByRole('region', { name });
-const expenses = (page: Page) =>
-  region(page, t('settingsCategories.tiles.expense.title'));
+// One tile holds every kind's tree.
+const expenses = (page: Page) => region(page, t('settingsCategories.title'));
 
 const seeded = new Set([
   'Dining',
@@ -82,7 +82,9 @@ const seeded = new Set([
 async function order(tile: Locator): Promise<string[]> {
   const actions = tile.getByRole('button', { name: /^Actions for / });
   await actions.first().waitFor();
-  const labels = await actions.allTextContents();
+  const labels = await actions.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') ?? ''),
+  );
   // The starter set shares the tile; only the seeded names matter here.
   return labels
     .map((label) => label.replace(/^Actions for /, ''))
@@ -162,7 +164,7 @@ test('the tree lists categories by kind with tags beside it', async ({
     'Mortgage',
   ]);
   await expect(
-    region(page, t('settingsCategories.tiles.income.title'))
+    expenses(page)
       .getByRole('row', { name: 'Wages' })
       .getByText(t('settingsCategories.paycheckTag'), { exact: true }),
   ).toBeVisible();
@@ -203,16 +205,7 @@ test('the arrows reorder siblings and the server keeps the order', async ({
   await signIn(page, baseURL ?? '');
   await page.goto('/settings/categories');
   const tile = expenses(page);
-  const down = tile.getByRole('button', {
-    name: t('settingsCategories.down', { name: 'Espresso' }),
-  });
-  // Narrow frames drop the arrow column; the row menu has the same steps.
-  if (await down.isVisible()) {
-    await reach(page, 'Espresso', down);
-    await page.keyboard.press('Enter');
-  } else {
-    await choose(page, 'Espresso', t('settingsCategories.menu.moveDown'));
-  }
+  await choose(page, 'Espresso', t('settingsCategories.menu.moveDown'));
   await expect
     .poll(async () => order(tile))
     .toEqual(['Dining', 'Ramen', 'Espresso', 'Mortgage']);
@@ -223,11 +216,6 @@ test('the arrows reorder siblings and the server keeps the order', async ({
     'Espresso',
     'Mortgage',
   ]);
-  // The first row has nothing to move past.
-  const first = expenses(page).getByRole('button', {
-    name: t('settingsCategories.up', { name: 'Food' }),
-  });
-  if (await first.isVisible()) await expect(first).toBeDisabled();
 });
 
 test('a row drags with the keyboard to a new place among its siblings', async ({
@@ -263,6 +251,10 @@ test('a row drags with the mouse', async ({ page, baseURL }) => {
   await page.goto('/settings/categories');
   const tile = expenses(page);
   // Mortgage is above Dining; drop it on the lower half of Dining's row.
+  // Both rows must be on screen, so the list scrolls to the lower one first.
+  await tile
+    .getByRole('row', { name: 'Dining', exact: true })
+    .scrollIntoViewIfNeeded();
   const from = await tile
     .getByRole('row', { name: 'Mortgage', exact: true })
     .boundingBox();

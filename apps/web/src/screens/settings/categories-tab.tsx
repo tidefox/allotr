@@ -10,16 +10,25 @@ import {
 import type { CategoryView, TagView } from '@allotr/shared';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton, Tag } from '@/components/buttons';
-import { Grid, Stack, Tile } from '@/components/layout';
+import { Grid, SectionTitle, Stack, Tile } from '@/components/layout';
 import { MenuButton, MenuItem, MenuSeparator } from '@/components/menu';
-import { Row, TreeRow } from '@/components/row';
+import { Row } from '@/components/row';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import {
   CATEGORY_KINDS,
   categoryTree,
   type CategoryKind,
 } from '@/features/settings/categories-model';
-import { IconMore2Line } from '@/generated/icons';
+import {
+  IconAddLine,
+  IconArrowDownSLine,
+  IconArrowRightSLine,
+  IconMore2Line,
+  IconNodeTree,
+} from '@/generated/icons';
+import { budgetsQuery } from '@/lib/budgets';
+import { formatMoney } from '@/lib/format-money';
+import { cn } from '@/lib/utils';
 import {
   categoryStyles,
   colourVar,
@@ -61,13 +70,6 @@ type Open =
   | Readonly<{ sheet: 'archive' | 'merge'; category: CategoryView }>
   | Readonly<{ sheet: 'tag'; tag: TagView | null }>;
 
-const columns = [
-  { width: 'minmax(0,1fr)' },
-  { width: '4.5rem' },
-  { width: '5rem', from: 'medium' },
-  { width: '2rem' },
-] as const;
-
 // Categories (docs/ui.md §6): a tree per kind, with tags beside it. Drag a
 // row (press and hold on touch) or use the arrows to reorder it among its
 // siblings; everything else is in the row's menu. The server decides what
@@ -75,6 +77,7 @@ const columns = [
 export function CategoriesTab() {
   const categories = useQuery(categoriesQuery);
   const tags = useQuery(tagsQuery);
+  const budgets = useQuery(budgetsQuery);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<Open | null>(null);
   // Positions shown while a reorder is being saved, so a move feels instant.
@@ -101,7 +104,7 @@ export function CategoriesTab() {
   if (categories.isError) {
     return (
       <Stack className="h-full">
-        <Tile title={t('settingsCategories.tiles.expense.title')}>
+        <Tile title={t('settingsCategories.title')}>
           <TileFailed
             retry={() => {
               void categories.refetch();
@@ -135,20 +138,60 @@ export function CategoriesTab() {
     save.mutate(changes);
   };
 
+  const total = CATEGORY_KINDS.reduce(
+    (sum, kind) =>
+      sum + tree[kind].reduce((n, node) => n + 1 + node.children.length, 0),
+    0,
+  );
+  const parents = CATEGORY_KINDS.reduce(
+    (sum, kind) =>
+      sum + tree[kind].filter((node) => node.children.length > 0).length,
+    0,
+  );
+  const budgetOf = new Map<string, string>();
+  for (const budget of budgets.data?.budgets ?? []) {
+    if (budget.target.kind === 'category')
+      budgetOf.set(
+        budget.target.categoryId,
+        t('settingsCategories.budget', { amount: formatMoney(budget.amount) }),
+      );
+  }
+
   return (
     <>
-      <Grid>
-        {CATEGORY_KINDS.map((kind) => (
-          <KindTile
-            key={kind}
-            kind={kind}
-            nodes={tree[kind]}
-            styles={styles}
-            failed={save.isError}
-            onOpen={setOpen}
-            onReorder={reorderTo}
-          />
-        ))}
+      <Stack className="min-h-full">
+        <Tile
+          title={t('settingsCategories.title')}
+          icon={IconNodeTree}
+          subtitle={t('settingsCategories.count', { total, parents })}
+          bodyClassName="px-0 pb-0"
+          actions={
+            <BracketButton
+              icon={IconAddLine}
+              onPress={() => {
+                setOpen({ sheet: 'create', kind: 'expense', parent: null });
+              }}
+            >
+              {t('settingsCategories.add')}
+            </BracketButton>
+          }
+        >
+          <p className="px-3 pt-2 pb-2 font-ui text-text-muted">
+            {t('settingsCategories.hint')}
+          </p>
+          {CATEGORY_KINDS.map((kind) => (
+            <KindList
+              key={kind}
+              kind={kind}
+              nodes={tree[kind]}
+              styles={styles}
+              budgetOf={budgetOf}
+              failed={save.isError}
+              onOpen={setOpen}
+              onReorder={reorderTo}
+            />
+          ))}
+        </Tile>
         <TagsTile
           tags={tags.data?.tags}
           failed={tags.isError}
@@ -157,7 +200,7 @@ export function CategoriesTab() {
           }}
           onOpen={setOpen}
         />
-      </Grid>
+      </Stack>
       {open === null ? null : (
         <Sheets
           open={open}
@@ -212,10 +255,11 @@ function Sheets({
   }
 }
 
-function KindTile({
+function KindList({
   kind,
   nodes,
   styles,
+  budgetOf,
   failed,
   onOpen,
   onReorder,
@@ -223,6 +267,7 @@ function KindTile({
   kind: CategoryKind;
   nodes: ReturnType<typeof categoryTree>[CategoryKind];
   styles: ReadonlyMap<string, CategoryStyle>;
+  budgetOf: ReadonlyMap<string, string>;
   failed: boolean;
   onOpen: (open: Open) => void;
   onReorder: (
@@ -286,21 +331,20 @@ function KindTile({
   });
 
   return (
-    <Tile
-      title={t(`settingsCategories.tiles.${kind}.title`)}
-      subtitle={t(`settingsCategories.tiles.${kind}.subtitle`)}
-      span={kind === 'expense' ? 2 : 1}
-      bodyClassName="px-0 pb-0"
-      actions={
-        <BracketButton
-          onPress={() => {
-            onOpen({ sheet: 'create', kind, parent: null });
-          }}
-        >
-          {t('settingsCategories.add')}
-        </BracketButton>
-      }
-    >
+    <>
+      {kind === 'expense' ? null : (
+        <div className="flex items-center justify-between gap-2 border-t px-3">
+          <SectionTitle>{t(`settingsCategories.kinds.${kind}`)}</SectionTitle>
+          <BracketButton
+            icon={IconAddLine}
+            onPress={() => {
+              onOpen({ sheet: 'create', kind, parent: null });
+            }}
+          >
+            {t('settingsCategories.add')}
+          </BracketButton>
+        </div>
+      )}
       {rows.length === 0 ? (
         <EmptyState
           title={t('settingsCategories.none')}
@@ -324,6 +368,17 @@ function KindTile({
                 <CategoryRow
                   row={row}
                   style={styles.get(row.category.id)}
+                  budget={
+                    row.role === 'parent' && row.foldable
+                      ? t('settingsCategories.rollsUp')
+                      : (budgetOf.get(row.category.id) ?? '—')
+                  }
+                  subCount={
+                    row.role === 'parent'
+                      ? (nodes.find((n) => n.category.id === row.category.id)
+                          ?.children.length ?? 0)
+                      : 0
+                  }
                   nodes={nodes}
                   folded={folded.has(row.category.id)}
                   onToggle={() => {
@@ -335,23 +390,31 @@ function KindTile({
               </GridListItem>
             ))}
           </GridList>
-          <p className="px-3 py-2 font-sans text-small text-text-muted">
-            {t('settingsCategories.hint')}
-          </p>
           {failed ? (
-            <p role="alert" className="px-3 pb-2 text-small text-negative">
+            <p role="alert" className="px-3 py-2 text-small text-negative">
               {t('settingsCategories.saveFailed')}
             </p>
           ) : null}
         </>
       )}
-    </Tile>
+    </>
   );
 }
+
+const rowColumns = [
+  { width: '1.5rem' },
+  { width: '1.125rem' },
+  { width: 'minmax(0,1fr)' },
+  { width: '14ch', from: 'medium' },
+  { width: 'auto' },
+  { width: 'auto' },
+] as const;
 
 function CategoryRow({
   row,
   style,
+  budget,
+  subCount,
   nodes,
   folded,
   onToggle,
@@ -360,6 +423,8 @@ function CategoryRow({
 }: {
   row: CategoryRowModel;
   style: CategoryStyle | undefined;
+  budget: string;
+  subCount: number;
   nodes: ReturnType<typeof categoryTree>[CategoryKind];
   folded: boolean;
   onToggle: () => void;
@@ -374,6 +439,38 @@ function CategoryRow({
   const order = siblingIds(nodes, category);
   const up = stepOrder(order, category.id, -1);
   const down = stepOrder(order, category.id, 1);
+  const parent = row.role === 'parent';
+  const lead = parent ? (
+    row.foldable ? (
+      <button
+        type="button"
+        aria-label={t('settingsCategories.foldOf', { name: category.name })}
+        aria-expanded={!folded}
+        onClick={onToggle}
+        className="flex size-hit items-center justify-center text-text-muted"
+      >
+        {folded ? (
+          <IconArrowRightSLine className="size-4" />
+        ) : (
+          <IconArrowDownSLine className="size-4" />
+        )}
+      </button>
+    ) : null
+  ) : (
+    <span aria-hidden="true" className="block w-6 text-center text-outline">
+      {row.role === 'last-child' ? '└' : '├'}
+    </span>
+  );
+  const icon =
+    style?.icon === null || style === undefined ? (
+      <span
+        aria-hidden="true"
+        className="block size-2 shrink-0"
+        style={{ backgroundColor: colourVar(style?.colour ?? 'series-1') }}
+      />
+    ) : (
+      <CategoryIcon name={style.icon} color={seriesNumber(style.colour)} />
+    );
   const name = (
     <span className="flex min-w-0 items-center gap-2">
       {/* Keyboard and screen reader users pick a row up with this; it shows
@@ -384,63 +481,37 @@ function CategoryRow({
       >
         ⠿
       </Button>
-      {style?.icon === null || style === undefined ? (
-        <span
-          aria-hidden="true"
-          className="size-2 shrink-0"
-          style={{
-            backgroundColor: colourVar(style?.colour ?? 'series-1'),
-          }}
-        />
-      ) : (
-        <CategoryIcon name={style.icon} color={seriesNumber(style.colour)} />
-      )}
-      <span className="truncate font-sans">{category.name}</span>
+      <span className={cn('truncate font-ui', parent && 'font-semibold')}>
+        {category.name}
+        {parent && subCount > 0 ? (
+          <span className="font-normal text-text-muted">
+            {' '}
+            {t('settingsCategories.subCount', { count: subCount })}
+          </span>
+        ) : null}
+      </span>
       {category.isPaycheck ? (
         <Tag>{t('settingsCategories.paycheckTag')}</Tag>
       ) : null}
     </span>
   );
-  const addSub =
-    row.role === 'parent' ? (
-      <BracketButton
-        aria-label={t('settingsCategories.addSubOf', { name: category.name })}
-        onPress={() => {
-          onOpen({ sheet: 'create', kind: category.kind, parent: category });
-        }}
-      >
-        {t('settingsCategories.addSub')}
-      </BracketButton>
-    ) : null;
-  const arrows = (
-    <span className="flex items-center justify-end">
-      <BracketButton
-        aria-label={t('settingsCategories.up', { name: category.name })}
-        isDisabled={up === null}
-        onPress={() => {
-          if (up !== null) onReorder(nodes, category, up);
-        }}
-      >
-        ↑
-      </BracketButton>
-      <BracketButton
-        aria-label={t('settingsCategories.down', { name: category.name })}
-        isDisabled={down === null}
-        onPress={() => {
-          if (down !== null) onReorder(nodes, category, down);
-        }}
-      >
-        ↓
-      </BracketButton>
-    </span>
-  );
+  const addSub = parent ? (
+    <BracketButton
+      icon={IconAddLine}
+      aria-label={t('settingsCategories.addSubOf', { name: category.name })}
+      onPress={() => {
+        onOpen({ sheet: 'create', kind: category.kind, parent: category });
+      }}
+    >
+      {t('settingsCategories.addSub')}
+    </BracketButton>
+  ) : null;
   const menu = (
     <MenuButton
-      iconOnly
+      variant="bracket"
       icon={IconMore2Line}
       label={t('settingsCategories.actionsOf', { name: category.name })}
       title={category.name}
-      className="size-8 justify-center"
     >
       <MenuItem
         id="rename"
@@ -496,32 +567,19 @@ function CategoryRow({
       />
     </MenuButton>
   );
-  const cells = [name, addSub, arrows, menu];
-  if (row.role === 'parent' && !row.foldable) {
-    // Nothing to fold: an empty lead keeps the names aligned.
-    return (
-      <Row
-        columns={[{ width: '1.5rem' }, ...columns]}
-        cells={[
-          null,
-          <strong key="n" className="font-semibold">
-            {name}
-          </strong>,
-          addSub,
-          arrows,
-          menu,
-        ]}
-      />
-    );
-  }
   return (
-    <TreeRow
-      role={row.role}
-      expanded={!folded}
-      onToggle={onToggle}
-      label={t('settingsCategories.foldOf', { name: category.name })}
-      columns={columns}
-      cells={cells}
+    <Row
+      columns={rowColumns}
+      cells={[
+        lead,
+        icon,
+        name,
+        <span key="budget" className="text-text-muted">
+          {budget}
+        </span>,
+        addSub,
+        menu,
+      ]}
     />
   );
 }

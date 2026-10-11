@@ -8,10 +8,10 @@ import {
 } from '@allotr/shared';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton, PrimaryButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
+import { Grid, Stack, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import { EmptyState } from '@/components/states';
-import { IconAddLine } from '@/generated/icons';
+import { IconAddLine, IconSettings3Line } from '@/generated/icons';
 import {
   payKind,
   percentText,
@@ -47,7 +47,7 @@ export function PoliciesTab() {
   if (settings.data === undefined) {
     return settings.isError ? (
       <Grid>
-        <Tile title={t('settingsPolicies.payday.title')}>
+        <Tile title={t('settingsPolicies.title')} icon={IconSettings3Line}>
           <Failed
             retry={() => {
               void settings.refetch();
@@ -64,10 +64,14 @@ export function PoliciesTab() {
     );
   }
   return (
-    <Grid>
-      <PlanTile settings={settings.data} />
-      <EntriesTile settings={settings.data} />
-      <ReportsTile settings={settings.data} />
+    <Stack className="min-h-full">
+      <Tile title={t('settingsPolicies.title')} icon={IconSettings3Line}>
+        <div className="-mx-3 -mb-2.5 flex flex-col">
+          <PlanRows settings={settings.data} />
+          <EntriesRows settings={settings.data} />
+          <ReportsRows settings={settings.data} />
+        </div>
+      </Tile>
       <TagsTile
         tags={tags.data?.tags}
         failed={tags.isError}
@@ -75,13 +79,13 @@ export function PoliciesTab() {
           void tags.refetch();
         }}
       />
-    </Grid>
+    </Stack>
   );
 }
 
 type PlanSheet = 'pay' | 'months' | 'writeOff';
 
-function PlanTile({ settings }: { settings: LedgerSettingsView }) {
+function PlanRows({ settings }: { settings: LedgerSettingsView }) {
   const [sheet, open, close] = useSheet<PlanSheet>();
   const pay = settings.payYourselfFirst;
   const paySummary =
@@ -95,11 +99,7 @@ function PlanTile({ settings }: { settings: LedgerSettingsView }) {
             percent: percentText(pay.basisPoints),
           });
   return (
-    <Tile
-      title={t('settingsPolicies.payday.title')}
-      subtitle={t('settingsPolicies.payday.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <FormRow
         label={t('settingsPolicies.payday.payFirst')}
         value={paySummary}
@@ -157,7 +157,7 @@ function PlanTile({ settings }: { settings: LedgerSettingsView }) {
           onClose={close}
         />
       ) : null}
-    </Tile>
+    </>
   );
 }
 
@@ -301,14 +301,10 @@ function PaySheet({
   );
 }
 
-function EntriesTile({ settings }: { settings: LedgerSettingsView }) {
+function EntriesRows({ settings }: { settings: LedgerSettingsView }) {
   const save = useSaveSettings();
   return (
-    <Tile
-      title={t('settingsPolicies.entries.title')}
-      subtitle={t('settingsPolicies.entries.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <ChoiceRow
         label={t('settingsPolicies.entries.times')}
         value={settings.entryTimes}
@@ -324,20 +320,16 @@ function EntriesTile({ settings }: { settings: LedgerSettingsView }) {
         }}
       />
       <SaveError error={save.error} />
-    </Tile>
+    </>
   );
 }
 
-function ReportsTile({ settings }: { settings: LedgerSettingsView }) {
+function ReportsRows({ settings }: { settings: LedgerSettingsView }) {
   const save = useSaveSettings();
   const periods = ['cycle', 'month'] as const;
   const cards = ['top', 'all'] as const;
   return (
-    <Tile
-      title={t('settingsPolicies.reports.title')}
-      subtitle={t('settingsPolicies.reports.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <ChoiceRow
         label={t('settingsPolicies.reports.period')}
         value={settings.reportPeriod}
@@ -373,7 +365,7 @@ function ReportsTile({ settings }: { settings: LedgerSettingsView }) {
         }}
       />
       <SaveError error={save.error} />
-    </Tile>
+    </>
   );
 }
 

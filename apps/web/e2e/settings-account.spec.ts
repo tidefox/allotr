@@ -213,7 +213,7 @@ test('the data tab downloads an export and imports it into an empty ledger', asy
   await apiSignIn(page, origin);
   await page.goto('/settings/data');
   const exports = page.getByRole('region', {
-    name: t('settingsData.export.title'),
+    name: t('settingsData.title'),
   });
   await expect(exports).toBeVisible();
   expect(await smallTargets(page)).toEqual([]);

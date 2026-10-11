@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { BracketButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
+import { Stack, Tile } from '@/components/layout';
+import { IconShieldCheckLine } from '@/generated/icons';
 import { sessionQuery, signOut } from '@/lib/session';
 import { t } from '@/messages/t';
 import { InstanceTile, InvitesTile } from './instance-tiles.tsx';
@@ -18,7 +19,11 @@ function SignInTile({ session }: { session: SessionView }) {
   const [error, setError] = useState<unknown>(null);
   const [pending, setPending] = useState(false);
   return (
-    <Tile title={t('settingsAccount.signIn.title')} bodyClassName="px-0 pb-0">
+    <Tile
+      title={t('settingsAccount.signIn.title')}
+      icon={IconShieldCheckLine}
+      bodyClassName="px-0 pb-0"
+    >
       <SettingRow
         label={t('settingsAccount.signIn.email')}
         value={session.user.email}
@@ -69,12 +74,12 @@ export function AccountTab() {
   const { locale, timeZone } = useRegion(session?.twoFactorRequired === false);
   if (session === null || session === undefined) return null;
   return (
-    <Grid>
+    <Stack className="min-h-full">
       <SignInTile session={session} />
       <TwoFactorTile session={session} />
       <SessionsTile locale={locale} timeZone={timeZone} />
       {admin ? <InstanceTile /> : null}
       {admin ? <InvitesTile locale={locale} timeZone={timeZone} /> : null}
-    </Grid>
+    </Stack>
   );
 }

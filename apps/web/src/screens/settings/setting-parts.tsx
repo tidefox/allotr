@@ -11,14 +11,17 @@ import {
 import type { UpdateLedgerSettingsBody } from '@allotr/shared';
 import {
   BracketButton,
+  Brackets,
   PrimaryButton,
-  menuButtonClass,
+  SettingRowFace,
+  Tag,
+  bracketClass,
+  settingRowClass,
 } from '@/components/buttons';
-import { MenuButton, MenuRadioItem } from '@/components/menu';
+import { MenuButton, MenuRadioItem, MenuSection } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { Sheet } from '@/components/sheet';
-import { IconEditLine } from '@/generated/icons';
 import { budgetQueryKeys } from '@/lib/budgets';
 import { ledgerSettingsQuery } from '@/lib/ledger';
 import { describeProblem, errorMessage } from '@/lib/problem';
@@ -38,48 +41,51 @@ import { t } from '@/messages/t';
 // row with its control on the right, a confirm sheet for destructive actions,
 // a secret text field and a download link in the bracket style.
 
-// The label (which may be a menu button) keeps its full width when it fits;
-// the hint gives way first.
 const settingColumns: readonly RowColumn[] = [
-  { width: 'minmax(0, max-content)' },
-  { width: 'minmax(0, 1fr)', from: 'medium' },
+  { width: 'minmax(0, 1fr)' },
   { width: 'auto' },
+  { width: '1.125rem' },
 ];
 
-/** One line: a label, a muted hint from 600 px, and a control (menu or button). */
+/**
+ * One kv line (`r` with `minmax(0,1fr) auto 18px`): a muted label, then the
+ * value or a control on the right. The hint is kept for assistive
+ * technology and as a tooltip; the locked design shows one line per row.
+ */
 export function SettingRow({
   label,
   hint,
   value,
   control,
 }: {
-  /** Text, or a labelled menu button that is the row's control. */
   label: ReactNode;
   hint?: string | undefined;
-  /** The current value, shown after the label in the interface font. */
+  /** The current value, in the interface font. */
   value?: ReactNode;
   control?: ReactNode;
 }) {
   return (
-    <Row
-      columns={settingColumns}
-      cells={[
-        <span key="label" className="flex min-w-0 items-baseline gap-2">
-          <span className="shrink-0">{label}</span>
-          {value === undefined ? null : (
-            <span className="min-w-0 truncate font-ui text-text-muted">
-              {value}
-            </span>
-          )}
-        </span>,
-        <span key="hint" className="font-ui text-small text-text-muted">
-          {hint}
-        </span>,
-        <span key="control" className="flex justify-end">
-          {control}
-        </span>,
-      ]}
-    />
+    <div title={hint}>
+      <Row
+        columns={settingColumns}
+        cells={[
+          <span key="label" className="text-text-muted">
+            {label}
+            {hint === undefined ? null : (
+              <span className="sr-only"> {hint}</span>
+            )}
+          </span>,
+          <span
+            key="value"
+            className="flex items-center justify-end gap-2 font-ui"
+          >
+            {value}
+            {control}
+          </span>,
+          <span key="end" />,
+        ]}
+      />
+    </div>
   );
 }
 
@@ -246,22 +252,19 @@ export function BracketLink({
         ? {}
         : { 'aria-label': accessibleName })}
       {...(download ? { download: true } : {})}
-      className="press inline-flex min-h-hit min-w-hit items-center gap-1 px-1 text-small text-primary"
+      className={bracketClass}
     >
-      <span aria-hidden="true" className="text-outline">
-        [
-      </span>
-      <span>{label}</span>
-      <span aria-hidden="true" className="text-outline">
-        ]
-      </span>
+      <Brackets>{label}</Brackets>
     </Link>
   );
 }
 
 export type SettingChoice = Readonly<{ id: string; label: string }>;
 
-/** A row whose value is picked from a short list in an in-app menu. */
+/**
+ * A row whose value is picked from a short list in an in-app menu. The
+ * whole row is the control; the hint is the menu's first line.
+ */
 export function ChoiceRow({
   label,
   value,
@@ -278,63 +281,76 @@ export function ChoiceRow({
   onChange: (id: string) => void;
 }) {
   const chosen = choices.find((c) => c.id === value);
+  const items = choices.map((choice) => (
+    <MenuRadioItem key={choice.id} id={choice.id} label={choice.label} />
+  ));
   return (
-    <SettingRow
-      hint={hint}
-      label={
-        <MenuButton
-          label={label}
-          value={chosen?.label ?? value}
-          selectionMode="single"
-          selectedKeys={new Set([value])}
-          onSelectionChange={(keys) => {
-            const [first] = keys === 'all' ? [] : [...keys];
-            if (first !== undefined && !disabled) onChange(String(first));
-          }}
-        >
-          {choices.map((choice) => (
-            <MenuRadioItem
-              key={choice.id}
-              id={choice.id}
-              label={choice.label}
-            />
-          ))}
-        </MenuButton>
-      }
-    />
+    <MenuButton
+      variant="row"
+      label={label}
+      value={chosen?.label ?? value}
+      selectionMode="single"
+      selectedKeys={new Set([value])}
+      onSelectionChange={(keys) => {
+        const [first] = keys === 'all' ? [] : [...keys];
+        if (first !== undefined && !disabled) onChange(String(first));
+      }}
+    >
+      {hint === undefined ? (
+        items
+      ) : (
+        <MenuSection title={hint} note>
+          {items}
+        </MenuSection>
+      )}
+    </MenuButton>
   );
 }
 
-/** A row whose value is typed in a sheet; the button shows it and an edit mark. */
+/**
+ * A row whose value is typed in a sheet. The whole row opens the sheet,
+ * which carries the explanation.
+ */
 export function FormRow({
   label,
   value,
-  hint,
   onOpen,
 }: {
   label: string;
   value: string;
+  /** Kept for callers; the sheet shows its own explanation. */
   hint?: string | undefined;
   onOpen: () => void;
 }) {
   return (
-    <SettingRow
-      hint={hint}
-      label={
-        <Button
-          aria-haspopup="dialog"
-          onPress={onOpen}
-          className={menuButtonClass}
-        >
-          <span className="text-text-muted">{label}</span>
-          <span aria-hidden="true" className="text-text-muted">
-            ·
-          </span>
-          <span className="min-w-0 truncate">{value}</span>
-          <IconEditLine className="size-3.5 shrink-0" />
-        </Button>
-      }
-    />
+    <Button aria-haspopup="dialog" onPress={onOpen} className={settingRowClass}>
+      <SettingRowFace label={label} value={value} />
+    </Button>
+  );
+}
+
+/** A row for a setting that is planned (ADR 0029): no control, tagged. */
+export function PlannedRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid min-h-row w-full grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3">
+      <span className="min-w-0 truncate text-text-muted">
+        {label}
+        <PlannedTag />
+      </span>
+      <span className="min-w-0 truncate font-ui whitespace-nowrap text-text-muted">
+        {value}
+      </span>
+      <span aria-hidden="true" />
+    </div>
+  );
+}
+
+/** The mockup's `planned` tag (`tagp`): a small warning-toned outline. */
+export function PlannedTag() {
+  return (
+    <Tag tone="warning" className="ml-1.5 align-[1px]">
+      {t('settingsShell.planned')}
+    </Tag>
   );
 }
 

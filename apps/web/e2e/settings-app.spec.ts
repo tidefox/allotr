@@ -25,7 +25,7 @@ async function signIn(page: Page, origin: string) {
 
 async function noSmallTargets(scope: Locator) {
   const small = await scope
-    .locator('a, button, [role=button], input')
+    .locator('a, button, [role=button], input:not([type=checkbox])')
     .evaluateAll((els) =>
       els
         .map((el) => el.getBoundingClientRect())
@@ -64,7 +64,7 @@ test('the App tab shows palette, palettes, interface and the planned notes', asy
   expect(skip.ok()).toBe(true);
 
   await page.goto('/settings/app');
-  for (const key of ['palette', 'themes', 'interface'] as const) {
+  for (const key of ['palette', 'interface'] as const) {
     await expect(
       page.getByRole('region', {
         name: t(`settingsApp.${key}.title`),
@@ -72,11 +72,14 @@ test('the App tab shows palette, palettes, interface and the planned notes', asy
       }),
     ).toBeVisible();
   }
-  const planned = page.getByRole('region', {
-    name: t('settingsApp.planned.title'),
-  });
-  await expect(planned.getByText(t('settingsApp.planned.note'))).toHaveCount(4);
-  await expect(page.getByText(t('settingsApp.themes.none'))).toBeVisible();
+  for (const key of ['tabs', 'topBar', 'layouts'] as const) {
+    const planned = page.getByRole('region', {
+      name: new RegExp(`^${t(`settingsApp.planned.${key}`)}`),
+    });
+    await expect(
+      planned.getByText(t(`settingsApp.planned.${key}Note`)),
+    ).toBeVisible();
+  }
   await noSidewaysScroll(page);
   await noSmallTargets(page.locator('main'));
   await expectAccessible(page);
@@ -125,15 +128,8 @@ test('a custom palette is created, used and picked again from the menu', async (
   await page.reload();
   await expect.poll(() => canvas(page)).toBe('#fdf6e3');
 
-  await page
-    .getByRole('button', { name: new RegExp(t('settingsApp.palette.light')) })
-    .click();
-  await expect(
-    page.getByRole('menuitemradio', {
-      name: `Tidepool · ${t('settingsApp.palette.custom')}`,
-    }),
-  ).toBeChecked();
-  await page.keyboard.press('Escape');
+  const row = page.getByRole('button', { name: /^Tidepool/ });
+  await expect(row).toHaveAttribute('aria-pressed', 'true');
   await expectAccessible(page);
 });
 
@@ -240,12 +236,9 @@ test('density and key hints are kept on this device', async ({
     'data-density',
     'comfortable',
   );
-  const hints = page.getByRole('radiogroup', {
-    name: t('settingsApp.interface.hints'),
-  });
-  await hints
-    .getByRole('radio', { name: t('settingsApp.interface.off') })
-    .click();
+  await page
+    .getByRole('checkbox', { name: t('settingsApp.interface.hints') })
+    .uncheck({ force: true });
   await expect(page.locator('html')).toHaveAttribute('data-hints', 'off');
 
   await page.reload();

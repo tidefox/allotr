@@ -455,7 +455,24 @@ hints; notifications: opt in to Web Push on this device, off until asked,
 with a test; tabs, top bar and layouts **(planned)**) · account (sign-in, two-factor,
 sessions, invites) · data (export, import, delete account).
 
-Every value row opens a menu or form. There are no inline native controls.
+Every sub-tab opens with one full-width tile (`money`, `categories`,
+`policies`, `data`, `account`) of one-line value rows: a muted label, the
+value on the right and a faint `▾`. The whole row is the control and opens a
+menu (choices; the explanation is the menu's first line) or a form sheet. A
+setting that is planned shows a `planned` tag and no control. Tiles for the
+rest (exchange rates, tags, import, two-factor, sessions, instance, invites,
+delete account) are stacked below in the same row style. There are no inline
+native controls.
+
+`categories` is one tile: a short intro, then each kind's tree with the
+mockup's row (fold, icon, name with `N sub`, `budget $X` or `rolls up`,
+`[+ sub]`, `[⋮]`); income and transfer trees follow under their own heading
+with their own `[+ category]`. `app` is two columns: the palette list (a
+radio row and a swatch strip per palette, your own palettes with edit,
+download and delete, `[import]` and `[editor]` in the title) beside a stack of
+`tabs`, `top bar` and `layouts` tiles (planned, a one-line note) and
+`interface` (a `kv` list: density and motion as segmented toggles, key hints
+and shortcuts as checks), then notifications.
 
 ## 7. Category icon map
 

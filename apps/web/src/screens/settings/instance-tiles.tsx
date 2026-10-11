@@ -23,6 +23,7 @@ import {
   FailureLine,
   Notice,
   SecretField,
+  ChoiceRow,
   SettingRow,
 } from './setting-parts.tsx';
 
@@ -47,30 +48,30 @@ function useInstanceSave() {
   });
 }
 
-function OnOffMenu({
+function OnOffRow({
   label,
+  hint,
   checked,
   onChange,
 }: {
   label: string;
+  hint: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <MenuButton
+    <ChoiceRow
       label={label}
-      value={t(checked ? 'settingsAccount.on' : 'settingsAccount.off')}
-      selectionMode="single"
-      selectedKeys={new Set([checked ? 'on' : 'off'])}
-      onSelectionChange={(keys) => {
-        const next = firstKey(keys);
-        if (next !== undefined && (next === 'on') !== checked)
-          onChange(next === 'on');
+      hint={hint}
+      value={checked ? 'on' : 'off'}
+      choices={[
+        { id: 'on', label: t('settingsAccount.on') },
+        { id: 'off', label: t('settingsAccount.off') },
+      ]}
+      onChange={(next) => {
+        if ((next === 'on') !== checked) onChange(next === 'on');
       }}
-    >
-      <MenuRadioItem id="on" label={t('settingsAccount.on')} />
-      <MenuRadioItem id="off" label={t('settingsAccount.off')} />
-    </MenuButton>
+    />
   );
 }
 
@@ -78,54 +79,35 @@ function InstanceRows({ settings }: { settings: InstanceSettings }) {
   const save = useInstanceSave();
   return (
     <>
-      <SettingRow
-        label={
-          <MenuButton
-            label={t('settingsAccount.instance.registration')}
-            value={t(`settings.instance.modes.${settings.registrationMode}`)}
-            selectionMode="single"
-            selectedKeys={new Set([settings.registrationMode])}
-            onSelectionChange={(keys) => {
-              const next = firstKey(keys);
-              const mode = modes.find((m) => m === next);
-              if (mode !== undefined && mode !== settings.registrationMode)
-                save.mutate({ registrationMode: mode });
-            }}
-          >
-            {modes.map((mode: RegistrationMode) => (
-              <MenuRadioItem
-                key={mode}
-                id={mode}
-                label={t(`settings.instance.modes.${mode}`)}
-              />
-            ))}
-          </MenuButton>
-        }
+      <ChoiceRow
+        label={t('settingsAccount.instance.registration')}
+        value={settings.registrationMode}
         hint={t(`settings.instance.modeHints.${settings.registrationMode}`)}
+        choices={modes.map((mode: RegistrationMode) => ({
+          id: mode,
+          label: t(`settings.instance.modes.${mode}`),
+        }))}
+        onChange={(next) => {
+          const mode = modes.find((m) => m === next);
+          if (mode !== undefined && mode !== settings.registrationMode)
+            save.mutate({ registrationMode: mode });
+        }}
       />
-      <SettingRow
-        label={
-          <OnOffMenu
-            label={t('settingsAccount.instance.twoFactor')}
-            checked={settings.requireTwoFactor}
-            onChange={(requireTwoFactor) => {
-              save.mutate({ requireTwoFactor });
-            }}
-          />
-        }
+      <OnOffRow
+        label={t('settingsAccount.instance.twoFactor')}
         hint={t('settingsAccount.instance.twoFactorHint')}
+        checked={settings.requireTwoFactor}
+        onChange={(requireTwoFactor) => {
+          save.mutate({ requireTwoFactor });
+        }}
       />
-      <SettingRow
-        label={
-          <OnOffMenu
-            label={t('settingsAccount.instance.themeUrl')}
-            checked={settings.themeUrlImport}
-            onChange={(themeUrlImport) => {
-              save.mutate({ themeUrlImport });
-            }}
-          />
-        }
+      <OnOffRow
+        label={t('settingsAccount.instance.themeUrl')}
         hint={t('settingsAccount.instance.themeUrlHint')}
+        checked={settings.themeUrlImport}
+        onChange={(themeUrlImport) => {
+          save.mutate({ themeUrlImport });
+        }}
       />
       <div className="px-3 empty:hidden">
         <FailureLine error={save.error} />

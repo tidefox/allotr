@@ -647,9 +647,9 @@ export const en = {
     },
     instance: {
       modes: {
-        invite_only: 'People with an invite link',
-        open: 'Anyone',
-        closed: 'Nobody',
+        invite_only: 'people with an invite link',
+        open: 'anyone',
+        closed: 'nobody',
       },
       modeHints: {
         invite_only: 'Create a link below for each person.',
@@ -848,7 +848,7 @@ export const en = {
       'Set a palette and choose which colour each part of the app uses. Allotr adjusts colours that are too faint so every text and control meets WCAG 2.2 AA.',
     name: 'Name',
     scheme: 'Scheme',
-    schemes: { light: 'Light', dark: 'Dark' },
+    schemes: { light: 'light', dark: 'dark' },
     startFrom: 'Start from',
     tabs: { roles: 'roles' },
     neutralsHint:

@@ -6,7 +6,7 @@ import {
   type ButtonProps,
 } from 'react-aria-components';
 import type { IconProps } from '@/generated/icons';
-import { IconCloseLine } from '@/generated/icons';
+import { IconArrowDownSLine, IconCloseLine } from '@/generated/icons';
 import { cn } from '@/lib/utils';
 
 // Controls (docs/ui.md §4). Focus ring and cursor come from the base layer;
@@ -114,6 +114,38 @@ export const stripButtonClass =
 /** A bordered control face (`ddb`): muted label, value, ▾. The menu is in menu.tsx. */
 export const menuButtonClass =
   'press inline-flex min-h-7 min-w-hit max-w-full items-center gap-1.5 border border-outline bg-canvas pr-1.5 pl-2.5 text-small whitespace-nowrap';
+
+/** A settings row that is itself the control (`r click`): label, value, ▾. */
+export const settingRowClass =
+  'press grid min-h-row w-full grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3 text-left';
+
+/** The cells of a `settingRowClass` control. */
+export function SettingRowFace({
+  label,
+  value,
+  tag,
+}: {
+  label: string;
+  value?: string | undefined;
+  /** A small tag after the label, such as `planned`. */
+  tag?: ReactNode;
+}) {
+  return (
+    <>
+      <span className="min-w-0 truncate text-text-muted">
+        {label}
+        {tag}
+      </span>
+      <span className="min-w-0 truncate font-ui whitespace-nowrap">
+        {value}
+      </span>
+      <IconArrowDownSLine
+        aria-hidden="true"
+        className="size-[1.15em] text-text-muted"
+      />
+    </>
+  );
+}
 
 export type ToggleOption<Id extends string> = Readonly<{
   id: Id;

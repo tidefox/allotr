@@ -8,11 +8,11 @@ import {
 } from '@allotr/shared';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton, PrimaryButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
+import { Grid, Stack, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import { EmptyState } from '@/components/states';
-import { IconAddLine } from '@/generated/icons';
-import { formatDay, formatLongDay } from '@/features/today/format';
+import { IconAddLine, IconCoinsLine } from '@/generated/icons';
+import { formatDay } from '@/features/today/format';
 import { localeSample, timeZoneOptions } from '@/features/settings/region.ts';
 import { useCurrencyOptions } from '@/lib/currency-options';
 import { ledgerSettingsQuery, todayQuery } from '@/lib/ledger';
@@ -42,6 +42,7 @@ import {
   Failed,
   FormRow,
   Note,
+  PlannedRow,
   SaveError,
   useSaveSettings,
   useSheet,
@@ -60,7 +61,7 @@ export function MoneyTab() {
   if (settings.data === undefined) {
     return settings.isError ? (
       <Grid>
-        <Tile title={t('settingsMoney.region.title')}>
+        <Tile title={t('settingsMoney.title')} icon={IconCoinsLine}>
           <Failed
             retry={() => {
               void settings.refetch();
@@ -77,10 +78,14 @@ export function MoneyTab() {
     );
   }
   return (
-    <Grid>
-      <RegionTile settings={settings.data} />
-      <PaydayTile settings={settings.data} today={today.data} />
-      <PlanTile settings={settings.data} />
+    <Stack className="min-h-full">
+      <Tile title={t('settingsMoney.title')} icon={IconCoinsLine}>
+        <div className="-mx-3 -mb-2.5 flex flex-col">
+          <RegionRows settings={settings.data} />
+          <PaydayRows settings={settings.data} />
+          <PlanRows settings={settings.data} />
+        </div>
+      </Tile>
       <RatesTile
         settings={settings.data}
         today={today.data}
@@ -90,21 +95,17 @@ export function MoneyTab() {
           void rates.refetch();
         }}
       />
-    </Grid>
+    </Stack>
   );
 }
 
-function RegionTile({ settings }: { settings: LedgerSettingsView }) {
+function RegionRows({ settings }: { settings: LedgerSettingsView }) {
   const save = useSaveSettings();
   const [editing, open, close] = useSheet();
   const currencies = useCurrencyOptions(locale);
   const zones = useMemo(() => timeZoneOptions(settings.timeZone), [settings]);
   return (
-    <Tile
-      title={t('settingsMoney.region.title')}
-      subtitle={t('settingsMoney.region.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <ChoiceRow
         label={t('settingsMoney.region.currency')}
         value={settings.defaultCurrency}
@@ -115,15 +116,9 @@ function RegionTile({ settings }: { settings: LedgerSettingsView }) {
             save.mutate({ defaultCurrency });
         }}
       />
-      <Row
-        columns={[{ width: 'minmax(0,1fr)' }]}
-        cells={[
-          <span key="d" className="font-ui text-small text-text-muted">
-            {t('settingsMoney.region.display')} ·{' '}
-            {t('settingsMoney.region.displayValue')} ·{' '}
-            {t('settingsMoney.region.displayPlanned')}
-          </span>,
-        ]}
+      <PlannedRow
+        label={t('settingsMoney.region.display')}
+        value={t('settingsMoney.region.displayValue')}
       />
       <FormRow
         label={t('settingsMoney.region.locale')}
@@ -146,7 +141,7 @@ function RegionTile({ settings }: { settings: LedgerSettingsView }) {
       {editing === null ? null : (
         <LocaleSheet settings={settings} onClose={close} />
       )}
-    </Tile>
+    </>
   );
 }
 
@@ -193,29 +188,12 @@ function LocaleSheet({
   );
 }
 
-function PaydayTile({
-  settings,
-  today,
-}: {
-  settings: LedgerSettingsView;
-  today: TodayView | undefined;
-}) {
+function PaydayRows({ settings }: { settings: LedgerSettingsView }) {
   const save = useSaveSettings();
   const [editing, open, close] = useSheet();
   const rule = settings.paydayRule;
   return (
-    <Tile
-      title={t('settingsMoney.payday.title')}
-      subtitle={
-        today === undefined
-          ? undefined
-          : t('settingsMoney.payday.next', {
-              date: formatLongDay(today.cycle.payday, locale),
-              count: today.daysLeft,
-            })
-      }
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <ChoiceRow
         label={t('settingsMoney.payday.rule')}
         value={rule}
@@ -262,7 +240,7 @@ function PaydayTile({
       {editing === null ? null : (
         <OverrideSheet settings={settings} onClose={close} />
       )}
-    </Tile>
+    </>
   );
 }
 
@@ -324,16 +302,12 @@ function OverrideSheet({
   );
 }
 
-function PlanTile({ settings }: { settings: LedgerSettingsView }) {
+function PlanRows({ settings }: { settings: LedgerSettingsView }) {
   const save = useSaveSettings();
   const modes = ['free', 'pool-minus-bills', 'daily-budgets'] as const;
   const periods = ['cycle', 'month'] as const;
   return (
-    <Tile
-      title={t('settingsMoney.plan.title')}
-      subtitle={t('settingsMoney.plan.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
+    <>
       <ChoiceRow
         label={t('settingsMoney.plan.period')}
         value={settings.budgetPeriod}
@@ -379,9 +353,8 @@ function PlanTile({ settings }: { settings: LedgerSettingsView }) {
             save.mutate({ countSavingsInDaily });
         }}
       />
-      <Note>{t('settingsMoney.plan.countSavingsNote')}</Note>
       <SaveError error={save.error} />
-    </Tile>
+    </>
   );
 }
 
