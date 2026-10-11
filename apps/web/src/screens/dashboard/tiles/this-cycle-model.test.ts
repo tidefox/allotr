@@ -1,6 +1,6 @@
 import { localDate, money, type CycleDayView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { cycleView, daysOver } from './this-cycle-model.ts';
+import { cycleTicks, cycleView, daysOver } from './this-cycle-model.ts';
 
 const usd = (amountMinor: number) => money(amountMinor, 'USD');
 
@@ -71,5 +71,28 @@ describe('cycleView', () => {
     expect(view.reference).toBeNull();
     expect(view.todayIndex).toBe(-1);
     expect(view.spent).toBeNull();
+  });
+});
+
+describe('cycleTicks', () => {
+  const at = (length: number, today: number) =>
+    cycleTicks(length, today).map((t) => (t.today ? 'today' : t.index));
+
+  it('marks weeks, today and the last day', () => {
+    expect(at(28, 14)).toEqual([0, 7, 'today', 21, 27]);
+  });
+  it('drops a weekly tick too close to today or the end', () => {
+    expect(at(30, 16)).toEqual([0, 7, 'today', 21, 29]);
+    expect(at(26, 10)).toEqual([0, 'today', 14, 21, 25]);
+  });
+  it('lets today replace a first or last day next to it', () => {
+    expect(at(28, 1)).toEqual(['today', 7, 14, 21, 27]);
+    expect(at(28, 26)).toEqual([0, 7, 14, 21, 'today']);
+    expect(at(28, 0)).toEqual(['today', 7, 14, 21, 27]);
+  });
+  it('has no today tick before the series has figures', () => {
+    expect(at(10, -1)).toEqual([0, 9]);
+    expect(at(15, -1)).toEqual([0, 7, 14]);
+    expect(at(0, -1)).toEqual([]);
   });
 });

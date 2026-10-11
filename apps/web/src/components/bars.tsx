@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { clampFraction, percent } from './bars-math.ts';
 import { shareText } from '@/lib/share-text';
+import { tileSpanClass, type TileSpan } from './layout.tsx';
 
 // Bars draw fractions the caller got from the server; they never derive
 // money (docs/ui.md §4).
@@ -12,6 +13,7 @@ export function Bar({
   over = false,
   label,
   className,
+  fillClassName,
 }: {
   value: number;
   /** Days elapsed ÷ cycle length, drawn as a 1 px `text` tick. */
@@ -20,6 +22,8 @@ export function Bar({
   over?: boolean;
   label: string;
   className?: string;
+  /** The fill: `primary` by default, or a series (a category's colour). */
+  fillClassName?: string;
 }) {
   const fraction = clampFraction(value);
   return (
@@ -32,13 +36,16 @@ export function Bar({
       className={cn('relative h-2 w-full bg-card', className)}
     >
       <div
-        className={cn('h-full', over ? 'bg-negative' : 'bg-primary')}
+        className={cn(
+          'h-full',
+          over ? 'bg-negative' : (fillClassName ?? 'bg-primary'),
+        )}
         style={{ width: percent(fraction) }}
       />
       {pace === undefined ? null : (
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 w-px bg-text"
+          className="absolute -top-[3px] -bottom-[3px] w-px bg-text"
           style={{ left: percent(pace) }}
         />
       )}
@@ -106,6 +113,16 @@ export const seriesBg: Record<SeriesColor, string> = {
   'series-8': 'bg-series-8',
 };
 
+/** A fill: a series, or a role for marks (paid, reserved, free money). */
+export type FillColor = SeriesColor | 'outline' | 'reserved' | 'success';
+
+export const fillBg: Record<FillColor, string> = {
+  ...seriesBg,
+  outline: 'bg-outline',
+  reserved: 'bg-reserved',
+  success: 'bg-success',
+};
+
 /** Series colours for icons and marks (never text: they are fitted 3:1). */
 export const seriesText: Record<SeriesColor, string> = {
   'series-1': 'text-series-1',
@@ -124,7 +141,7 @@ export type ShareSegment = Readonly<{
   fraction: number;
   /** The share in basis points from the server; read out instead of a ratio. */
   shareBp?: number;
-  color: SeriesColor;
+  color: FillColor;
 }>;
 
 /** Stacked segments with 1 px gaps, for pools, categories and IOUs. */
@@ -156,7 +173,7 @@ export function ShareBar({
       {segments.map((s) => (
         <div
           key={s.id}
-          className={cn('h-full min-w-px', seriesBg[s.color])}
+          className={cn('h-full min-w-px', fillBg[s.color])}
           style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
         />
       ))}
@@ -190,9 +207,12 @@ export function Skeleton({
 export function SkeletonTile({
   rows = 3,
   span = 1,
+  tileRows = 1,
 }: {
   rows?: number;
-  span?: 1 | 2 | 'full';
+  span?: TileSpan;
+  /** Grid rows the tile it stands in for spans. */
+  tileRows?: 1 | 2;
 }) {
   return (
     <section
@@ -200,8 +220,7 @@ export function SkeletonTile({
       aria-label="Loading"
       className={cn(
         'flex min-w-0 flex-col border-r border-b bg-canvas',
-        span === 2 && 'cols2:col-span-2',
-        span === 'full' && 'col-span-full',
+        tileSpanClass(span, tileRows),
       )}
     >
       <div className="flex h-bar items-center border-b bg-chrome px-3">

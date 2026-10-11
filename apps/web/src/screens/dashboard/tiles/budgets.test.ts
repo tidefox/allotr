@@ -1,11 +1,12 @@
 import {
+  localDate,
   money,
   type BudgetStatusView,
   type BudgetView,
   type CategoryView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { budgetRows } from './budgets.ts';
+import { budgetRows, periodPace } from './budgets.ts';
 
 const m = (n: number) => money(n, 'USD');
 const budget = (id: string, categoryId: string, over?: Partial<BudgetView>) =>
@@ -46,7 +47,9 @@ describe('budgetRows', () => {
     expect(row?.over).toBe(false);
     expect(row?.icon).toBe('beer');
     expect(row?.colour).toBe(3);
-    expect(row?.depth).toBe(0);
+    expect(row?.role).toBe('flat');
+    expect(row?.spent).toEqual(m(300));
+    expect(row?.left).toEqual(m(700));
   });
   it('marks overflow and falls back for the buffer', () => {
     const [row] = budgetRows(
@@ -62,6 +65,8 @@ describe('budgetRows', () => {
     );
     expect(row?.over).toBe(true);
     expect(row?.fraction).toBe(1);
+    // Past what it had: the server's overflow with a minus sign.
+    expect(row?.left).toEqual(m(-50));
     expect(row?.icon).toBeNull();
   });
   it('puts a parent row with the server total over its children', () => {
@@ -83,12 +88,32 @@ describe('budgetRows', () => {
       ),
       categories,
     );
-    expect(rows.map((r) => [r.id, r.depth])).toEqual([
-      ['c1', 0],
-      ['b2', 1],
-      ['b3', 1],
+    expect(rows.map((r) => [r.id, r.role])).toEqual([
+      ['c1', 'parent'],
+      ['b2', 'child'],
+      ['b3', 'last-child'],
     ]);
+    expect(rows[0]?.spent).toEqual(m(150));
     expect(rows[0]?.left).toEqual(m(350));
     expect(rows[0]?.fraction).toBeCloseTo(0.3);
+  });
+});
+
+describe('periodPace', () => {
+  it('counts today as a day gone', () => {
+    expect(
+      periodPace({
+        today: localDate('2026-03-15'),
+        period: { from: localDate('2026-03-01'), to: localDate('2026-03-29') },
+      }),
+    ).toEqual({ fraction: 15 / 28, day: 15, length: 28 });
+  });
+  it('has no pace for an empty period', () => {
+    expect(
+      periodPace({
+        today: localDate('2026-03-01'),
+        period: { from: localDate('2026-03-01'), to: localDate('2026-03-01') },
+      }),
+    ).toBeNull();
   });
 });

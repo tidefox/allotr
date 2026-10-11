@@ -112,6 +112,18 @@ export function Split({
   );
 }
 
+export type TileSpan = 1 | 2 | 3 | 'full';
+
+/** The grid placement classes for a tile's span and rows. */
+export function tileSpanClass(span: TileSpan = 1, rows: 1 | 2 = 1): string {
+  return cn(
+    span === 2 && 'cols2:col-span-2',
+    span === 3 && 'col-span-full cols4:col-span-3',
+    span === 'full' && 'col-span-full',
+    rows === 2 && 'cols2:row-span-2',
+  );
+}
+
 export type TileProps = {
   title: string;
   subtitle?: string | undefined;
@@ -120,8 +132,13 @@ export type TileProps = {
   actions?: ReactNode;
   /** A focused or primary tile gets a 3 px `primary` edge on its title bar. */
   primary?: boolean;
-  /** Columns the tile spans in a Grid. */
-  span?: 1 | 2 | 'full';
+  /**
+   * Columns the tile spans in a Grid. `3` is the full width up to three
+   * columns and three of the four from 1500 px (`w3`).
+   */
+  span?: TileSpan;
+  /** Rows the tile spans from two columns (`h2`). */
+  rows?: 1 | 2;
   className?: string;
   bodyClassName?: string;
   children?: ReactNode;
@@ -135,6 +152,7 @@ export function Tile({
   actions,
   primary = false,
   span = 1,
+  rows = 1,
   className,
   bodyClassName,
   children,
@@ -145,8 +163,7 @@ export function Tile({
       aria-labelledby={id}
       className={cn(
         'flex min-w-0 flex-col border-r border-b bg-canvas',
-        span === 2 && 'cols2:col-span-2',
-        span === 'full' && 'col-span-full',
+        tileSpanClass(span, rows),
         className,
       )}
     >

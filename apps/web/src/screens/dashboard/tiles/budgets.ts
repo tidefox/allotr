@@ -1,25 +1,35 @@
-import type {
-  BudgetStatusView,
-  CategoryIcon,
-  CategoryView,
-  Money,
+import {
+  daysBetween,
+  money,
+  type BudgetStatusView,
+  type CategoryIcon,
+  type CategoryView,
+  type Money,
 } from '@allotr/shared';
-import { budgetTree } from '@/screens/budget/budgets-model';
+import { budgetTree, type TreeRole } from '@/screens/budget/budgets-model';
 import type { SeriesNumber } from '@/lib/category-style';
 
 export type BudgetRow = Readonly<{
   id: string;
   name: string;
-  /** The budget's `left`, or the server's total on a parent header. */
+  /** Tree position: a parent folds the children of its `group`. */
+  role: TreeRole;
+  group: string;
+  /** The budget's `spent`, or the server's total on a parent header. */
+  spent: Money;
+  /**
+   * What is left; when spending went past it, the server's `overflow`
+   * with a minus sign (a sign flip only).
+   */
   left: Money;
   /** How full the bar is, 0..1. */
   fraction: number;
   over: boolean;
+  /** Set-aside budgets hold money; they get no pace tick. */
+  setAside: boolean;
   icon: CategoryIcon | null;
   /** The series number, 1..8. */
   colour: SeriesNumber;
-  /** 1 for a subcategory under a parent row, else 0. */
-  depth: 0 | 1;
 }>;
 
 /**
@@ -32,20 +42,43 @@ export function budgetRows(
 ): readonly BudgetRow[] {
   return budgetTree(status.budgets, categories, status.parents).flatMap(
     (e): BudgetRow[] => {
-      const left = e.budget?.left ?? e.total?.left;
-      if (left === undefined) return [];
+      const figures = e.budget ?? e.total;
+      if (figures === null) return [];
+      const overflow =
+        e.budget !== null && e.budget.overflow.amountMinor > 0
+          ? money(-e.budget.overflow.amountMinor, e.budget.overflow.currency)
+          : null;
       return [
         {
           id: e.key,
           name: e.name,
-          left,
+          role: e.role,
+          group: e.group,
+          spent: figures.spent,
+          left: overflow ?? figures.left,
           fraction: e.fraction,
           over: e.over,
+          setAside: e.budget?.mode === 'set-aside',
           icon: e.icon,
           colour: e.colour,
-          depth: e.role === 'child' || e.role === 'last-child' ? 1 : 0,
         },
       ];
     },
   );
+}
+
+/**
+ * The even-pace tick: the share of the budget period gone by the end of
+ * today, and the day numbers for the legend. Day counting only.
+ */
+export function periodPace(
+  status: Pick<BudgetStatusView, 'today' | 'period'>,
+): { fraction: number; day: number; length: number } | null {
+  const length = daysBetween(status.period.from, status.period.to);
+  if (length <= 0) return null;
+  const day = Math.min(
+    length,
+    Math.max(0, daysBetween(status.period.from, status.today) + 1),
+  );
+  return { fraction: day / length, day, length };
 }

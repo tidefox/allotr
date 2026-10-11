@@ -1,14 +1,14 @@
+import { daysBetween, type LocalDate } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { SkeletonTile } from '@/components/bars';
-import { BracketButton, Tag } from '@/components/buttons';
+import { BracketButton, Tag, type TagTone } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { EmptyState } from '@/components/states';
-import { IconMore2Line } from '@/generated/icons';
-import { formatDay } from '@/features/today/format';
+import { IconErrorWarningLine, IconMore2Line } from '@/generated/icons';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
 import { markRead, remindersQuery } from '@/lib/reminders';
@@ -19,47 +19,50 @@ import { attentionItems, type AttentionItem } from './needs-attention-model.ts';
 const locale = 'en';
 
 const columns: readonly RowColumn[] = [
-  { width: '3.5rem' },
+  { width: 'auto' },
   { width: 'minmax(0, 1fr)' },
-  { width: 'auto', from: 'medium' },
-  { width: '1.75rem' },
+  { width: 'auto' },
+  { width: 'auto' },
 ];
 
 type Presented = Readonly<{
   tag: string;
+  tone: TagTone;
   text: string;
   action: string;
   href: string;
 }>;
 
-function present(item: AttentionItem): Presented {
+function present(item: AttentionItem, today: LocalDate): Presented {
   switch (item.kind) {
     case 'payday-overdue':
       return {
         tag: t('dashboardTiles.needsAttention.tagPayday'),
+        tone: 'warning',
         text: t('dashboardTiles.needsAttention.payday'),
         action: t('dashboardTiles.needsAttention.actionPayday'),
         href: '/settings/money',
       };
-    case 'bill-due':
+    case 'bill-due': {
+      const late = daysBetween(item.dueOn, today);
       return {
-        tag: t('dashboardTiles.needsAttention.tagBill'),
-        text: item.today
-          ? t('dashboardTiles.needsAttention.billDueToday', {
-              name: item.name,
-              amount: formatMoney(item.amount, 'symbol', locale),
-            })
-          : t('dashboardTiles.needsAttention.billDue', {
-              name: item.name,
-              amount: formatMoney(item.amount, 'symbol', locale),
-              date: formatDay(item.dueOn, locale),
-            }),
+        tag:
+          late > 0
+            ? t('dashboardTiles.needsAttention.tagLate', { days: late })
+            : t('dashboardTiles.needsAttention.tagToday'),
+        tone: late > 0 ? 'negative' : 'warning',
+        text: t('dashboardTiles.needsAttention.billDue', {
+          name: item.name,
+          amount: formatMoney(item.amount, 'symbol', locale),
+        }),
         action: t('dashboardTiles.needsAttention.actionBill'),
         href: '/budget/bills',
       };
+    }
     case 'missing-rate':
       return {
         tag: t('dashboardTiles.needsAttention.tagRate'),
+        tone: 'muted',
         text: t('dashboardTiles.needsAttention.missingRate', {
           currency: item.currency,
         }),
@@ -72,6 +75,7 @@ function present(item: AttentionItem): Presented {
           item.reminderKind === 'weekly_review'
             ? t('dashboardTiles.needsAttention.tagReview')
             : t('dashboardTiles.needsAttention.tagIou'),
+        tone: 'muted',
         text: item.body,
         action: t('dashboardTiles.needsAttention.actionOpen'),
         href: item.url,
@@ -120,6 +124,7 @@ export function NeedsAttentionTile() {
   return (
     <Tile
       title={title}
+      icon={IconErrorWarningLine}
       subtitle={items.length === 0 ? undefined : String(items.length)}
       actions={
         items.some((item) => item.kind === 'reminder') ? (
@@ -143,19 +148,18 @@ export function NeedsAttentionTile() {
       ) : (
         <div>
           {items.map((item) => {
-            const view = present(item);
+            const view = present(item, today.data.today);
             return (
               <Row
                 key={item.id}
                 columns={columns}
                 cells={[
-                  <Tag
-                    key="tag"
-                    tone={item.kind === 'payday-overdue' ? 'warning' : 'muted'}
-                  >
+                  <Tag key="tag" tone={view.tone}>
                     {view.tag}
                   </Tag>,
-                  view.text,
+                  <span key="text" className="font-sans">
+                    {view.text}
+                  </span>,
                   <BracketButton
                     key="action"
                     onPress={() => {
@@ -168,8 +172,7 @@ export function NeedsAttentionTile() {
                     key="more"
                     label={t('dashboardTiles.needsAttention.more')}
                     icon={IconMore2Line}
-                    iconOnly
-                    className="size-hit justify-center border-0"
+                    variant="bracket"
                   >
                     <MenuItem
                       id="open"

@@ -113,13 +113,14 @@ test('the dashboard shows every tile with seeded data', async ({
   const allocation = page.getByRole('region', {
     name: t('dashboardTiles.allocation.title'),
   });
+  // Nothing here is unexplained, so the `other` part of zero is left out
+  // and the other five each print the server's share.
   await expect(
     allocation.getByText(t('dashboardTiles.allocation.other'), {
       exact: true,
     }),
-  ).toBeVisible();
-  // Each part prints the server's share, so all six show a percentage.
-  await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(6);
+  ).toHaveCount(0);
+  await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(5);
   const fund = page.getByRole('region', {
     name: t('dashboardTiles.emergencyFund.title'),
   });
@@ -132,10 +133,48 @@ test('the dashboard shows every tile with seeded data', async ({
   const worth = page.getByRole('region', {
     name: t('dashboardTiles.netWorth.title'),
   });
+  // The cycle opened today, so the chart shows the shortest window.
   await expect(
-    worth.getByText(t('dashboardTiles.netWorth.change', { days: 30 })),
+    worth.getByText(t('dashboardTiles.netWorth.subtitleDays', { days: 7 })),
   ).toBeVisible();
   await expectAccessible(page);
+});
+
+test('budget parents fold and the payday plan opens, by keyboard', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await page.goto('/');
+  const budgets = page.getByRole('region', {
+    name: t('dashboardTiles.budgets.title'),
+  });
+  const fold = budgets.getByRole('button', {
+    name: t('dashboardTiles.budgets.collapse', { name: 'Household' }),
+  });
+  await fold.focus();
+  await page.keyboard.press('Enter');
+  const unfold = budgets.getByRole('button', {
+    name: t('dashboardTiles.budgets.expand', { name: 'Household' }),
+  });
+  await expect(unfold).toHaveAttribute('aria-expanded', 'false');
+  await expect(budgets.getByText('Repairs', { exact: true })).toBeHidden();
+  await page.keyboard.press('Enter');
+  await expect(budgets.getByText('Repairs', { exact: true })).toBeVisible();
+
+  const plan = page
+    .getByRole('region', { name: t('dashboardTiles.allocation.title') })
+    .getByRole('button', { name: t('dashboardTiles.allocation.planPayday') });
+  await plan.focus();
+  await page.keyboard.press('Enter');
+  const sheet = page.getByRole('dialog', {
+    name: t('budgetGoalsIous.payday.title'),
+  });
+  await expect(sheet).toBeVisible();
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  await expect(plan).toBeFocused();
 });
 
 test('a pool is switched in and out of the daily number by keyboard', async ({

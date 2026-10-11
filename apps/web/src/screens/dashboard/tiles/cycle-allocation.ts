@@ -20,7 +20,10 @@ export type AllocationLabels = Readonly<{
   free: string;
 }>;
 
-/** Segments in display order; the last two are the money still left. */
+/**
+ * Segments in display order; the last two are the money still left. The
+ * `other` part shows only when it is not zero.
+ */
 export function allocationSegments(
   a: CycleAllocationView,
   labels: AllocationLabels,
@@ -30,19 +33,22 @@ export function allocationSegments(
     Money,
     AllocationSegment['color'],
   ])[] = [
-    ['paidBills', a.paidBills, 'series-2'],
-    ['savings', a.savings, 'series-3'],
-    ['spent', a.spent, 'series-1'],
-    ['other', a.other, 'series-6'],
-    ['reserved', a.reserved, 'series-5'],
-    ['free', a.free, 'series-4'],
+    ['paidBills', a.paidBills, 'outline'],
+    ['savings', a.savings, 'series-2'],
+    ['spent', a.spent, 'series-4'],
+    ['other', a.other, 'series-3'],
+    ['reserved', a.reserved, 'reserved'],
+    ['free', a.free, 'success'],
   ];
-  return parts.map(([id, amount, color]) => ({
-    id,
-    label: labels[id],
-    amount,
-    fraction: segmentShare(amount, a.start),
-    shareBp: a.shareBp[id],
-    color,
-  }));
+  return parts
+    .filter(([id, amount]) => id !== 'other' || amount.amountMinor !== 0)
+    .map(([id, amount, color]) => ({
+      id,
+      label: labels[id],
+      amount,
+      fraction: segmentShare(amount, a.start),
+      shareBp: a.shareBp[id],
+      color,
+      ...(id === 'free' ? { positive: true } : {}),
+    }));
 }

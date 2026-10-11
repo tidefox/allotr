@@ -74,16 +74,29 @@ export function Stats({ stats }: { stats: readonly Stat[] }) {
 export function KeyFigures({
   figures,
 }: {
-  figures: readonly Readonly<{ label: string; figure: ReactNode }>[];
+  figures: readonly Readonly<{
+    label: string;
+    figure: ReactNode;
+    /** The figure's colour: `text` by default. */
+    tone?: 'muted' | 'positive' | 'negative';
+  }>[];
 }) {
   return (
     <dl className="mb-2.5 grid grid-cols-[repeat(4,minmax(0,max-content))] gap-x-[1.625rem] gap-y-1.5 compact:mb-1.5 compact:gap-x-3.5 compact:gap-y-1">
-      {figures.slice(0, 4).map(({ label, figure }) => (
+      {figures.slice(0, 4).map(({ label, figure, tone }) => (
         <div key={label} className="flex min-w-0 flex-col">
           <dt className="truncate text-tiny leading-[1.45] text-text-muted">
             {label}
           </dt>
-          <dd className="truncate text-[1.125rem] leading-[1.45] font-semibold compact:text-[0.875rem] wide:text-[1.375rem]">
+          <dd
+            className={cn(
+              'truncate text-[1.125rem] compact:text-[0.875rem] wide:text-[1.375rem]',
+              'leading-[1.45] font-semibold',
+              tone === 'muted' && 'text-text-muted',
+              tone === 'positive' && 'text-positive',
+              tone === 'negative' && 'text-negative',
+            )}
+          >
             {figure}
           </dd>
         </div>

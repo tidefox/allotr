@@ -62,3 +62,37 @@ export function cycleView(days: readonly CycleDayView[]): CycleView {
     todayIndex,
   };
 }
+
+/** An x tick on the cycle chart: a day's date, or the today marker. */
+export type CycleTick = Readonly<{ index: number; today: boolean }>;
+
+/**
+ * Weekly ticks from the first day, the last day and today. A weekly tick
+ * closer than four days to today or the last day gives way, so labels
+ * never overlap. Pure day counting.
+ */
+export function cycleTicks(length: number, todayIndex: number): CycleTick[] {
+  if (length <= 0) return [];
+  const last = length - 1;
+  const near = (a: number, b: number) => Math.abs(a - b) < 4;
+  const ticks: CycleTick[] = [];
+  for (let index = 0; index < last; index += 7) {
+    if (index === todayIndex) continue;
+    if (index !== 0 && (near(index, last) || near(index, todayIndex))) continue;
+    ticks.push({ index, today: false });
+  }
+  if (last > 0 && last !== todayIndex)
+    ticks.push({ index: last, today: false });
+  if (todayIndex >= 0) {
+    // Today wins over the first or last day when they are too close.
+    const kept = ticks.filter(
+      (tick) => tick.index !== 0 || !near(0, todayIndex) || todayIndex === 0,
+    );
+    const trimmed = kept.filter(
+      (tick) => tick.index !== last || !near(last, todayIndex),
+    );
+    trimmed.push({ index: todayIndex, today: true });
+    return trimmed.sort((a, b) => a.index - b.index);
+  }
+  return ticks;
+}

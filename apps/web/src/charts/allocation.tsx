@@ -1,5 +1,5 @@
 import type { Money } from '@allotr/shared';
-import { ShareBar, seriesBg, type SeriesColor } from '@/components/bars';
+import { ShareBar, fillBg, type FillColor } from '@/components/bars';
 import { clampFraction } from '@/components/bars-math';
 import { shareText } from '@/lib/share-text';
 import { formatMoney, type CurrencyDisplay } from '@/lib/format-money';
@@ -18,7 +18,9 @@ export type AllocationSegment = Readonly<{
   fraction: number;
   /** The segment's share of the cycle start in basis points, from the server. */
   shareBp: number;
-  color: SeriesColor;
+  color: FillColor;
+  /** Free money prints its figure in `positive`. */
+  positive?: boolean;
 }>;
 
 export type AllocationProps = Readonly<{
@@ -48,54 +50,54 @@ export function Allocation({
   className,
 }: AllocationProps) {
   const lead = segments.slice(0, -2);
-  const tail = segments.slice(-2);
+  // One grid template for the bracket row, so it lines up with the bar's
+  // segments; the widths are the server's fractions as `fr`.
+  const template = segments
+    .map((s) => `minmax(1px, ${String(clampFraction(s.fraction))}fr)`)
+    .join(' ');
   return (
-    <div className={cn('grid gap-2 px-3 py-2.5', className)}>
-      <ShareBar segments={segments} label={label} className="h-3" />
-      {tail.length > 0 ? (
-        <div aria-hidden="true" className="flex h-4 w-full gap-px">
-          {lead.map((s) => (
-            <div
-              key={s.id}
-              className="min-w-px"
-              style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
-            />
-          ))}
-          {tail.map((s, i) => (
-            <div
-              key={s.id}
-              className={cn(
-                'min-w-px border-b border-outline',
-                i === 0 && 'border-l',
-                i === tail.length - 1 && 'border-r',
-              )}
-              style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
-            />
-          ))}
-        </div>
-      ) : null}
-      <p className="num text-right text-tiny text-text">
+    <div className={cn('grid', className)}>
+      <ShareBar segments={segments} label={label} className="h-[1.375rem]" />
+      <div
+        aria-hidden="true"
+        className="mt-0.5 grid h-[7px] gap-px"
+        style={{ gridTemplateColumns: template }}
+      >
+        {segments.length > 2 ? (
+          <div
+            className="border-x border-b border-text"
+            style={{ gridColumn: `${String(lead.length + 1)} / -1` }}
+          />
+        ) : null}
+      </div>
+      <p className="num mt-px h-[1.0625rem] text-right text-tiny leading-[1.45] font-semibold whitespace-nowrap text-text">
         {leftLabel} {formatMoney(left.amount, mode, locale)} {ofLabel}{' '}
         {formatMoney(left.of, mode, locale)}
       </p>
-      <ul className="grid grid-cols-6 gap-x-2 gap-y-1.5 compact:grid-cols-3">
+      <ul className="mt-1.5 -mr-[calc(0.75rem+1px)] -mb-[calc(0.625rem+1px)] -ml-3 grid grid-cols-[repeat(auto-fit,minmax(8.125rem,1fr))] border-t compact:grid-cols-3">
         {segments.map((s) => (
-          <li key={s.id} className="min-w-0">
-            <div className="flex items-center gap-1">
+          <li
+            key={s.id}
+            className="flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5"
+          >
+            <span className="flex items-center gap-1.5 truncate text-tiny leading-[1.45] text-text-muted compact:text-[0.625rem]">
               <span
                 aria-hidden="true"
-                className={cn('size-2 shrink-0', seriesBg[s.color])}
+                className={cn('size-[9px] shrink-0', fillBg[s.color])}
               />
-              <span className="truncate text-tiny text-text-muted">
-                {s.label}
-              </span>
-            </div>
-            <div className="num truncate text-text">
+              <span className="truncate">{s.label}</span>
+            </span>
+            <span
+              className={cn(
+                'num truncate text-[1.0625rem] leading-[1.45] font-semibold compact:text-[0.875rem]',
+                s.positive === true && 'text-positive',
+              )}
+            >
               {formatMoney(s.amount, mode, locale)}
-            </div>
-            <div className="num text-tiny text-text-muted">
+            </span>
+            <span className="num text-tiny leading-[1.45] text-text-muted">
               {shareText(s.shareBp)}
-            </div>
+            </span>
           </li>
         ))}
       </ul>
