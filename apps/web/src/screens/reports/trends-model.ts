@@ -168,15 +168,21 @@ export interface VersusRow {
   average: Money;
   /** This period against the average; null with a single period. */
   movement: Movement | null;
+  /**
+   * How far above or below the average, in whole percent (the server's
+   * `changeBp` rounded for display); null with a single period or no
+   * positive average. Never negative: `movement` carries the direction.
+   */
+  percent: number | null;
   /** The category's spending in every period, oldest first, for a sparkline. */
   points: readonly Point[];
 }
 
 /**
  * The selected period against the average over all periods, per category,
- * by comparison only: the average is the server's (`average`), and the
- * percentage in the locked design stays out because the browser may not
- * compute one.
+ * by comparison: the average and the change in basis points are the
+ * server's (`average`, `changeBp`); the percentage shown is that figure
+ * rounded for display (ADR 0030).
  */
 export function versusRows(
   series: CategorySeriesView,
@@ -204,6 +210,10 @@ export function versusRows(
         current,
         average: group.average,
         points: group.points.map((p, x) => ({ x, y: p.amountMinor })),
+        percent:
+          group.changeBp === null
+            ? null
+            : Math.round(Math.abs(group.changeBp) / 100),
         movement:
           last === 0
             ? null

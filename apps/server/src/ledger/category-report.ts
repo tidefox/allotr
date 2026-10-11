@@ -72,6 +72,7 @@ const seriesView = (series: CategorySeries): CategorySeriesView => ({
     categoryId: g.categoryId,
     points: [...g.points],
     average: g.average,
+    changeBp: g.changeBp,
   })),
   totals: [...series.totals],
   totalAverage: series.totalAverage,

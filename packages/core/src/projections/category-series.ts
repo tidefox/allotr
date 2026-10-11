@@ -27,6 +27,12 @@ export type SeriesGroup = Readonly<{
   points: readonly Money[];
   /** `points` averaged over every period, rounded down; see `averageOf`. */
   average: Money;
+  /**
+   * The last period's `points` entry against `average`, in basis points,
+   * signed and truncated toward zero. Null with a single period or an
+   * average that is not positive; see `changeBp`.
+   */
+  changeBp: number | null;
 }>;
 
 export type CategorySeries = Readonly<{
@@ -88,6 +94,19 @@ export function averageOf(
 }
 
 /**
+ * How far `current` is above (positive) or below (negative) `average`, in
+ * basis points of `average`, truncated toward zero so -12.4% reads as 12%
+ * down, never 13%. Null when `average` is not positive, since a change from
+ * nothing has no percentage. Pure integer arithmetic. The baseline is the
+ * floored average the series reports, so the figure can be checked by hand.
+ */
+export function changeBp(current: Money, average: Money): number | null {
+  if (average.amountMinor <= 0) return null;
+  const diff = BigInt(current.amountMinor) - BigInt(average.amountMinor);
+  return Number((diff * 10_000n) / BigInt(average.amountMinor));
+}
+
+/**
  * Spending per top-level category for each of `periods`, in the default
  * currency. `periods` must be ordered and not overlap; nothing else is
  * assumed, so months and cycles both work.
@@ -117,7 +136,17 @@ export function categorySeries(
         inPeriod.find((g) => g.categoryId === categoryId)?.amount ??
         money(0, currency),
     );
-    return { categoryId, points, average: averageOf(points, currency) };
+    const average = averageOf(points, currency);
+    const last = points[points.length - 1];
+    return {
+      categoryId,
+      points,
+      average,
+      changeBp:
+        points.length < 2 || last === undefined
+          ? null
+          : changeBp(last, average),
+    };
   });
   const sum = (points: readonly Money[]) =>
     points.reduce((acc, p) => acc + p.amountMinor, 0);
