@@ -1,4 +1,4 @@
-import type { CategoryIcon, CategoryView } from '@allotr/shared';
+import type { CategoryView } from '@allotr/shared';
 import { moveItem } from '@/features/budget/order';
 import type { CategoryNode } from '@/features/settings/categories-model';
 
@@ -120,11 +120,7 @@ export function moveParents(
     .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }
 
-/** "shopping-basket" as "Shopping basket". */
-export function iconLabel(name: CategoryIcon): string {
-  const words = name.replaceAll('-', ' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
+export { iconLabel } from '@/lib/category-style';
 
 /** The position that puts a category last under its new parent. */
 export function lastPosition(

@@ -13,7 +13,8 @@ import { openSqlite } from './sqlite.ts';
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
 // 0013_reminders.sql, 0014_entry_order_time.sql and
 // 0015_entry_replacements.sql, 0016_buffer_currency.sql,
-// 0017_implied_rates.sql, 0018_entry_client.sql and 0019_goals.sql against
+// 0017_implied_rates.sql, 0018_entry_client.sql, 0019_goals.sql and
+// 0020_pool_account_style_credit.sql against
 // real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
@@ -63,6 +64,8 @@ function migrationsUpTo(last: string): string {
     '0015_entry_replacements.sql',
     '0016_buffer_currency.sql',
     '0017_implied_rates.sql',
+    '0018_entry_client.sql',
+    '0019_goals.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -470,6 +473,7 @@ describe('migration 0005_reconciliations', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     insertReconciliation('r1');
@@ -569,6 +573,7 @@ describe('migration 0006_bill_prices', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(
@@ -663,6 +668,7 @@ describe('migration 0007_pools', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(pools()).toEqual([
@@ -823,6 +829,7 @@ describe('migration 0008_budgets', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(
@@ -991,6 +998,7 @@ describe('migration 0009_budget_cover', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1062,6 +1070,7 @@ describe('migration 0010_category_style', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1153,6 +1162,7 @@ describe('migration 0012_ious', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1308,6 +1318,7 @@ describe('migration 0011_income_categories', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1390,6 +1401,7 @@ describe('migration 0013_reminders', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1610,6 +1622,7 @@ describe('migration 0015_entry_replacements', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1695,6 +1708,7 @@ describe('migration 0016_buffer_currency', () => {
       '0017_implied_rates',
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(
@@ -1784,6 +1798,7 @@ describe('migration 0018_entry_client', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0018_entry_client',
       '0019_goals',
+      '0020_pool_account_style_credit',
     ]);
 
     expect(sql('SELECT id, client FROM transactions').all()).toEqual([
@@ -1854,6 +1869,107 @@ describe('migration 0019_goals', () => {
     ).toThrow();
     expect(() =>
       sql(`UPDATE goals SET target_minor = 0 WHERE id = 'g5'`).run(),
+    ).toThrow();
+  });
+});
+
+describe('migration 0020_pool_account_style_credit', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+
+  it('adds nullable style and credit columns to what is already there', () => {
+    migrateFrom(migrationsUpTo('0019'));
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD');
+    insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
+
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0020_pool_account_style_credit',
+    ]);
+
+    expect(
+      sql(
+        `SELECT id, colour, icon, credit_limit_minor, due_day FROM accounts WHERE id IN ('a1', 'c1') ORDER BY id`,
+      ).all(),
+    ).toEqual([
+      {
+        id: 'a1',
+        colour: null,
+        icon: null,
+        credit_limit_minor: null,
+        due_day: null,
+      },
+      {
+        id: 'c1',
+        colour: null,
+        icon: null,
+        credit_limit_minor: null,
+        due_day: null,
+      },
+    ]);
+    expect(
+      sql(
+        `SELECT count(*) FROM pools WHERE colour IS NOT NULL OR icon IS NOT NULL`,
+      )
+        .pluck()
+        .get(),
+    ).toBe(0);
+  });
+
+  it('only accepts a series role and a lower-case icon key', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD');
+    for (const table of ['accounts', 'pools']) {
+      const where = table === 'accounts' ? `id = 'a1'` : `user_id = 'u1'`;
+      sql(
+        `UPDATE ${table} SET colour = 'series-8', icon = 'wallet' WHERE ${where}`,
+      ).run();
+      sql(
+        `UPDATE ${table} SET colour = NULL, icon = NULL WHERE ${where}`,
+      ).run();
+      expect(() =>
+        sql(`UPDATE ${table} SET colour = '#ff0000' WHERE ${where}`).run(),
+      ).toThrow();
+      expect(() =>
+        sql(`UPDATE ${table} SET colour = 'series-9' WHERE ${where}`).run(),
+      ).toThrow();
+      expect(() =>
+        sql(`UPDATE ${table} SET icon = 'Wallet' WHERE ${where}`).run(),
+      ).toThrow();
+      expect(() =>
+        sql(
+          `UPDATE ${table} SET icon = '${'a'.repeat(41)}' WHERE ${where}`,
+        ).run(),
+      ).toThrow();
+    }
+  });
+
+  it('keeps a limit and a due day to credit accounts, in range', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD');
+    insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
+
+    sql(
+      `UPDATE accounts SET credit_limit_minor = 200000, due_day = 31 WHERE id = 'c1'`,
+    ).run();
+    expect(() =>
+      sql(`UPDATE accounts SET credit_limit_minor = 0 WHERE id = 'c1'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE accounts SET credit_limit_minor = -5 WHERE id = 'c1'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE accounts SET due_day = 0 WHERE id = 'c1'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE accounts SET due_day = 32 WHERE id = 'c1'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE accounts SET credit_limit_minor = 100 WHERE id = 'a1'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE accounts SET due_day = 5 WHERE id = 'a1'`).run(),
     ).toThrow();
   });
 });

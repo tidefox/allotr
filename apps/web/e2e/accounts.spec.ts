@@ -65,6 +65,9 @@ test('the tree groups accounts by pool and credit, with stats', async ({
     kind: 'liability',
     currency,
     openingBalance: usd(-45_000),
+    // 2,000.00 limit with 450.00 owed leaves 1,550.00 free.
+    creditLimit: usd(200_000),
+    dueDay: 15,
   });
   await post(page, origin, '/v1/pools', { name: 'Trip', kind: 'spending' });
 
@@ -90,6 +93,23 @@ test('the tree groups accounts by pool and credit, with stats', async ({
   // Credit owed is the server's total, signed as the debt it is.
   await expect(
     page.getByText('−$450.00', { exact: true }).first(),
+  ).toBeVisible();
+  // The credit stat names the server's limit total and draws a left-of bar.
+  await expect(
+    page.getByText(
+      t('accountsScreen.stats.creditSubLimit', {
+        count: 1,
+        limit: '$2,000.00',
+      }),
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('progressbar', {
+      name: t('accountsScreen.stats.creditBar', {
+        free: '$1,550.00',
+        limit: '$2,000.00',
+      }),
+    }),
   ).toBeVisible();
   await expectAccessible(page);
 
@@ -226,4 +246,98 @@ test('+ account opens a sheet, adds an account and refuses a taken name', async 
   await expect(sheet).toBeHidden();
   await expect(rowOf(page, 'Holiday jar')).toBeVisible();
   await expect(page).toHaveURL(/account=/);
+});
+
+test('a credit account shows its limit, what is free and when it is due', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts/credit');
+  // The group header says what the limit total is.
+  await expect(
+    page.getByText(t('accountsScreen.list.owedLimit', { limit: '$2,000.00' })),
+  ).toBeVisible();
+  await rowOf(page, 'Visa').click();
+  await expect(
+    page.getByText(
+      t('accountDetail.credit.free', {
+        free: '$1,550.00',
+        limit: '$2,000.00',
+      }),
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(t('accountDetail.fields.limit'), { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(t('accountDetail.fields.due'), { exact: true }),
+  ).toBeVisible();
+  await expectAccessible(page);
+});
+
+test('editing an account sets its icon and colour, and a card its limit and due day', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await actionsOf(page, 'Visa').click();
+  await page
+    .getByRole('menuitem', { name: t('accountsScreen.menu.rename') })
+    .click();
+  const sheet = page.getByRole('dialog');
+  // The input is hidden inside its swatch; people press the swatch.
+  const swatch = (name: string) =>
+    sheet.getByRole('radio', { name }).locator('xpath=ancestor::label');
+  await swatch(
+    t('settingsCategories.style.colourOption', { number: 4 }),
+  ).click();
+  await swatch('Piggy bank').click();
+  await expect(sheet.getByRole('radio', { name: 'Piggy bank' })).toBeChecked();
+  await sheet
+    .getByRole('textbox', {
+      name: t('accountsScreen.edit.limit', { currency: 'USD' }),
+    })
+    .fill('3000');
+  await sheet
+    .getByRole('textbox', { name: t('accountsScreen.edit.dueDay') })
+    .fill('40');
+  await sheet
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
+  await expect(
+    sheet.getByText(t('accountsScreen.edit.errors.dayInvalid')),
+  ).toBeVisible();
+  await sheet
+    .getByRole('textbox', { name: t('accountsScreen.edit.dueDay') })
+    .fill('31');
+  await expectAccessible(page);
+  await sheet
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
+  await expect(sheet).toBeHidden();
+
+  // The stored colour paints the row's icon; the server holds the rest.
+  await expect(rowOf(page, 'Visa').locator('svg.text-series-4')).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const list = (await (await page.request.get('/v1/accounts')).json()) as {
+        accounts: {
+          name: string;
+          colour: string | null;
+          icon: string | null;
+          creditLimit: { amountMinor: number } | null;
+          dueDay: number | null;
+        }[];
+      };
+      const visa = list.accounts.find((a) => a.name === 'Visa');
+      return [
+        visa?.colour,
+        visa?.icon,
+        visa?.creditLimit?.amountMinor,
+        visa?.dueDay,
+      ];
+    })
+    .toEqual(['series-4', 'piggy-bank', 300_000, 31]);
 });

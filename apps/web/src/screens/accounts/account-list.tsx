@@ -4,6 +4,7 @@ import type { AccountView, Money } from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { Bar, seriesBg, seriesText } from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
+import { Glyph } from '@/components/glyph';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { TreeRow } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
@@ -21,6 +22,8 @@ import {
   type IconProps,
 } from '@/generated/icons';
 import { accountHistoryQuery } from '@/lib/ledger';
+import { formatMoney } from '@/lib/format-money';
+import { glyph } from '@/lib/pool-style';
 import { sparkPoints } from '@/lib/spark-points';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
@@ -125,9 +128,12 @@ function Balance({ amount }: { amount: Money }) {
   );
 }
 
-/** The account's kind icon; the API has no icon per account. */
+/** The account's own icon when stored, else its kind's. */
 export function accountIcon(account: AccountView): ComponentType<IconProps> {
-  return account.kind === 'liability' ? IconBankCardLine : IconWallet3Line;
+  return glyph(
+    account.icon,
+    account.kind === 'liability' ? IconBankCardLine : IconWallet3Line,
+  );
 }
 
 /** `accountIcon` as an element, decorative. */
@@ -138,10 +144,15 @@ export function AccountIcon({
   account: AccountView;
   className?: string;
 }) {
-  return account.kind === 'liability' ? (
-    <IconBankCardLine aria-hidden="true" className={className} />
-  ) : (
-    <IconWallet3Line aria-hidden="true" className={className} />
+  return (
+    <Glyph
+      icon={account.icon}
+      fallback={
+        account.kind === 'liability' ? IconBankCardLine : IconWallet3Line
+      }
+      aria-hidden="true"
+      className={className}
+    />
   );
 }
 
@@ -179,14 +190,19 @@ function AccountRow({
         >
           <AccountIcon
             account={account}
-            className="size-4 shrink-0 text-text-muted"
+            className={cn(
+              'size-4 shrink-0',
+              account.colour === null
+                ? 'text-text-muted'
+                : seriesText[account.colour],
+            )}
           />
           <span className="min-w-0 truncate font-sans">{account.name}</span>
         </button>,
         <Trend
           key="trend"
           account={account}
-          color={lineColour(account.balance, color)}
+          color={lineColour(account.balance, account.colour ?? color)}
         />,
         <span
           key="date"
@@ -261,7 +277,7 @@ function groupName(group: AccountGroup): string {
   return group.name ?? '';
 }
 
-/** A group's kind icon in its colour (the API has no icon per pool). */
+/** A group's icon (the pool's own, else its kind's) in its colour. */
 function GroupIcon({ group }: { group: AccountGroup }) {
   const color = group.color;
   const className = cn(
@@ -272,18 +288,36 @@ function GroupIcon({ group }: { group: AccountGroup }) {
         ? 'text-negative'
         : seriesText[color],
   );
-  if (group.kind === 'credit')
-    return <IconBankCardLine aria-hidden="true" className={className} />;
-  if (group.poolKind === 'spending')
-    return <IconWallet3Line aria-hidden="true" className={className} />;
-  if (group.poolKind === 'savings')
-    return <IconSafe2Line aria-hidden="true" className={className} />;
-  return <IconStackLine aria-hidden="true" className={className} />;
+  const fallback =
+    group.kind === 'credit'
+      ? IconBankCardLine
+      : group.poolKind === 'spending'
+        ? IconWallet3Line
+        : group.poolKind === 'savings'
+          ? IconSafe2Line
+          : IconStackLine;
+  return (
+    <Glyph
+      icon={group.icon}
+      fallback={fallback}
+      aria-hidden="true"
+      className={className}
+    />
+  );
 }
 
 /** `● daily`, `off-budget` or `owed` after a group's name. */
 function GroupNote({ group }: { group: AccountGroup }) {
-  if (group.kind === 'credit') return <>{t('accountsScreen.list.owed')}</>;
+  if (group.kind === 'credit')
+    return (
+      <>
+        {group.limit == null || group.limit.amountMinor <= 0
+          ? t('accountsScreen.list.owed')
+          : t('accountsScreen.list.owedLimit', {
+              limit: formatMoney(group.limit, 'symbol', locale),
+            })}
+      </>
+    );
   if (group.counts)
     return (
       <>

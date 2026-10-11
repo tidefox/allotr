@@ -74,6 +74,8 @@ export async function importPools(
               .set({
                 name: pool.name,
                 counts_toward_daily: counts ? 1 : 0,
+                ...(pool.colour === undefined ? {} : { colour: pool.colour }),
+                ...(pool.icon === undefined ? {} : { icon: pool.icon }),
                 updated_at: stamp,
               })
               .where('user_id', '=', userId)
@@ -98,6 +100,8 @@ export async function importPools(
               counts_toward_daily: counts ? 1 : 0,
               position,
               archived: pool.archived === true ? 1 : 0,
+              colour: pool.colour ?? null,
+              icon: pool.icon ?? null,
               created_at: stamp,
               updated_at: stamp,
             })

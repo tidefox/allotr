@@ -1,5 +1,12 @@
-import type { AccountView, Money, PoolView } from '@allotr/shared';
+import type {
+  AccountView,
+  CategoryColour,
+  CategoryIcon,
+  Money,
+  PoolView,
+} from '@allotr/shared';
 import type { SeriesColor } from '@/components/bars';
+import { poolLooks } from '@/lib/pool-style';
 import { barFraction } from '@/shell/summary-math';
 
 // View model for the Budget · pools sub-tab. Every figure is the server's;
@@ -10,8 +17,13 @@ export type PoolTile = Readonly<{
   name: string;
   kind: PoolView['kind'];
   balance: Money;
-  /** The series colour by the pool's place among the open pools. */
+  /** The stored colour, else the series at the pool's place. */
   color: SeriesColor;
+  /** The stored icon; null shows the pool kind's own. */
+  icon: CategoryIcon | null;
+  /** What the user stored, null for Auto, for the style sheet. */
+  storedColour: CategoryColour | null;
+  storedIcon: CategoryIcon | null;
   /** The pool's own daily switch. */
   checked: boolean;
   /** The Budget pool always counts; the server refuses to switch it off. */
@@ -25,11 +37,15 @@ export function poolTiles(
   pools: readonly PoolView[],
   accounts: readonly AccountView[],
 ): PoolTile[] {
+  const looks = poolLooks(pools);
   return pools
     .filter((pool) => !pool.archived)
-    .map((pool, index) => ({
+    .map((pool) => ({
       id: pool.id,
-      color: `series-${String((index % 8) + 1)}` as SeriesColor,
+      color: looks.get(pool.id)?.colour ?? 'series-1',
+      icon: looks.get(pool.id)?.icon ?? null,
+      storedColour: pool.colour,
+      storedIcon: pool.icon,
       name: pool.name,
       kind: pool.kind,
       balance: pool.balance.amount,

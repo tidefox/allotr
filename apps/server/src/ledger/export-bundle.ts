@@ -212,6 +212,17 @@ export function toBundle(snapshot: Snapshot): Bundle {
         currency: a.currency as BundleAccount['currency'],
         budgetGroup: a.budgetGroup,
         ...(a.archived ? { archived: true } : {}),
+        ...(a.colour === null ? {} : { colour: a.colour }),
+        ...(a.icon === null ? {} : { icon: a.icon }),
+        ...(a.creditLimitMinor === null
+          ? {}
+          : {
+              creditLimit: money(
+                a.creditLimitMinor,
+                a.currency as BundleAccount['currency'],
+              ),
+            }),
+        ...(a.dueDay === null ? {} : { dueDay: a.dueDay }),
       },
     ]),
   );
@@ -433,6 +444,8 @@ export function toBundle(snapshot: Snapshot): Bundle {
     countsTowardDaily: pool.countsTowardDaily,
     ...(pool.archived ? { archived: true } : {}),
     ...(pool.defaultFor === null ? {} : { defaultFor: pool.defaultFor }),
+    ...(pool.colour === null ? {} : { colour: pool.colour }),
+    ...(pool.icon === null ? {} : { icon: pool.icon }),
   }));
 
   const budgets = planned.flatMap((budget): Bundle['budgets'] => {

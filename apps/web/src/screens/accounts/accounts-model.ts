@@ -1,25 +1,16 @@
 import {
   type AccountView,
+  type CategoryIcon,
   type Money,
   type PoolKind,
   type PoolView,
 } from '@allotr/shared';
 import type { SeriesColor } from '@/components/bars';
+import { accountLook, poolLooks } from '@/lib/pool-style';
 import { barFraction } from '@/shell/summary-math';
 
 // View model for the Accounts screen. Every amount is a server figure; this
 // file only sorts accounts into groups and counts them (docs/ui.md §4).
-
-const COLORS: readonly SeriesColor[] = [
-  'series-1',
-  'series-2',
-  'series-3',
-  'series-4',
-  'series-5',
-  'series-6',
-  'series-7',
-  'series-8',
-];
 
 export type AccountsFilter = 'all' | 'on-budget' | 'off-budget' | 'credit';
 
@@ -35,16 +26,24 @@ export type AccountGroup = Readonly<{
   /** Spending or savings; null for the credit and stray groups. */
   poolKind: PoolKind | null;
   /**
-   * The pool's series colour by its place among the open pools (as in the
-   * top bar), `negative` for credit, null for strays.
+   * The pool's stored colour, else its series by its place among the open
+   * pools (as in the top bar); `negative` for credit, null for strays.
    */
   color: SeriesColor | 'negative' | null;
+  /** The pool's stored icon; null shows its kind's icon. */
+  icon: CategoryIcon | null;
   /** Whether the pool counts toward the daily number today. */
   counts: boolean;
   /** Cycle money left ÷ start for a pool that counts; a bar width only. */
   cycleFraction: number | null;
+  /** Credit group only: the server's limit total and what is free of it. */
+  limit?: Money | null;
+  available?: Money | null;
   accounts: readonly AccountView[];
 }>;
+
+/** The server's limit and free totals over the credit accounts with a limit. */
+export type CreditTotals = Readonly<{ limit: Money; available: Money }>;
 
 export const CREDIT_GROUP = 'credit';
 export const NO_POOL_GROUP = 'none';
@@ -78,14 +77,17 @@ export function accountGroups(
   filter: AccountsFilter,
   /** The server's credit total (`totals.creditOwed`), for the credit group. */
   creditOwed: Money | null = null,
+  /** The server's limit and free totals over the credit accounts with a limit. */
+  creditTotals: CreditTotals | null = null,
 ): AccountGroup[] {
   const shown = accounts.filter((a) => !a.archived && inFilter(a, filter));
   const credit = shown.filter(isCredit);
   const rest = shown.filter((a) => !isCredit(a));
   const groups: AccountGroup[] = [];
   const known = new Set<string>();
+  const looks = poolLooks(pools);
   const open = pools.filter((p) => !p.archived);
-  open.forEach((pool, index) => {
+  open.forEach((pool) => {
     known.add(pool.id);
     const inPool = rest.filter((a) => a.poolId === pool.id);
     if (inPool.length > 0) {
@@ -95,7 +97,8 @@ export function accountGroups(
         kind: 'pool',
         balance: pool.balance.amount,
         poolKind: pool.kind,
-        color: COLORS[index % COLORS.length] ?? 'series-1',
+        color: looks.get(pool.id)?.colour ?? 'series-1',
+        icon: looks.get(pool.id)?.icon ?? null,
         counts: pool.counts,
         cycleFraction:
           pool.cycle === null
@@ -117,6 +120,7 @@ export function accountGroups(
       balance: null,
       poolKind: null,
       color: null,
+      icon: null,
       counts: false,
       cycleFraction: null,
       accounts: strays,
@@ -130,8 +134,18 @@ export function accountGroups(
       balance: creditOwed,
       poolKind: null,
       color: 'negative',
+      icon: null,
       counts: false,
-      cycleFraction: null,
+      // Free ÷ limit over the cards that have a limit, both from the server.
+      cycleFraction:
+        creditTotals === null
+          ? null
+          : barFraction(
+              creditTotals.available.amountMinor,
+              creditTotals.limit.amountMinor,
+            ),
+      limit: creditTotals === null ? null : creditTotals.limit,
+      available: creditTotals === null ? null : creditTotals.available,
       accounts: credit,
     });
   }
@@ -146,18 +160,14 @@ export function needsReconcile(
 }
 
 /**
- * An account's colour: `negative` for credit, else its pool's series colour
- * by the pool's place among the open pools (as in the tree and top bar).
+ * An account's colour: its stored one, else `negative` for credit, else its
+ * pool's colour (as in the tree and top bar).
  */
 export function accountColour(
   account: AccountView,
   pools: readonly PoolView[],
 ): SeriesColor | 'negative' | null {
-  if (isCredit(account)) return 'negative';
-  const index = pools
-    .filter((p) => !p.archived)
-    .findIndex((p) => p.id === account.poolId);
-  return index < 0 ? null : (COLORS[index % COLORS.length] ?? 'series-1');
+  return accountLook(account, poolLooks(pools)).colour;
 }
 
 /**

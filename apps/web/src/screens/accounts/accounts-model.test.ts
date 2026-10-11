@@ -21,6 +21,12 @@ function account(patch: Partial<AccountView> & { id: string }): AccountView {
     createdAt: '2026-01-01T00:00:00.000Z',
     lastReconciledOn: null,
     reconcileDue: false,
+    colour: null,
+    icon: null,
+    creditLimit: null,
+    creditAvailable: null,
+    dueDay: null,
+    nextDueOn: null,
     ...patch,
   };
 }
@@ -36,6 +42,8 @@ function pool(patch: Partial<PoolView> & { id: string }): PoolView {
     accountIds: [],
     balance: { amount: money(50000, 'USD'), missingRates: [] },
     cycle: null,
+    colour: null,
+    icon: null,
     ...patch,
   };
 }
@@ -74,6 +82,21 @@ describe('inFilter', () => {
   });
 });
 
+describe('accountColour', () => {
+  it('prefers the account’s own colour, then credit, then its pool', () => {
+    const styled = [pool({ id: 'p-budget', colour: 'series-5' })];
+    expect(accountColour(cash, styled)).toBe('series-5');
+    expect(accountColour({ ...cash, colour: 'series-3' }, styled)).toBe(
+      'series-3',
+    );
+    expect(accountColour(card, styled)).toBe('negative');
+    expect(accountColour({ ...card, colour: 'series-4' }, styled)).toBe(
+      'series-4',
+    );
+    expect(accountColour(nest, styled)).toBeNull();
+  });
+});
+
 describe('accountGroups', () => {
   const all = [cash, bank, nest, card, old];
 
@@ -99,6 +122,42 @@ describe('accountGroups', () => {
     const groups = accountGroups(all, pools, 'credit', owed);
     expect(groups[0]?.balance).toEqual(owed);
     expect(groups[0]?.color).toBe('negative');
+  });
+
+  it('sizes the credit bar from the server limit and free totals', () => {
+    const owed = money(-4500, 'USD');
+    const [credit] = accountGroups(all, pools, 'credit', owed, {
+      limit: money(200000, 'USD'),
+      available: money(50000, 'USD'),
+    });
+    expect(credit?.limit).toEqual(money(200000, 'USD'));
+    expect(credit?.available).toEqual(money(50000, 'USD'));
+    expect(credit?.cycleFraction).toBe(0.25);
+    // Past the limit the free total is negative: an empty bar.
+    const [over] = accountGroups(all, pools, 'credit', owed, {
+      limit: money(200000, 'USD'),
+      available: money(-100, 'USD'),
+    });
+    expect(over?.cycleFraction).toBe(0);
+    // No limit anywhere: no bar.
+    expect(
+      accountGroups(all, pools, 'credit', owed)[0]?.cycleFraction,
+    ).toBeNull();
+  });
+
+  it('uses a pool’s stored colour and icon and keeps the others’ places', () => {
+    const styled = [
+      pool({
+        id: 'p-budget',
+        name: 'Budget',
+        colour: 'series-7',
+        icon: 'wallet',
+      }),
+      pool({ id: 'p-save', name: 'Savings', kind: 'savings', counts: false }),
+    ];
+    const groups = accountGroups(all, styled, 'all');
+    expect(groups[0]).toMatchObject({ color: 'series-7', icon: 'wallet' });
+    expect(groups[1]).toMatchObject({ color: 'series-2', icon: null });
   });
 
   it('colours pools by their place among open pools on every tab', () => {

@@ -49,6 +49,10 @@ describe('bundleAccountNames', () => {
     currency: 'EUR',
     archived,
     createdOn: '2026-04-01' as SnapshotAccount['createdOn'],
+    colour: null,
+    icon: null,
+    creditLimitMinor: null,
+    dueDay: null,
   });
 
   it('keeps open names and numbers archived clashes', () => {

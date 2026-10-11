@@ -114,6 +114,45 @@ test('a pool is switched in and out of the daily number by keyboard', async ({
   await expect(travel).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('a pool takes a colour and icon from its style sheet', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await page.goto('/budget/pools');
+  await page
+    .getByRole('button', { name: t('budgetPools.styleOf', { name: 'Travel' }) })
+    .click();
+  const sheet = page.getByRole('dialog');
+  // The input is hidden inside its swatch; people press the swatch.
+  const swatch = (name: string) =>
+    sheet.getByRole('radio', { name }).locator('xpath=ancestor::label');
+  await swatch(
+    t('settingsCategories.style.colourOption', { number: 6 }),
+  ).click();
+  await swatch('Plane').click();
+  await expectAccessible(page);
+  await sheet
+    .getByRole('button', { name: t('budgetPools.style.save') })
+    .click();
+  await expect(sheet).toBeHidden();
+  await expect
+    .poll(async () => {
+      const list = (await (await page.request.get('/v1/pools')).json()) as {
+        pools: { name: string; colour: string | null; icon: string | null }[];
+      };
+      const travel = list.pools.find((p) => p.name === 'Travel');
+      return [travel?.colour, travel?.icon];
+    })
+    .toEqual(['series-6', 'plane']);
+  // The top bar draws the pool in its stored colour.
+  await expect(
+    page
+      .getByRole('list', { name: t('shell.summary.pools') })
+      .locator('svg.text-series-6'),
+  ).toHaveCount(1);
+});
+
 test('the bills sub-tab shows the timeline and the unpaid bill', async ({
   page,
   baseURL,

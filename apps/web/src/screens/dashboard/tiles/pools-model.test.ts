@@ -20,6 +20,8 @@ function pool(
     accountIds: [],
     balance: fig(0),
     cycle: null,
+    colour: null,
+    icon: null,
     shareBp: 0,
     ...over,
   };
@@ -64,5 +66,17 @@ describe('poolRows', () => {
       pool({ id: 'mine' }),
     ]);
     expect(rows.map((r) => r.fixed)).toEqual([true, false, false]);
+  });
+
+  it('uses the stored colour and icon, else the series at the pool’s place', () => {
+    const rows = poolRows([
+      pool({ id: 'a', colour: 'series-6', icon: 'plane' }),
+      pool({ id: 'x', archived: true }),
+      pool({ id: 'b' }),
+    ]);
+    expect(rows.map((r) => [r.color, r.icon])).toEqual([
+      ['series-6', 'plane'],
+      ['series-2', null],
+    ]);
   });
 });

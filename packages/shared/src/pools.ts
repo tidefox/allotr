@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { localDateSchema } from './dates.ts';
+import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { figureSchema, idSchema } from './ledger.ts';
 
 // Request and response shapes for pools (ADR 0021, docs/domain.md "Pools").
@@ -23,6 +24,10 @@ export const poolSchema = z.object({
    */
   defaultFor: z.enum(['on', 'off']).nullable(),
   archived: z.boolean(),
+  /** A chart series role of the active theme; null follows its place. */
+  colour: categoryColourSchema.nullable(),
+  /** A key from the fixed icon set; null shows the kind's icon. */
+  icon: categoryIconSchema.nullable(),
   /** Open accounts in the pool today. */
   accountIds: z.array(idSchema),
   /** What the open accounts hold, in the default currency at today's rates. */
@@ -70,6 +75,8 @@ export const createPoolBodySchema = z.object({
   kind: poolKindSchema,
   /** Defaults to on for a spending pool and off for a savings pool. */
   countsTowardDaily: z.boolean().optional(),
+  colour: categoryColourSchema.optional(),
+  icon: categoryIconSchema.optional(),
 });
 export type CreatePoolBody = z.input<typeof createPoolBodySchema>;
 
@@ -77,6 +84,9 @@ export const updatePoolBodySchema = z
   .object({
     name: nameSchema.optional(),
     countsTowardDaily: z.boolean().optional(),
+    /** Null clears it, so the pool takes its place's colour again. */
+    colour: categoryColourSchema.nullable().optional(),
+    icon: categoryIconSchema.nullable().optional(),
     /** Only an empty pool that is not a default one can be archived. */
     archived: z.boolean().optional(),
   })

@@ -3,6 +3,7 @@ import {
   accountBalances,
   accountId,
   goalMonthlyNeeded,
+  goalProgressBp,
   poolsOn,
   totalOn,
 } from '@allotr/core';
@@ -130,6 +131,10 @@ async function readGoals(
       saved: figure.amount,
       remaining: money(Math.max(0, row.target_minor - saved), row.currency),
       reached: saved >= row.target_minor,
+      progressBp: goalProgressBp(
+        figure.amount,
+        money(row.target_minor, row.currency),
+      ),
       monthlyNeeded: goalMonthlyNeeded(
         {
           remaining: money(Math.max(0, row.target_minor - saved), row.currency),

@@ -19,6 +19,11 @@ export const accountsScreen = {
       one: '{count} credit account',
       other: '{count} credit accounts',
     },
+    creditSubLimit: {
+      one: '{count} credit account · limit {limit}',
+      other: '{count} credit accounts · limit {limit}',
+    },
+    creditBar: 'Credit left of the limit: {free} free of {limit}',
     creditNoneSub: 'no credit accounts',
     creditMissing: 'no rate for {currencies}',
     reconcile: 'reconcile',
@@ -47,6 +52,7 @@ export const accountsScreen = {
     daily: 'daily',
     offBudget: 'off-budget',
     owed: 'owed',
+    owedLimit: 'owed · limit {limit}',
     cycleLeft: '{name}: cycle money left',
     addTo: 'Add an account',
     empty: 'no accounts here',
@@ -60,7 +66,7 @@ export const accountsScreen = {
   menu: {
     reconcile: 'Reconcile',
     transfer: 'Transfer from here',
-    rename: 'Rename',
+    rename: 'Edit',
     move: 'Move to another pool',
     archive: 'Archive',
   },
@@ -70,14 +76,25 @@ export const accountsScreen = {
     pick: 'no account selected',
     pickHint: 'Pick an account in the list to see it here.',
   },
+  edit: {
+    colourHint: 'Colours follow the theme. Auto uses the pool’s colour.',
+    limit: 'Credit limit ({currency})',
+    dueDay: 'Payment due day (1 to 31)',
+    creditHint:
+      'Shown on the account only. A due day does not add a bill; add one in Budget if you want a reminder.',
+    errors: {
+      limitInvalid: 'Enter an amount above zero, or leave it empty.',
+      dayInvalid: 'Use a day from 1 to 31, or leave it empty.',
+    },
+  },
   rename: {
-    title: 'Rename {name}',
+    title: 'Edit {name}',
     name: 'Name',
-    save: 'Save name',
+    save: 'Save',
     saving: 'Saving…',
     nameRequired: 'Enter a name.',
     nameLong: 'Use at most 100 characters.',
-    failed: 'The name could not be saved. Try again.',
+    failed: 'The account could not be saved. Try again.',
   },
   move: {
     title: 'Move {name}',
