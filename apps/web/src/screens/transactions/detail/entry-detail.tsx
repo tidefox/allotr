@@ -4,6 +4,7 @@ import {
   useQueryClient,
   queryOptions,
 } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
 import type {
@@ -748,8 +749,17 @@ function SamePayee({
       aria-label={t('transactionDetail.payee.title')}
       className="flex flex-col border-b py-2"
     >
-      <div className="px-3 pb-1">
+      <div className="flex items-center justify-between gap-2 px-3 pb-1">
         <SectionTitle>{t('transactionDetail.payee.title')}</SectionTitle>
+        {rows.length === 0 ? null : (
+          <Link
+            to="/transactions"
+            search={{ payee, type: 'expense', period: 'all' }}
+            className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
+          >
+            {t('transactionDetail.payee.all')}
+          </Link>
+        )}
       </div>
       {rows.length === 0 ? (
         <p className="px-3 text-small text-text-muted">

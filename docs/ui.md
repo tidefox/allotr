@@ -291,7 +291,7 @@ settings, so no ledger read is made that the server would refuse.
   archive). The open account is `?account=ID`; it shows beside the list from
   1000 px and in a sheet below.
 - Detail: name and balance, a balance chart, pool, type, reconcile state,
-  recent entries, actions.
+  recent entries (newest 8, with an [all entries] link to `/transactions?accounts=ID&period=all`), actions.
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,
   `/v1/transactions?account=`.
 
@@ -313,7 +313,8 @@ settings, so no ledger read is made that the server would refuse.
 - Detail (`GET /v1/transactions/{id}`): icon and payee, amount, date,
   category path, account, budget left after this entry (text, from `budget.lines[].leftAfter`; no
   bar, since a past period's budget amount is not sent), cover (`budget.lines[].covers`, in any
-  period), source, history, other entries from the same payee, then edit ·
+  period), source, history, the newest five other entries from the same payee (any date; a `[see all]`
+  link opens `/transactions?payee=…&type=expense&period=all`), then edit ·
   split · cover · delete.
 - Lists over 200 rows are virtualised.
 - Moving within a day: when grouped by day, rows of a day with more than one
