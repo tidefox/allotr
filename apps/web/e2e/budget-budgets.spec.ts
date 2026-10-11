@@ -177,15 +177,17 @@ test('the cover order moves a source and previews an overspend', async ({
   });
   const rows = list.getByRole('row');
   await expect(rows.first()).toBeVisible();
-  // The row reads "1", then the name (a hidden drag button may come first).
-  const parts = (await rows.first().innerText())
-    .split('\n')
-    .map((part) => part.trim());
-  const first = parts[parts.indexOf('1') + 1] ?? '';
+  // The first row's name, from its "Move … down" button.
+  const downName =
+    (await rows
+      .first()
+      .getByRole('button', { name: /^Move .* down$/ })
+      .getAttribute('aria-label')) ?? '';
+  const first = downName.replace(/^Move /, '').replace(/ down$/, '');
   await rows
     .first()
     .getByRole('button', {
-      name: t('budgetBudgets.order.down', { name: first.trim() }),
+      name: t('budgetBudgets.order.down', { name: first }),
     })
     .click();
   await expect(rows.nth(1)).toContainText(first.trim());

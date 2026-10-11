@@ -6,32 +6,49 @@ import {
   GridListItem,
   useDragAndDrop,
 } from 'react-aria-components';
-import type { BudgetStatusView, CoverPreviewView } from '@allotr/shared';
+import type {
+  BudgetStatusView,
+  CategoryView,
+  CoverPreviewView,
+  Money,
+} from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
-import { Grid, Stack, Tile } from '@/components/layout';
+import { Split, Stack, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
-import { EmptyState } from '@/components/states';
+import { CategoryIcon, EmptyState } from '@/components/states';
+import {
+  IconArrowDownLine,
+  IconArrowUpDownLine,
+  IconArrowUpLine,
+  IconCoinsLine,
+  IconWallet3Line,
+} from '@/generated/icons';
 import { moveItem } from '@/features/budget/order';
 import { useCoverPreview } from '@/features/budget/cover-preview';
 import { budgetQueryKeys, budgetsQuery, setCoverOrder } from '@/lib/budgets';
-import { accountsQuery } from '@/lib/ledger';
+import { formatMoney } from '@/lib/format-money';
+import { accountsQuery, categoriesQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
+import { budgetRows } from '../dashboard/tiles/budgets.ts';
 import { TileFailed } from '../dashboard/tiles/tile-failed.tsx';
 import { ChoiceField, TextField } from '../transactions/detail/fields.tsx';
 import { reorder } from '@/lib/reorder';
 import { previewRequest } from './cover-order-model.ts';
+
+const money = (amount: Money) => formatMoney(amount, 'symbol', 'en');
 
 // Cover order (docs/ui.md §6): who pays first when a budget overspends, as
 // a list you reorder by dragging a row or with ↑ ↓, and a preview that asks
 // the server where an overspend would take its money from.
 export function CoverOrderTab() {
   const status = useQuery(budgetsQuery);
+  const categories = useQuery(categoriesQuery);
   if (status.isError) {
     return (
-      <Stack className="h-full">
-        <Tile title={t('budgetBudgets.order.title')}>
+      <Stack className="min-h-full">
+        <Tile title={t('budgetBudgets.order.title')} icon={IconArrowUpDownLine}>
           <TileFailed
             retry={() => {
               void status.refetch();
@@ -43,17 +60,26 @@ export function CoverOrderTab() {
   }
   if (status.data === undefined) {
     return (
-      <Grid>
-        <SkeletonTile rows={5} />
-        <SkeletonTile span={2} rows={5} />
-      </Grid>
+      <Split
+        even
+        className="min-h-full"
+        list={<SkeletonTile rows={5} />}
+        detail={<SkeletonTile rows={5} />}
+      />
     );
   }
   return (
-    <Grid>
-      <OrderTile data={status.data} />
-      <NextTile data={status.data} />
-    </Grid>
+    <Split
+      even
+      className="min-h-full"
+      list={
+        <OrderTile
+          data={status.data}
+          categories={categories.data?.categories ?? []}
+        />
+      }
+      detail={<NextTile data={status.data} />}
+    />
   );
 }
 
@@ -63,8 +89,23 @@ function sourceName(item: BudgetStatusView['coverOrder'][number]): string {
   return item.name;
 }
 
-function OrderTile({ data }: { data: BudgetStatusView }) {
+function OrderTile({
+  data,
+  categories,
+}: {
+  data: BudgetStatusView;
+  categories: readonly CategoryView[];
+}) {
   const queryClient = useQueryClient();
+  const rows = budgetRows(data, categories);
+  const icons = new Map(
+    rows.flatMap((row) =>
+      row.budget === null || row.icon === null
+        ? []
+        : [[row.budget.id, row.icon] as const],
+    ),
+  );
+  const budgets = new Map(data.budgets.map((b) => [b.id, b]));
   const server = data.coverOrder;
   // The order shown while a save is in flight, so a move feels instant.
   const [pending, setPending] = useState<readonly string[] | null>(null);
@@ -102,8 +143,10 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
   return (
     <Tile
       title={t('budgetBudgets.order.title')}
-      subtitle={t('budgetBudgets.order.subtitle')}
-      bodyClassName="px-0 pb-0"
+      icon={IconArrowUpDownLine}
+      primary
+      className="h-full"
+      bodyClassName="px-0"
     >
       {ids.length === 0 ? (
         <EmptyState
@@ -112,6 +155,9 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
         />
       ) : (
         <>
+          <p className="mb-2 px-3 font-sans text-text-muted">
+            {t('budgetBudgets.order.intro')}
+          </p>
           <GridList
             aria-label={t('budgetBudgets.order.listLabel')}
             dragAndDropHooks={dragAndDropHooks}
@@ -121,6 +167,22 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
               const item = byId.get(id);
               if (item === undefined) return null;
               const name = sourceName(item);
+              const budget = budgets.get(id);
+              const icon = icons.get(id);
+              const Icon =
+                item.kind === 'free' ? IconWallet3Line : IconCoinsLine;
+              const left =
+                item.kind === 'free'
+                  ? t('budgetBudgets.order.has', { amount: money(data.free) })
+                  : budget === undefined
+                    ? null
+                    : budget.mode === 'set-aside'
+                      ? t('budgetBudgets.order.setAside', {
+                          amount: money(budget.held),
+                        })
+                      : t('budgetBudgets.order.left', {
+                          amount: money(budget.left),
+                        });
               return (
                 <GridListItem
                   key={id}
@@ -128,7 +190,7 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
                   textValue={name}
                   className="border-b outline-none focus-visible:bg-card data-[dragging]:bg-card data-[drop-target]:bg-card"
                 >
-                  <div className="flex min-h-row items-center gap-2 px-3">
+                  <div className="flex min-h-row items-center gap-2.5 px-3">
                     {/* Keyboard and screen reader users pick a row up with
                         this; it shows only while it has focus, so there is
                         no drag handle to see. */}
@@ -138,38 +200,52 @@ function OrderTile({ data }: { data: BudgetStatusView }) {
                     >
                       ⠿
                     </Button>
-                    <span className="num w-5 text-text-muted">{index + 1}</span>
+                    <span className="num w-[3ch] shrink-0 text-text-muted">
+                      {t('budgetBudgets.cover.place', { n: index + 1 })}
+                    </span>
+                    {icon === undefined ? (
+                      <Icon
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-text-muted"
+                      />
+                    ) : (
+                      <CategoryIcon name={icon} />
+                    )}
                     <span className="min-w-0 flex-1 truncate font-sans">
                       {name}
+                      {left === null ? null : (
+                        <span className="text-text-muted"> {left}</span>
+                      )}
                     </span>
-                    <BracketButton
-                      aria-label={t('budgetBudgets.order.up', { name })}
-                      isDisabled={index === 0}
-                      onPress={() => {
-                        apply(moveItem(ids, index, index - 1));
-                      }}
-                    >
-                      ↑
-                    </BracketButton>
-                    <BracketButton
-                      aria-label={t('budgetBudgets.order.down', { name })}
-                      isDisabled={index === ids.length - 1}
-                      onPress={() => {
-                        apply(moveItem(ids, index, index + 1));
-                      }}
-                    >
-                      ↓
-                    </BracketButton>
+                    <span className="flex shrink-0">
+                      <BracketButton
+                        icon={IconArrowUpLine}
+                        aria-label={t('budgetBudgets.order.up', { name })}
+                        isDisabled={index === 0}
+                        onPress={() => {
+                          apply(moveItem(ids, index, index - 1));
+                        }}
+                      >
+                        {null}
+                      </BracketButton>
+                      <BracketButton
+                        icon={IconArrowDownLine}
+                        aria-label={t('budgetBudgets.order.down', { name })}
+                        isDisabled={index === ids.length - 1}
+                        onPress={() => {
+                          apply(moveItem(ids, index, index + 1));
+                        }}
+                      >
+                        {null}
+                      </BracketButton>
+                    </span>
                   </div>
                 </GridListItem>
               );
             })}
           </GridList>
-          <p className="px-3 py-2 font-sans text-small text-text-muted">
-            {t('budgetBudgets.order.hint')}
-          </p>
           {save.isError ? (
-            <p role="alert" className="px-3 pb-2 text-small text-negative">
+            <p role="alert" className="px-3 pt-2 text-small text-negative">
               {t('budgetBudgets.order.saveFailed')}
             </p>
           ) : null}
@@ -203,8 +279,8 @@ function NextTile({ data }: { data: BudgetStatusView }) {
   return (
     <Tile
       title={t('budgetBudgets.next.title')}
-      subtitle={t('budgetBudgets.next.subtitle')}
-      span={2}
+      icon={IconArrowUpDownLine}
+      className="h-full"
       bodyClassName="px-0 pb-0"
     >
       {budgets.length === 0 ? (
@@ -213,11 +289,11 @@ function NextTile({ data }: { data: BudgetStatusView }) {
           hint={t('budgetBudgets.next.intro')}
         />
       ) : (
-        <div className="flex flex-col gap-3 border-b p-3">
-          <p className="font-sans text-small text-text-muted">
+        <div className="flex flex-col gap-3 border-b px-3 pb-3">
+          <p className="font-sans text-text-muted">
             {t('budgetBudgets.next.intro')}
           </p>
-          <div className="grid grid-cols-1 items-end gap-2 medium:grid-cols-3">
+          <div className="grid grid-cols-1 items-end gap-2 medium:grid-cols-3 wide:grid-cols-1">
             <ChoiceField
               label={t('budgetBudgets.next.budget')}
               value={budgetId}

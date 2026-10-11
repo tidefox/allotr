@@ -89,25 +89,34 @@ export function Stack({
   );
 }
 
-/** A list and its detail side by side from 1000 px; the list alone below. */
+/**
+ * A list and its detail side by side from 1000 px; the list alone below.
+ * `even` (the locked design's `split even`) shares the width 1.6 : 1 and
+ * keeps both, one above the other, below 1000 px.
+ */
 export function Split({
   list,
   detail,
+  even = false,
   className,
 }: {
   list: ReactNode;
   detail: ReactNode;
+  even?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 border-t border-l bg-canvas wide:grid-cols-[minmax(0,1fr)_25rem]',
+        'grid grid-cols-1 border-t border-l bg-canvas',
+        even
+          ? 'wide:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
+          : 'wide:grid-cols-[minmax(0,1fr)_25rem]',
         className,
       )}
     >
       <div className="min-w-0">{list}</div>
-      <div className="min-w-0 narrow:hidden">{detail}</div>
+      <div className={cn('min-w-0', !even && 'narrow:hidden')}>{detail}</div>
     </div>
   );
 }
