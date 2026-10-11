@@ -338,6 +338,22 @@ describe('credit totals', () => {
 });
 
 describe('export and import', () => {
+  it('refuse a credit limit on an account that is not a card', async () => {
+    const other = await startWithTwoUsers({ now: () => now });
+    try {
+      const refused = await other.alice.post('/v1/import', {
+        format: 'allotr.bundle',
+        version: 1,
+        accounts: [
+          { name: 'Plain', currency: 'USD', creditLimit: usd(100_000) },
+        ],
+      });
+      expect(refused.status).toBe(400);
+    } finally {
+      await other.close();
+    }
+  });
+
   it('carry the styles, limits and due days', async () => {
     const budget = (
       (await h.alice.get('/v1/pools')).body as {

@@ -217,6 +217,49 @@ describe('bundleSchema', () => {
     }
   });
 
+  it('accepts the look of pools and accounts, and credit limits only on cards', () => {
+    const card = {
+      name: 'Card',
+      kind: 'liability',
+      currency: 'EUR',
+      colour: 'series-4',
+      icon: 'credit-card',
+      creditLimit: eur(200_000),
+      dueDay: 15,
+    };
+    const parsed = bundleSchema.parse({
+      ...full,
+      accounts: [card],
+      pools: [
+        { name: 'Trips', kind: 'spending', colour: 'series-2', icon: 'plane' },
+      ],
+    });
+    expect(parsed.accounts[0]).toMatchObject({
+      colour: 'series-4',
+      creditLimit: eur(200_000),
+      dueDay: 15,
+    });
+    for (const bad of [
+      { colour: '#ff0000' },
+      { colour: 'series-9' },
+      { icon: 'Rocket' },
+      { dueDay: 0 },
+      { dueDay: 32 },
+      { creditLimit: eur(0) },
+    ]) {
+      expect(
+        bundleSchema.safeParse({ ...full, accounts: [{ ...card, ...bad }] })
+          .success,
+      ).toBe(false);
+    }
+    expect(
+      bundleSchema.safeParse({
+        ...full,
+        pools: [{ name: 'Trips', kind: 'spending', colour: 'red' }],
+      }).success,
+    ).toBe(false);
+  });
+
   it('accepts a bundle with only the header', () => {
     expect(
       bundleSchema.parse({ format: 'allotr.bundle', version: 1 }),
@@ -233,7 +276,7 @@ describe('bundleSchema', () => {
     ['an unknown top-level key', { ...full, extra: 1 }, []],
     [
       'an unknown item key',
-      { ...full, accounts: [{ ...full.accounts[0], colour: 'red' }] },
+      { ...full, accounts: [{ ...full.accounts[0], nickname: 'red' }] },
       ['accounts', 0],
     ],
     ['another version', { ...full, version: 2 }, ['version']],
