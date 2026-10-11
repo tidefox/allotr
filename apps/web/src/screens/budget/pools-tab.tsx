@@ -34,6 +34,7 @@ import { t } from '@/messages/t';
 import { AccountIcon } from '../accounts/account-list.tsx';
 import { NewAccountSheet } from '../accounts/new-account-sheet.tsx';
 import { Formula } from '../dashboard/tiles/this-cycle.tsx';
+import { PoolSheet } from './pool-sheet.tsx';
 import { PoolStyleSheet } from './pool-style-sheet.tsx';
 import { poolTiles, type PoolTile } from './pools-model.ts';
 
@@ -135,12 +136,14 @@ function PoolCard({
   onToggle,
   onAdd,
   onStyle,
+  onRename,
 }: {
   tile: PoolTile;
   failed: boolean;
   onToggle: (checked: boolean) => void;
   onAdd: () => void;
   onStyle: () => void;
+  onRename: () => void;
 }) {
   const navigate = useNavigate();
   return (
@@ -153,6 +156,12 @@ function PoolCard({
       primary={tile.checked}
       actions={
         <>
+          <BracketButton
+            aria-label={t('budgetPools.renameOf', { name: tile.name })}
+            onPress={onRename}
+          >
+            {t('budgetPools.renameAction')}
+          </BracketButton>
           <BracketButton
             aria-label={t('budgetPools.styleOf', { name: tile.name })}
             onPress={onStyle}
@@ -284,6 +293,8 @@ export function PoolsTab() {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [styling, setStyling] = useState<PoolTile | null>(null);
+  const [renaming, setRenaming] = useState<PoolTile | null>(null);
+  const [creating, setCreating] = useState(false);
 
   if (pools.isError || accounts.isError) {
     return (
@@ -339,9 +350,30 @@ export function PoolsTab() {
               onStyle={() => {
                 setStyling(tile);
               }}
+              onRename={() => {
+                setRenaming(tile);
+              }}
             />
           ))
         )}
+        <Tile
+          title={t('budgetPools.newPool.title')}
+          icon={IconAddLine}
+          actions={
+            <BracketButton
+              icon={IconAddLine}
+              onPress={() => {
+                setCreating(true);
+              }}
+            >
+              {t('budgetPools.newPool.action')}
+            </BracketButton>
+          }
+        >
+          <p className="font-sans text-text-muted">
+            {t('budgetPools.newPool.body')}
+          </p>
+        </Tile>
         <HowItWorks />
       </Grid>
       {styling === null ? null : (
@@ -352,6 +384,21 @@ export function PoolsTab() {
           }}
         />
       )}
+      {renaming === null ? null : (
+        <PoolSheet
+          pool={renaming}
+          onClose={() => {
+            setRenaming(null);
+          }}
+        />
+      )}
+      {creating ? (
+        <PoolSheet
+          onClose={() => {
+            setCreating(false);
+          }}
+        />
+      ) : null}
       {adding ? (
         <NewAccountSheet
           onClose={() => {
