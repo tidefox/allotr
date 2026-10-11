@@ -72,7 +72,7 @@ function rowCells(row: TxRow) {
         </>
       )}
     </span>,
-    <span key="account" className="font-sans text-text-muted">
+    <span key="account" className="font-sans text-text">
       {row.account}
     </span>,
     row.amount === null ? null : (
