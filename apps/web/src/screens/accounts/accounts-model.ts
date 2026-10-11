@@ -1,7 +1,25 @@
-import { type AccountView, type Money, type PoolView } from '@allotr/shared';
+import {
+  type AccountView,
+  type Money,
+  type PoolKind,
+  type PoolView,
+} from '@allotr/shared';
+import type { SeriesColor } from '@/components/bars';
+import { barFraction } from '@/shell/summary-math';
 
 // View model for the Accounts screen. Every amount is a server figure; this
 // file only sorts accounts into groups and counts them (docs/ui.md §4).
+
+const COLORS: readonly SeriesColor[] = [
+  'series-1',
+  'series-2',
+  'series-3',
+  'series-4',
+  'series-5',
+  'series-6',
+  'series-7',
+  'series-8',
+];
 
 export type AccountsFilter = 'all' | 'on-budget' | 'off-budget' | 'credit';
 
@@ -14,6 +32,17 @@ export type AccountGroup = Readonly<{
   kind: 'pool' | 'credit' | 'none';
   /** What the pool's open accounts hold; null where there is no such figure. */
   balance: Money | null;
+  /** Spending or savings; null for the credit and stray groups. */
+  poolKind: PoolKind | null;
+  /**
+   * The pool's series colour by its place among the open pools (as in the
+   * top bar), `negative` for credit, null for strays.
+   */
+  color: SeriesColor | 'negative' | null;
+  /** Whether the pool counts toward the daily number today. */
+  counts: boolean;
+  /** Cycle money left ÷ start for a pool that counts; a bar width only. */
+  cycleFraction: number | null;
   accounts: readonly AccountView[];
 }>;
 
@@ -47,14 +76,16 @@ export function accountGroups(
   accounts: readonly AccountView[],
   pools: readonly PoolView[],
   filter: AccountsFilter,
+  /** The server's credit total (`totals.creditOwed`), for the credit group. */
+  creditOwed: Money | null = null,
 ): AccountGroup[] {
   const shown = accounts.filter((a) => !a.archived && inFilter(a, filter));
   const credit = shown.filter(isCredit);
   const rest = shown.filter((a) => !isCredit(a));
   const groups: AccountGroup[] = [];
   const known = new Set<string>();
-  for (const pool of pools) {
-    if (pool.archived) continue;
+  const open = pools.filter((p) => !p.archived);
+  open.forEach((pool, index) => {
     known.add(pool.id);
     const inPool = rest.filter((a) => a.poolId === pool.id);
     if (inPool.length > 0) {
@@ -63,10 +94,20 @@ export function accountGroups(
         name: pool.name,
         kind: 'pool',
         balance: pool.balance.amount,
+        poolKind: pool.kind,
+        color: COLORS[index % COLORS.length] ?? 'series-1',
+        counts: pool.counts,
+        cycleFraction:
+          pool.cycle === null
+            ? null
+            : barFraction(
+                pool.cycle.left.amount.amountMinor,
+                pool.cycle.start.amount.amountMinor,
+              ),
         accounts: inPool,
       });
     }
-  }
+  });
   const strays = rest.filter((a) => !known.has(a.poolId));
   if (strays.length > 0) {
     groups.push({
@@ -74,6 +115,10 @@ export function accountGroups(
       name: null,
       kind: 'none',
       balance: null,
+      poolKind: null,
+      color: null,
+      counts: false,
+      cycleFraction: null,
       accounts: strays,
     });
   }
@@ -82,7 +127,11 @@ export function accountGroups(
       id: CREDIT_GROUP,
       name: null,
       kind: 'credit',
-      balance: null,
+      balance: creditOwed,
+      poolKind: null,
+      color: 'negative',
+      counts: false,
+      cycleFraction: null,
       accounts: credit,
     });
   }
@@ -94,6 +143,35 @@ export function needsReconcile(
   accounts: readonly AccountView[],
 ): AccountView[] {
   return accounts.filter((a) => !a.archived && a.reconcileDue);
+}
+
+/**
+ * An account's colour: `negative` for credit, else its pool's series colour
+ * by the pool's place among the open pools (as in the tree and top bar).
+ */
+export function accountColour(
+  account: AccountView,
+  pools: readonly PoolView[],
+): SeriesColor | 'negative' | null {
+  if (isCredit(account)) return 'negative';
+  const index = pools
+    .filter((p) => !p.archived)
+    .findIndex((p) => p.id === account.poolId);
+  return index < 0 ? null : (COLORS[index % COLORS.length] ?? 'series-1');
+}
+
+/**
+ * How many open accounts and open pools the ledger has, for the list's
+ * title bar (the same on every sub-tab, as in the mockup).
+ */
+export function ledgerCounts(
+  accounts: readonly AccountView[],
+  pools: readonly PoolView[],
+): { accounts: number; pools: number } {
+  return {
+    accounts: accounts.filter((a) => !a.archived).length,
+    pools: pools.filter((p) => !p.archived).length,
+  };
 }
 
 /** The pools an account can move to: open, and not the one it is in. */

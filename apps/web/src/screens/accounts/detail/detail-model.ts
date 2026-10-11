@@ -5,8 +5,8 @@ import {
   type ReconcileResultView,
 } from '@allotr/shared';
 import type { ChartTick } from '@/charts/chart';
-import type { Point } from '@/charts/math';
-import { formatDay } from '@/features/today/format';
+import { niceTicks, type Point } from '@/charts/math';
+import { formatTerminalDate } from '@/features/today/format';
 import type { ReconcileMode } from '@/features/accounts/reconcile-draft';
 import { formatMoneyShort } from '@/lib/format-money';
 
@@ -27,23 +27,20 @@ export function historyChart(
   const points = history.map((p, x) => ({ x, y: p.balance.amountMinor }));
   const first = history[0];
   if (first === undefined) return { points, yTicks: [], xTicks: [] };
-  const low = history.reduce((a, p) =>
-    p.balance.amountMinor < a.balance.amountMinor ? p : a,
+  const ys = points.map((p) => p.y);
+  // Axis positions from zero (or below, for a debt) to the top, as in the
+  // mockup's three-step axis; none of them is an amount anyone holds.
+  const yTicks = niceTicks(Math.min(0, ...ys), Math.max(0, ...ys), 3).map(
+    (value) => ({
+      value,
+      label: formatMoneyShort(money(value, first.balance.currency), locale),
+    }),
   );
-  const high = history.reduce((a, p) =>
-    p.balance.amountMinor > a.balance.amountMinor ? p : a,
-  );
-  const extremes =
-    low.balance.amountMinor === high.balance.amountMinor ? [low] : [low, high];
-  const yTicks = extremes.map((p) => ({
-    value: p.balance.amountMinor,
-    label: formatMoneyShort(p.balance, locale),
-  }));
   const mid = Math.floor((history.length - 1) / 2);
   const xs = [...new Set([0, mid, history.length - 1])];
   const xTicks = xs.map((value) => ({
     value,
-    label: formatDay(history[value]?.date ?? first.date, locale),
+    label: formatTerminalDate(history[value]?.date ?? first.date, locale),
   }));
   return { points, yTicks, xTicks };
 }

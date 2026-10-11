@@ -83,17 +83,14 @@ test('the tree groups accounts by pool and credit, with stats', async ({
   await expect(
     page.getByText(t('accountsScreen.stats.netWorth')),
   ).toBeVisible();
+  // Each new account is flagged due for a reconcile by the server.
   await expect(
-    page.getByText(t('accountsScreen.stats.reconcileFigure', { count: 3 })),
+    page.getByText(t('accountsScreen.stats.reconcileLooks', { count: 3 })),
   ).toBeVisible();
-  // Credit owed is the server's total, shown as owed; each new account is
-  // flagged due for a reconcile.
+  // Credit owed is the server's total, signed as the debt it is.
   await expect(
-    page.getByText('$450.00', { exact: true }).first(),
+    page.getByText('−$450.00', { exact: true }).first(),
   ).toBeVisible();
-  await expect(
-    page.getByText(t('accountsScreen.list.reconcileDue'), { exact: true }),
-  ).toHaveCount(3);
   await expectAccessible(page);
 
   const small = await page
@@ -197,7 +194,8 @@ test('+ account opens a sheet, adds an account and refuses a taken name', async 
   await signIn(page, baseURL ?? '');
   await page.goto('/accounts');
   const add = page.getByRole('button', {
-    name: t('accountsScreen.add.action'),
+    name: t('accountsScreen.add.name'),
+    exact: true,
   });
   await expect(add).toBeVisible();
   await add.click();

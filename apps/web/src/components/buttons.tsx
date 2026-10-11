@@ -35,11 +35,13 @@ export function Brackets({
         <Icon
           className={cn(
             'size-3.5 shrink-0',
-            children === undefined ? null : 'mr-[3px]',
+            children === undefined || children === null ? null : 'mr-[3px]',
           )}
         />
       )}
-      {children === undefined ? null : <span>{children}</span>}
+      {children === undefined || children === null ? null : (
+        <span>{children}</span>
+      )}
       <span aria-hidden="true" className="text-outline">
         ]
       </span>

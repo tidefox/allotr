@@ -11,58 +11,63 @@ export type Stat = Readonly<{
   bar?: Readonly<{ fraction: number; label: string }>;
   /** Edge colour of the primary (first) stat. */
   tone?: 'positive' | 'primary' | 'neutral';
+  /** The figure in `negative`, for an amount owed. */
+  figureTone?: 'negative';
 }>;
 
 /** Four stat tiles: 2 × 2 on compact, in a row from medium. */
 export function Stats({ stats }: { stats: readonly Stat[] }) {
   return (
     <div className="grid grid-cols-2 border-t border-l medium:grid-cols-4">
-      {stats.map(({ label, icon: Icon, figure, sub, bar, tone }, index) => {
-        const highlight = index === 0 && tone !== 'neutral';
-        return (
-          <div
-            key={label}
-            className={cn(
-              'flex min-w-0 flex-col justify-center border-r border-b px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
-              highlight && 'border-l-[3px]',
-              highlight &&
-                (tone === 'positive'
-                  ? 'border-l-positive'
-                  : 'border-l-primary'),
-            )}
-          >
-            <div className="flex items-center gap-1.5 text-[0.7188rem] leading-[1.45] text-text-muted">
-              {Icon === undefined ? null : (
-                <Icon className="size-[1.15em] shrink-0" />
-              )}
-              <span className="truncate">{label}</span>
-            </div>
+      {stats.map(
+        ({ label, icon: Icon, figure, sub, bar, tone, figureTone }, index) => {
+          const highlight = index === 0 && tone !== 'neutral';
+          return (
             <div
+              key={label}
               className={cn(
-                // The size comes before `leading-*`: cn() lets a later size
-                // reset the line height.
-                highlight ? 'text-stat tracking-[-0.01em]' : 'text-stat-sub',
-                'my-0.5 truncate leading-[1.45] font-semibold',
-                highlight && tone === 'positive' && 'text-positive',
+                'flex min-w-0 flex-col justify-center border-r border-b px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
+                highlight && 'border-l-[3px]',
+                highlight &&
+                  (tone === 'positive'
+                    ? 'border-l-positive'
+                    : 'border-l-primary'),
               )}
             >
-              {figure}
-            </div>
-            {sub === undefined ? null : (
-              <div className="truncate text-tiny leading-[1.45] text-text-muted">
-                {sub}
+              <div className="flex items-center gap-1.5 text-[0.7188rem] leading-[1.45] text-text-muted">
+                {Icon === undefined ? null : (
+                  <Icon className="size-[1.15em] shrink-0" />
+                )}
+                <span className="truncate">{label}</span>
               </div>
-            )}
-            {bar === undefined ? null : (
-              <LeftBar
-                fraction={bar.fraction}
-                label={bar.label}
-                className="mt-1"
-              />
-            )}
-          </div>
-        );
-      })}
+              <div
+                className={cn(
+                  // The size comes before `leading-*`: cn() lets a later size
+                  // reset the line height.
+                  highlight ? 'text-stat tracking-[-0.01em]' : 'text-stat-sub',
+                  'my-0.5 truncate leading-[1.45] font-semibold',
+                  highlight && tone === 'positive' && 'text-positive',
+                  figureTone === 'negative' && 'text-negative',
+                )}
+              >
+                {figure}
+              </div>
+              {sub === undefined ? null : (
+                <div className="truncate text-tiny leading-[1.45] text-text-muted">
+                  {sub}
+                </div>
+              )}
+              {bar === undefined ? null : (
+                <LeftBar
+                  fraction={bar.fraction}
+                  label={bar.label}
+                  className="mt-1"
+                />
+              )}
+            </div>
+          );
+        },
+      )}
     </div>
   );
 }

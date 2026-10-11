@@ -1,6 +1,5 @@
-import { type SeriesColor } from '@/components/bars.tsx';
 import { cn } from '@/lib/utils';
-import { seriesStroke } from './chart.tsx';
+import { seriesStroke, type ChartColor } from './chart.tsx';
 import { domainOf, lineGeometry } from './chart-model.ts';
 import type { Point } from './math.ts';
 
@@ -12,7 +11,7 @@ export function Sparkline({
   className,
 }: {
   points: readonly Point[];
-  color?: SeriesColor;
+  color?: ChartColor;
   /** The summary read by assistive tech, for example "Balance, last 30 days". */
   label: string;
   className?: string;

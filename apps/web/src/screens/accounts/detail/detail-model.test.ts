@@ -75,7 +75,7 @@ describe('historyChart', () => {
     });
   });
 
-  it('puts days on x and minor units on y, ticking the extremes', () => {
+  it('puts days on x and minor units on y, ticking from zero up', () => {
     const chart = historyChart(
       [
         { date: d('2026-10-01'), balance: usd(100) },
@@ -89,18 +89,36 @@ describe('historyChart', () => {
       { x: 1, y: 900 },
       { x: 2, y: 500 },
     ]);
-    expect(chart.yTicks.map((t) => t.value)).toEqual([100, 900]);
+    expect(chart.yTicks.map((t) => t.value)).toEqual([0, 500, 1000]);
     expect(chart.xTicks.map((t) => t.value)).toEqual([0, 1, 2]);
+    expect(chart.xTicks.map((t) => t.label)).toEqual([
+      'oct 01',
+      'oct 02',
+      'oct 03',
+    ]);
   });
 
-  it('ticks once when the balance never moves', () => {
+  it('ticks once when the balance stays at zero', () => {
     const chart = historyChart(
       [
-        { date: d('2026-10-01'), balance: usd(100) },
-        { date: d('2026-10-02'), balance: usd(100) },
+        { date: d('2026-10-01'), balance: usd(0) },
+        { date: d('2026-10-02'), balance: usd(0) },
       ],
       'en',
     );
     expect(chart.yTicks).toHaveLength(1);
+  });
+
+  it('reaches below zero for a debt', () => {
+    const chart = historyChart(
+      [
+        { date: d('2026-10-01'), balance: usd(-12000) },
+        { date: d('2026-10-02'), balance: usd(-31000) },
+      ],
+      'en',
+    );
+    const values = chart.yTicks.map((t) => t.value);
+    expect(Math.min(...values)).toBeLessThanOrEqual(-31000);
+    expect(Math.max(...values)).toBe(0);
   });
 });

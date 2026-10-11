@@ -309,27 +309,47 @@ settings, so no ledger read is made that the server would refuse.
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
-- Stats: net worth (primary) · savings & invest (the off-budget total) ·
-  credit owed · to reconcile (accounts the server flags `reconcileDue`: never reconciled, or not for 30 days; rows carry a `due` tag).
-  Credit owed is `totals.creditOwed` on `/v1/accounts` and to reconcile
-  counts `reconcileDue` accounts; neither is summed in the browser. Credit
-  limits are not in the API yet, so there is no limit bar.
-- A list tile with a tree: pools → accounts, each pool folding and showing
-  the pool's balance. Credit accounts are their own group below the pools
-  and appear only under All and Credit; On budget and Off budget show the
-  pools of that kind.
+- Stats, each with an icon and a lower-case label: net worth (primary; the
+  server's `change` over the open cycle below it, as on the dashboard) ·
+  savings & invest (the off-budget total; the number of savings accounts) ·
+  credit owed (`totals.creditOwed` on `/v1/accounts`, signed and in
+  `negative` while money is owed; the number of credit accounts) · reconcile
+  (how many accounts the server flags `reconcileDue`, never reconciled or not
+  for 30 days, with a small muted `need a look`; the first one's name and
+  since when). Nothing is summed in the browser. Credit limits, minimum
+  payments and due dates are not in the API yet, so there is no limit bar.
+- A list tile (`accounts`, subtitle `N accounts in M pools` over the whole
+  ledger) with 46 px tree rows: pools → accounts, each pool folding. Credit
+  accounts are their own group below the pools and appear only under All
+  and Credit; On budget and Off budget show the pools of that kind.
+- A pool header row is semibold: fold handle, the pool's kind icon in its
+  series colour (by its place among the open pools, as in the top bar), the
+  name with a muted `● daily`, `off-budget` or `owed`, a bar of the cycle
+  money left on pools that count (from 600 px; the server's `cycle.left` ÷
+  `cycle.start`), the pool's balance (the credit total for credit) and
+  `[+]`, which opens the new-account sheet.
 - The list tile's title bar has `[+ account]`, which opens a sheet with the
   name, currency, whether it counts toward today (on budget) or is savings
   (off budget) and an optional opening balance. The new account opens.
-- Each account row: icon, name, sparkline (the last 30 days, fetched when the
-  row scrolls into view; from 600 px), reconciled date (from 1000 px),
-  balance, ⋮ (reconcile, transfer from here, rename, move to another pool,
-  archive). The open account is `?account=ID`; it shows beside the list from
-  1000 px and in a sheet below.
-- Detail: name and balance, a balance chart, pool, type, reconcile state,
-  recent entries (newest 8, with an [all entries] link to `/transactions?accounts=ID&period=all`), actions.
+- Each account row: muted kind icon, name, sparkline in the pool's colour
+  (`negative` below zero; the last 30 days, fetched when the row scrolls
+  into view; from 600 px), `✓ oct 05` reconciled date (from 1000 px),
+  balance (`negative` below zero), `[⋮]` (reconcile, transfer from here,
+  rename, move to another pool, archive). The open account is
+  `?account=ID`; it shows beside the list from 1000 px and in a sheet named
+  after it below.
+- Detail: the `account` tile (primary edge, kind icon, the type as
+  subtitle), or the same content bare in the sheet. The name with its icon
+  in the pool's colour and the balance (26 px), a 30-day balance chart
+  growing to fill the pane (area in the pool's colour, axis from zero), a
+  key-value list (pool and whether it counts toward daily, type and
+  currency, reconciled date and whether it needs a look), `recent` (newest
+  5: date, category icon, payee, amount; `[all entries]` opens
+  `/transactions?accounts=ID&period=all`), then `[✓ reconcile]`
+  `[⇆ transfer]` `[✎ edit]` (rename) and `[⋮]` (move to another pool,
+  archive).
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,
-  `/v1/transactions?account=`.
+  `/v1/transactions?account=`, `/v1/insights/net-worth`.
 
 ### Transactions `/transactions`
 
