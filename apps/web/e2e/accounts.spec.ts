@@ -341,3 +341,57 @@ test('editing an account sets its icon and colour, and a card its limit and due 
     })
     .toEqual(['series-4', 'piggy-bank', 300_000, 31]);
 });
+
+// Last: it adds to the limit total the credit tests above assert on.
+test('+ account can add a credit account with a limit and a due day', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await page
+    .getByRole('button', { name: t('accountsScreen.add.name'), exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: t('accountsScreen.add.title'),
+  });
+  // The limit and due day appear only for a credit account.
+  await expect(
+    sheet.getByRole('textbox', { name: t('accounts.create.dueDay') }),
+  ).toHaveCount(0);
+  await sheet
+    .getByRole('button', { name: new RegExp(t('accounts.create.kind')) })
+    .click();
+  await page
+    .getByRole('menuitemradio', { name: t('accounts.create.kinds.liability') })
+    .click();
+
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.name') })
+    .fill('Travel card');
+  await sheet
+    .getByRole('textbox', {
+      name: t('accounts.create.limit', { currency: 'USD' }),
+    })
+    .fill('3000');
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.dueDay') })
+    .fill('40');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(
+    sheet.getByText(t('accounts.create.errors.dayInvalid')),
+  ).toBeVisible();
+  await expectAccessible(page);
+
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.dueDay') })
+    .fill('12');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(sheet).toBeHidden();
+  await expect(rowOf(page, 'Travel card')).toBeVisible();
+  await page.goto('/accounts/credit');
+  await rowOf(page, 'Travel card').click();
+  await expect(
+    page.getByText(t('accountDetail.fields.due'), { exact: true }),
+  ).toBeVisible();
+});

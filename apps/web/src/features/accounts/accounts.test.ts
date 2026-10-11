@@ -29,7 +29,12 @@ describe('toCreateBody', () => {
   it('sends only a name, currency and group without a balance', () => {
     expect(toCreateBody({ ...draft, name: '  Everyday  ' }, 'en-US')).toEqual({
       ok: true,
-      body: { name: 'Everyday', currency: 'USD', budgetGroup: 'on' },
+      body: {
+        name: 'Everyday',
+        currency: 'USD',
+        kind: 'asset',
+        budgetGroup: 'on',
+      },
     });
   });
 
@@ -51,11 +56,53 @@ describe('toCreateBody', () => {
       body: {
         name: 'Yen wallet',
         currency: 'JPY',
+        kind: 'asset',
         budgetGroup: 'off',
         openingBalance: money(12_000, 'JPY'),
         openedOn: '2026-03-01',
       },
     });
+  });
+
+  it('adds a credit limit and due day for a credit account only', () => {
+    const credit = {
+      ...draft,
+      name: 'Card',
+      kind: 'liability' as const,
+      creditLimit: '1,500.00',
+      dueDay: '25',
+    };
+    expect(toCreateBody(credit, 'en-US')).toEqual({
+      ok: true,
+      body: {
+        name: 'Card',
+        currency: 'USD',
+        kind: 'liability',
+        budgetGroup: 'on',
+        creditLimit: money(150_000, 'USD'),
+        dueDay: 25,
+      },
+    });
+    // Typed values are ignored when the type is switched back.
+    const asset = toCreateBody({ ...credit, kind: 'asset' }, 'en-US');
+    expect(asset.ok && 'creditLimit' in asset.body).toBe(false);
+    expect(asset.ok && 'dueDay' in asset.body).toBe(false);
+  });
+
+  it('refuses a credit limit of zero and a due day out of range', () => {
+    const credit = { ...draft, name: 'Card', kind: 'liability' as const };
+    expect(
+      toCreateBody({ ...credit, creditLimit: '0', dueDay: '32' }, 'en-US'),
+    ).toEqual({
+      ok: false,
+      errors: {
+        creditLimit: 'accounts.create.errors.limitInvalid',
+        dueDay: 'accounts.create.errors.dayInvalid',
+      },
+    });
+    expect(toCreateBody({ ...credit, creditLimit: 'abc' }, 'en-US').ok).toBe(
+      false,
+    );
   });
 
   it('takes a negative balance for a debt and the locale’s separators', () => {
@@ -76,7 +123,12 @@ describe('toCreateBody', () => {
       ),
     ).toEqual({
       ok: true,
-      body: { name: 'Empty', currency: 'USD', budgetGroup: 'on' },
+      body: {
+        name: 'Empty',
+        currency: 'USD',
+        kind: 'asset',
+        budgetGroup: 'on',
+      },
     });
   });
 

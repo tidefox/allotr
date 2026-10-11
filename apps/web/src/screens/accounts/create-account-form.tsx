@@ -59,6 +59,8 @@ export function CreateAccountForm({
     },
   });
 
+  const credit = draft.kind === 'liability';
+
   const update = (patch: Partial<AccountDraft>) => {
     if (create.isError) create.reset();
     if (patch.name !== undefined) setNameTaken(false);
@@ -69,7 +71,8 @@ export function CreateAccountForm({
       return t('accounts.create.errors.nameTaken');
     const key = errors[field];
     if (key === undefined) return undefined;
-    return key === 'accounts.create.errors.balanceInvalid'
+    return key === 'accounts.create.errors.balanceInvalid' ||
+      key === 'accounts.create.errors.limitInvalid'
       ? t(key, { example: amountExample(draft.currency, settings.locale) })
       : t(key);
   };
@@ -119,6 +122,18 @@ export function CreateAccountForm({
         autoFocus={autoFocus}
       />
       <ChoiceField
+        label={t('accounts.create.kind')}
+        value={draft.kind}
+        choices={(['asset', 'liability'] as const).map((id) => ({
+          id,
+          label: t(`accounts.create.kinds.${id}`),
+        }))}
+        placeholder={t('accounts.create.kinds.asset')}
+        onChange={(kind) => {
+          update({ kind: kind === 'liability' ? 'liability' : 'asset' });
+        }}
+      />
+      <ChoiceField
         label={t('accounts.create.currency')}
         value={draft.currency}
         choices={currencies.map((o) => ({ id: o.code, label: o.label }))}
@@ -142,6 +157,43 @@ export function CreateAccountForm({
           }}
         />
       ) : null}
+      {credit ? (
+        <>
+          <div
+            onBlur={() => {
+              update({
+                creditLimit: reformatAmountInput(
+                  draft.creditLimit,
+                  draft.currency,
+                  settings.locale,
+                ),
+              });
+            }}
+          >
+            <TextField
+              label={t('accounts.create.limit', { currency: draft.currency })}
+              value={draft.creditLimit}
+              inputMode="decimal"
+              onChange={(creditLimit) => {
+                update({ creditLimit });
+              }}
+              error={errorText('creditLimit')}
+            />
+          </div>
+          <TextField
+            label={t('accounts.create.dueDay')}
+            value={draft.dueDay}
+            inputMode="numeric"
+            onChange={(dueDay) => {
+              update({ dueDay });
+            }}
+            error={errorText('dueDay')}
+          />
+          <p className="-mt-2 font-sans text-small text-text-muted">
+            {t('accounts.create.creditHint')}
+          </p>
+        </>
+      ) : null}
       <div
         onBlur={() => {
           update({
@@ -164,7 +216,11 @@ export function CreateAccountForm({
         />
       </div>
       <p className="-mt-2 font-ui text-small text-text-muted">
-        {t('accounts.create.balanceHint')}
+        {t(
+          credit
+            ? 'accounts.create.creditBalanceHint'
+            : 'accounts.create.balanceHint',
+        )}
       </p>
       <FormMessage
         message={create.isError ? describeProblem(create.error).message : null}
