@@ -28,6 +28,10 @@ on every screen, and savings never count toward it.
    and labels in HTML.
 8. **The server owns money.** The web app formats amounts, but every sum,
    balance, projection and series comes from the API (architecture §4).
+   Two narrow exceptions (ADR 0030): a bar, column or share may be sized
+   from a ratio of same-currency server figures, and a form may sum or
+   split the amounts the user typed as an input aid. Neither result is
+   ever shown as money or sent to the server as fact.
 9. **Colour is never the only signal.** Amounts carry a sign and an arrow.
    Status carries text.
 

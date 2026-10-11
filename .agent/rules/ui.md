@@ -30,7 +30,12 @@ Accepted in [ADR 0026](../../docs/adr/0026-visual-language-v3.md),
   alternatives.
 - Format every amount with the one money formatter (symbol by default).
   **Never sum, convert or derive money in the web app.** If a screen needs a
-  total, add it to the API (docs/ui.md §8).
+  total, add it to the API (docs/ui.md §8). ADR 0030 allows only two
+  exceptions: display ratios (a bar width, column height or share from a
+  ratio of same-currency server figures, clamped by the shared helpers) and
+  input aids (summing or splitting amounts the user typed, which the server
+  validates). Neither is ever shown as an amount or sent as fact; a
+  percentage shown as text comes from the server.
 - Charts come from the in-house SVG kit: monotone curves, exact bars, HTML
   labels, `role="img"` with a text summary.
 - Motion is CSS only: instant tab switches, `snappy` for press feedback and
