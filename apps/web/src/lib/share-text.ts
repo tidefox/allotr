@@ -11,3 +11,11 @@ export function shareText(basisPoints: number): string {
     ? t('reportsSummary.categories.lessThanOne')
     : `${String(whole)}%`;
 }
+
+/**
+ * A goal's progress the server sent in basis points, as whole percents
+ * rounded down, so an unreached goal never reads as 100%.
+ */
+export function progressText(basisPoints: number): string {
+  return `${String(Math.floor(Math.max(0, basisPoints) / 100))}%`;
+}

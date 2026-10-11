@@ -24,6 +24,7 @@ import {
 } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
 import { accountsQuery, todayQuery } from '@/lib/ledger';
+import { progressText } from '@/lib/share-text';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { StripControls } from '@/shell/strip-controls';
@@ -179,7 +180,7 @@ function GoalTile({
         <span className="num truncate text-text-muted">
           {t('budgetGoalsIous.goals.savedOf', {
             target,
-            percent: Math.round(fraction * 100),
+            percent: progressText(goal.progressBp),
           })}
         </span>
       </div>

@@ -1,9 +1,9 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import type { AccountView, PoolView } from '@allotr/shared';
+import type { AccountView, Money, PoolView } from '@allotr/shared';
 import { Amount } from '@/components/amount';
-import { SkeletonTile, seriesText } from '@/components/bars';
+import { LeftBar, SkeletonTile, seriesText } from '@/components/bars';
 import {
   BracketButton,
   Brackets,
@@ -37,6 +37,7 @@ import {
 } from '@/lib/ledger';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
+import { barFraction } from '@/shell/summary-math';
 import {
   AccountIcon,
   accountIcon,
@@ -183,6 +184,14 @@ export function AccountDetail({
         </span>
       </div>
 
+      {account.creditLimit === null ||
+      account.creditAvailable === null ? null : (
+        <CreditLine
+          limit={account.creditLimit}
+          available={account.creditAvailable}
+        />
+      )}
+
       <History account={account} colour={colour} grow={!bare} />
 
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-1.5">
@@ -195,6 +204,16 @@ export function AccountDetail({
             currency: account.currency,
           })}
         </Field>
+        {account.creditLimit === null ? null : (
+          <Field label={t('accountDetail.fields.limit')}>
+            <Amount amount={account.creditLimit} locale={locale} />
+          </Field>
+        )}
+        {account.nextDueOn === null ? null : (
+          <Field label={t('accountDetail.fields.due')}>
+            {formatTerminalDate(account.nextDueOn, locale)}
+          </Field>
+        )}
         <Field label={t('accountDetail.fields.reconciled')}>
           {account.lastReconciledOn === null ? (
             t('accounts.neverReconciled')
@@ -271,9 +290,32 @@ export function AccountDetail({
   );
 }
 
+/**
+ * What is free of a card's limit, as the server worked it out (limit plus
+ * balance, so negative past the limit), under a "left of" bar. The bar only
+ * sizes the ratio of the two server figures.
+ */
+function CreditLine({ limit, available }: { limit: Money; available: Money }) {
+  return (
+    <div className="mt-2">
+      <LeftBar
+        fraction={barFraction(available.amountMinor, limit.amountMinor)}
+        height={4}
+        label={t('accountDetail.credit.bar')}
+      />
+      <p className="num truncate pt-0.5 text-tiny text-text-muted">
+        {t('accountDetail.credit.free', {
+          free: formatMoney(available, 'symbol', locale),
+          limit: formatMoney(limit, 'symbol', locale),
+        })}
+      </p>
+    </div>
+  );
+}
+
 /** `Budget · counts toward daily`, `Savings · off-budget` or `credit`. */
 function poolText(account: AccountView, pool: PoolView | undefined): string {
-  if (account.kind === 'liability') return t('accountDetail.credit');
+  if (account.kind === 'liability') return t('accountDetail.creditPool');
   if (pool === undefined) return '…';
   return t(pool.counts ? 'accountDetail.poolCounts' : 'accountDetail.poolOff', {
     pool: pool.name,

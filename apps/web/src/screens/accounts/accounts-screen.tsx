@@ -22,10 +22,12 @@ import {
   IconSafe2Line,
 } from '@/generated/icons';
 import { poolsQuery } from '@/lib/budgets';
+import { formatMoney } from '@/lib/format-money';
 import { accountsQuery, todayQuery } from '@/lib/ledger';
 import { netWorthQuery } from '@/lib/plan';
 import { t } from '@/messages/t';
 import { openNewForm } from '@/shell/command/store';
+import { barFraction } from '@/shell/summary-math';
 import {
   accountGroups,
   isCredit,
@@ -37,9 +39,10 @@ import { AccountList, type RowAction } from './account-list.tsx';
 import { AccountDetail } from './detail/account-detail.tsx';
 import { ArchiveSheet } from './detail/archive-sheet.tsx';
 import { ReconcileSheet } from './detail/reconcile-sheet.tsx';
+import { EditSheet } from './edit-sheet.tsx';
 import { MoveSheet } from './move-sheet.tsx';
 import { NewAccountSheet } from './new-account-sheet.tsx';
-import { RenameSheet } from './rename-sheet.tsx';
+
 import { validateAccountsSearch } from './search-params.ts';
 
 const locale = 'en';
@@ -97,12 +100,30 @@ export function AccountsScreen() {
 
   const list = accounts.data?.accounts;
   const creditOwed = accounts.data?.totals.creditOwed.amount ?? null;
+  // The server's limit and free totals; none while no card has a limit.
+  const limitTotal = accounts.data?.totals.creditLimit.amount;
+  const freeTotal = accounts.data?.totals.creditAvailable.amount;
+  const creditTotals = useMemo(
+    () =>
+      limitTotal === undefined ||
+      freeTotal === undefined ||
+      limitTotal.amountMinor <= 0
+        ? null
+        : { limit: limitTotal, available: freeTotal },
+    [limitTotal, freeTotal],
+  );
   const groups = useMemo(
     () =>
       list === undefined || pools.data === undefined
         ? undefined
-        : accountGroups(list, pools.data.pools, filter, creditOwed),
-    [list, pools.data, filter, creditOwed],
+        : accountGroups(
+            list,
+            pools.data.pools,
+            filter,
+            creditOwed,
+            creditTotals,
+          ),
+    [list, pools.data, filter, creditOwed, creditTotals],
   );
 
   const stats = useMemo<Stat[] | undefined>(() => {
@@ -181,7 +202,26 @@ export function AccountsScreen() {
               })
             : credit === 0
               ? t('accountsScreen.stats.creditNoneSub')
-              : t('accountsScreen.stats.creditSub', { count: credit }),
+              : creditTotals === null
+                ? t('accountsScreen.stats.creditSub', { count: credit })
+                : t('accountsScreen.stats.creditSubLimit', {
+                    count: credit,
+                    limit: formatMoney(creditTotals.limit, 'symbol', locale),
+                  }),
+        ...(creditTotals === null
+          ? {}
+          : {
+              bar: {
+                fraction: barFraction(
+                  creditTotals.available.amountMinor,
+                  creditTotals.limit.amountMinor,
+                ),
+                label: t('accountsScreen.stats.creditBar', {
+                  free: formatMoney(creditTotals.available, 'symbol', locale),
+                  limit: formatMoney(creditTotals.limit, 'symbol', locale),
+                }),
+              },
+            }),
       },
       {
         label: t('accountsScreen.stats.reconcile'),
@@ -209,7 +249,7 @@ export function AccountsScreen() {
                 }),
       },
     ];
-  }, [accounts.data, worth.data, wholeCycle]);
+  }, [accounts.data, worth.data, wholeCycle, creditTotals]);
 
   const act = (action: RowAction, account: AccountView) => {
     if (action === 'transfer')
@@ -345,7 +385,7 @@ export function AccountsScreen() {
         />
       ) : null}
       {open?.action === 'rename' ? (
-        <RenameSheet account={open.account} onClose={closeSheet} />
+        <EditSheet account={open.account} onClose={closeSheet} />
       ) : null}
       {open?.action === 'move' && pools.data !== undefined ? (
         <MoveSheet

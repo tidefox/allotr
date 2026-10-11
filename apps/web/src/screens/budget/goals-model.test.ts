@@ -25,6 +25,12 @@ function account(patch: Partial<AccountView> & { id: string }): AccountView {
     createdAt: '2026-01-01T00:00:00.000Z',
     lastReconciledOn: null,
     reconcileDue: false,
+    colour: null,
+    icon: null,
+    creditLimit: null,
+    creditAvailable: null,
+    dueDay: null,
+    nextDueOn: null,
     ...patch,
   };
 }
@@ -40,6 +46,8 @@ function pool(patch: Partial<PoolView> & { id: string }): PoolView {
     accountIds: [],
     balance: { amount: money(50000, 'USD'), missingRates: [] },
     cycle: null,
+    colour: null,
+    icon: null,
     ...patch,
   };
 }
@@ -56,6 +64,7 @@ function goal(patch: Partial<GoalView> = {}): GoalView {
     saved: money(25000, 'USD'),
     remaining: money(75000, 'USD'),
     reached: false,
+    progressBp: 2500,
     monthlyNeeded: money(15000, 'USD'),
     missingRates: [],
     ...patch,

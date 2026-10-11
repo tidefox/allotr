@@ -16,6 +16,7 @@ import {
 import { poolsQuery } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
+import { glyph } from '@/lib/pool-style';
 import { useLedgerReady } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
@@ -92,7 +93,7 @@ function Pools() {
       )}
     >
       {rows.map((row) => {
-        const Icon = poolIcon[kinds.get(row.id) ?? 'savings'];
+        const Icon = glyph(row.icon, poolIcon[kinds.get(row.id) ?? 'savings']);
         const amount = formatMoney(row.balance, 'symbol', locale);
         return (
           <li key={row.id} className="flex min-w-0">

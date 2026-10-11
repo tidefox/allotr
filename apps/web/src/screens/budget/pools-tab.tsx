@@ -27,12 +27,14 @@ import {
 } from '@/generated/icons';
 import { poolQueryKeys, poolsQuery, updatePool } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
+import { glyph } from '@/lib/pool-style';
 import { accountHistoryQuery, accountsQuery, todayQuery } from '@/lib/ledger';
 import { sparkPoints } from '@/lib/spark-points';
 import { t } from '@/messages/t';
 import { AccountIcon } from '../accounts/account-list.tsx';
 import { NewAccountSheet } from '../accounts/new-account-sheet.tsx';
 import { Formula } from '../dashboard/tiles/this-cycle.tsx';
+import { PoolStyleSheet } from './pool-style-sheet.tsx';
 import { poolTiles, type PoolTile } from './pools-model.ts';
 
 const locale = 'en';
@@ -132,29 +134,39 @@ function PoolCard({
   failed,
   onToggle,
   onAdd,
+  onStyle,
 }: {
   tile: PoolTile;
   failed: boolean;
   onToggle: (checked: boolean) => void;
   onAdd: () => void;
+  onStyle: () => void;
 }) {
   const navigate = useNavigate();
   return (
     <Tile
       title={tile.name}
-      icon={poolIcon[tile.kind]}
+      icon={glyph(tile.icon, poolIcon[tile.kind])}
       subtitle={t(
         tile.checked ? 'budgetPools.onBudget' : 'budgetPools.offBudget',
       )}
       primary={tile.checked}
       actions={
-        <BracketButton
-          icon={IconAddLine}
-          aria-label={t('budgetPools.addAccountTo', { name: tile.name })}
-          onPress={onAdd}
-        >
-          {t('budgetPools.addAccount')}
-        </BracketButton>
+        <>
+          <BracketButton
+            aria-label={t('budgetPools.styleOf', { name: tile.name })}
+            onPress={onStyle}
+          >
+            {t('budgetPools.styleAction')}
+          </BracketButton>
+          <BracketButton
+            icon={IconAddLine}
+            aria-label={t('budgetPools.addAccountTo', { name: tile.name })}
+            onPress={onAdd}
+          >
+            {t('budgetPools.addAccount')}
+          </BracketButton>
+        </>
       }
     >
       <div className="flex items-baseline justify-between gap-2">
@@ -271,6 +283,7 @@ export function PoolsTab() {
   const toggle = useToggleDaily();
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
+  const [styling, setStyling] = useState<PoolTile | null>(null);
 
   if (pools.isError || accounts.isError) {
     return (
@@ -323,11 +336,22 @@ export function PoolsTab() {
               onAdd={() => {
                 setAdding(true);
               }}
+              onStyle={() => {
+                setStyling(tile);
+              }}
             />
           ))
         )}
         <HowItWorks />
       </Grid>
+      {styling === null ? null : (
+        <PoolStyleSheet
+          pool={styling}
+          onClose={() => {
+            setStyling(null);
+          }}
+        />
+      )}
       {adding ? (
         <NewAccountSheet
           onClose={() => {

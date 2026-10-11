@@ -111,6 +111,8 @@ test('a goal is added on a savings account and shows its progress', async ({
   await expect(tile).toBeVisible();
   await expect(tile).toContainText('2,500.00');
   await expect(tile).toContainText('10,000.00');
+  // 2,500.00 of 10,000.00, as the server's basis points, rounded down.
+  await expect(tile).toContainText('· 25%');
   // The server's monthly amount for the dated goal.
   await expect(tile).toContainText(
     t('budgetGoalsIous.goals.perMonth', { amount: '' }),

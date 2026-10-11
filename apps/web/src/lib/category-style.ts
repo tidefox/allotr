@@ -57,3 +57,9 @@ export function categoryStyles(
     }),
   );
 }
+
+/** "shopping-basket" as "Shopping basket". */
+export function iconLabel(name: CategoryIcon): string {
+  const words = name.replaceAll('-', ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

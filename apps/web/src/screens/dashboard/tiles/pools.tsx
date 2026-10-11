@@ -6,6 +6,7 @@ import { ToggleButton } from 'react-aria-components';
 import { Amount } from '@/components/amount';
 import { ShareBar, SkeletonTile, seriesText } from '@/components/bars';
 import { Brackets, bracketClass } from '@/components/buttons';
+import { Glyph } from '@/components/glyph';
 import { Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
@@ -64,13 +65,17 @@ function PoolLine({
   onToggle: (checked: boolean) => void;
   failed: boolean;
 }) {
-  const Icon = poolIcon[row.kind];
   return (
     <>
       <Row
         columns={columns}
         cells={[
-          <Icon key="i" className={cn('size-4', seriesText[row.color])} />,
+          <Glyph
+            key="i"
+            icon={row.icon}
+            fallback={poolIcon[row.kind]}
+            className={cn('size-4', seriesText[row.color])}
+          />,
           <span
             key="n"
             className={cn('font-sans', row.checked && 'font-semibold')}

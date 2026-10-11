@@ -27,6 +27,12 @@ const accounts: AccountView[] = [...currencies, 'USD2'].map((name) => ({
   poolId: 'pool-budget',
   lastReconciledOn: null,
   reconcileDue: false,
+  colour: null,
+  icon: null,
+  creditLimit: null,
+  creditAvailable: null,
+  dueDay: null,
+  nextDueOn: null,
 }));
 
 const neg = (m: Money) => money(-m.amountMinor, m.currency);

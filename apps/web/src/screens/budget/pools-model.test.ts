@@ -18,6 +18,8 @@ function pool(over: Partial<PoolView> & { id: string }): PoolView {
     accountIds: [],
     balance: fig(0),
     cycle: null,
+    colour: null,
+    icon: null,
     ...over,
   };
 }
@@ -34,6 +36,12 @@ function account(over: Partial<AccountView> & { id: string }): AccountView {
     createdAt: '2026-10-01T00:00:00.000Z',
     lastReconciledOn: null,
     reconcileDue: false,
+    colour: null,
+    icon: null,
+    creditLimit: null,
+    creditAvailable: null,
+    dueDay: null,
+    nextDueOn: null,
     ...over,
   };
 }
@@ -82,5 +90,23 @@ describe('poolTiles', () => {
     );
     expect(half?.cycle?.fraction).toBe(0.25);
     expect(over?.cycle?.fraction).toBe(1);
+  });
+
+  it('uses the stored colour and icon and leaves the others where they were', () => {
+    const [first, second, third] = poolTiles(
+      [
+        pool({ id: 'a' }),
+        pool({ id: 'b', colour: 'series-7', icon: 'piggy-bank' }),
+        pool({ id: 'c' }),
+      ],
+      [],
+    );
+    expect([first?.color, first?.icon]).toEqual(['series-1', null]);
+    expect([second?.color, second?.icon]).toEqual(['series-7', 'piggy-bank']);
+    expect([second?.storedColour, second?.storedIcon]).toEqual([
+      'series-7',
+      'piggy-bank',
+    ]);
+    expect([third?.color, third?.storedColour]).toEqual(['series-3', null]);
   });
 });

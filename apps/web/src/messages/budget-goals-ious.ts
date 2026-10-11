@@ -18,7 +18,7 @@ export const budgetGoalsIous = {
     by: 'by {date}',
     perMonth: '{amount}/mo',
     noDate: 'no date',
-    savedOf: 'of {target} · {percent}%',
+    savedOf: 'of {target} · {percent}',
     reached: 'goal reached',
     progress: '{name} progress',
     missingRates: 'Some of what it holds has no rate to {currency}.',
