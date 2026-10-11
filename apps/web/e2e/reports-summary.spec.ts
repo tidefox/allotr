@@ -122,6 +122,14 @@ test('the summary tab shows figures, categories, payees and days', async ({
     page.getByText(t('reportsSummary.stats.spent'), { exact: true }).first(),
   ).toBeVisible();
 
+  // The daily average is the server's figure, not a dash.
+  const average = page
+    .getByText(t('reportsSummary.stats.average'), { exact: true })
+    .first()
+    .locator('xpath=ancestor::*[self::section or self::div][1]');
+  await expect(average).not.toContainText('—');
+  await expect(average).toContainText(/\d/);
+
   await noSidewaysScroll(page);
   expect(await tooSmall(page)).toEqual([]);
   await expectAccessible(page);
@@ -169,6 +177,13 @@ test('the period menu is kept in the address', async ({ page, baseURL }) => {
   await expectAccessible(page);
 
   await page.goto('/reports?period=month');
+  // A month shows income and saved from the report, not a placeholder.
+  for (const key of ['income', 'saved', 'average'] as const) {
+    await expect(
+      page.getByText(t(`reportsSummary.stats.${key}`), { exact: true }).first(),
+    ).toBeVisible();
+  }
+  await expect(page.getByText('—')).toHaveCount(0);
   await expect(
     page.getByRole('region', { name: t('reportsSummary.categories.title') }),
   ).toBeVisible();

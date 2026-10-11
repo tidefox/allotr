@@ -35,7 +35,6 @@ import {
   cycleOf,
   dayChart,
   monthDayFigures,
-  periodTotal,
   reportParams,
   shareSegments,
   sharePercent,
@@ -127,35 +126,41 @@ function StatsRow({ params }: { params: ReportParams }) {
     return <SkeletonTile span="full" rows={2} />;
   }
   const cycle = cycleOf(period, cycles.data.cycles);
-  const figures = statFigures(cycle, periodTotal(summary.data));
-  const missing = t('reportsSummary.stats.needsServer');
-  const money = (amount: Money | null) =>
-    amount === null ? '—' : <Amount amount={amount} locale={locale} />;
+  const figures = statFigures(cycle, summary.data);
+  const missing =
+    figures.missingRates.length === 0
+      ? {}
+      : {
+          sub: t('reportsSummary.stats.missingRates', {
+            currencies: figures.missingRates.join(', '),
+          }),
+        };
+  const money = (amount: Money) => <Amount amount={amount} locale={locale} />;
   const stats: Stat[] = [
     {
       label: t('reportsSummary.stats.spent'),
       icon: IconArrowDownLine,
       figure: money(figures.spent),
       tone: 'primary',
+      ...missing,
     },
     {
       label: t('reportsSummary.stats.income'),
       icon: IconArrowUpLine,
       figure: money(figures.income),
-      ...(figures.income === null ? { sub: missing } : {}),
+      ...missing,
     },
     {
       label: t('reportsSummary.stats.saved'),
       icon: IconBankLine,
       figure: money(figures.saved),
-      ...(figures.saved === null ? { sub: missing } : {}),
+      ...missing,
     },
     {
-      // The server sends no daily average yet; the browser does not divide.
       label: t('reportsSummary.stats.average'),
       icon: IconCalendarLine,
-      figure: '—',
-      sub: missing,
+      figure: money(figures.average),
+      ...missing,
     },
   ];
   return <Stats stats={stats} />;
@@ -173,7 +178,7 @@ function CategoriesTile({ params }: { params: ReportParams }) {
         ? []
         : categoryRows(
             summary.data,
-            periodTotal(summary.data),
+            summary.data.spendingTotal,
             categories.data?.categories ?? [],
             budgetsByCategory(
               budgets.data?.budgets ?? [],

@@ -16,7 +16,6 @@ import {
   cycleOf,
   dayChart,
   fractionOf,
-  periodTotal,
   reportParams,
   shareSegments,
   sharePercent,
@@ -108,23 +107,29 @@ describe('cycleOf and statFigures', () => {
     expect(cycleOf('last-cycle', [cycle('2026-10-01')])).toBeNull();
   });
 
-  it('reads cycle figures as sent, and leaves a month with its total only', () => {
-    expect(statFigures(list[0] ?? null, null)).toEqual({
+  const report = {
+    spendingTotal: money(900),
+    incomeTotal: money(4000),
+    saved: money(700),
+    dailyAverage: money(30),
+    missingRates: ['EUR'],
+  } as unknown as CategorySummaryView;
+
+  it('reads cycle figures as sent, and a month from the report', () => {
+    expect(statFigures(list[0] ?? null, report)).toEqual({
       spent: money(500),
       income: money(2000),
       saved: money(300),
+      average: money(30),
+      missingRates: ['EUR'],
     });
-    expect(statFigures(null, money(900))).toEqual({
+    expect(statFigures(null, report)).toEqual({
       spent: money(900),
-      income: null,
-      saved: null,
+      income: money(4000),
+      saved: money(700),
+      average: money(30),
+      missingRates: ['EUR'],
     });
-  });
-});
-
-describe('periodTotal', () => {
-  it('is the last total of the series', () => {
-    expect(periodTotal(summary([], [100, 250]))).toEqual(money(250));
   });
 });
 

@@ -63,35 +63,43 @@ export function cycleOf(
   return null;
 }
 
-/** The stat tiles' figures; `null` where the server sends none. */
+/** The stat tiles' figures. */
 export interface StatFigures {
-  spent: Money | null;
-  income: Money | null;
-  saved: Money | null;
+  spent: Money;
+  income: Money;
+  saved: Money;
+  /** Spending per day over the days so far, as the server sends it. */
+  average: Money;
+  /** Currencies the report left out for want of a rate. */
+  missingRates: readonly string[];
 }
 
 /**
- * A cycle carries its own spending, income and savings. A month has only
- * the spending total the category series gives, so income and saved stay
- * empty (an API gap).
+ * A cycle carries its own spending, income and savings; a month takes them
+ * from the category report. The daily average and the currencies without a
+ * rate always come from the report.
  */
 export function statFigures(
   cycle: CycleSummaryView | null,
-  monthSpent: Money | null,
+  summary: CategorySummaryView,
 ): StatFigures {
-  if (cycle !== null) {
-    return {
-      spent: cycle.spending,
-      income: cycle.income,
-      saved: cycle.savingsNetChange,
-    };
-  }
-  return { spent: monthSpent, income: null, saved: null };
-}
-
-/** The selected period's total, which is the series' last. */
-export function periodTotal(summary: CategorySummaryView): Money | null {
-  return summary.series?.totals.at(-1) ?? null;
+  const own =
+    cycle === null
+      ? {
+          spent: summary.spendingTotal,
+          income: summary.incomeTotal,
+          saved: summary.saved,
+        }
+      : {
+          spent: cycle.spending,
+          income: cycle.income,
+          saved: cycle.savingsNetChange,
+        };
+  return {
+    ...own,
+    average: summary.dailyAverage,
+    missingRates: summary.missingRates,
+  };
 }
 
 /**
