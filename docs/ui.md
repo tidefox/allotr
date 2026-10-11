@@ -144,12 +144,17 @@ column setting, 4 from 1500.
   - `›` prompt and an input for the grammar ([grammar.md](grammar.md)).
   - Key hints (≥ 600).
   - An account menu ("into Daily card").
-  - A filled **+ new** menu: expense, income, transfer, split (one amount
-    across categories), payday, bill, IOU. Expense, income, transfer and
-    split open a form in a bottom sheet over the quick entry draft; the
-    "into" account and "transfer from here" preset its account. Payday and
-    IOU open the Budget screen's sheets. Bill has no create form yet and
-    leads to the Bills tab.
+  - A filled **+ new** menu: expense, income, transfer, split with people,
+    payday, bill, IOU. Expense, income and transfer open a form in a bottom
+    sheet over the quick entry draft; the "into" account and "transfer from
+    here" preset its account. An expense can still be spread over categories
+    with its `[split across categories]` lines. **Split with people** records
+    a new expense shared with people: the amount is the whole bill, each
+    person owes an even share until typed, and the server keeps the rest as
+    the user's own share (one IOU request). Payday and IOU open the Budget
+    screen's sheets. **Bill** opens a create-bill sheet (name, paying account,
+    amount, due day of the month from a menu, optional category); the Bills
+    tab has the same `[+ bill]`.
   - After logging, a result line slides up over the content with the amount,
     category, account, "left today" and **undo**.
 - **Navigation.** Phone: square bar fixed to the bottom, five equal buttons,
@@ -161,7 +166,10 @@ column setting, 4 from 1500.
   code, key hints, sync state. When a new service worker is waiting, an
   `update` item shows before the sync state: "new version ready" with
   `[reload]` and `[later]`. Reloading is the user's choice, so a typed entry is
-  never thrown away.
+  never thrown away. On phones, where the status line is hidden, the same
+  offer is a one-line bar (chrome, `primary` text) between the command line
+  and the tab bar. It takes no room until a version waits, and its polite
+  live region announces it.
 - **Overlay scrollbar.** Hide the native bar. Draw a 4 px thumb (7 px on hover
   or drag) over the right edge, which can be dragged, and clicking the track
   scrolls a page. It takes no width.
@@ -247,7 +255,9 @@ change (§8).
 
 Default tiles, in order: this cycle (2 × 2) · needs attention · today's
 entries · cycle allocation (full width) · budgets · next 7 days · pools ·
-emergency fund · net worth (2 wide).
+emergency fund · net worth (2 wide). While a user is held to two-factor
+enrolment no tile mounts: the screen shows a note and a link to the account
+settings, so no ledger read is made that the server would refuse.
 
 | Tile | Content | Data |
 |---|---|---|
@@ -304,7 +314,10 @@ emergency fund · net worth (2 wide).
   entry can be dragged (long press on touch) to change their place; there is
   no visible handle. The drag key appears on focus, and the detail has
   `[move up]` and `[move down]`. The day that continues on an unloaded page
-  is not movable. The server refuses a move that would break the time order
+  is not movable. With a search or a payee, type, account or category filter
+  on, moving is off (drag and the buttons, which say why): the list may hide
+  entries of a day, so a visible neighbour is not the neighbour in time. The
+  server refuses a move that would break the time order
   of timed entries. A move never changes a date.
 - Split with people: an expense in a category has `[split with people]` in its
   detail. A sheet takes each person's name (with names used before as taps)

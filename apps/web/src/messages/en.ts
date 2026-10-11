@@ -3,6 +3,7 @@
 import { accountsScreen } from './accounts-screen.ts';
 import { accountDetail } from './account-detail.ts';
 import { budgetBills, budgetPools } from './budget-pools-bills.ts';
+import { billForm } from './bill-form.ts';
 import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
 import { budgetBudgets } from './budget-budgets.ts';
@@ -27,6 +28,7 @@ export const en = {
   transactionDetail,
   budgetPools,
   budgetBills,
+  billForm,
   budgetGoalsIous,
   budgetBudgets,
   reportsShell,
@@ -347,10 +349,15 @@ export const en = {
         expense: 'Expense',
         income: 'Income',
         transfer: 'Transfer',
-        split: 'Split',
+        split: 'Split with people',
         payday: 'Payday',
         bill: 'Bill',
         iou: 'IOU',
+      },
+      splitPeople: {
+        intro:
+          'The amount is the whole bill. Each person owes an even share unless you change it; the rest is yours.',
+        exceeds: 'People owe more than the bill. Lower their amounts.',
       },
       close: 'Close',
     },
