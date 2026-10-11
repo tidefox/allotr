@@ -72,7 +72,8 @@ export function CreateAccountForm({
     const key = errors[field];
     if (key === undefined) return undefined;
     return key === 'accounts.create.errors.balanceInvalid' ||
-      key === 'accounts.create.errors.limitInvalid'
+      key === 'accounts.create.errors.limitInvalid' ||
+      key === 'accounts.create.errors.paymentInvalid'
       ? t(key, { example: amountExample(draft.currency, settings.locale) })
       : t(key);
   };
@@ -133,6 +134,14 @@ export function CreateAccountForm({
           update({ kind: kind === 'liability' ? 'liability' : 'asset' });
         }}
       />
+      <TextField
+        label={t('accounts.create.subtype')}
+        value={draft.subtype}
+        onChange={(subtype) => {
+          update({ subtype });
+        }}
+        error={errorText('subtype')}
+      />
       <ChoiceField
         label={t('accounts.create.currency')}
         value={draft.currency}
@@ -189,6 +198,29 @@ export function CreateAccountForm({
             }}
             error={errorText('dueDay')}
           />
+          <div
+            onBlur={() => {
+              update({
+                minPayment: reformatAmountInput(
+                  draft.minPayment,
+                  draft.currency,
+                  settings.locale,
+                ),
+              });
+            }}
+          >
+            <TextField
+              label={t('accounts.create.minPayment', {
+                currency: draft.currency,
+              })}
+              value={draft.minPayment}
+              inputMode="decimal"
+              onChange={(minPayment) => {
+                update({ minPayment });
+              }}
+              error={errorText('minPayment')}
+            />
+          </div>
           <p className="-mt-2 font-sans text-small text-text-muted">
             {t('accounts.create.creditHint')}
           </p>

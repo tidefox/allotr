@@ -22,9 +22,14 @@ export interface AccountEditDraft {
   readonly creditLimit: string;
   /** 1 to 31 as typed; empty for none. */
   readonly dueDay: string;
+  /** As typed, in the account's currency; empty for none. */
+  readonly minPayment: string;
+  /** Free text; empty for none. */
+  readonly subtype: string;
 }
 
-export type AccountEditField = 'name' | 'creditLimit' | 'dueDay';
+export type AccountEditField =
+  'name' | 'subtype' | 'creditLimit' | 'dueDay' | 'minPayment';
 export type AccountEditErrors = Partial<
   Record<
     AccountEditField,
@@ -33,6 +38,7 @@ export type AccountEditErrors = Partial<
       | `accountsScreen.edit.errors.${string}`
       | 'accountsScreen.rename.nameRequired'
       | 'accountsScreen.rename.nameLong'
+      | 'accountsScreen.edit.errors.subtypeLong'
     >
   >
 >;
@@ -43,6 +49,8 @@ export interface AccountUpdate {
   icon?: CategoryIcon | null;
   creditLimit?: Money | null;
   dueDay?: number | null;
+  minPayment?: Money | null;
+  subtype?: string | null;
 }
 
 export function accountEditDraft(
@@ -58,6 +66,11 @@ export function accountEditDraft(
         ? ''
         : formatMoneyInput(account.creditLimit, locale),
     dueDay: account.dueDay === null ? '' : String(account.dueDay),
+    minPayment:
+      account.minPayment === null
+        ? ''
+        : formatMoneyInput(account.minPayment, locale),
+    subtype: account.subtype ?? '',
   };
 }
 
@@ -79,6 +92,12 @@ export function toUpdateBody(
   else if (name.length > 100) errors.name = 'accountsScreen.rename.nameLong';
   else if (name !== account.name) body.name = name;
 
+  const subtype = draft.subtype.trim();
+  if (subtype.length > 100)
+    errors.subtype = 'accountsScreen.edit.errors.subtypeLong';
+  else if (subtype !== (account.subtype ?? ''))
+    body.subtype = subtype === '' ? null : subtype;
+
   if (draft.colour !== account.colour) body.colour = draft.colour;
   if (draft.icon !== account.icon) body.icon = draft.icon;
 
@@ -96,6 +115,22 @@ export function toUpdateBody(
       } catch (error) {
         if (!(error instanceof MoneyError)) throw error;
         errors.creditLimit = 'accountsScreen.edit.errors.limitInvalid';
+      }
+    }
+
+    const typedPayment = draft.minPayment.trim();
+    if (typedPayment === '') {
+      if (account.minPayment !== null) body.minPayment = null;
+    } else {
+      try {
+        const payment = parseMoney(typedPayment, account.currency, locale);
+        if (payment.amountMinor <= 0)
+          errors.minPayment = 'accountsScreen.edit.errors.paymentInvalid';
+        else if (payment.amountMinor !== account.minPayment?.amountMinor)
+          body.minPayment = payment;
+      } catch (error) {
+        if (!(error instanceof MoneyError)) throw error;
+        errors.minPayment = 'accountsScreen.edit.errors.paymentInvalid';
       }
     }
 

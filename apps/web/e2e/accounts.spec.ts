@@ -375,6 +375,14 @@ test('+ account can add a credit account with a limit and a due day', async ({
     })
     .fill('3000');
   await sheet
+    .getByRole('textbox', {
+      name: t('accounts.create.minPayment', { currency: 'USD' }),
+    })
+    .fill('45');
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.subtype') })
+    .fill('travel rewards');
+  await sheet
     .getByRole('textbox', { name: t('accounts.create.dueDay') })
     .fill('40');
   await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
@@ -394,4 +402,9 @@ test('+ account can add a credit account with a limit and a due day', async ({
   await expect(
     page.getByText(t('accountDetail.fields.due'), { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByText(t('accountDetail.fields.minPayment'), { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('$45.00')).toBeVisible();
+  await expect(page.getByText(/travel rewards/)).toBeVisible();
 });

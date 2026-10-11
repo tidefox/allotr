@@ -22,6 +22,10 @@ export interface AccountDraft {
   readonly creditLimit: string;
   /** Credit only: 1 to 31 as typed; empty for none. */
   readonly dueDay: string;
+  /** Credit only: as typed, in `currency`; empty for none. */
+  readonly minPayment: string;
+  /** Free text for any account; empty for none. */
+  readonly subtype: string;
   /** As typed, in `currency`; empty for none, negative for a debt. */
   readonly openingBalance: string;
   /** YYYY-MM-DD; the day the opening balance counts from. */
@@ -47,8 +51,10 @@ export type AccountDraftErrors = Partial<
 export const ACCOUNT_FIELD_ORDER: readonly AccountDraftField[] = [
   'name',
   'currency',
+  'subtype',
   'creditLimit',
   'dueDay',
+  'minPayment',
   'openingBalance',
   'openedOn',
 ];
@@ -64,6 +70,8 @@ export function newAccountDraft(
     kind: 'asset',
     creditLimit: '',
     dueDay: '',
+    minPayment: '',
+    subtype: '',
     openingBalance: '',
     openedOn: today,
   };
@@ -103,7 +111,23 @@ export function toCreateBody(
   // A limit and a due day belong to credit accounts, and both are optional.
   let creditLimit: CreateAccountBody['creditLimit'];
   let dueDay: number | undefined;
+  let minPayment: CreateAccountBody['minPayment'];
+  const subtype = draft.subtype.trim();
+  if (subtype.length > 100)
+    errors.subtype = 'accounts.create.errors.subtypeLong';
   if (draft.kind === 'liability') {
+    const typedPayment = draft.minPayment.trim();
+    if (currency !== undefined && typedPayment !== '') {
+      try {
+        const payment = parseMoney(typedPayment, currency, locale);
+        if (payment.amountMinor <= 0)
+          errors.minPayment = 'accounts.create.errors.paymentInvalid';
+        else minPayment = payment;
+      } catch (error) {
+        if (!(error instanceof MoneyError)) throw error;
+        errors.minPayment = 'accounts.create.errors.paymentInvalid';
+      }
+    }
     const typedLimit = draft.creditLimit.trim();
     if (currency !== undefined && typedLimit !== '') {
       try {
@@ -143,6 +167,8 @@ export function toCreateBody(
       budgetGroup: draft.budgetGroup,
       ...(creditLimit === undefined ? {} : { creditLimit }),
       ...(dueDay === undefined ? {} : { dueDay }),
+      ...(minPayment === undefined ? {} : { minPayment }),
+      ...(subtype === '' ? {} : { subtype }),
       ...(openingBalance === undefined ? {} : { openingBalance }),
       ...(openedOn?.success === true ? { openedOn: openedOn.data } : {}),
     },

@@ -365,10 +365,11 @@ settings, so no ledger read is made that the server would refuse.
   `[⇆ transfer]` `[✎ edit]` and `[⋮]` (move to another pool,
   archive). `[✎ edit]` (and `edit` in the row menu) opens one sheet: the name,
   the colour and icon pickers (Auto first) and, for a credit account, the
-  limit and the payment due day. The limit and due day are shown only; a due
-  day creates no bill, and the sheet says so. The new-account sheet
+  limit, the payment due day and the minimum payment, and any account's
+  subtype. They are shown only; a due day or minimum payment creates no bill, and the sheet says so. The new-account sheet
   offers a type, account or credit; a credit account also takes the limit and
-  due day there. Receivable and payable accounts come only from IOUs.
+  due day and minimum payment there, and any account takes a free-text
+  subtype (it replaces the kind in the detail's type line). Receivable and payable accounts come only from IOUs.
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,
   `/v1/transactions?account=`, `/v1/insights/net-worth`.
 

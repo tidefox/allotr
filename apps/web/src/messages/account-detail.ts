@@ -12,6 +12,7 @@ export const accountDetail = {
     type: 'type',
     reconciled: 'reconciled',
     limit: 'credit limit',
+    minPayment: 'min payment',
     due: 'next due',
   },
   credit: { bar: 'Credit left of the limit', free: '{free} free of {limit}' },

@@ -89,6 +89,38 @@ describe('toCreateBody', () => {
     expect(asset.ok && 'dueDay' in asset.body).toBe(false);
   });
 
+  it('adds a minimum payment for a card and a subtype for any account', () => {
+    const card = toCreateBody(
+      {
+        ...draft,
+        name: 'Card',
+        kind: 'liability',
+        minPayment: '25',
+        subtype: ' credit card ',
+      },
+      'en-US',
+    );
+    expect(card.ok && card.body).toMatchObject({
+      minPayment: money(2_500, 'USD'),
+      subtype: 'credit card',
+    });
+    const plain = toCreateBody(
+      { ...draft, name: 'Wallet', minPayment: '25', subtype: 'cash' },
+      'en-US',
+    );
+    expect(plain.ok && plain.body).toMatchObject({ subtype: 'cash' });
+    expect(plain.ok && 'minPayment' in plain.body).toBe(false);
+    expect(
+      toCreateBody(
+        { ...draft, name: 'Card', kind: 'liability', minPayment: '0' },
+        'en-US',
+      ),
+    ).toEqual({
+      ok: false,
+      errors: { minPayment: 'accounts.create.errors.paymentInvalid' },
+    });
+  });
+
   it('refuses a credit limit of zero and a due day out of range', () => {
     const credit = { ...draft, name: 'Card', kind: 'liability' as const };
     expect(

@@ -200,13 +200,18 @@ export function AccountDetail({
         </Field>
         <Field label={t('accountDetail.fields.type')}>
           {t('accountDetail.typeLine', {
-            kind: t(`accountDetail.kinds.${account.kind}`),
+            kind: account.subtype ?? t(`accountDetail.kinds.${account.kind}`),
             currency: account.currency,
           })}
         </Field>
         {account.creditLimit === null ? null : (
           <Field label={t('accountDetail.fields.limit')}>
             <Amount amount={account.creditLimit} locale={locale} />
+          </Field>
+        )}
+        {account.minPayment === null ? null : (
+          <Field label={t('accountDetail.fields.minPayment')}>
+            <Amount amount={account.minPayment} locale={locale} />
           </Field>
         )}
         {account.nextDueOn === null ? null : (

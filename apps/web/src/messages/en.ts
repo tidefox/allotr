@@ -520,8 +520,11 @@ export const en = {
       kinds: { asset: 'Account', liability: 'Credit' },
       limit: 'Credit limit in {currency}',
       dueDay: 'Payment due on day (1–31)',
+      minPayment: 'Minimum payment in {currency}',
+      subtype: 'Account type (optional)',
+      subtypeHint: 'Your own label, such as debit card.',
       creditHint:
-        'Optional. The limit and due day are shown only; they create no bill and change no figure.',
+        'Optional. The limit, due day and minimum payment are shown only; they create no bill and change no figure.',
       creditBalanceHint:
         'Optional. Enter what you owe as a negative amount, such as −250.00.',
       balance: 'Opening balance in {currency}',
@@ -537,6 +540,8 @@ export const en = {
         balanceDecimals: 'This currency has fewer decimal places.',
         limitInvalid: 'Enter a limit above zero, such as {example}.',
         dayInvalid: 'Enter a day from 1 to 31.',
+        paymentInvalid: 'Enter an amount above zero, such as {example}.',
+        subtypeLong: 'Use at most 100 characters.',
         dateInvalid: 'Enter a date.',
       },
     },
