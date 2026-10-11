@@ -76,9 +76,9 @@ Numbers use `font-variant-numeric: tabular-nums`.
 
 ### 2.3 Scale and sizes
 
-The root is `font-size: 85%` and every size is in `rem`. The table lists
-design sizes in px at 100 %; divide by 16 for `rem`. The rendered size is
-85 % of these.
+The root is `font-size: 100%` (ADR 0031) and every size is in `rem`. The
+table lists design sizes in px; divide by 16 for `rem`. The rendered size
+equals the design size.
 
 | Token | Desktop / tablet | Phone (< 600) |
 |---|---|---|

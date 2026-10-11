@@ -90,8 +90,8 @@ describe('styles.css', () => {
     expect(css).not.toMatch(/box-shadow/);
   });
 
-  it('scales the root to 85 % and sizes in rem', () => {
-    expect(css).toMatch(/html\s*{[^}]*font-size:\s*85%/);
+  it('keeps the root at 100 % and sizes in rem', () => {
+    expect(css).toMatch(/html\s*{[^}]*font-size:\s*100%/);
   });
 
   it('has no radius anywhere', () => {

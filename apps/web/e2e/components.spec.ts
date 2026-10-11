@@ -100,7 +100,7 @@ for (const size of widths) {
       const columns = await row.evaluate(
         (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
       );
-      // The sheet is at most 40 rem (544 px at the 85 % root): always the
+      // The sheet is at most 34 rem (544 px): always the
       // compact frame, so time, category and account drop: icon, payee, amount.
       expect(columns).toBe(3);
       const fontSize = await dialog
