@@ -24,11 +24,11 @@
  * Surfaces are flat and opaque: no radius, no shadow, no alpha. Depth comes
  * from the roles canvas < chrome < card and 1 px seams.
  *
- * Size: the root is 85 % and everything is in rem, taken from the design px
+ * Size: the root is 100 % and everything is in rem, taken from the design px
  * in docs/ui.md §2.3 divided by 16.
  */
 html {
-  font-size: 85%;
+  font-size: 100%;
   /* Overlay scrollbars (OverlayScrollbar) replace the native bar. */
   scrollbar-width: none;
 }
@@ -62,8 +62,8 @@ html::-webkit-scrollbar {
 
 /*
  * Container queries run on the app frame (`.frame`), so the shell, tiles and
- * menus respond to the room they have. Thresholds are in px: rem would be
- * evaluated at the 85 % root.
+ * menus respond to the room they have. Thresholds are in px, matching the
+ * mockup and docs/ui.md §2.4.
  */
 @custom-variant compact (@container frame (width < 600px));
 @custom-variant medium (@container frame (width >= 600px));
@@ -113,8 +113,8 @@ html::-webkit-scrollbar {
   --spacing-cmd: var(--h-cmd);
   --spacing-tab: var(--h-tab);
   --spacing-topbar: var(--h-topbar);
-  /* The rendered hit target stays >= 24 CSS px at the 85 % root (WCAG 2.2). */
-  --spacing-hit: 1.8rem;
+  /* The hit target stays >= 24 CSS px (WCAG 2.2); 26 px as in the mockup. */
+  --spacing-hit: 1.625rem;
 
   /* Every role as a colour utility: bg-card, text-text-muted… */
   --color-canvas: var(--canvas);

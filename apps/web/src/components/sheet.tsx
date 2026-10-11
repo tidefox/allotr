@@ -30,7 +30,7 @@ export function Sheet({
       isDismissable
       className="fixed inset-0 z-50 flex items-end justify-center"
     >
-      <Modal className="w-full max-w-[40rem]">
+      <Modal className="w-full max-w-[34rem]">
         <Dialog
           aria-label={title ?? 'Sheet'}
           className={cn(

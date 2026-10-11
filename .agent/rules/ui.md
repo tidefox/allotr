@@ -16,7 +16,7 @@ Accepted in [ADR 0026](../../docs/adr/0026-visual-language-v3.md),
   tags, titles, headers, tabs, labels, menus, numbers. Only content text
   (names, detail values, notes) uses `--font-ui` (default Geist).
 - Size everything in `rem` from the design px in docs/ui.md §2.3. The root is
-  `font-size: 85%`. Never use CSS `zoom`.
+  `font-size: 100%` (ADR 0031). Never use CSS `zoom`.
 - Lay out with **container queries** on the app frame (600 / 1000 for the
   shell, 720 / 1100 / 1500 for tile grids), not viewport media queries.
 - **Tiles run edge to edge.** Seams come from each tile's 1 px outline, and
