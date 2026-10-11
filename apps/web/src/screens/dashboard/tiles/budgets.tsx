@@ -7,6 +7,7 @@ import { Row } from '@/components/row';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { budgetsQuery } from '@/lib/budgets';
 import { categoriesQuery } from '@/lib/ledger';
+import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { TileFailed } from './tile-failed.tsx';
 import { budgetRows } from './budgets.ts';
@@ -34,10 +35,7 @@ export function BudgetsTile() {
     );
   }
   if (budgets.data === undefined) return <SkeletonTile rows={4} />;
-  const rows = budgetRows(
-    budgets.data.budgets,
-    categories.data?.categories ?? [],
-  );
+  const rows = budgetRows(budgets.data, categories.data?.categories ?? []);
   return (
     <Tile
       title={title}
@@ -64,7 +62,13 @@ export function BudgetsTile() {
             key={row.id}
             columns={columns}
             cells={[
-              <span key="n" className="flex min-w-0 items-center gap-2">
+              <span
+                key="n"
+                className={cn(
+                  'flex min-w-0 items-center gap-2',
+                  row.depth === 1 && 'pl-4',
+                )}
+              >
                 {row.icon === null ? (
                   // Keeps names lined up with the rows that have an icon.
                   <span aria-hidden="true" className="size-4 shrink-0" />

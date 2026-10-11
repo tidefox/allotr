@@ -1,6 +1,6 @@
 import { moveItem } from '@/features/budget/order';
 import { reorder } from '@/lib/reorder';
-import type { Group } from './search-params.ts';
+import type { Group, TransactionsView } from './search-params.ts';
 
 // Moving an entry within its day (docs/domain.md "Order within a day"). The
 // list shows a day newest first, and the API takes the entry that should come
@@ -96,4 +96,39 @@ export function stepsFor(
   if (day === undefined) return null;
   const ids = day.rows.map((row) => row.id);
   return { up: stepMove(ids, id, -1), down: stepMove(ids, id, 1) };
+}
+
+/**
+ * True when the list leaves out entries of a day it shows: a search, a payee
+ * or a type, account or category filter. Then the row listed below another
+ * is not necessarily its neighbour in time, so moves are off. A period only
+ * cuts between days, so it never hides part of a day.
+ */
+export function hidesDayEntries(
+  view: Pick<
+    TransactionsView,
+    'q' | 'payee' | 'type' | 'categories' | 'accounts'
+  >,
+): boolean {
+  return (
+    view.q !== undefined ||
+    view.payee !== undefined ||
+    view.type !== undefined ||
+    view.categories.length > 0 ||
+    view.accounts.length > 0
+  );
+}
+
+/**
+ * Moves are off when the list hides entries of a day, and for any order but
+ * newest first: the row listed below another is then not the entry that
+ * follows it in time (or there are no days at all, sorted by amount).
+ */
+export function reorderBlocked(
+  view: Pick<
+    TransactionsView,
+    'q' | 'payee' | 'type' | 'categories' | 'accounts' | 'sort'
+  >,
+): boolean {
+  return hidesDayEntries(view) || view.sort !== 'date-desc';
 }

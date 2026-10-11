@@ -144,12 +144,17 @@ column setting, 4 from 1500.
   - `›` prompt and an input for the grammar ([grammar.md](grammar.md)).
   - Key hints (≥ 600).
   - An account menu ("into Daily card").
-  - A filled **+ new** menu: expense, income, transfer, split (one amount
-    across categories), payday, bill, IOU. Expense, income, transfer and
-    split open a form in a bottom sheet over the quick entry draft; the
-    "into" account and "transfer from here" preset its account. Payday and
-    IOU open the Budget screen's sheets. Bill has no create form yet and
-    leads to the Bills tab.
+  - A filled **+ new** menu: expense, income, transfer, split with people,
+    payday, bill, IOU. Expense, income and transfer open a form in a bottom
+    sheet over the quick entry draft; the "into" account and "transfer from
+    here" preset its account. An expense can still be spread over categories
+    with its `[split across categories]` lines. **Split with people** records
+    a new expense shared with people: the amount is the whole bill, each
+    person owes an even share until typed, and the server keeps the rest as
+    the user's own share (one IOU request). Payday and IOU open the Budget
+    screen's sheets. **Bill** opens a create-bill sheet (name, paying account,
+    amount, due day of the month from a menu, optional category); the Bills
+    tab has the same `[+ bill]`.
   - After logging, a result line slides up over the content with the amount,
     category, account, "left today" and **undo**.
 - **Navigation.** Phone: square bar fixed to the bottom, five equal buttons,
@@ -161,7 +166,10 @@ column setting, 4 from 1500.
   code, key hints, sync state. When a new service worker is waiting, an
   `update` item shows before the sync state: "new version ready" with
   `[reload]` and `[later]`. Reloading is the user's choice, so a typed entry is
-  never thrown away.
+  never thrown away. On phones, where the status line is hidden, the same
+  offer is a one-line bar (chrome, `primary` text) between the command line
+  and the tab bar. It takes no room until a version waits, and its polite
+  live region announces it.
 - **Overlay scrollbar.** Hide the native bar. Draw a 4 px thumb (7 px on hover
   or drag) over the right edge, which can be dragged, and clicking the track
   scrolls a page. It takes no width.
@@ -173,7 +181,7 @@ column setting, 4 from 1500.
 | **Tile** (`pane`) | `canvas` background. A title bar on `chrome` with an icon, title, muted subtitle and actions on the right. Focused or primary tiles get a 3 px `primary` inset on the title bar. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. |
 | **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000). |
 | **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
-| **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the sum of their children. React Aria `Tree`. |
+| **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`. |
 | **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
 | **Bracket button** | `[pay]`. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
@@ -186,7 +194,7 @@ column setting, 4 from 1500.
 | **Bar** | Exact width on a `card` track. A 1 px `text` tick at even pace (days elapsed ÷ cycle length). Over budget fills `negative`. |
 | **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
 | **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
-| **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · bills set aside · free to spend. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (5 columns, 3 on phone) shows the amount and the share. |
+| **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (6 columns, 3 on phone) shows the amount and the share. |
 | **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge (`positive`, or `primary` when neutral). |
 | **Key figures** | One line of up to 4 label-over-figure pairs, each truncated with "…". |
 | **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone. |
@@ -247,7 +255,9 @@ change (§8).
 
 Default tiles, in order: this cycle (2 × 2) · needs attention · today's
 entries · cycle allocation (full width) · budgets · next 7 days · pools ·
-emergency fund · net worth (2 wide).
+emergency fund · net worth (2 wide). While a user is held to two-factor
+enrolment no tile mounts: the screen shows a note and a link to the account
+settings, so no ledger read is made that the server would refuse.
 
 | Tile | Content | Data |
 |---|---|---|
@@ -255,7 +265,7 @@ emergency fund · net worth (2 wide).
 | needs attention | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
 | cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; segment shares are a ratio of two server figures) |
-| budgets | Category tree with bar, spent and left | `/v1/budgets` (`parents`: totals per parent category) |
+| budgets | Category tree: parent rows with the server's totals, children under them, each with bar and left | `/v1/budgets` (`parents`: totals per parent category) |
 | next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
 | pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
 | emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
@@ -264,7 +274,7 @@ emergency fund · net worth (2 wide).
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
 - Stats: net worth (primary) · savings & invest (the off-budget total) ·
-  credit owed · to reconcile (accounts never reconciled, or not for 30 days).
+  credit owed · to reconcile (accounts the server flags `reconcileDue`: never reconciled, or not for 30 days; rows carry a `due` tag).
   Credit owed is `totals.creditOwed` on `/v1/accounts` and to reconcile
   counts `reconcileDue` accounts; neither is summed in the browser. Credit
   limits are not in the API yet, so there is no limit bar.
@@ -310,7 +320,10 @@ emergency fund · net worth (2 wide).
   entry can be dragged (long press on touch) to change their place; there is
   no visible handle. The drag key appears on focus, and the detail has
   `[move up]` and `[move down]`. The day that continues on an unloaded page
-  is not movable. The server refuses a move that would break the time order
+  is not movable. With a search or a payee, type, account or category filter
+  on, moving is off (drag and the buttons, which say why): the list may hide
+  entries of a day, so a visible neighbour is not the neighbour in time. The
+  server refuses a move that would break the time order
   of timed entries. A move never changes a date.
 - Split with people: an expense in a category has `[split with people]` in its
   detail. A sheet takes each person's name (with names used before as taps)
@@ -321,7 +334,7 @@ emergency fund · net worth (2 wide).
 
 | Sub-tab | Content |
 |---|---|
-| budgets | Allocation (full width) · budget tree with spent, left, `[+ sub]` and ⋮, and a total row (2 wide) · cover this period with what's next in line |
+| budgets | Allocation (full width) · budget tree with spent, left (parent rows show `parents` totals), `[+ sub]` and ⋮, and a total row (2 wide) · cover this period with what's next in line |
 | pools | One tile per pool (daily checkbox, balance, "left of" bar for on-budget pools, accounts with sparklines), plus "how the daily number works" |
 | bills | Timeline tile with set aside, paid and next · upcoming (with a "set aside of" bar) · paid this cycle |
 | goals | One tile per goal: figure, bar, plan line, progress chart |
@@ -337,7 +350,7 @@ a toolbar.
 |---|---|
 | summary | Stats (spent, income, saved, daily average) · by category (share bar + tree with bar, spent, budget, share; 2 wide) · top payees **(API +)** · spending per day (columns, over the daily number in `negative`) |
 | trends | Category spending across cycles (multi-line chart, 2 wide) · this cycle against the average per category, plus total spent per cycle **(API +: per-category series across cycles)** |
-| plan | Budget against actual · savings rate per cycle · net worth over time |
+| plan | Budget against actual · savings rate per cycle · net worth over time, with its change |
 | calendar | Layer toggles (spending heat, bills & dues) · month grid + picked-day list |
 | cycles | Spent and saved per cycle (columns) · table of past cycles |
 

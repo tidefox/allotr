@@ -1,19 +1,16 @@
 import type {
-  BudgetView,
+  BudgetStatusView,
   CategoryIcon,
   CategoryView,
   Money,
 } from '@allotr/shared';
-import { spentShare } from '@/features/budget/share';
-import {
-  categoryStyles,
-  seriesNumber,
-  type SeriesNumber,
-} from '@/lib/category-style';
+import { budgetTree } from '@/screens/budget/budgets-model';
+import type { SeriesNumber } from '@/lib/category-style';
 
 export type BudgetRow = Readonly<{
   id: string;
   name: string;
+  /** The budget's `left`, or the server's total on a parent header. */
   left: Money;
   /** How full the bar is, 0..1. */
   fraction: number;
@@ -21,27 +18,34 @@ export type BudgetRow = Readonly<{
   icon: CategoryIcon | null;
   /** The series number, 1..8. */
   colour: SeriesNumber;
+  /** 1 for a subcategory under a parent row, else 0. */
+  depth: 0 | 1;
 }>;
 
-/** One row per budget, with its category's icon and colour when it has one. */
+/**
+ * The category tree as rows: parent rows carry the server's `parents`
+ * totals, subcategories sit under them. Nothing is summed here.
+ */
 export function budgetRows(
-  budgets: readonly BudgetView[],
+  status: Pick<BudgetStatusView, 'budgets' | 'parents'>,
   categories: readonly CategoryView[],
 ): readonly BudgetRow[] {
-  const styles = categoryStyles(categories);
-  return budgets.map((b) => {
-    const style =
-      b.target.kind === 'category'
-        ? styles.get(b.target.categoryId)
-        : undefined;
-    return {
-      id: b.id,
-      name: b.name,
-      left: b.left,
-      fraction: spentShare(b.spent, b.left) / 100,
-      over: b.overflow.amountMinor > 0,
-      icon: style?.icon ?? null,
-      colour: style === undefined ? 1 : seriesNumber(style.colour),
-    };
-  });
+  return budgetTree(status.budgets, categories, status.parents).flatMap(
+    (e): BudgetRow[] => {
+      const left = e.budget?.left ?? e.total?.left;
+      if (left === undefined) return [];
+      return [
+        {
+          id: e.key,
+          name: e.name,
+          left,
+          fraction: e.fraction,
+          over: e.over,
+          icon: e.icon,
+          colour: e.colour,
+          depth: e.role === 'child' || e.role === 'last-child' ? 1 : 0,
+        },
+      ];
+    },
+  );
 }

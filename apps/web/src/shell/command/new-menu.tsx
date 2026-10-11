@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useState, type ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
 import {
   Menu,
   MenuTrigger,
@@ -25,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { accountsQuery, categoriesQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
+import { BillSheet } from '@/screens/budget/bill-sheet.tsx';
 import { IouSheet } from '@/screens/budget/iou-sheets.tsx';
 import { PaydaySheet } from '@/screens/budget/sheets/payday-sheet.tsx';
 import { EntryFormSheet } from './entry-form.tsx';
@@ -125,22 +125,16 @@ export function NewMenu() {
 
 /**
  * Where a + new item's form opens: the structured entry forms here, and the
- * payday and IOU sheets the Budget screen already has. A bill has no create
- * form yet, so it leads to the Bills tab.
+ * payday and IOU sheets the Budget screen already has. The bill form is the create-bill
+ * sheet.
  */
 function NewFormHost() {
   const { newForm, newFormPreset, intoAccountId } = useCommandState();
-  const navigate = useNavigate();
   const accounts = useQuery(accountsQuery).data?.accounts;
   const categories = useQuery(categoriesQuery).data?.categories;
 
-  useEffect(() => {
-    if (newForm !== 'bill') return;
-    closeNewForm();
-    void navigate({ to: '/budget/$sub', params: { sub: 'bills' } });
-  }, [newForm, navigate]);
-
-  if (newForm === null || newForm === 'bill') return null;
+  if (newForm === null) return null;
+  if (newForm === 'bill') return <BillSheet onClose={closeNewForm} />;
   if (newForm === 'payday') return <PaydaySheet open onClose={closeNewForm} />;
   if (newForm === 'iou')
     return (

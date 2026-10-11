@@ -1,4 +1,8 @@
-import { Grid } from '@/components/layout';
+import { Link } from '@tanstack/react-router';
+import { Grid, Tile } from '@/components/layout';
+import { EmptyState } from '@/components/states';
+import { useLedgerReady } from '@/lib/session';
+import { t } from '@/messages/t';
 import { BudgetsTile } from './tiles/budgets.tsx';
 import { CycleAllocationTile } from './tiles/cycle-allocation.tsx';
 import { EmergencyFundTile } from './tiles/emergency-fund.tsx';
@@ -12,6 +16,9 @@ import { TodaysEntriesTile } from './tiles/todays-entries.tsx';
 // The Dashboard (docs/ui.md §6): default tile order and sizes, no layout
 // editor yet. Every figure comes from the server.
 export function Dashboard() {
+  // While a user is held to two-factor enrolment the server refuses ledger
+  // reads, so no tile mounts (and queries) until the hold is over.
+  if (!useLedgerReady()) return <HeldForTwoFactor />;
   return (
     <Grid>
       <ThisCycleTile />
@@ -24,5 +31,25 @@ export function Dashboard() {
       <EmergencyFundTile />
       <NetWorthTile />
     </Grid>
+  );
+}
+
+function HeldForTwoFactor() {
+  return (
+    <Tile title={t('nav.dashboard')}>
+      <EmptyState
+        title={t('settingsAccount.twoFactor.heldTitle')}
+        hint={t('settingsAccount.twoFactor.required')}
+        action={
+          <Link
+            to="/settings/$sub"
+            params={{ sub: 'account' }}
+            className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
+          >
+            {t('settingsAccount.twoFactor.goTo')}
+          </Link>
+        }
+      />
+    </Tile>
   );
 }

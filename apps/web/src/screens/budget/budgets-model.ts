@@ -1,4 +1,9 @@
-import type { BudgetView, CategoryIcon, CategoryView } from '@allotr/shared';
+import type {
+  BudgetStatusView,
+  BudgetView,
+  CategoryIcon,
+  CategoryView,
+} from '@allotr/shared';
 import { spentShare } from '@/features/budget/share';
 import {
   categoryStyles,
@@ -8,7 +13,10 @@ import {
 
 // The budget tree's shape. Budgets sit on categories, so a budget on a
 // subcategory is listed under its parent's row. A parent with no budget of
-// its own is a header: it shows no figures, because the browser never sums.
+// its own is a header: it shows the server's `parents` totals, because the
+// browser never sums.
+
+export type ParentTotal = BudgetStatusView['parents'][number];
 
 export type TreeRole = 'parent' | 'child' | 'last-child' | 'flat';
 
@@ -20,6 +28,8 @@ export type TreeEntry = Readonly<{
   group: string;
   name: string;
   budget: BudgetView | null;
+  /** The server's totals for a parent header with no budget of its own. */
+  total: ParentTotal | null;
   categoryId: string | null;
   icon: CategoryIcon | null;
   colour: SeriesNumber;
@@ -28,13 +38,18 @@ export type TreeEntry = Readonly<{
   over: boolean;
 }>;
 
-function barOf(budget: BudgetView | null) {
-  return budget === null
-    ? { fraction: 0, over: false }
-    : {
-        fraction: spentShare(budget.spent, budget.left) / 100,
-        over: budget.overflow.amountMinor > 0,
-      };
+function barOf(budget: BudgetView | null, total: ParentTotal | null) {
+  if (budget !== null)
+    return {
+      fraction: spentShare(budget.spent, budget.left) / 100,
+      over: budget.overflow.amountMinor > 0,
+    };
+  if (total !== null)
+    return {
+      fraction: spentShare(total.spent, total.left) / 100,
+      over: total.left.amountMinor < 0,
+    };
+  return { fraction: 0, over: false };
 }
 
 function categoryOf(budget: BudgetView): string {
@@ -53,8 +68,10 @@ function takenCategories(budgets: readonly BudgetView[]): Set<string> {
 export function budgetTree(
   budgets: readonly BudgetView[],
   categories: readonly CategoryView[],
+  parents: readonly ParentTotal[] = [],
 ): readonly TreeEntry[] {
   const styles = categoryStyles(categories);
+  const totals = new Map(parents.map((p) => [p.categoryId, p]));
   const byId = new Map(categories.map((c) => [c.id, c]));
   const onCategory = new Map<string, BudgetView>();
   const others: BudgetView[] = [];
@@ -80,16 +97,21 @@ export function budgetTree(
     categoryId: string | null,
   ): TreeEntry => {
     const s = categoryId === null ? undefined : styles.get(categoryId);
+    const total =
+      role === 'parent' && budget === null && categoryId !== null
+        ? (totals.get(categoryId) ?? null)
+        : null;
     return {
       key,
       role,
       group,
       name,
       budget,
+      total,
       categoryId,
       icon: s?.icon ?? null,
       colour: s === undefined ? 1 : seriesNumber(s.colour),
-      ...barOf(budget),
+      ...barOf(budget, total),
     };
   };
   const entries: TreeEntry[] = [];

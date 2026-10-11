@@ -5,7 +5,7 @@ import { OverlayScrollbar } from '@/components/overlay-scrollbar';
 import { t } from '@/messages/t';
 import { CommandLine } from './command-line.tsx';
 import { Navigation } from './navigation.tsx';
-import { StatusLine } from './status-line.tsx';
+import { StatusLine, UpdateBar } from './status-line.tsx';
 import { SummaryBar } from './summary-bar.tsx';
 import { TitleStrip } from './title-strip.tsx';
 import { useShortcuts } from './use-shortcuts.ts';
@@ -19,7 +19,8 @@ import { useShortcuts } from './use-shortcuts.ts';
 //   nav     strip            strip
 //   nav     content          content
 //   foot    command          command
-//   status  status           tabs
+//   status  status           update bar (only when a version waits)
+//                             tabs
 //
 // Container queries run on the frame, with px thresholds (600 / 1000).
 
@@ -37,7 +38,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <div
         data-shell
         className={[
-          'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_var(--h-strip)_minmax(0,1fr)_auto_auto]',
+          'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_var(--h-strip)_minmax(0,1fr)_auto_auto_auto]',
           'medium:grid-cols-[4.5rem_minmax(0,1fr)] medium:grid-rows-[var(--h-topbar)_var(--h-strip)_minmax(0,1fr)_auto_auto]',
           'wide:grid-cols-[13.25rem_minmax(0,1fr)]',
         ].join(' ')}
@@ -55,6 +56,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           </OverlayScrollbar>
         </main>
         <CommandLine />
+        <UpdateBar />
         <StatusLine />
       </div>
     </Frame>

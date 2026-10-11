@@ -144,6 +144,8 @@ export interface DayOrder {
   up: Move | null;
   down: Move | null;
   busy: boolean;
+  /** A filter or search hides entries of the day, so moves are off. */
+  blocked: boolean;
   onMove: (move: Move) => void;
 }
 
@@ -315,7 +317,7 @@ function DetailBody({
           <>
             <BracketButton
               icon={IconArrowUpLine}
-              isDisabled={order.up === null || order.busy}
+              isDisabled={order.up === null || order.busy || order.blocked}
               onPress={() => {
                 if (order.up !== null) order.onMove(order.up);
               }}
@@ -324,13 +326,21 @@ function DetailBody({
             </BracketButton>
             <BracketButton
               icon={IconArrowDownLine}
-              isDisabled={order.down === null || order.busy}
+              isDisabled={order.down === null || order.busy || order.blocked}
               onPress={() => {
                 if (order.down !== null) order.onMove(order.down);
               }}
             >
               {t('transactionDetail.order.down')}
             </BracketButton>
+            {order.blocked ? (
+              <p
+                data-order-blocked
+                className="w-full text-small text-text-muted"
+              >
+                {t('transactionDetail.order.blocked')}
+              </p>
+            ) : null}
           </>
         )}
         {model.canDelete ? (

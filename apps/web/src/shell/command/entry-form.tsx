@@ -32,6 +32,7 @@ import { randomId } from '@/lib/random-id';
 import { t } from '@/messages/t';
 import { EntryFields } from '@/screens/transactions/detail/entry-fields.tsx';
 import { loggedFromTransaction } from './logged.ts';
+import { SplitPeopleForm } from './split-people-form.tsx';
 import { closeNewForm, showLogged } from './store.ts';
 
 const locale = 'en';
@@ -45,8 +46,8 @@ function storage(): Storage | undefined {
 }
 
 /**
- * The structured + new forms for an expense, income, transfer or split
- * (docs/ui.md §3): a sheet over the quick entry draft. On save the entry
+ * The structured + new forms for an expense, income or transfer, and a split
+ * with people (docs/ui.md §3): a sheet over the quick entry draft. On save the entry
  * shows in the command line's result line with an undo.
  */
 export function EntryFormSheet({
@@ -74,7 +75,14 @@ export function EntryFormSheet({
       title={t(`shell.command.kinds.${kind}`)}
       closeLabel={t('shell.command.close')}
     >
-      {ready ? (
+      {ready && kind === 'split' ? (
+        <SplitPeopleForm
+          preset={{ intoAccountId, ...preset }}
+          accounts={accounts.data.accounts}
+          categories={categories.data.categories}
+          today={today.data.today}
+        />
+      ) : ready ? (
         <EntryForm
           kind={kind}
           preset={{ intoAccountId, ...preset }}

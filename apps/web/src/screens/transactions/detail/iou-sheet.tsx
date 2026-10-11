@@ -1,27 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type SyntheticEvent } from 'react';
 import { money, type Money, type TransactionView } from '@allotr/shared';
 import { BracketButton, PrimaryButton } from '@/components/buttons';
 import { Sheet } from '@/components/sheet';
 import {
   emptyPerson,
-  fillEven,
   toConvertBody,
   type PersonDraft,
   type PersonError,
 } from '@/features/ious/draft';
-import { amountExample } from '@/features/quick-entry/draft';
 import { entryQueryKeys } from '@/lib/ledger';
-import { convertToIou, iouQueryKeys, peopleQuery } from '@/lib/ious';
+import { convertToIou, iouQueryKeys } from '@/lib/ious';
 import { describeProblem } from '@/lib/problem';
 import { randomId } from '@/lib/random-id';
 import { t } from '@/messages/t';
-import { TextField } from './fields.tsx';
+import { PeopleEditor } from './people-editor.tsx';
 
 const locale = 'en';
-
-/** The most people the server takes in one entry. */
-export const MAX_PEOPLE = 20;
 
 /** The whole bill: what the logged expense took out of its account. */
 export function billOf(entry: TransactionView): Money | null {
@@ -31,37 +26,6 @@ export function billOf(entry: TransactionView): Money | null {
   return out === undefined
     ? null
     : money(-out.amount.amountMinor, out.amount.currency);
-}
-
-/** Names used before that start like what was typed, as one-tap choices. */
-function Suggestions({
-  value,
-  onPick,
-}: {
-  value: string;
-  onPick: (name: string) => void;
-}) {
-  const names = useQuery(peopleQuery(value.trim()));
-  const shown = (names.data?.people ?? []).filter((name) => name !== value);
-  if (shown.length === 0) return null;
-  return (
-    <div
-      role="group"
-      aria-label={t('transactionDetail.iou.suggestions')}
-      className="flex flex-wrap gap-1"
-    >
-      {shown.slice(0, 5).map((name) => (
-        <BracketButton
-          key={name}
-          onPress={() => {
-            onPick(name);
-          }}
-        >
-          {name}
-        </BracketButton>
-      ))}
-    </div>
-  );
 }
 
 /**
@@ -95,8 +59,6 @@ export function IouSheet({
     },
   });
 
-  // Amounts nobody typed are shown, and saved, as even shares.
-  const shown = fillEven(people, bill, locale);
   const change = (next: readonly PersonDraft[]) => {
     if (save.isError) save.reset();
     setPeople(next);
@@ -127,93 +89,14 @@ export function IouSheet({
         <p className="font-sans text-small text-text-muted">
           {t('transactionDetail.iou.intro')}
         </p>
-        {shown.map((p, index) => (
-          // Rows have no identity of their own; they are edited in place.
-          <fieldset
-            key={index}
-            className="flex flex-col gap-2 border border-outline p-2"
-          >
-            <legend className="px-1 text-small text-text-muted">
-              {t('transactionDetail.iou.person', { n: index + 1 })}
-            </legend>
-            <TextField
-              label={t('transactionDetail.iou.name', { n: index + 1 })}
-              value={p.person}
-              error={
-                errors[index] === 'person'
-                  ? t('transactionDetail.iou.errors.person')
-                  : undefined
-              }
-              onChange={(person) => {
-                change(
-                  people.map((q, i) => (i === index ? { ...q, person } : q)),
-                );
-              }}
-            />
-            <Suggestions
-              value={p.person}
-              onPick={(person) => {
-                change(
-                  people.map((q, i) => (i === index ? { ...q, person } : q)),
-                );
-              }}
-            />
-            <TextField
-              label={t('transactionDetail.iou.owes', {
-                n: index + 1,
-                currency: bill?.currency ?? '',
-              })}
-              value={p.amount}
-              inputMode="decimal"
-              error={
-                errors[index] === 'amount'
-                  ? t('transactionDetail.iou.errors.amount', {
-                      example: amountExample(bill?.currency ?? '', locale),
-                    })
-                  : undefined
-              }
-              onChange={(amount) => {
-                change(
-                  people.map((q, i) =>
-                    i === index ? { ...q, amount, edited: true } : q,
-                  ),
-                );
-              }}
-            />
-            {people.length > 1 ? (
-              <div>
-                <BracketButton
-                  tone="destructive"
-                  onPress={() => {
-                    change(people.filter((_, i) => i !== index));
-                  }}
-                >
-                  {t('transactionDetail.iou.remove', { n: index + 1 })}
-                </BracketButton>
-              </div>
-            ) : null}
-          </fieldset>
-        ))}
-        <div className="flex flex-wrap items-center gap-1">
-          {people.length < MAX_PEOPLE ? (
-            <BracketButton
-              onPress={() => {
-                change([...people, emptyPerson]);
-              }}
-            >
-              {t('transactionDetail.iou.add')}
-            </BracketButton>
-          ) : null}
-          {people.some((p) => p.edited === true) ? (
-            <BracketButton
-              onPress={() => {
-                change(people.map((p) => ({ ...p, edited: false })));
-              }}
-            >
-              {t('transactionDetail.iou.evenly')}
-            </BracketButton>
-          ) : null}
-        </div>
+        <PeopleEditor
+          people={people}
+          bill={bill}
+          currency={bill?.currency ?? ''}
+          locale={locale}
+          errors={errors}
+          onChange={change}
+        />
         {save.isError ? (
           <p role="alert" className="text-small text-negative">
             {describeProblem(save.error).message}

@@ -24,6 +24,8 @@ export const settingsAccount = {
     status: 'Authenticator app',
     required:
       'This instance requires two-factor authentication. Turn it on to use the rest of the app.',
+    heldTitle: 'Turn on two-factor authentication first',
+    goTo: 'open account settings',
     turnOn: 'turn on',
     turnOff: 'turn off',
     passwordTitleOn: 'Turn on two-factor authentication',

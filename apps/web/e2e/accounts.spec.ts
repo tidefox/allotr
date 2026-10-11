@@ -86,6 +86,14 @@ test('the tree groups accounts by pool and credit, with stats', async ({
   await expect(
     page.getByText(t('accountsScreen.stats.reconcileFigure', { count: 3 })),
   ).toBeVisible();
+  // Credit owed is the server's total, shown as owed; each new account is
+  // flagged due for a reconcile.
+  await expect(
+    page.getByText('$450.00', { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText(t('accountsScreen.list.reconcileDue'), { exact: true }),
+  ).toHaveCount(3);
   await expectAccessible(page);
 
   const small = await page

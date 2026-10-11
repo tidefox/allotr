@@ -1,10 +1,4 @@
-import {
-  daysBetween,
-  type AccountView,
-  type LocalDate,
-  type Money,
-  type PoolView,
-} from '@allotr/shared';
+import { type AccountView, type Money, type PoolView } from '@allotr/shared';
 
 // View model for the Accounts screen. Every amount is a server figure; this
 // file only sorts accounts into groups and counts them (docs/ui.md §4).
@@ -95,38 +89,11 @@ export function accountGroups(
   return groups;
 }
 
-/** An account not matched to the bank for this many days needs a look. */
-export const STALE_AFTER_DAYS = 30;
-
-/** Open accounts never reconciled, or not for `STALE_AFTER_DAYS`. */
+/** Open accounts the server flags as due for a reconcile. */
 export function needsReconcile(
   accounts: readonly AccountView[],
-  today: LocalDate,
 ): AccountView[] {
-  return accounts.filter(
-    (a) =>
-      !a.archived &&
-      (a.lastReconciledOn === null ||
-        daysBetween(a.lastReconciledOn, today) > STALE_AFTER_DAYS),
-  );
-}
-
-export type CreditStat =
-  | Readonly<{ kind: 'none' }>
-  | Readonly<{ kind: 'one'; balance: Money }>
-  | Readonly<{ kind: 'many'; count: number }>;
-
-/**
- * The credit stat. The API sends no total for credit, so one account shows
- * its own balance and several show how many there are; adding balances in
- * the browser would break the rule that it never sums money.
- */
-export function creditStat(accounts: readonly AccountView[]): CreditStat {
-  const credit = accounts.filter((a) => !a.archived && isCredit(a));
-  const [only] = credit;
-  if (only === undefined) return { kind: 'none' };
-  if (credit.length === 1) return { kind: 'one', balance: only.balance };
-  return { kind: 'many', count: credit.length };
+  return accounts.filter((a) => !a.archived && a.reconcileDue);
 }
 
 /** The pools an account can move to: open, and not the one it is in. */

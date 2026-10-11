@@ -11,6 +11,7 @@ import { Timeline } from '@/charts/timeline';
 import { formatDay } from '@/features/today/format';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
+import { openNewForm } from '@/shell/command/store.ts';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { billsView, cycleDayDate, type DueItem } from './bills-model.ts';
@@ -82,7 +83,7 @@ function PaidRow({ item }: { item: DueItem }) {
 
 // Budget · bills (docs/ui.md §6): the cycle's timeline with set aside, paid
 // and next; the unpaid due dates with a "set aside of" bar; and what was
-// paid this cycle. Figures are the server's (`reserved`, `allocation.paidBills`).
+// paid this cycle. Figures are the server's (`reservedBills`, `allocation.paidBills`).
 export function BillsTab() {
   const today = useQuery(todayQuery);
   const bills = useQuery(billsQuery);
@@ -140,13 +141,22 @@ export function BillsTab() {
         })}
         span="full"
         primary
+        actions={
+          <BracketButton
+            onPress={() => {
+              openNewForm('bill');
+            }}
+          >
+            {t('billForm.add')}
+          </BracketButton>
+        }
         bodyClassName="grid content-start gap-3 pt-2.5"
       >
         <KeyFigures
           figures={[
             {
               label: t('budgetBills.figures.setAside'),
-              figure: money(today.data.reserved),
+              figure: money(today.data.reservedBills),
             },
             {
               label: t('budgetBills.figures.paid'),
