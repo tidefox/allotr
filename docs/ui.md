@@ -267,7 +267,7 @@ settings, so no ledger read is made that the server would refuse.
 | cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
 | budgets | Category tree: parent rows with the server's totals, children under them, each with bar and left | `/v1/budgets` (`parents`: totals per parent category) |
 | next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
-| pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
+| pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` (`shareBp` per pool) |
 | emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
 | net worth | Figure, change, area chart | `/v1/insights/net-worth` (`change`) |
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   accountId,
   accountBalances,
+  basisPointShares,
   poolCounts,
   poolCycleFigures,
   poolId,
@@ -137,7 +138,24 @@ async function readPools(
               },
       };
     });
-  return { pools, countSavingsInDaily };
+  // Shares are worked out here so the web app never sums balances.
+  const shares = basisPointShares(
+    pools.map((pool) => (pool.archived ? 0 : pool.balance.amount.amountMinor)),
+    pools.reduce(
+      (sum, pool) =>
+        pool.archived
+          ? sum
+          : sum + Math.max(0, pool.balance.amount.amountMinor),
+      0,
+    ),
+  );
+  return {
+    pools: pools.map((pool, index) => ({
+      ...pool,
+      shareBp: shares[index] ?? 0,
+    })),
+    countSavingsInDaily,
+  };
 }
 
 async function findOwned(db: Db, userId: string, id: string) {

@@ -18,6 +18,7 @@ type Pool = {
   archived: boolean;
   accountIds: string[];
   balance: { amount: Money; missingRates: string[] };
+  shareBp: number;
 };
 type Account = { id: string; budgetGroup: string; poolId: string };
 
@@ -91,6 +92,8 @@ describe('default pools', () => {
     expect(budget?.balance.amount).toEqual(usd(100_000));
     expect(savings?.accountIds).toEqual([rainy.id]);
     expect(savings?.balance.amount).toEqual(usd(40_000));
+    // 100 000 of 140 000 and 40 000 of 140 000, largest remainder first.
+    expect([budget?.shareBp, savings?.shareBp]).toEqual([7143, 2857]);
   });
 
   it('are not shared between users', async () => {
