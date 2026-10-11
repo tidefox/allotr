@@ -108,9 +108,9 @@ export function PrimaryButton({
 export const stripButtonClass =
   'press flex h-full min-w-10 shrink-0 items-center justify-center gap-1.5 border-l px-3 whitespace-nowrap text-text-muted hover:text-text';
 
-/** A bordered control face: `label · value ▾`. The menu itself is in menu.tsx. */
+/** A bordered control face (`ddb`): muted label, value, ▾. The menu is in menu.tsx. */
 export const menuButtonClass =
-  'press inline-flex min-h-hit min-w-hit max-w-full items-center gap-1.5 border border-outline px-2 text-small';
+  'press inline-flex min-h-7 min-w-hit max-w-full items-center gap-1.5 border border-outline bg-canvas pr-1.5 pl-2.5 text-small whitespace-nowrap';
 
 export type ToggleOption<Id extends string> = Readonly<{
   id: Id;
@@ -196,24 +196,30 @@ export function Tag({
   );
 }
 
-/** A filter chip with a remove (×) button, for the chip bar above a list. */
+/** A filter chip: a muted kind, the value and a remove (×) button. */
 export function Chip({
   label,
+  kind,
   removeLabel,
   onRemove,
 }: {
   label: string;
+  /** What the value is, for example `category`; shown muted before it. */
+  kind?: string | undefined;
   /** Accessible name of the remove button, for example "Remove Food". */
   removeLabel: string;
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex items-center border border-outline text-small">
-      <span className="truncate px-2">{label}</span>
+    <span className="inline-flex min-h-hit min-w-0 items-center gap-1 border border-outline bg-canvas pr-0.5 pl-2 text-small text-text">
+      {kind === undefined ? null : (
+        <span className="shrink-0 text-text-muted">{kind}</span>
+      )}
+      <span className="truncate">{label}</span>
       <Button
         aria-label={removeLabel}
         onPress={onRemove}
-        className="press flex size-hit items-center justify-center border-l border-outline text-text-muted"
+        className="press flex size-6 shrink-0 items-center justify-center text-text-muted hover:text-text"
       >
         <IconCloseLine className="size-3.5" />
       </Button>

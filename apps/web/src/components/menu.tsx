@@ -130,18 +130,22 @@ export type MenuButtonProps = {
   onSelectionChange?: (keys: Selection) => void;
   className?: string;
   /**
-   * `bordered` (default): `label · value ▾` in a box. `strip`: a
+   * `bordered` (default): muted label, value and ▾ in a box (`ddb`). `strip`: a
    * full-height strip button showing icon, value and ▾, with the label as
    * its accessible name; the value hides on phones. `bracket`: `[⋮]`, the
    * icon in brackets with the label as its accessible name.
    */
   variant?: 'bordered' | 'strip' | 'bracket';
+  /** Strip only: false leaves out the ▾ (the mockup's period and filter). */
+  chevron?: boolean;
+  /** Strip only: a filled count after the text, for example active filters. */
+  badge?: string;
   /** Where the popover opens; the command line opens upwards. */
   placement?: 'bottom start' | 'top end';
   children: ReactNode;
 };
 
-/** A bordered `label · value ▾` control that opens a menu. */
+/** A bordered `label value ▾` control (`ddb`) that opens a menu. */
 export function MenuButton({
   label,
   value,
@@ -155,6 +159,8 @@ export function MenuButton({
   onSelectionChange,
   className,
   variant = 'bordered',
+  chevron = true,
+  badge,
   placement = 'bottom start',
   children,
 }: MenuButtonProps) {
@@ -170,7 +176,9 @@ export function MenuButton({
   const bracket = variant === 'bracket';
   // The strip face shows only the value, so the name carries both (the
   // visible text stays part of the name, WCAG 2.5.3).
-  const stripName = value === undefined ? label : `${label}: ${value}`;
+  const stripName = [value === undefined ? label : `${label}: ${value}`, badge]
+    .filter((part) => part !== undefined)
+    .join(', ');
   const faceClass = strip
     ? stripButtonClass
     : bracket
@@ -186,24 +194,30 @@ export function MenuButton({
   ) : strip ? (
     <>
       {Icon === undefined ? null : <Icon className="size-[1.15em] shrink-0" />}
-      {value === undefined ? null : (
-        <span className="min-w-0 truncate compact:hidden">{value}</span>
+      {/* With no value the label shows, as the filter's word does. */}
+      <span className="min-w-0 truncate compact:hidden">{value ?? label}</span>
+      {badge === undefined ? null : (
+        <span className="bg-primary px-[5px] text-[0.6875rem] font-semibold text-on-primary">
+          {badge}
+        </span>
       )}
-      <IconArrowDownSLine className="size-[1.15em] shrink-0" />
+      {chevron ? (
+        <IconArrowDownSLine className="size-[1.15em] shrink-0" />
+      ) : null}
     </>
   ) : (
     <>
       {Icon === undefined ? null : <Icon className="size-3.5" />}
-      <span className={cn('text-text-muted', iconOnly && 'sr-only')}>
+      <span
+        className={cn(
+          value !== undefined && 'text-text-muted',
+          iconOnly && 'sr-only',
+        )}
+      >
         {label}
       </span>
       {value === undefined || iconOnly ? null : (
-        <>
-          <span aria-hidden="true" className="text-text-muted">
-            ·
-          </span>
-          <span className="min-w-0 truncate">{value}</span>
-        </>
+        <span className="min-w-0 truncate">{value}</span>
       )}
       {iconOnly ? null : <IconArrowDownSLine className="size-3.5 shrink-0" />}
     </>

@@ -9,22 +9,24 @@ import { Amount, type AmountKind } from '@/components/amount';
 import { BracketButton, Chip, Tag } from '@/components/buttons';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
-import { SummaryLine } from '@/components/stats';
 import { CategoryIcon, EmptyState } from '@/components/states';
-import { IconMoneyDollarCircleLine } from '@/generated/icons';
+import { IconFilter3Line, IconMoneyDollarCircleLine } from '@/generated/icons';
 import { seriesNumber } from '@/lib/category-style';
+import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import type { FilterChip } from './filter-model.ts';
-import type { TxRow, TxSection } from './list-model.ts';
+import type { SummaryPart, TxRow, TxSection } from './list-model.ts';
 import { dropMove, type Move } from './reorder-model.ts';
 
+// The mockup's row: time, icon, payee, category, account, amount. Time and
+// category go below 600 px, the account below 1000 px.
 const columns: readonly RowColumn[] = [
-  { width: '2.75rem' },
-  { width: 'minmax(0, 1.4fr)' },
-  { width: 'minmax(0, 1fr)', from: 'medium' },
-  { width: 'minmax(0, 0.7fr)', from: 'wide' },
-  // A floor, so columns line up from row to row; a bigger amount still fits.
-  { width: 'minmax(7.5rem, auto)' },
+  { width: '5ch', from: 'medium' },
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: '18ch', at: { medium: '16ch' }, from: 'medium' },
+  { width: '18ch', from: 'wide' },
+  { width: '13ch', at: { compact: 'auto' } },
 ];
 
 function kindOf(row: TxRow): AmountKind {
@@ -39,31 +41,44 @@ function rowCells(row: TxRow) {
     <span key="time" className="num text-text-muted">
       {row.time ?? t('transactions.list.noTime')}
     </span>,
-    <span key="payee" className="flex items-center gap-2">
-      {row.style?.icon == null ? (
-        <IconMoneyDollarCircleLine
-          aria-hidden="true"
-          className="size-4 shrink-0 text-text-muted"
-        />
-      ) : (
-        <CategoryIcon
-          name={row.style.icon}
-          {...(colour === undefined ? {} : { color: colour })}
-        />
-      )}
+    row.style?.icon == null ? (
+      <IconMoneyDollarCircleLine
+        key="icon"
+        aria-hidden="true"
+        className="block size-4 text-text-muted"
+      />
+    ) : (
+      <CategoryIcon
+        key="icon"
+        name={row.style.icon}
+        {...(colour === undefined ? {} : { color: colour })}
+      />
+    ),
+    <span key="payee" className="flex min-w-0 items-center gap-1.5">
       <span className="truncate font-sans">{row.payee}</span>
       {row.bill === null ? null : (
         <Tag className="shrink-0">{t('transactions.list.billTag')}</Tag>
       )}
     </span>,
     <span key="category" className="font-sans text-text-muted">
-      {row.category ?? ''}
+      {row.categoryParts === null ? (
+        (row.category ?? '')
+      ) : (
+        <>
+          {row.categoryParts.parent === null ? null : (
+            <span>{row.categoryParts.parent} › </span>
+          )}
+          {row.categoryParts.name}
+        </>
+      )}
     </span>,
     <span key="account" className="font-sans text-text-muted">
       {row.account}
     </span>,
     row.amount === null ? null : (
-      <Amount key="amount" amount={row.amount} kind={kindOf(row)} />
+      <span key="amount" className="block text-right">
+        <Amount amount={row.amount} kind={kindOf(row)} />
+      </span>
     ),
   ];
 }
@@ -79,7 +94,6 @@ function EntryRow({
 }) {
   return (
     <Row
-      tall
       className="cv-row"
       columns={columns}
       selected={selected}
@@ -152,7 +166,6 @@ function MovableDay({
             ⠿
           </Button>
           <Row
-            tall
             className="cv-row"
             columns={columns}
             selected={row.id === selectedId}
@@ -179,11 +192,13 @@ export function ChipBar({
     <div
       role="group"
       aria-label={t('transactions.list.chips')}
-      className="flex flex-wrap items-center gap-1 border-b px-3 py-2"
+      className="flex flex-wrap items-center gap-1.5 border-r border-b bg-chrome px-3 py-1.5 text-small text-text-muted"
     >
+      <IconFilter3Line aria-hidden="true" className="size-4 shrink-0" />
       {chips.map((chip) => (
         <Chip
           key={chip.key}
+          kind={chipKind(chip.key)}
           label={chip.label}
           removeLabel={t('transactions.filter.remove', { label: chip.label })}
           onRemove={() => {
@@ -196,6 +211,15 @@ export function ChipBar({
       </BracketButton>
     </div>
   );
+}
+
+/** The muted word before a chip's value; search and payee name themselves. */
+function chipKind(key: string): string | undefined {
+  if (key === 'type') return t('transactions.filter.kinds.type');
+  if (key.startsWith('category:'))
+    return t('transactions.filter.kinds.category');
+  if (key.startsWith('account:')) return t('transactions.filter.kinds.account');
+  return undefined;
 }
 
 export function EntryList({
@@ -211,7 +235,7 @@ export function EntryList({
   moving,
   onMove,
 }: {
-  summary: readonly string[];
+  summary: readonly SummaryPart[];
   sections: readonly TxSection[];
   selectedId: string | undefined;
   filtered: boolean;
@@ -242,7 +266,33 @@ export function EntryList({
   return (
     <div>
       {summary.length === 0 ? null : (
-        <SummaryLine parts={summary} className="border-b px-3 py-1.5" />
+        <p className="flex flex-wrap gap-x-[1.125rem] gap-y-1 px-3 pt-0.5 pb-1.5 text-small text-text-muted">
+          {summary.map((part) => {
+            const value = (
+              <b
+                className={cn(
+                  'num font-semibold',
+                  part.tone === 'positive' ? 'text-positive' : 'text-text',
+                )}
+              >
+                {part.value}
+              </b>
+            );
+            return (
+              <span key={part.key}>
+                {part.valueFirst ? (
+                  <>
+                    {value} {part.label}
+                  </>
+                ) : (
+                  <>
+                    {part.label} {value}
+                  </>
+                )}
+              </span>
+            );
+          })}
+        </p>
       )}
       {empty ? (
         <EmptyState
@@ -262,16 +312,16 @@ export function EntryList({
           <section
             key={section.key}
             aria-label={section.title ?? t('transactions.list.title')}
+            // Seams run between rows only: a group's last row has none.
+            className="[&>:last-child]:border-b-0 [&_[role=row]:last-child>:last-child]:border-b-0"
           >
             {section.title === null ? null : (
-              <h3 className="flex h-row items-center gap-2 border-b bg-chrome px-3 text-small">
-                <span className="min-w-0 flex-1 truncate font-semibold">
+              <h3 className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-canvas px-3 pt-2.5 pb-1 text-small text-text-muted">
+                <span className="min-w-0 flex-1 truncate font-semibold text-text">
                   {section.title}
                 </span>
                 {section.total === null ? null : (
-                  <span className="num shrink-0 text-text-muted">
-                    {section.total}
-                  </span>
+                  <span className="num shrink-0">{section.total}</span>
                 )}
               </h3>
             )}

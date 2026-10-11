@@ -19,6 +19,8 @@ export type RowColumn = Readonly<{
   width: string;
   /** The narrowest frame the column shows in; shown from there up. */
   from?: Frame;
+  /** A different track at some frames, for example a narrower column at `medium`. */
+  at?: Partial<Record<Frame, string>>;
 }>;
 
 export function isShown(column: RowColumn, frame: Frame): boolean {
@@ -33,7 +35,7 @@ export function rowTemplate(
 ): string {
   return columns
     .filter((column) => isShown(column, frame))
-    .map((column) => column.width)
+    .map((column) => column.at?.[frame] ?? column.width)
     .join(' ');
 }
 

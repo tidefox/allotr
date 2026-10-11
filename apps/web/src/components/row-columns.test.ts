@@ -48,6 +48,16 @@ describe('rowTemplate', () => {
     expect(rowTemplate(columns, 'compact')).toBe('1.5rem minmax(0, 2fr) auto');
   });
 
+  it("uses a column's own track at a frame that names one", () => {
+    const sized = [
+      { width: 'minmax(0, 1fr)' },
+      { width: '18ch', at: { medium: '16ch' }, from: 'medium' as const },
+    ];
+    expect(rowTemplate(sized, 'wide')).toBe('minmax(0, 1fr) 18ch');
+    expect(rowTemplate(sized, 'medium')).toBe('minmax(0, 1fr) 16ch');
+    expect(rowTemplate(sized, 'compact')).toBe('minmax(0, 1fr)');
+  });
+
   it('never gains a column as the frame narrows', () => {
     const count = (frame: 'compact' | 'medium' | 'wide') =>
       columns.filter((c) => isShown(c, frame)).length;
