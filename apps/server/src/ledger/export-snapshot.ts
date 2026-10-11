@@ -7,6 +7,7 @@ import {
   localDateIn,
   money,
   type CategoryView,
+  type IncomeClass,
   type LedgerSettingsView,
   type LocalDate,
   type Money,
@@ -65,6 +66,7 @@ export type SnapshotCategory = Readonly<{
   kind: 'expense' | 'income' | 'transfer';
   parentId: string | null;
   isPaycheck: boolean;
+  incomeClass: IncomeClass;
   colour: CategoryView['colour'];
   icon: CategoryView['icon'];
   mergedIntoId: string | null;
@@ -187,6 +189,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'kind',
         'parent_id',
         'is_paycheck',
+        'income_class',
         'colour',
         'icon',
         'merged_into_id',
@@ -330,6 +333,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     kind: row.kind as SnapshotCategory['kind'],
     parentId: row.parent_id,
     isPaycheck: row.is_paycheck === 1,
+    incomeClass: row.income_class as IncomeClass,
     colour: row.colour as SnapshotCategory['colour'],
     icon: row.icon as SnapshotCategory['icon'],
     mergedIntoId: row.merged_into_id,

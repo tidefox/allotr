@@ -20,6 +20,12 @@ export const settingsCategories = {
   addSubOf: 'Add a subcategory to {name}',
   foldOf: 'Subcategories of {name}',
   paycheckTag: 'paycheck',
+  incomeClasses: {
+    earned: 'Earned',
+    passive: 'Passive',
+    gift: 'Gift',
+    refund: 'Refund',
+  },
   none: 'No categories yet',
   noneHint: 'Add one with [+ category].',
   hint: 'Drag a row to reorder it among its siblings (long-press on touch). Parents fold with ▾; Move up, Move down and Move under… are in the row menu.',
@@ -42,6 +48,9 @@ export const settingsCategories = {
     paycheckHint: 'Income in this category starts a new cycle.',
     paycheckYes: 'Yes',
     paycheckNo: 'No',
+    incomeClass: 'Kind of income',
+    incomeClassHint:
+      'Earned and passive income count as earnings. Gifts and refunds are shown as other inflows and stay out of income and the savings rate.',
     save: 'Add',
     saving: 'Adding…',
     nameRequired: 'Enter a name.',

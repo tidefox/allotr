@@ -31,6 +31,7 @@ type Category = {
   kind: string;
   parentId: string | null;
   isPaycheck: boolean;
+  incomeClass: string;
   colour: string | null;
   icon: string | null;
   mergedIntoId: string | null;
@@ -295,6 +296,7 @@ describe('categories', () => {
       'Other income',
       'Interest',
       'Tax refund',
+      'Gifts',
     ]);
     const paycheck = (await categories(h.alice)).find(
       (c) => c.name === 'Paycheck',
@@ -303,7 +305,15 @@ describe('categories', () => {
     const interest = (await categories(h.alice)).find(
       (c) => c.name === 'Interest',
     );
-    expect(interest).toMatchObject({ kind: 'income', isPaycheck: false });
+    expect(interest).toMatchObject({
+      kind: 'income',
+      isPaycheck: false,
+      incomeClass: 'passive',
+    });
+    expect(
+      (await categories(h.alice)).find((c) => c.name === 'Gifts'),
+    ).toMatchObject({ kind: 'income', incomeClass: 'gift' });
+    expect(paycheck).toMatchObject({ incomeClass: 'earned' });
   });
 
   it('adds a subcategory of its parent’s kind, two levels deep', async () => {

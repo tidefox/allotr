@@ -183,6 +183,17 @@ function StatsRow({ params }: { params: ReportParams }) {
       figureTone: 'positive',
       ...missing,
     },
+    ...(figures.otherInflows.amountMinor === 0
+      ? []
+      : [
+          {
+            label: t('reportsSummary.stats.otherInflows'),
+            icon: IconMoneyDollarCircleLine,
+            figure: money(figures.otherInflows),
+            sub: t('reportsSummary.stats.otherInflowsSub'),
+            ...missing,
+          },
+        ]),
     {
       label: t('reportsSummary.stats.saved'),
       icon: IconSafe2Line,

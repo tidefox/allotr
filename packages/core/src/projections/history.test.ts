@@ -97,6 +97,42 @@ describe('cycleReports', () => {
     });
   });
 
+  it('counts earnings as income and shows gifts and refunds apart', () => {
+    const gifts = categoryId('gifts');
+    const interest = categoryId('interest');
+    const refunds = categoryId('refunds');
+    const inflow = (amountMinor: number, categoryId: typeof gifts) =>
+      income(chart, meta('2026-03-10', { createdAt: at('2026-03-10') }), {
+        accountId: card,
+        amount: usd(amountMinor),
+        categoryId,
+      });
+    const entries = [
+      ...ledger,
+      inflow(400000, gifts),
+      inflow(2500, refunds),
+      inflow(70, interest),
+    ];
+    const classes = new Map([
+      [gifts, 'gift' as const],
+      [refunds, 'refund' as const],
+      [interest, 'passive' as const],
+    ]);
+    const [, closed] = cycleReports(
+      view(entries, { incomeClasses: classes }),
+      today,
+    );
+    expect(closed).toMatchObject({
+      income: usd(300070),
+      otherInflows: usd(402500),
+    });
+    // Money is money: the closing balance holds all of it.
+    expect(closed?.closing.on).toEqual(usd(338500 + 402570));
+    // No classes: every category is earned, as before.
+    const [, plain] = cycleReports(view(entries), today);
+    expect(plain).toMatchObject({ income: usd(702570), otherInflows: usd(0) });
+  });
+
   it('does not count entries recorded before the closing paycheck', () => {
     expect(reports().closed.amendments).toEqual([]);
   });

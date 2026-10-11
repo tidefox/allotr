@@ -43,6 +43,7 @@ function category(
     kind,
     parentId,
     isPaycheck: false,
+    incomeClass: 'earned',
     position,
     colour: null,
     icon: null,

@@ -22,6 +22,7 @@ const pay: CategoryView = {
   kind: 'income',
   parentId: null,
   isPaycheck: true,
+  incomeClass: 'earned',
   position: 0,
   colour: null,
   icon: null,

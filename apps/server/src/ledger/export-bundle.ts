@@ -409,6 +409,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
           ? { kind: c.kind }
           : { parent: bundleCategoryName(parent.name) }),
         isPaycheck: c.isPaycheck,
+        ...(c.incomeClass === 'earned' ? {} : { incomeClass: c.incomeClass }),
         ...(c.colour === null ? {} : { colour: c.colour }),
         ...(c.icon === null ? {} : { icon: c.icon }),
       };

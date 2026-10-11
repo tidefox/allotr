@@ -68,6 +68,8 @@ export function cycleOf(
 export interface StatFigures {
   spent: Money;
   income: Money;
+  /** Gifts and refunds: money that came in but was not earned. */
+  otherInflows: Money;
   saved: Money;
   /** Spending per day over the days so far, as the server sends it. */
   average: Money;
@@ -89,11 +91,13 @@ export function statFigures(
       ? {
           spent: summary.spendingTotal,
           income: summary.incomeTotal,
+          otherInflows: summary.otherInflowsTotal,
           saved: summary.saved,
         }
       : {
           spent: cycle.spending,
           income: cycle.income,
+          otherInflows: cycle.otherInflows,
           saved: cycle.savingsNetChange,
         };
   return {

@@ -32,6 +32,7 @@ function category(id: string, parentId: string | null): CategoryView {
     kind: 'expense',
     parentId,
     isPaycheck: false,
+    incomeClass: 'earned',
     position: 0,
     colour: null,
     icon: null,
@@ -95,6 +96,7 @@ describe('cycleOf and statFigures', () => {
       openedOn,
       spending: money(500),
       income: money(2000),
+      otherInflows: money(150),
       savingsNetChange: money(300),
     }) as unknown as CycleSummaryView;
   const list = [cycle('2026-10-01'), cycle('2026-09-01')];
@@ -109,6 +111,7 @@ describe('cycleOf and statFigures', () => {
   const report = {
     spendingTotal: money(900),
     incomeTotal: money(4000),
+    otherInflowsTotal: money(250),
     saved: money(700),
     dailyAverage: money(30),
     missingRates: ['EUR'],
@@ -118,6 +121,7 @@ describe('cycleOf and statFigures', () => {
     expect(statFigures(list[0] ?? null, report)).toEqual({
       spent: money(500),
       income: money(2000),
+      otherInflows: money(150),
       saved: money(300),
       average: money(30),
       missingRates: ['EUR'],
@@ -125,6 +129,7 @@ describe('cycleOf and statFigures', () => {
     expect(statFigures(null, report)).toEqual({
       spent: money(900),
       income: money(4000),
+      otherInflows: money(250),
       saved: money(700),
       average: money(30),
       missingRates: ['EUR'],

@@ -363,6 +363,7 @@ export async function importBundle(
           {
             name: category.name,
             isPaycheck: category.isPaycheck ?? false,
+            incomeClass: category.incomeClass,
             colour: category.colour,
             icon: category.icon,
             ...placement,

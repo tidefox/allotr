@@ -448,7 +448,8 @@ All of these are computed from the ledger and settings when read.
   the three biggest categories, the daily figure, free money and where the
   budgets stand. Spending counts as for budgets: paid from counted accounts,
   without linked bill payments and reconcile adjustments.
-- **Savings rate.** A cycle's change in savings over its paycheck income,
+- **Savings rate.** A cycle's change in savings over its earnings (income
+  of class `earned` or `passive`, [Income classes](#income-classes)),
   in hundredths of a percent, rounded half to even (`savingsRate` on cycle
   summaries). It is negative when savings fell and null when the cycle had no
   income. The web app only formats it.
@@ -582,6 +583,27 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 - Snapshot figures are in the default currency at the rate on the cycle's
   last day. Spending by category counts every expense, whichever account
   paid it.
+
+## Income classes
+
+An income category has a class. `earned` and `passive` (interest) are
+*earnings*; `gift` and `refund` are *other inflows*. Only an income category
+can be anything but `earned`, and the paycheck category is always `earned`.
+A new subcategory takes its parent's class unless told otherwise. The starter
+categories are Paycheck and Other income (`earned`), Interest (`passive`),
+Tax refund (`refund`) and Gifts (`gift`); the user can change the class of
+any income category. A merged category counts as the one it merged into.
+
+- A cycle's `income`, the category summary's `incomeTotal` and the savings
+  rate count earnings only. `otherInflows` and `otherInflowsTotal` carry the
+  rest, and the summary lists their categories apart. A refund is an other
+  inflow; it is not netted against the spending it reverses (budget cover
+  does that for budgets).
+- Balances, net worth, available money and the daily number never read the
+  class: money is money. The extra-income policy is unaffected.
+- The cycle allocation is a view of cash, so its `start` and `paycheck`
+  still count every inflow ([Cycle allocation](#cycle-allocation)).
+- An entry with no category is `earned`.
 
 ## Cycle allocation
 

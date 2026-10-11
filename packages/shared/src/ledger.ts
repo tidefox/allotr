@@ -254,12 +254,27 @@ export type ReconcileBody = z.input<typeof reconcileBodySchema>;
 
 export const categoryKindSchema = z.enum(['expense', 'income', 'transfer']);
 
+/**
+ * What an income category is. `earned` and `passive` count as earnings (a
+ * cycle's income, the savings-rate base); `gift` and `refund` are other
+ * inflows, shown apart. Only an income category can be anything but
+ * `earned`, and a paycheck category is always `earned`.
+ */
+export const incomeClassSchema = z.enum([
+  'earned',
+  'passive',
+  'gift',
+  'refund',
+]);
+export type IncomeClass = z.infer<typeof incomeClassSchema>;
+
 export const categorySchema = z.object({
   id: idSchema,
   name: z.string(),
   kind: categoryKindSchema,
   parentId: idSchema.nullable(),
   isPaycheck: z.boolean(),
+  incomeClass: incomeClassSchema,
   position: z.int(),
   /** A chart series role; null follows the parent, else a default. */
   colour: categoryColourSchema.nullable(),
@@ -284,6 +299,8 @@ export const createCategoryBodySchema = z.object({
   kind: categoryKindSchema.optional(),
   parentId: idSchema.optional(),
   isPaycheck: z.boolean().default(false),
+  /** Defaults to the parent's class, else `earned`. */
+  incomeClass: incomeClassSchema.optional(),
   position: z.int().min(0).max(10_000).optional(),
   colour: categoryColourSchema.optional(),
   icon: categoryIconSchema.optional(),
@@ -294,6 +311,7 @@ export const updateCategoryBodySchema = z
     name: nameSchema.optional(),
     parentId: idSchema.nullable().optional(),
     isPaycheck: z.boolean().optional(),
+    incomeClass: incomeClassSchema.optional(),
     position: z.int().min(0).max(10_000).optional(),
     /** null clears it. */
     colour: categoryColourSchema.nullable().optional(),
@@ -989,11 +1007,16 @@ export const categorySummarySchema = z.object({
   from: localDateSchema,
   to: localDateSchema,
   spending: z.array(categoryGroupSchema),
+  /** Earnings: categories of class `earned` or `passive`. */
   income: z.array(categoryGroupSchema),
+  /** Gifts and refunds: categories of class `gift` or `refund`. */
+  otherInflows: z.array(categoryGroupSchema),
   /** All spending in the period: the sum of the `spending` groups. */
   spendingTotal: moneySchema,
-  /** All income in the period: the sum of the `income` groups. */
+  /** All earnings in the period: the sum of the `income` groups. */
   incomeTotal: moneySchema,
+  /** All other inflows: the sum of the `otherInflows` groups. */
+  otherInflowsTotal: moneySchema,
   /**
    * Days the average runs over: from `from` to the earlier of `to` and
    * today, both counted (at least 1), so a running period is not diluted
@@ -1029,7 +1052,10 @@ export const cycleSummarySchema = z.object({
   /** The last day it covers: the day before it closed, or today. */
   lastDay: localDateSchema,
   payday: localDateSchema,
+  /** Earnings: `earned` and `passive` income. */
   income: moneySchema,
+  /** Gifts and refunds: money that came in but was not earned. */
+  otherInflows: moneySchema,
   /** Every entry in an expense category, whichever account paid. */
   spending: moneySchema,
   /** Available budget at the end of `lastDay`. */
@@ -1037,7 +1063,7 @@ export const cycleSummarySchema = z.object({
   /** Change in the off-budget total over the cycle. */
   savingsNetChange: moneySchema,
   /**
-   * `savingsNetChange` over `income` in hundredths of a percent, rounded
+   * `savingsNetChange` over earnings (`income`) in hundredths of a percent, rounded
    * half to even; null when the cycle had no income.
    */
   savingsRate: z.int().nullable(),

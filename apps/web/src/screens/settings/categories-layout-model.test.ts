@@ -23,6 +23,7 @@ function cat(
     kind: 'expense',
     parentId: null,
     isPaycheck: false,
+    incomeClass: 'earned',
     colour: null,
     icon: null,
     mergedIntoId: null,

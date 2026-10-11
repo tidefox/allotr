@@ -145,6 +145,19 @@ function resolveCategories(
       );
       continue;
     }
+    if (
+      category.incomeClass !== undefined &&
+      category.incomeClass !== 'earned' &&
+      (kind !== 'income' || category.isPaycheck === true)
+    ) {
+      report(
+        [...at, 'incomeClass'],
+        kind === 'income'
+          ? 'The paycheck category is always earned income.'
+          : 'Only an income category has an income class.',
+      );
+      continue;
+    }
     const existingId = existingIds.get(key);
     if (existingId !== undefined) {
       const flag = byId.get(existingId)?.isPaycheck;

@@ -18,8 +18,10 @@ type Summary = {
   to: string;
   spending: Group[];
   income: Group[];
+  otherInflows: Group[];
   spendingTotal: Money;
   incomeTotal: Money;
+  otherInflowsTotal: Money;
   days: number;
   dailyAverage: Money;
   saved: Money;
@@ -280,5 +282,46 @@ describe('GET /v1/reports/categories', () => {
       new URL('/v1/reports/categories', h.server.url),
     );
     expect([401, 403]).toContain(anonymous.status);
+  });
+});
+
+describe('GET /v1/reports/categories income classes', () => {
+  it('counts earnings as income and lists gifts and refunds apart', async () => {
+    const account = await h.bob.post('/v1/accounts', {
+      name: 'Everyday',
+      currency: 'USD',
+      openingBalance: usd(0),
+    });
+    const accountId = (account.body as { id: string }).id;
+    const list = await h.bob.get('/v1/categories');
+    const named = (name: string) =>
+      (
+        list.body as { categories: { id: string; name: string }[] }
+      ).categories.find((c) => c.name === name)?.id;
+    const gifts = named('Gifts');
+    const interest = named('Interest');
+    clock = new Date('2026-03-25T12:00:00Z');
+    for (const [categoryId, amountMinor] of [
+      [gifts, 400000],
+      [interest, 120],
+    ] as const) {
+      const response = await h.bob.post('/v1/transactions', {
+        kind: 'income',
+        accountId,
+        amount: usd(amountMinor),
+        categoryId,
+        occurredOn: '2026-03-25',
+      });
+      expect(response.status).toBe(201);
+    }
+
+    const response = await h.bob.get(
+      '/v1/reports/categories?period=month&month=2026-03',
+    );
+    const body = response.body as Summary;
+    expect(body.incomeTotal).toEqual(usd(120));
+    expect(body.otherInflowsTotal).toEqual(usd(400000));
+    expect(body.income.map((g) => g.categoryId)).toEqual([interest]);
+    expect(body.otherInflows.map((g) => g.categoryId)).toEqual([gifts]);
   });
 });
