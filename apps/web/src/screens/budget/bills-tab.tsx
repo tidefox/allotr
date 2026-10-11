@@ -82,7 +82,7 @@ function PaidRow({ item }: { item: DueItem }) {
 
 // Budget · bills (docs/ui.md §6): the cycle's timeline with set aside, paid
 // and next; the unpaid due dates with a "set aside of" bar; and what was
-// paid this cycle. Figures are the server's (`reserved`, `allocation.paidBills`).
+// paid this cycle. Figures are the server's (`reservedBills`, `allocation.paidBills`).
 export function BillsTab() {
   const today = useQuery(todayQuery);
   const bills = useQuery(billsQuery);
@@ -146,7 +146,7 @@ export function BillsTab() {
           figures={[
             {
               label: t('budgetBills.figures.setAside'),
-              figure: money(today.data.reserved),
+              figure: money(today.data.reservedBills),
             },
             {
               label: t('budgetBills.figures.paid'),

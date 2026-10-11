@@ -11,18 +11,18 @@ import { Stats, type Stat } from '@/components/stats';
 import { EmptyState } from '@/components/states';
 import { useFrameWidth } from '@/components/use-frame-width';
 import { poolsQuery } from '@/lib/budgets';
-import { accountsQuery, todayQuery } from '@/lib/ledger';
+import { accountsQuery } from '@/lib/ledger';
 import { netWorthQuery } from '@/lib/plan';
 import { t } from '@/messages/t';
 import { openNewForm } from '@/shell/command/store';
 import {
   accountGroups,
-  creditStat,
   needsReconcile,
   type AccountsFilter,
 } from './accounts-model.ts';
 import { AccountList, type RowAction } from './account-list.tsx';
 import { AccountDetail } from './detail/account-detail.tsx';
+import { flip } from './detail/detail-model.ts';
 import { ArchiveSheet } from './detail/archive-sheet.tsx';
 import { ReconcileSheet } from './detail/reconcile-sheet.tsx';
 import { MoveSheet } from './move-sheet.tsx';
@@ -58,7 +58,6 @@ export function AccountsScreen() {
   const accounts = useQuery(accountsQuery);
   const pools = useQuery(poolsQuery);
   const worth = useQuery(netWorthQuery(30));
-  const today = useQuery(todayQuery);
   const [open, setOpen] = useState<Open | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -82,11 +81,8 @@ export function AccountsScreen() {
 
   const stats = useMemo<Stat[] | undefined>(() => {
     if (accounts.data === undefined) return undefined;
-    const credit = creditStat(accounts.data.accounts);
-    const looks =
-      today.data === undefined
-        ? undefined
-        : needsReconcile(accounts.data.accounts, today.data.today).length;
+    const owed = accounts.data.totals.creditOwed;
+    const looks = needsReconcile(accounts.data.accounts).length;
     return [
       {
         label: t('accountsScreen.stats.netWorth'),
@@ -108,34 +104,34 @@ export function AccountsScreen() {
       },
       {
         label: t('accountsScreen.stats.credit'),
+        // Owed shows as a positive figure; the API sends it negative.
         figure:
-          credit.kind === 'one' ? (
-            <Amount amount={credit.balance} locale={locale} />
-          ) : credit.kind === 'many' ? (
-            t('accountsScreen.stats.creditMany', { count: credit.count })
-          ) : (
+          owed.amount.amountMinor === 0 ? (
             t('accountsScreen.stats.creditNone')
+          ) : (
+            <Amount amount={flip(owed.amount)} locale={locale} />
           ),
-        sub: t(
-          credit.kind === 'none'
-            ? 'accountsScreen.stats.creditNoneSub'
-            : credit.kind === 'one'
-              ? 'accountsScreen.stats.creditOneSub'
-              : 'accountsScreen.stats.creditManySub',
-        ),
+        sub:
+          owed.missingRates.length > 0
+            ? t('accountsScreen.stats.creditMissing', {
+                currencies: owed.missingRates.join(', '),
+              })
+            : t(
+                owed.amount.amountMinor === 0
+                  ? 'accountsScreen.stats.creditNoneSub'
+                  : 'accountsScreen.stats.creditSub',
+              ),
       },
       {
         label: t('accountsScreen.stats.reconcile'),
         figure:
-          looks === undefined
-            ? '…'
-            : looks === 0
-              ? t('accountsScreen.stats.reconcileNone')
-              : t('accountsScreen.stats.reconcileFigure', { count: looks }),
+          looks === 0
+            ? t('accountsScreen.stats.reconcileNone')
+            : t('accountsScreen.stats.reconcileFigure', { count: looks }),
         sub: t('accountsScreen.stats.reconcileSub'),
       },
     ];
-  }, [accounts.data, worth.data, today.data]);
+  }, [accounts.data, worth.data]);
 
   const act = (action: RowAction, account: AccountView) => {
     if (action === 'transfer')

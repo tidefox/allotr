@@ -7,12 +7,14 @@ import { cn } from '@/lib/utils';
 // come with the colour, so meaning never rests on colour alone (principle 9).
 // It formats what the server produced; it never adds or converts.
 
-export type AmountKind = 'expense' | 'income' | 'transfer' | 'plain';
+export type AmountKind = 'expense' | 'income' | 'transfer' | 'change' | 'plain';
 
 const ARROW: Record<AmountKind, string> = {
   expense: '↓',
   income: '↑',
   transfer: '↔',
+  // A change takes its arrow from the sign; zero has none.
+  change: '',
   plain: '',
 };
 
@@ -32,8 +34,18 @@ export function Amount({
 }) {
   const negative = amount.amountMinor < 0;
   const shown = kind === 'plain' ? amount : { ...amount };
+  const arrow =
+    kind === 'change'
+      ? amount.amountMinor > 0
+        ? '↑'
+        : negative
+          ? '↓'
+          : ''
+      : ARROW[kind];
   const text =
-    kind === 'income' && !negative
+    (kind === 'income' || kind === 'change') &&
+    !negative &&
+    !(kind === 'change' && amount.amountMinor === 0)
       ? `+${formatMoney(shown, mode, locale)}`
       : formatMoney(shown, mode, locale).replace('-', '−');
   const tone =
@@ -51,9 +63,7 @@ export function Amount({
         className,
       )}
     >
-      {ARROW[kind] === '' ? null : (
-        <span aria-hidden="true">{ARROW[kind]} </span>
-      )}
+      {arrow === '' ? null : <span aria-hidden="true">{arrow} </span>}
       {text}
     </span>
   );

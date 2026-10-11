@@ -193,17 +193,15 @@ function NetWorthTile() {
               <Amount amount={data.amount} locale={locale} />
             </div>
             <p className="num truncate text-small text-text-muted">
-              {t('reportsPlan.netWorth.since', {
-                start: formatMoney(first.amount, 'symbol', locale),
-                date: formatDay(first.date, locale),
-              })}
+              <Amount amount={data.change} kind="change" locale={locale} />{' '}
+              {t('reportsPlan.netWorth.change', { days: data.series.length })}
             </p>
           </div>
           <Chart
             label={t('reportsPlan.netWorth.summary', {
               days: data.series.length,
-              start: formatMoney(first.amount, 'symbol', locale),
-              end: formatMoney(last.amount, 'symbol', locale),
+              end: formatMoney(data.amount, 'symbol', locale),
+              change: formatMoney(data.change, 'symbol', locale),
             })}
             series={[
               {

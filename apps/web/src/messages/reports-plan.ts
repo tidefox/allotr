@@ -22,11 +22,11 @@ export const reportsPlan = {
   netWorth: {
     title: 'Net worth',
     subtitle: 'over the period',
-    summary: 'Net worth over {days} days, from {start} to {end}',
+    summary: 'Net worth over {days} days: {end} now, a change of {change}',
     caption: 'Net worth by day',
     day: 'Day',
     total: 'Net worth',
-    since: 'was {start} on {date}',
+    change: 'over {days} days',
     emptyTitle: 'No history yet',
     emptyHint: 'Net worth appears once an account has a balance.',
   },
