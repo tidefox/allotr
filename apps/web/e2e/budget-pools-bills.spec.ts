@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { Money } from '@allotr/shared';
+import { formatMoney } from '../src/lib/format-money.ts';
 import { t } from '../src/messages/t.ts';
 import { expectAccessible } from './a11y.ts';
 import { account, setupSkipped } from './account.ts';
@@ -61,6 +63,12 @@ test('the pools sub-tab shows a tile per pool and the formula', async ({
     openingBalance: usd(250_000),
   });
   await post(page, origin, '/v1/pools', { name: 'Travel', kind: 'spending' });
+  // Borrowed money is reserved too, but it is not a bill.
+  await post(page, origin, '/v1/ious', {
+    direction: 'owed-by-me',
+    accountId: everyday.id,
+    people: [{ person: 'Alex Example', amount: usd(6_000) }],
+  });
   await post(page, origin, '/v1/bills', {
     name: 'Rent',
     amount: usd(90_000),
@@ -121,6 +129,28 @@ test('the bills sub-tab shows the timeline and the unpaid bill', async ({
       name: new RegExp('^' + t('budgetBills.timeline.label')),
     }),
   ).toBeVisible();
+  // Set aside is the bills only, not what is owed to people.
+  const view = (await (await page.request.get('/v1/today')).json()) as {
+    reserved: Money;
+    reservedBills: Money;
+    reservedIous: Money;
+  };
+  expect(view.reservedIous.amountMinor).toBe(6_000);
+  const timeline = page.getByRole('region', {
+    name: t('budgetBills.timeline.title'),
+  });
+  await expect(
+    timeline
+      .getByText(formatMoney(view.reservedBills, 'symbol', 'en'), {
+        exact: true,
+      })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    timeline.getByText(formatMoney(view.reserved, 'symbol', 'en'), {
+      exact: true,
+    }),
+  ).toHaveCount(0);
   // Rent is due on the 28th, so it sits in this cycle or in "not due".
   await expect(page.getByText('Rent').first()).toBeVisible();
   await expect(
