@@ -157,8 +157,9 @@ column setting, 4 from 1500.
     bar. Its figure and left edge are `positive`, and it sits on `canvas`.
   - **On-budget total:** "left of" the cycle's on-budget start, with bills
     set aside and free money in the sub-line.
-  - **Pools:** a grid of cells, each with an icon for its kind (spending or
-    savings) in its series colour, name, balance, a ● if it counts toward
+  - **Pools:** a grid of cells, each with the pool's own icon (else one for
+    its kind, spending or savings) in its colour (the stored one, else the
+    series at its place among the open pools), name, balance, a ● if it counts toward
     the daily number, and a "left of" bar for on-budget pools. Pools that do
     not count show a muted figure. From 600 px they form two rows when
     there are more than two pools. Below 600 px they form one row, four
@@ -308,7 +309,7 @@ settings, so no ledger read is made that the server would refuse.
 | cycle allocation (`w3`) | Allocation component: a 22 px bar, the on-budget-left bracket, and a legend strip of seamed cells (swatch, label, amount, share); `other` shows only when it is not zero. The title bar shows `paycheck $X + carried $Y`; `[plan next payday]` opens the payday plan sheet | `/v1/today` `allocation` (`paycheck` and `carried`, which add up to `start`; six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
 | budgets | A compact, borderless category tree: fold handle or tree line, icon, name (`set aside` muted on set-aside budgets), a bar in the category colour with the period's even-pace tick (none on set-aside budgets), spent (muted), left (a budget past what it had shows its `overflow` with a minus sign; phones drop this column); parent rows are bold throughout; a pace legend line; `[all]` | `/v1/budgets` (`parents`: totals per parent category; `period` for the pace tick) |
 | next 7 days | Every day from today, `sat 10` style; days with nothing show `·`; bill, IOU and payday rows with an icon and amount; `[calendar]` opens Reports › calendar | `/v1/reports/calendar` |
-| pools | Pool rows (kind icon, name, a `daily` checkbox, balance; bold when the pool counts), then a share bar; the title bar shows on-budget; `[manage]` | `/v1/pools` (`shareBp` per pool), `/v1/today` `onBudget` |
+| pools | Pool rows (the pool's icon, else its kind's, in its colour; name, a `daily` checkbox, balance; bold when the pool counts), then a share bar; the title bar shows on-budget; `[manage]` | `/v1/pools` (`shareBp` per pool), `/v1/today` `onBudget` |
 | emergency fund | Figure, `of target · share`, bar, then covers, this cycle and at this rate (`full in N cycles`) | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
 | net worth (2 wide) | Figure and change on one line, area chart over the open cycle (the API's shortest window is a week, so a younger cycle shows that week and says so) | `/v1/insights/net-worth` (`change`) |
 
@@ -321,38 +322,52 @@ settings, so no ledger read is made that the server would refuse.
   `negative` while money is owed; the number of credit accounts) · reconcile
   (how many accounts the server flags `reconcileDue`, never reconciled or not
   for 30 days, with a small muted `need a look`; the first one's name and
-  since when). Nothing is summed in the browser. Credit limits, minimum
-  payments and due dates are not in the API yet, so there is no limit bar.
+  since when). Nothing is summed in the browser. When a credit account has a limit,
+  the credit stat's sub-line adds `limit $X` (the server's
+  `totals.creditLimit`) and a "left of" bar of `totals.creditAvailable` ÷
+  `totals.creditLimit` (the cards with a limit only). A minimum payment is
+  not in the API, so it is not shown.
 - A list tile (`accounts`, subtitle `N accounts in M pools` over the whole
   ledger) with 46 px tree rows: pools → accounts, each pool folding. Credit
   accounts are their own group below the pools and appear only under All
   and Credit; On budget and Off budget show the pools of that kind.
-- A pool header row is semibold: fold handle, the pool's kind icon in its
-  series colour (by its place among the open pools, as in the top bar), the
+- A pool header row is semibold: fold handle, the pool's icon (its stored
+  one, else its kind's) in its colour (stored, else by its place among the
+  open pools, as in the top bar), the
   name with a muted `● daily`, `off-budget` or `owed`, a bar of the cycle
   money left on pools that count (from 600 px; the server's `cycle.left` ÷
   `cycle.start`), the pool's balance (the credit total for credit) and
-  `[+]`, which opens the new-account sheet.
+  `[+]`, which opens the new-account sheet. The credit group's note reads
+  `owed · limit $X` when a card has a limit, and its bar is the free share
+  of that limit.
 - The list tile's title bar has `[+ account]`, which opens a sheet with the
   name, currency, whether it counts toward today (on budget) or is savings
   (off budget) and an optional opening balance. The new account opens.
-- Each account row: muted kind icon, name, sparkline in the pool's colour
-  (`negative` below zero; the last 30 days, fetched when the row scrolls
+- Each account row: kind icon (or the account's own icon; muted, or in the
+  account's own colour when it has one), name, sparkline in the account's or
+  pool's colour (`negative` below zero; the last 30 days, fetched when the row scrolls
   into view; from 600 px), `✓ oct 05` reconciled date (from 1000 px),
   balance (`negative` below zero), `[⋮]` (reconcile, transfer from here,
   rename, move to another pool, archive). The open account is
   `?account=ID`; it shows beside the list from 1000 px and in a sheet named
   after it below.
-- Detail: the `account` tile (primary edge, kind icon, the type as
+- Detail: the `account` tile (primary edge, the account's icon, the type as
   subtitle), or the same content bare in the sheet. The name with its icon
-  in the pool's colour and the balance (26 px), a 30-day balance chart
+  in the account's or pool's colour and the balance (26 px), for a credit
+  account with a limit a "left of" bar and `$X free of $Y` (the server's
+  `creditAvailable` ÷ `creditLimit`), a 30-day balance chart
   growing to fill the pane (area in the pool's colour, axis from zero), a
   key-value list (pool and whether it counts toward daily, type and
-  currency, reconciled date and whether it needs a look), `recent` (newest
+  currency, the credit limit and the next due date for a credit account that
+  has them, reconciled date and whether it needs a look), `recent` (newest
   5: date, category icon, payee, amount; `[all entries]` opens
   `/transactions?accounts=ID&period=all`), then `[✓ reconcile]`
-  `[⇆ transfer]` `[✎ edit]` (rename) and `[⋮]` (move to another pool,
-  archive).
+  `[⇆ transfer]` `[✎ edit]` and `[⋮]` (move to another pool,
+  archive). `[✎ edit]` (and `edit` in the row menu) opens one sheet: the name,
+  the colour and icon pickers (Auto first) and, for a credit account, the
+  limit and the payment due day. The limit and due day are shown only; a due
+  day creates no bill, and the sheet says so. The new-account sheet has no
+  account type, so credit accounts come from import or the API.
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,
   `/v1/transactions?account=`, `/v1/insights/net-worth`.
 
@@ -420,9 +435,9 @@ settings, so no ledger read is made that the server would refuse.
 | Sub-tab | Content |
 |---|---|
 | budgets | Allocation (full width) · budgets (2 wide): the dashboard's budget rows with separators and an action column (`[+ sub]` on a parent header, `[⋮]` on a budget), a `total` row with the server's `totals` spent and left (phones drop left) and the server's totals below in muted rows (daily budgets left, held, spent outside any budget, free), and the pace legend; `[+ budget]` and `[plan next period]` (the payday plan) in the title bar · cover this period: one row per source that covered an entry (`/v1/budgets/covers`), then the first three in the cover order with what each has left |
-| pools | Two columns from 720. One tile per pool (kind icon, `on-budget` / `off-budget`, the primary edge when it counts; `[+ account]`): a `counts toward daily` checkbox and the balance, a "left of" bar in the pool's series colour with "X left of Y this cycle" for on-budget pools, and its accounts as tree rows (kind icon, name, sparkline, balance; a row opens the account) · "how the daily number works" (full width): a short paragraph and the dashboard's formula line |
+| pools | Two columns from 720. One tile per pool (the pool's icon, else its kind's; `on-budget` / `off-budget`, the primary edge when it counts; `[style]` opens a sheet with the colour and icon pickers, Auto first; `[+ account]`): a `counts toward daily` checkbox and the balance, a "left of" bar in the pool's series colour with "X left of Y this cycle" for on-budget pools, and its accounts as tree rows (kind icon, name, sparkline, balance; a row opens the account) · "how the daily number works" (full width): a short paragraph and the dashboard's formula line |
 | bills | Stacked full-width tiles: bills this cycle (the cycle's dates; timeline, then a summary line: set aside, paid, next with its `3d` tag; `[+ bill]`) · upcoming (count of bills; what is still set aside; rows of date, bill icon, name, account, amount, a `3d` / `today` / `2d late` tag) · paid this cycle (the paid total; the same rows with `✓ paid` and `[⋮]` › Show payment) · not due this cycle, when a bill has no date in it |
-| goals | One tile per goal (flag icon, `[⋮]` › Archive): the saved figure with "of $X · N%", a bar in the goal's series colour, where it is held and its date and the server's `monthlyNeeded` ("by apr 2027 · $136.00/mo" / "no date"), and the chart from today to the target (y from zero); an odd last goal fills the row at two columns. `[+ goal]` sits in the title strip, and in the empty state. The weekly review opens from its "needs attention" item; the payday plan from the budgets sub-tab |
+| goals | One tile per goal (flag icon, `[⋮]` › Archive): the saved figure with "of $X · N%" (the server's `progressBp`, rounded down; the bar's width is the ratio of saved to target), a bar in the goal's series colour, where it is held and its date and the server's `monthlyNeeded` ("by apr 2027 · $136.00/mo" / "no date"), and the chart from today to the target (y from zero); an odd last goal fills the row at two columns. `[+ goal]` sits in the title strip, and in the empty state. The weekly review opens from its "needs attention" item; the payday plan from the budgets sub-tab |
 | ious | People (`[+ lend]` `[+ borrow]`): a summary line (owed to you, you owe, `net` signed from the server's `totals.net`), then tall rows with an icon, the name and a muted `owes you` / `you owe` / `even`, one status tag (`9d late`, the next due date, `settled`) and the server's per-person figure (`personOpen`; `N open` when IOUs run both ways) · person (from 1000 px; a sheet below): what they owe or you owe, then the history (each loan and its payments) with `[✓ repay]` `[due date]` `[write off]` `[delete entry]` per IOU; "no person selected" until one is picked |
 | cover order | Side by side 1.6 : 1 from 1000 px, stacked below. Cover order (primary edge): a short paragraph, then numbered rows (icon, name, what it has: free money, `set aside $X` for set-aside budgets, `$X left` otherwise) with `[↑]` `[↓]`; rows also drag · "what happens next": a paragraph and a try-it form (budget, account, amount) that previews where an overspend would take money from **(server preview: `/v1/budgets/cover-preview`)** |
 
@@ -543,6 +558,16 @@ property tests:
    and `average` per group and `totalAverage` on the `series` of
    `/v1/reports/categories`. Each is a server figure the screens print as
    it is; the browser only compares or drops a sign.
+9. **Look and credit details.** Shipped: `colour` and `icon` on pools and
+   accounts (null falls back to the pool's place among the open pools, and
+   for an account to its pool; credit stays `negative`); `creditLimit`,
+   `creditAvailable`, `dueDay` and `nextDueOn` on credit accounts, with
+   `totals.creditLimit` and `totals.creditAvailable` on `/v1/accounts`; and
+   `progressBp` on goals, which replaces the percentage the goal tile worked
+   out in the browser (ADR 0030). A due day is informational and creates no
+   bill. A minimum payment is not stored.
+10. **Household name.** The design's "name · household" line is dropped by
+    decision: the sidebar shows the user's name only.
 
 ## 9. Accessibility
 
