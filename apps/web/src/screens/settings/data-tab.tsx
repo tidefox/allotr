@@ -2,7 +2,8 @@ import { exportFormatSchema } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { BracketButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
+import { Stack, Tile } from '@/components/layout';
+import { IconDownload2Line } from '@/generated/icons';
 import { sessionQuery } from '@/lib/session';
 import { t } from '@/messages/t';
 import { DeleteAccountTile } from './delete-account-tile.tsx';
@@ -14,8 +15,8 @@ const formats = exportFormatSchema.options;
 function ExportTile() {
   return (
     <Tile
-      title={t('settingsData.export.title')}
-      subtitle={t('settings.export.intro')}
+      title={t('settingsData.title')}
+      icon={IconDownload2Line}
       bodyClassName="px-0 pb-0"
     >
       {formats.map((format) => (
@@ -41,7 +42,11 @@ function ExportTile() {
 function HeldTile() {
   const navigate = useNavigate();
   return (
-    <Tile title={t('settingsData.export.title')} bodyClassName="px-0 pb-0">
+    <Tile
+      title={t('settingsData.title')}
+      icon={IconDownload2Line}
+      bodyClassName="px-0 pb-0"
+    >
       <Notice role="status">{t('settingsData.held')}</Notice>
       <div className="px-3 pb-2">
         <BracketButton
@@ -64,7 +69,7 @@ export function DataTab() {
   const session = useQuery(sessionQuery).data;
   if (session === null || session === undefined) return null;
   return (
-    <Grid>
+    <Stack className="min-h-full">
       {session.twoFactorRequired ? (
         <HeldTile />
       ) : (
@@ -74,6 +79,6 @@ export function DataTab() {
         </>
       )}
       <DeleteAccountTile session={session} />
-    </Grid>
+    </Stack>
   );
 }

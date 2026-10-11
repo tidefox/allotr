@@ -2,11 +2,11 @@
 // `settingsData`. Export wording stays under `settings.export` and the
 // delete-account wording under `settings.deleteAccount`.
 export const settingsData = {
+  title: 'data',
   cancel: 'Cancel',
   held: 'Turn on two-factor authentication under Account first. Until then, your ledger data cannot be exported or imported.',
   heldAction: 'go to account',
   export: {
-    title: 'export',
     download: 'download',
     formats: {
       json: 'JSON backup',
@@ -17,7 +17,7 @@ export const settingsData = {
   import: {
     title: 'import',
     subtitle: 'into an empty ledger',
-    row: 'Backup file',
+    row: 'backup file',
     rowHint:
       'Choose a JSON backup. It fills an empty ledger in one step: all of it, or none.',
     choose: 'choose file',

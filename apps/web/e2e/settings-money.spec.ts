@@ -56,10 +56,12 @@ test('the money tab shows every group and passes the checks', async ({
   expect(skip.ok()).toBe(true);
 
   await page.goto('/settings/money');
-  for (const key of ['region', 'payday', 'plan', 'rates'] as const)
-    await expect(region(page, t(`settingsMoney.${key}.title`))).toBeVisible();
+  await expect(region(page, t('settingsMoney.title'))).toBeVisible();
+  await expect(region(page, t('settingsMoney.rates.title'))).toBeVisible();
   await expect(
-    page.getByText(t('settingsMoney.region.displayPlanned')),
+    region(page, t('settingsMoney.title')).getByText(
+      t('settingsShell.planned'),
+    ),
   ).toBeVisible();
   await expectAccessible(page);
   expect(await tooSmall(page)).toEqual([]);
@@ -173,7 +175,7 @@ test('the policies tab edits a number and manages tags', async ({
   const origin = baseURL ?? '';
   await signIn(page, origin);
   await page.goto('/settings/policies');
-  const plan = region(page, t('settingsPolicies.payday.title'));
+  const plan = region(page, t('settingsPolicies.title'));
   await plan
     .getByRole('button', {
       name: new RegExp(t('settingsPolicies.payday.months')),

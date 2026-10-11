@@ -647,9 +647,9 @@ export const en = {
     },
     instance: {
       modes: {
-        invite_only: 'People with an invite link',
-        open: 'Anyone',
-        closed: 'Nobody',
+        invite_only: 'people with an invite link',
+        open: 'anyone',
+        closed: 'nobody',
       },
       modeHints: {
         invite_only: 'Create a link below for each person.',

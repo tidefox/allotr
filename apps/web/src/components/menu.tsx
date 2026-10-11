@@ -19,7 +19,9 @@ import { cn } from '@/lib/utils';
 import {
   Brackets,
   bracketClass,
+  SettingRowFace,
   menuButtonClass,
+  settingRowClass,
   stripButtonClass,
 } from './buttons.tsx';
 import { menuPresentation } from './menu-placement.ts';
@@ -93,15 +95,25 @@ export const MenuRadioItem = MenuItem;
 
 export function MenuSection({
   title,
+  note = false,
   children,
 }: {
   title?: string;
+  /** The title is a sentence of explanation, not a group name. */
+  note?: boolean;
   children: ReactNode;
 }) {
   return (
     <AriaMenuSection>
       {title === undefined ? null : (
-        <Header className="px-3 pt-2 pb-1 text-tiny font-semibold tracking-wide text-text-muted uppercase">
+        <Header
+          className={cn(
+            'px-3 pt-2 pb-1 text-text-muted',
+            note
+              ? 'font-ui text-small'
+              : 'text-tiny font-semibold tracking-wide uppercase',
+          )}
+        >
           {title}
         </Header>
       )}
@@ -133,9 +145,11 @@ export type MenuButtonProps = {
    * `bordered` (default): muted label, value and ▾ in a box (`ddb`). `strip`: a
    * full-height strip button showing icon, value and ▾, with the label as
    * its accessible name; the value hides on phones. `bracket`: `[⋮]`, the
-   * icon in brackets with the label as its accessible name.
+   * icon in brackets with the label as its accessible name. `row`: a full
+   * width list row (`r click`): muted label, the value on the right and a
+   * faint ▾.
    */
-  variant?: 'bordered' | 'strip' | 'bracket';
+  variant?: 'bordered' | 'strip' | 'bracket' | 'row';
   /** Strip only: false leaves out the ▾ (the mockup's period and filter). */
   chevron?: boolean;
   /** Strip only: a filled count after the text, for example active filters. */
@@ -174,6 +188,7 @@ export function MenuButton({
 
   const strip = variant === 'strip';
   const bracket = variant === 'bracket';
+  const row = variant === 'row';
   // The strip face shows only the value, so the name carries both (the
   // visible text stays part of the name, WCAG 2.5.3).
   const stripName = [value === undefined ? label : `${label}: ${value}`, badge]
@@ -183,7 +198,9 @@ export function MenuButton({
     ? stripButtonClass
     : bracket
       ? bracketClass
-      : menuButtonClass;
+      : row
+        ? settingRowClass
+        : menuButtonClass;
   const named = strip
     ? { 'aria-label': stripName }
     : bracket
@@ -191,6 +208,8 @@ export function MenuButton({
       : {};
   const face = bracket ? (
     <Brackets icon={Icon} />
+  ) : row ? (
+    <SettingRowFace label={label} value={value} />
   ) : strip ? (
     <>
       {Icon === undefined ? null : <Icon className="size-[1.15em] shrink-0" />}
