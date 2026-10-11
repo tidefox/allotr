@@ -5,7 +5,7 @@ import {
   type CalendarView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { upcomingItems } from './next-seven-days.ts';
+import { upcomingDays, upcomingItems } from './next-seven-days.ts';
 
 const m = (n: number) => money(n, 'USD');
 const day = (date: string, over: object = {}) => ({
@@ -55,6 +55,32 @@ describe('upcomingItems', () => {
       ['2026-03-11', 'payday', 'Payday', undefined],
       ['2026-03-11', 'bill', 'Rent', -1200],
       ['2026-03-14', 'iou', 'Sam', 300],
+    ]);
+  });
+});
+
+describe('upcomingDays', () => {
+  it('lists all seven days, empty ones included', () => {
+    const days = upcomingDays(
+      [
+        {
+          key: 'a',
+          date: localDate('2026-03-12'),
+          kind: 'payday',
+          label: 'Payday',
+          amount: null,
+        },
+      ],
+      today,
+    );
+    expect(days.map((d) => [d.date, d.items.length])).toEqual([
+      ['2026-03-10', 0],
+      ['2026-03-11', 0],
+      ['2026-03-12', 1],
+      ['2026-03-13', 0],
+      ['2026-03-14', 0],
+      ['2026-03-15', 0],
+      ['2026-03-16', 0],
     ]);
   });
 });

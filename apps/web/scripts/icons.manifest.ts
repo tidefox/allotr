@@ -106,4 +106,11 @@ export const INTERFACE_ICONS = [
   'bar-chart-box-line',
   'sun-line',
   'calendar-check-line',
+  'funds-line',
+  'file-list-3-line',
+  'calendar-2-line',
+  'stack-line',
+  'shield-check-line',
+  'checkbox-line',
+  'checkbox-blank-line',
 ] as const;

@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
 import { Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
-import { IconMoneyDollarCircleLine } from '@/generated/icons';
+import {
+  IconFileList3Line,
+  IconMoneyDollarCircleLine,
+} from '@/generated/icons';
 import { seriesNumber } from '@/lib/category-style';
+import { formatMoney } from '@/lib/format-money';
 import {
   accountsQuery,
   categoriesQuery,
@@ -21,14 +24,14 @@ import { dashboardEntries } from './todays-entries-model.ts';
 const locale = 'en';
 
 const columns: readonly RowColumn[] = [
-  { width: '2.75rem' },
+  { width: '5ch' },
+  { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
-  { width: 'minmax(0, 0.8fr)', from: 'medium' },
-  // A floor, so columns line up from row to row; a bigger amount still fits.
-  { width: 'minmax(7.5rem, auto)' },
+  { width: 'auto' },
 ];
 
-// Today's entries (docs/ui.md §6): time, icon, payee, category, amount.
+// Today's entries (docs/ui.md §6): time, icon, payee with its category,
+// amount; the title bar counts them and shows the server's spent today.
 export function TodaysEntriesTile() {
   const today = useQuery(todayQuery);
   const entries = useQuery(entriesOnQuery(today.data?.today));
@@ -72,14 +75,14 @@ export function TodaysEntriesTile() {
   return (
     <Tile
       title={title}
-      subtitle={rows.length === 0 ? undefined : String(rows.length)}
-      actions={
-        <Link
-          to="/transactions"
-          className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
-        >
-          {t('dashboardTiles.todaysEntries.all')}
-        </Link>
+      icon={IconFileList3Line}
+      subtitle={
+        rows.length === 0 || today.data === undefined
+          ? undefined
+          : t('dashboardTiles.todaysEntries.subtitle', {
+              count: rows.length,
+              spent: formatMoney(today.data.spentToday, 'symbol', locale),
+            })
       }
       bodyClassName="px-0 pb-0"
     >
@@ -101,21 +104,23 @@ export function TodaysEntriesTile() {
                   <span key="time" className="num text-text-muted">
                     {row.time ?? t('dashboardTiles.todaysEntries.noTime')}
                   </span>,
-                  <span key="payee" className="flex items-center gap-2">
-                    {row.style?.icon == null ? (
-                      <IconMoneyDollarCircleLine className="size-4 shrink-0 text-text-muted" />
-                    ) : (
-                      <CategoryIcon
-                        name={row.style.icon}
-                        {...(colour === undefined ? {} : { color: colour })}
-                      />
+                  row.style?.icon == null ? (
+                    <IconMoneyDollarCircleLine
+                      key="icon"
+                      className="size-4 text-text-muted"
+                    />
+                  ) : (
+                    <CategoryIcon
+                      key="icon"
+                      name={row.style.icon}
+                      {...(colour === undefined ? {} : { color: colour })}
+                    />
+                  ),
+                  <span key="payee" className="font-sans">
+                    {row.payee ?? t('dashboardTiles.todaysEntries.untitled')}
+                    {row.category === null ? null : (
+                      <span className="text-text-muted"> {row.category}</span>
                     )}
-                    <span className="truncate font-sans">
-                      {row.payee ?? t('dashboardTiles.todaysEntries.untitled')}
-                    </span>
-                  </span>,
-                  <span key="category" className="font-sans text-text-muted">
-                    {row.category ?? ''}
                   </span>,
                   row.amount === null ? null : (
                     <Amount

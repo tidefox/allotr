@@ -72,3 +72,19 @@ export function upcomingItems(
   }
   return items;
 }
+
+export type UpcomingDay = Readonly<{
+  date: LocalDate;
+  items: readonly UpcomingItem[];
+}>;
+
+/** Every day from `today` through six days later, each with its items. */
+export function upcomingDays(
+  items: readonly UpcomingItem[],
+  today: LocalDate,
+): readonly UpcomingDay[] {
+  return Array.from({ length: 7 }, (_, offset) => {
+    const date = addDays(today, offset);
+    return { date, items: items.filter((item) => item.date === date) };
+  });
+}

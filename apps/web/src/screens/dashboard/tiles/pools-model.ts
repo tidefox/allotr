@@ -1,4 +1,4 @@
-import type { Money, PoolListItemView } from '@allotr/shared';
+import type { Money, PoolKind, PoolListItemView } from '@allotr/shared';
 import type { SeriesColor } from '@/components/bars';
 import { barFraction } from '@/shell/summary-math';
 
@@ -19,6 +19,7 @@ const COLORS: readonly SeriesColor[] = [
 export type PoolRow = Readonly<{
   id: string;
   name: string;
+  kind: PoolKind;
   balance: Money;
   /** The pool's own daily switch. */
   checked: boolean;
@@ -36,6 +37,7 @@ export function poolRows(pools: readonly PoolListItemView[]): PoolRow[] {
   return open.map((p, index) => ({
     id: p.id,
     name: p.name,
+    kind: p.kind,
     balance: p.balance.amount,
     checked: p.countsTowardDaily,
     fixed: p.defaultFor === 'on',

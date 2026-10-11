@@ -113,13 +113,14 @@ test('the dashboard shows every tile with seeded data', async ({
   const allocation = page.getByRole('region', {
     name: t('dashboardTiles.allocation.title'),
   });
+  // Nothing here is unexplained, so the `other` part of zero is left out
+  // and the other five each print the server's share.
   await expect(
     allocation.getByText(t('dashboardTiles.allocation.other'), {
       exact: true,
     }),
-  ).toBeVisible();
-  // Each part prints the server's share, so all six show a percentage.
-  await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(6);
+  ).toHaveCount(0);
+  await expect(allocation.getByText(/^(\d+|<1)%$/)).toHaveCount(5);
   const fund = page.getByRole('region', {
     name: t('dashboardTiles.emergencyFund.title'),
   });
@@ -132,8 +133,9 @@ test('the dashboard shows every tile with seeded data', async ({
   const worth = page.getByRole('region', {
     name: t('dashboardTiles.netWorth.title'),
   });
+  // The cycle opened today, so the chart shows the shortest window.
   await expect(
-    worth.getByText(t('dashboardTiles.netWorth.change', { days: 30 })),
+    worth.getByText(t('dashboardTiles.netWorth.subtitleDays', { days: 7 })),
   ).toBeVisible();
   await expectAccessible(page);
 });

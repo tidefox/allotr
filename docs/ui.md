@@ -297,15 +297,15 @@ settings, so no ledger read is made that the server would refuse.
 
 | Tile | Content | Data |
 |---|---|---|
-| this cycle | Key figures (spent day-to-day, which leaves bills out, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
-| needs attention | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
-| today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
-| cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
-| budgets | Category tree: parent rows with the server's totals, children under them, each with bar and left | `/v1/budgets` (`parents`: totals per parent category) |
-| next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
-| pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` (`shareBp` per pool) |
-| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
-| net worth | Figure, change, area chart | `/v1/insights/net-worth` (`change`) |
+| this cycle (2 × 2) | Key figures (spent day-to-day, which leaves bills out; even pace; pace, the word under or over; days over of days so far), a spent-vs-even-pace chart (nice y ticks, weekly x ticks with today, a dotted today line, end labels on both lines) with its legend line, and the formula line built from server figures only: on-budget − bills (− owed) = free (− set aside) ÷ days = daily; `[history]` opens Reports › cycles | `/v1/today`, `/v1/cycles/{openedOn}/days` |
+| needs attention | Tag (`today` / `Nd late` for a due bill, `payday`, `rate`, `review`, `iou`), text, `[action]`, `[⋮]`; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
+| today's entries | Time, category icon, payee with its category muted, amount; the title bar shows the count and `spentToday` | `/v1/transactions?on=today`, `/v1/today` |
+| cycle allocation (`w3`) | Allocation component: a 22 px bar, the on-budget-left bracket, and a legend strip of seamed cells (swatch, label, amount, share); `other` shows only when it is not zero. The title bar shows `start`; `[plan next payday]` opens the payday plan sheet | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
+| budgets | A compact, borderless category tree: fold handle or tree line, icon, name (`set aside` muted on set-aside budgets), a bar in the category colour with the period's even-pace tick (none on set-aside budgets), spent, left (a budget past what it had shows its `overflow` with a minus sign; phones drop this column); a pace legend line; `[all]` | `/v1/budgets` (`parents`: totals per parent category; `period` for the pace tick) |
+| next 7 days | Every day from today, `sat 10` style; days with nothing show `·`; bill, IOU and payday rows with an icon and amount; `[calendar]` opens Reports › calendar | `/v1/reports/calendar` |
+| pools | Pool rows (kind icon, name, a `daily` checkbox, balance; bold when the pool counts), then a share bar; the title bar shows on-budget; `[manage]` | `/v1/pools` (`shareBp` per pool), `/v1/today` `onBudget` |
+| emergency fund | Figure, `of target · share`, bar, then covers, this cycle and at this rate (`full in N cycles`) | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
+| net worth (2 wide) | Figure and change on one line, area chart over the open cycle (the API's shortest window is a week, so a younger cycle shows that week and says so) | `/v1/insights/net-worth` (`change`) |
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 

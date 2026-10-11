@@ -3,6 +3,7 @@ import { Grid, Tile } from '@/components/layout';
 import { EmptyState } from '@/components/states';
 import { useLedgerReady } from '@/lib/session';
 import { t } from '@/messages/t';
+import { BudgetSheets } from '@/screens/budget/sheets/budget-sheets';
 import { BudgetsTile } from './tiles/budgets.tsx';
 import { CycleAllocationTile } from './tiles/cycle-allocation.tsx';
 import { EmergencyFundTile } from './tiles/emergency-fund.tsx';
@@ -20,17 +21,20 @@ export function Dashboard() {
   // reads, so no tile mounts (and queries) until the hold is over.
   if (!useLedgerReady()) return <HeldForTwoFactor />;
   return (
-    <Grid>
-      <ThisCycleTile />
-      <NeedsAttentionTile />
-      <TodaysEntriesTile />
-      <CycleAllocationTile />
-      <BudgetsTile />
-      <NextSevenDaysTile />
-      <PoolsTile />
-      <EmergencyFundTile />
-      <NetWorthTile />
-    </Grid>
+    <>
+      <Grid className="min-h-full">
+        <ThisCycleTile />
+        <NeedsAttentionTile />
+        <TodaysEntriesTile />
+        <CycleAllocationTile />
+        <BudgetsTile />
+        <NextSevenDaysTile />
+        <PoolsTile />
+        <EmergencyFundTile />
+        <NetWorthTile />
+      </Grid>
+      <BudgetSheets />
+    </>
   );
 }
 
