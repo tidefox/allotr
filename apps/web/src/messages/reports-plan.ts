@@ -4,8 +4,7 @@ export const reportsPlan = {
   loadFailed: 'This could not be loaded.',
   retry: 'Try again',
   budget: {
-    title: 'budget against actual',
-    subtitle: 'this period',
+    title: 'budget vs actual',
     barLabel: '{name} spent',
     emptyTitle: 'No budgets yet',
     emptyHint:
@@ -14,6 +13,7 @@ export const reportsPlan = {
   rate: {
     title: 'savings rate',
     subtitle: 'per cycle',
+    inProgress: '{cycle} in progress',
     summary: 'Savings rate per cycle',
     emptyTitle: 'No cycles yet',
     emptyHint: 'Rates appear once a paycheck has opened a cycle.',
@@ -21,7 +21,6 @@ export const reportsPlan = {
   },
   netWorth: {
     title: 'net worth',
-    subtitle: 'over the period',
     summary: 'Net worth over {days} days: {end} now, a change of {change}',
     caption: 'Net worth by day',
     day: 'Day',
@@ -31,25 +30,22 @@ export const reportsPlan = {
     emptyHint: 'Net worth appears once an account has a balance.',
   },
   cycles: {
-    thisCycle: 'This cycle',
+    thisCycle: 'this cycle',
+    closed: '{count} closed',
     spent: {
       title: 'spent per cycle',
-      subtitle: 'newest cycles',
       summary: 'Spent per cycle',
     },
     saved: {
       title: 'saved per cycle',
-      subtitle: 'change in savings',
       summary: 'Saved per cycle',
     },
     table: {
       title: 'past cycles',
-      subtitle: 'newest first',
-      cycle: 'Cycle',
-      income: 'Income',
-      spent: 'Spent',
-      saved: 'Saved',
-      rate: 'Rate',
+      cycle: 'cycle',
+      spent: 'spent',
+      saved: 'saved',
+      rate: 'rate',
       amended: 'amended',
     },
     emptyTitle: 'No cycles yet',

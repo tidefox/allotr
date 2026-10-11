@@ -3,18 +3,22 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { localDate, type Money } from '@allotr/shared';
 import { Amount } from '@/components/amount';
-import { Bar, ShareBar, SkeletonTile } from '@/components/bars';
+import { formatMoney } from '@/lib/format-money';
+import { Bar, seriesBg, ShareBar, SkeletonTile } from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
+import { Grid, Stack, Tile } from '@/components/layout';
 import { Row, TreeRow } from '@/components/row';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { Stats, type Stat } from '@/components/stats';
+import { ChartLegend } from '@/charts/chart';
 import { Columns } from '@/charts/columns';
 import {
-  IconArrowDownLine,
-  IconArrowUpLine,
-  IconBankLine,
-  IconCalendarLine,
+  IconBarChartBoxLine,
+  IconCalendar2Line,
+  IconFileList3Line,
+  IconMoneyDollarCircleLine,
+  IconPieChart2Line,
+  IconSafe2Line,
 } from '@/generated/icons';
 import { budgetsQuery } from '@/lib/budgets';
 import {
@@ -22,11 +26,14 @@ import {
   categoriesQuery,
   cycleDaysQuery,
   cyclesQuery,
+  todayQuery,
 } from '@/lib/ledger';
+import { formatRate } from './cycles-model.ts';
+import { periodPace } from '../dashboard/tiles/budgets.ts';
 import { seriesNumber } from '@/lib/category-style';
 import { t } from '@/messages/t';
 import { shareText } from '@/lib/share-text';
-import { PeriodMenu } from './period-menu.tsx';
+import { PeriodToolbar } from './period-menu.tsx';
 import type { ReportPeriod } from './reports-search.ts';
 import { reportPayeesQuery, reportCategoriesQuery } from './summary-queries.ts';
 import {
@@ -35,6 +42,7 @@ import {
   cycleDayFigures,
   cycleOf,
   dayChart,
+  fractionOf,
   monthDayFigures,
   reportParams,
   shareSegments,
@@ -49,18 +57,21 @@ const locale = 'en';
 // Only a placeholder key for the month read, which waits until dates exist.
 const FALLBACK_DAY = localDate('2000-01-01');
 
+// Lead is added by the row; icon, name, bar, spent, budget, share. Phones
+// drop the budget column and narrow the bar, as the locked design does.
 const categoryColumns = [
+  { width: '1.125rem' },
   { width: 'minmax(0,1fr)' },
-  { width: '5rem', from: 'medium' },
-  { width: '5.5rem' },
-  { width: '5.5rem', from: 'medium' },
-  { width: '3.5rem', from: 'wide' },
+  { width: 'minmax(3.125rem,1.8fr)', at: { compact: 'minmax(1.875rem,1fr)' } },
+  { width: '11ch', at: { compact: '10ch' } },
+  { width: '10ch', from: 'medium' },
+  { width: '5ch', at: { compact: '4ch' } },
 ] as const;
 
 const payeeColumns = [
   { width: 'minmax(0,1fr)' },
-  { width: '5rem', from: 'medium' },
-  { width: '6rem' },
+  { width: '4ch' },
+  { width: 'auto' },
 ] as const;
 
 /** A tile body for a failed read, with a retry. */
@@ -73,6 +84,10 @@ export function ReportFailed({ retry }: { retry: () => void }) {
   );
 }
 
+// The sub-tab's stack: the toolbar, then stats and tiles whose seams are
+// the stack's own.
+export const tabGridClass = 'border-t-0 border-l-0';
+
 // Summary (docs/ui.md §6): the period's figures, spending by category, top
 // payees and spending per day. Every amount is the server's.
 export function SummaryTab() {
@@ -80,9 +95,9 @@ export function SummaryTab() {
   const params = reportParams(period, range);
   if (ready && params === null) {
     return (
-      <>
-        <PeriodMenu />
-        <Grid>
+      <Stack className="min-h-full">
+        <PeriodToolbar />
+        <Grid className={tabGridClass}>
           <Tile title={t('reportsShell.period.last-cycle')} span="full">
             <EmptyState
               title={t('reportsShell.period.last-cycle')}
@@ -90,37 +105,38 @@ export function SummaryTab() {
             />
           </Tile>
         </Grid>
-      </>
+      </Stack>
     );
   }
   if (!ready || params === null) {
     return (
-      <>
-        <PeriodMenu />
-        <Grid>
+      <Stack className="min-h-full">
+        <PeriodToolbar />
+        <Grid className={tabGridClass}>
           <SkeletonTile span="full" />
           <SkeletonTile span={2} rows={5} />
           <SkeletonTile rows={4} />
         </Grid>
-      </>
+      </Stack>
     );
   }
   return (
-    <>
-      <PeriodMenu />
+    <Stack className="min-h-full">
+      <PeriodToolbar />
       <StatsRow params={params} />
-      <Grid>
+      <Grid className={tabGridClass}>
         <CategoriesTile params={params} />
         <PayeesTile params={params} period={period} />
         <DaysTile params={params} />
       </Grid>
-    </>
+    </Stack>
   );
 }
 
 function StatsRow({ params }: { params: ReportParams }) {
   const { period } = useReportRange();
   const cycles = useQuery(cyclesQuery);
+  const today = useQuery(todayQuery);
   const summary = useQuery(reportCategoriesQuery(params, 1));
   if (cycles.data === undefined || summary.data === undefined) {
     return <SkeletonTile span="full" rows={2} />;
@@ -136,34 +152,78 @@ function StatsRow({ params }: { params: ReportParams }) {
           }),
         };
   const money = (amount: Money) => <Amount amount={amount} locale={locale} />;
+  // The open cycle's allocation and daily number; a closed period has none.
+  const running = period === 'cycle' ? today.data : undefined;
+  const rate = cycle?.savingsRate ?? null;
   const stats: Stat[] = [
     {
-      label: t('reportsSummary.stats.spent'),
-      icon: IconArrowDownLine,
+      label: t('reportsSummary.stats.spent', {
+        period: t(`reportsShell.period.${period}`),
+      }),
+      icon: IconBarChartBoxLine,
       figure: money(figures.spent),
       tone: 'primary',
+      ...(running === undefined
+        ? {}
+        : {
+            sub: t('reportsSummary.stats.inclBills', {
+              amount: formatMoney(
+                running.allocation.paidBills,
+                'symbol',
+                locale,
+              ),
+            }),
+          }),
       ...missing,
     },
     {
       label: t('reportsSummary.stats.income'),
-      icon: IconArrowUpLine,
+      icon: IconMoneyDollarCircleLine,
       figure: money(figures.income),
+      figureTone: 'positive',
       ...missing,
     },
     {
       label: t('reportsSummary.stats.saved'),
-      icon: IconBankLine,
-      figure: money(figures.saved),
+      icon: IconSafe2Line,
+      // A cycle carries the server's rate; a month has only the amount.
+      figure: rate === null ? money(figures.saved) : formatRate(rate),
+      ...(rate === null
+        ? {}
+        : {
+            sub: t('reportsSummary.stats.toSavings', {
+              amount: formatMoney(figures.saved, 'symbol', locale),
+            }),
+            bar: {
+              fraction: Math.max(0, rate) / 10000,
+              label: t('reportsSummary.stats.savedBar'),
+            },
+          }),
       ...missing,
     },
     {
       label: t('reportsSummary.stats.average'),
-      icon: IconCalendarLine,
+      icon: IconCalendar2Line,
       figure: money(figures.average),
+      ...(running === undefined
+        ? {}
+        : {
+            sub: t('reportsSummary.stats.dailyNumber', {
+              amount: formatMoney(running.todayAllowance, 'symbol', locale),
+            }),
+            bar: {
+              fraction: fractionOf(
+                figures.average.amountMinor,
+                running.todayAllowance.amountMinor,
+              ),
+              label: t('reportsSummary.stats.averageBar'),
+              fillClassName: 'bg-primary',
+            },
+          }),
       ...missing,
     },
   ];
-  return <Stats stats={stats} />;
+  return <Stats stats={stats} className={tabGridClass} />;
 }
 
 function CategoriesTile({ params }: { params: ReportParams }) {
@@ -182,6 +242,7 @@ function CategoriesTile({ params }: { params: ReportParams }) {
             categories.data?.categories ?? [],
             budgetsByCategory(
               budgets.data?.budgets ?? [],
+              budgets.data?.parents ?? [],
               period,
               budgets.data?.periodRule ?? 'cycle',
             ),
@@ -190,7 +251,11 @@ function CategoriesTile({ params }: { params: ReportParams }) {
   );
   if (summary.isError) {
     return (
-      <Tile title={t('reportsSummary.categories.title')} span={2}>
+      <Tile
+        title={t('reportsSummary.categories.title')}
+        icon={IconPieChart2Line}
+        span={2}
+      >
         <ReportFailed
           retry={() => {
             void summary.refetch();
@@ -201,6 +266,10 @@ function CategoriesTile({ params }: { params: ReportParams }) {
   }
   if (summary.data === undefined) return <SkeletonTile span={2} rows={5} />;
   const shown = visibleRows(rows, folded);
+  const groups = [
+    ...new Set(rows.filter((r) => r.role === 'parent').map((r) => r.group)),
+  ];
+  const allFolded = groups.length > 0 && groups.every((g) => folded.has(g));
   const toggle = (group: string) => {
     setFolded((current) => {
       const next = new Set(current);
@@ -208,13 +277,31 @@ function CategoriesTile({ params }: { params: ReportParams }) {
       return next;
     });
   };
-  const top = rows.filter((r) => r.role === 'parent' || r.role === 'flat');
+  // The even-pace tick only means something against this period's budgets.
+  const pace =
+    budgets.data === undefined || !rows.some((r) => r.budget !== null)
+      ? null
+      : periodPace(budgets.data);
   return (
     <Tile
       title={t('reportsSummary.categories.title')}
-      subtitle={t('reportsSummary.categories.subtitle', { count: top.length })}
+      icon={IconPieChart2Line}
+      subtitle={t('reportsSummary.categories.subtitle')}
       span={2}
       bodyClassName="px-0 pb-0"
+      actions={
+        groups.length === 0 ? undefined : (
+          <BracketButton
+            onPress={() => {
+              setFolded(allFolded ? new Set() : new Set(groups));
+            }}
+          >
+            {allFolded
+              ? t('reportsSummary.categories.expandAll')
+              : t('reportsSummary.categories.collapseAll')}
+          </BracketButton>
+        )
+      }
     >
       {rows.length === 0 ? (
         <EmptyState
@@ -223,8 +310,9 @@ function CategoriesTile({ params }: { params: ReportParams }) {
         />
       ) : (
         <>
-          <div className="px-3 pb-2 pt-2">
+          <div className="px-3 pb-2.5">
             <ShareBar
+              className="h-3.5"
               segments={shareSegments(rows)}
               label={t('reportsSummary.categories.share')}
             />
@@ -233,12 +321,28 @@ function CategoriesTile({ params }: { params: ReportParams }) {
             <CategoryLine
               key={row.key}
               row={row}
+              pace={pace?.fraction}
               folded={folded.has(row.group)}
               onToggle={() => {
                 toggle(row.group);
               }}
             />
           ))}
+          {pace === null ? null : (
+            <ChartLegend
+              className="px-3"
+              items={[
+                {
+                  label: t('reportsSummary.categories.pace', {
+                    day: pace.day,
+                    length: pace.length,
+                  }),
+                  mark: 'tick',
+                  color: 'bg-text',
+                },
+              ]}
+            />
+          )}
         </>
       )}
     </Tile>
@@ -247,41 +351,61 @@ function CategoriesTile({ params }: { params: ReportParams }) {
 
 function CategoryLine({
   row,
+  pace,
   folded,
   onToggle,
 }: {
   row: CategoryRow;
+  pace: number | undefined;
   folded: boolean;
   onToggle: () => void;
 }) {
   const share = shareText(row.shareBp);
   const cells = [
-    <span key="name" className="flex min-w-0 items-center gap-2">
-      {row.icon === null ? (
-        <span aria-hidden="true" className="size-4 shrink-0" />
-      ) : (
-        <CategoryIcon name={row.icon} color={seriesNumber(row.colour)} />
-      )}
-      <span className="truncate font-sans">{row.name}</span>
+    row.icon === null ? (
+      <span key="icon" aria-hidden="true" className="block size-4" />
+    ) : (
+      <CategoryIcon
+        key="icon"
+        name={row.icon}
+        color={seriesNumber(row.colour)}
+      />
+    ),
+    <span key="name" className="font-sans">
+      {row.name}
     </span>,
-    <Bar
-      key="bar"
-      value={row.fraction}
-      over={row.over}
-      label={t('reportsSummary.categories.barLabel', {
-        name: row.name,
-        share,
-      })}
-    />,
-    <Amount key="spent" amount={row.amount} locale={locale} />,
     row.budget === null ? (
-      <span key="budget" className="text-text-muted">
+      <span key="bar" className="text-tiny text-text-muted">
+        {t('reportsSummary.categories.noBudget')}
+      </span>
+    ) : (
+      // Room for the pace tick, which reaches past the track.
+      <div key="bar" className="py-[3px]">
+        <Bar
+          value={row.budgetFraction}
+          over={row.over}
+          pace={pace}
+          fillClassName={seriesBg[row.colour]}
+          label={t('reportsSummary.categories.barLabel', {
+            name: row.name,
+            share,
+          })}
+        />
+      </div>
+    ),
+    <span key="spent" className="block text-right">
+      <Amount amount={row.amount} locale={locale} />
+    </span>,
+    row.budget === null ? (
+      <span key="budget" className="block text-right text-text-muted">
         —
       </span>
     ) : (
-      <Amount key="budget" amount={row.budget} locale={locale} />
+      <span key="budget" className="block text-right text-text-muted">
+        <Amount amount={row.budget} locale={locale} />
+      </span>
     ),
-    <span key="share" className="num text-text-muted">
+    <span key="share" className="num block text-right text-text-muted">
       {share}
     </span>,
   ];
@@ -301,6 +425,7 @@ function CategoryLine({
       label={t('reportsSummary.categories.fold', { name: row.name })}
       columns={categoryColumns}
       cells={cells}
+      {...(row.role === 'parent' ? { className: 'font-semibold' } : {})}
     />
   );
 }
@@ -316,7 +441,7 @@ function PayeesTile({
   const payees = useQuery(reportPayeesQuery(params));
   if (payees.isError) {
     return (
-      <Tile title={t('reportsSummary.payees.title')}>
+      <Tile title={t('reportsSummary.payees.title')} icon={IconFileList3Line}>
         <ReportFailed
           retry={() => {
             void payees.refetch();
@@ -333,7 +458,7 @@ function PayeesTile({
   return (
     <Tile
       title={t('reportsSummary.payees.title')}
-      subtitle={t('reportsSummary.payees.subtitle')}
+      icon={IconFileList3Line}
       bodyClassName="px-0 pb-0"
     >
       {sections.length === 0 ? (
@@ -368,10 +493,15 @@ function PayeesTile({
                   <span key="n" className="font-sans">
                     {p.payee}
                   </span>,
-                  <span key="c" className="num text-text-muted">
+                  <span
+                    key="c"
+                    className="num block text-right text-text-muted"
+                  >
                     {t('reportsSummary.payees.entries', { count: p.count })}
                   </span>,
-                  <Amount key="t" amount={p.total} locale={locale} />,
+                  <span key="t" className="block text-right">
+                    <Amount amount={p.total} locale={locale} />
+                  </span>,
                 ]}
               />
             ))}
@@ -382,16 +512,17 @@ function PayeesTile({
                   <span key="n" className="font-sans text-text-muted">
                     {t('reportsSummary.payees.unnamed')}
                   </span>,
-                  <span key="c" className="num text-text-muted">
+                  <span
+                    key="c"
+                    className="num block text-right text-text-muted"
+                  >
                     {t('reportsSummary.payees.entries', {
                       count: section.unnamed.count,
                     })}
                   </span>,
-                  <Amount
-                    key="t"
-                    amount={section.unnamed.total}
-                    locale={locale}
-                  />,
+                  <span key="t" className="block text-right">
+                    <Amount amount={section.unnamed.total} locale={locale} />
+                  </span>,
                 ]}
               />
             )}
@@ -419,7 +550,11 @@ function DaysTile({ params }: { params: ReportParams }) {
   const source = params.period === 'cycle' ? days : calendar;
   if (source.isError) {
     return (
-      <Tile title={t('reportsSummary.days.title')} span="full">
+      <Tile
+        title={t('reportsSummary.days.title')}
+        icon={IconBarChartBoxLine}
+        span="full"
+      >
         <ReportFailed
           retry={() => {
             void source.refetch();
@@ -441,13 +576,19 @@ function DaysTile({ params }: { params: ReportParams }) {
   return (
     <Tile
       title={t('reportsSummary.days.title')}
+      icon={IconBarChartBoxLine}
       subtitle={
-        params.period === 'cycle'
-          ? t('reportsSummary.days.subtitle')
-          : undefined
+        chart.columns.length === 0
+          ? undefined
+          : t(
+              params.period === 'cycle'
+                ? 'reportsSummary.days.subtitle'
+                : 'reportsSummary.days.subtitleMonth',
+              { count: chart.columns.length },
+            )
       }
       span="full"
-      bodyClassName="px-0"
+      bodyClassName="flex flex-col"
     >
       {chart.columns.length === 0 ? (
         <EmptyState
@@ -457,6 +598,7 @@ function DaysTile({ params }: { params: ReportParams }) {
       ) : (
         <>
           <Columns
+            height={120}
             data={chart.columns}
             label={
               params.period === 'cycle'
@@ -464,6 +606,22 @@ function DaysTile({ params }: { params: ReportParams }) {
                 : t('reportsSummary.days.summaryPlain')
             }
           />
+          {params.period === 'cycle' ? (
+            <ChartLegend
+              items={[
+                {
+                  label: t('reportsSummary.days.within'),
+                  mark: 'line',
+                  color: 'bg-primary',
+                },
+                {
+                  label: t('reportsSummary.days.overLabel'),
+                  mark: 'line',
+                  color: 'bg-negative',
+                },
+              ]}
+            />
+          ) : null}
           {/* A table ignores its own size, so the wrapper hides it. */}
           <div className="sr-only">
             <table>

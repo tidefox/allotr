@@ -117,12 +117,12 @@ describe('cycleRows', () => {
       'en',
     );
     expect(rows[0]).toMatchObject({
-      label: 'This cycle',
+      label: 'this cycle',
       rate: null,
       amended: true,
     });
     expect(rows[1]?.rate).toBe('10%');
-    expect(rows[1]?.label).toContain('Sep');
+    expect(rows[1]?.label).toContain('sep');
     expect(rows[1]?.spent).toEqual(usd(120_000));
   });
 });

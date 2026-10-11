@@ -60,7 +60,8 @@ export function BracketButton({
   icon?: ComponentType<IconProps>;
   tone?: Tone;
   className?: string;
-  children: ReactNode;
+  /** Left out for an icon-only button, which needs an `aria-label`. */
+  children?: ReactNode;
 }) {
   return (
     <Button

@@ -1,33 +1,19 @@
-import type { BudgetView, CycleSummaryView } from '@allotr/shared';
+import {
+  money,
+  type CycleSummaryView,
+  type NetWorthView,
+} from '@allotr/shared';
+import type { ChartTick } from '@/charts/chart';
 import type { ColumnDatum } from '@/charts/columns';
-import { formatDay } from '@/features/today/format';
-import { spentShare } from '@/features/budget/share';
+import { niceTicks, type Point } from '@/charts/math';
+import { formatTerminalDate } from '@/features/today/format';
+import { formatMoneyShort } from '@/lib/format-money';
 import { t } from '@/messages/t';
 import { formatRate, fractionsOf } from './cycles-model.ts';
 
-// What the plan tab shows: budgets against what was spent, the savings rate
-// per cycle. All amounts are the
-// server's; fractions only size bars.
-
-export type BudgetRow = Readonly<{
-  key: string;
-  name: string;
-  budget: BudgetView;
-  /** The bar's fill, 0..1. */
-  fraction: number;
-  over: boolean;
-}>;
-
-/** One row per budget, in the order the server sent. */
-export function budgetRows(budgets: readonly BudgetView[]): BudgetRow[] {
-  return budgets.map((budget) => ({
-    key: budget.id,
-    name: budget.name,
-    budget,
-    fraction: spentShare(budget.spent, budget.left) / 100,
-    over: budget.overflow.amountMinor > 0,
-  }));
-}
+// What the plan tab shows besides the budget tree: the savings rate per
+// cycle and the net worth line. All amounts are the server's; fractions and
+// tick positions only size and place marks.
 
 function rateText(cycle: CycleSummaryView): string {
   return cycle.savingsRate === null
@@ -35,7 +21,10 @@ function rateText(cycle: CycleSummaryView): string {
     : formatRate(cycle.savingsRate);
 }
 
-/** One column per cycle: the server's savings rate. A loss has no bar. */
+/**
+ * One column per cycle: the server's savings rate. A loss has no bar. The
+ * open cycle is `primary`, closed ones `positive`.
+ */
 export function rateColumns(
   cycles: readonly CycleSummaryView[],
   locale: string,
@@ -45,7 +34,38 @@ export function rateColumns(
     id: cycle.openedOn,
     fraction: fractions[i] ?? 0,
     valueLabel: rateText(cycle),
-    xLabel: formatDay(cycle.openedOn, locale),
-    color: 'series-3',
+    xLabel: formatTerminalDate(cycle.openedOn, locale),
+    color: cycle.closedOn === null ? 'primary' : 'positive',
   }));
+}
+
+export type WorthChart = Readonly<{
+  points: readonly Point[];
+  yTicks: readonly ChartTick[];
+  xTicks: readonly ChartTick[];
+}>;
+
+/** The net worth line with a gridline every round step and four x labels. */
+export function worthChart(
+  series: NetWorthView['series'],
+  locale: string,
+): WorthChart {
+  const points = series.map((p, x) => ({ x, y: p.amount.amountMinor }));
+  const first = series[0];
+  if (first === undefined) return { points, yTicks: [], xTicks: [] };
+  const low = Math.min(...points.map((p) => p.y));
+  const high = Math.max(...points.map((p) => p.y));
+  const yTicks = niceTicks(low, high, 4).map((value) => ({
+    value,
+    label: formatMoneyShort(money(value, first.amount.currency), locale),
+  }));
+  const last = series.length - 1;
+  const xs = [
+    ...new Set([0, Math.round(last / 3), Math.round((last * 2) / 3), last]),
+  ];
+  const xTicks = xs.map((value) => ({
+    value,
+    label: formatTerminalDate(series[value]?.date ?? first.date, locale),
+  }));
+  return { points, yTicks, xTicks };
 }

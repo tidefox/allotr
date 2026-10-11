@@ -1,7 +1,6 @@
 import type { CycleSummaryView, Money } from '@allotr/shared';
 import type { ColumnDatum } from '@/charts/columns';
-import { formatDay } from '@/features/today/format';
-import { formatRange } from '@/features/cycles/format';
+import { formatTerminalDate } from '@/features/today/format';
 import { formatMoneyShort } from '@/lib/format-money';
 import { t } from '@/messages/t';
 
@@ -44,11 +43,14 @@ export function formatRate(basisPoints: number): string {
   return `${sign}${String(whole)}${fraction === '0' ? '' : `.${fraction}`}%`;
 }
 
-/** The cycle's dates, or "This cycle" while it is open. */
+/** The cycle's dates ("sep 25 – oct 22"), or "this cycle" while it is open. */
 export function cycleLabel(cycle: CycleSummaryView, locale: string): string {
   return cycle.closedOn === null
     ? t('reportsPlan.cycles.thisCycle')
-    : formatRange(cycle.openedOn, cycle.lastDay, locale);
+    : t('reportsShell.span', {
+        from: formatTerminalDate(cycle.openedOn, locale),
+        to: formatTerminalDate(cycle.lastDay, locale),
+      });
 }
 
 /** One column per cycle: what the server says each spent. */
@@ -61,8 +63,8 @@ export function spentColumns(
     id: cycle.openedOn,
     fraction: fractions[i] ?? 0,
     valueLabel: formatMoneyShort(cycle.spending, locale),
-    xLabel: formatDay(cycle.openedOn, locale),
-    color: 'series-1',
+    xLabel: formatTerminalDate(cycle.openedOn, locale),
+    color: 'primary',
   }));
 }
 
@@ -78,8 +80,8 @@ export function savedColumns(
     id: cycle.openedOn,
     fraction: fractions[i] ?? 0,
     valueLabel: formatMoneyShort(cycle.savingsNetChange, locale),
-    xLabel: formatDay(cycle.openedOn, locale),
-    color: 'series-2',
+    xLabel: formatTerminalDate(cycle.openedOn, locale),
+    color: 'positive',
   }));
 }
 

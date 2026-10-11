@@ -131,6 +131,8 @@ export interface CategoryRow {
   icon: CategoryIcon | null;
   /** The category's budget for this period; null when none or not comparable. */
   budget: Money | null;
+  /** Spent over budget, 0..1, to size the bar; 0 without a budget. */
+  budgetFraction: number;
   over: boolean;
 }
 
@@ -143,18 +145,21 @@ const NO_CATEGORY_COLOUR: SeriesColor = 'series-8';
  */
 export function budgetsByCategory(
   budgets: readonly BudgetView[],
+  parents: readonly Readonly<{ categoryId: string; planned: Money }>[],
   period: ReportPeriod,
   rule: 'cycle' | 'month',
 ): ReadonlyMap<string, Money> {
   const comparable = period === rule;
   if (!comparable) return new Map();
-  return new Map(
-    budgets.flatMap((b) =>
+  // A parent takes the server's total over the budgets under it.
+  return new Map([
+    ...budgets.flatMap((b) =>
       b.target.kind === 'category'
         ? [[b.target.categoryId, b.planned] as const]
         : [],
     ),
-  );
+    ...parents.map((p) => [p.categoryId, p.planned] as const),
+  ]);
 }
 
 export function categoryRows(
@@ -178,11 +183,15 @@ export function categoryRows(
   };
   const figures = (id: string | null, amount: Money, shareBp: number) => {
     const budget = id === null ? null : (budgets.get(id) ?? null);
+    const comparable = budget !== null && budget.currency === amount.currency;
     return {
       amount,
       shareBp,
       fraction: fractionOf(amount.amountMinor, whole),
       budget,
+      budgetFraction: comparable
+        ? fractionOf(amount.amountMinor, budget.amountMinor)
+        : 0,
       over:
         budget !== null &&
         budget.currency === amount.currency &&
@@ -309,14 +318,15 @@ export function dayChart(
   const labelAll = spentDays.length <= LABEL_ALL_UP_TO;
   return {
     overCount: spentDays.filter((f) => f.over).length,
-    columns: spentDays.map((f) => ({
+    columns: spentDays.map((f, i) => ({
       id: f.date,
       fraction: fractionOf(f.spent.amountMinor, peak),
       valueLabel:
         labelAll || f.over || (peak > 0 && f.spent.amountMinor === peak)
           ? formatMoneyShort(f.spent, locale)
           : '',
-      xLabel: String(Number(f.date.slice(8))),
+      // The day of the period: 1 on its first day.
+      xLabel: String(i + 1),
       ...(f.over ? { color: 'negative' as const } : {}),
     })),
     rows: spentDays.map((f) => [

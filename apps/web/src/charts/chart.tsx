@@ -347,10 +347,10 @@ function EndMark({
 
 export type LegendItem = Readonly<{
   label: string;
-  /** A solid 2 px line, a dashed one, or the 1 px pace tick. */
-  mark: 'line' | 'dash' | 'tick';
+  /** A solid 2 px line, a dashed one, the 1 px pace tick, or just text. */
+  mark: 'line' | 'dash' | 'tick' | 'none';
   /** The mark's background class, for example `bg-series-1`. */
-  color: string;
+  color?: string;
 }>;
 
 /** The line under a chart naming its marks (`legend2`). */
@@ -370,16 +370,18 @@ export function ChartLegend({
     >
       {items.map((item) => (
         <span key={item.label} className="inline-flex items-center">
-          <span
-            aria-hidden="true"
-            className={cn(
-              'mr-[5px] inline-block',
-              item.mark === 'tick' ? 'h-2.5 w-px' : 'h-0.5 w-2.5',
-              item.mark === 'dash'
-                ? 'bg-[repeating-linear-gradient(90deg,currentColor_0_3px,var(--canvas)_3px_5px)]'
-                : item.color,
-            )}
-          />
+          {item.mark === 'none' ? null : (
+            <span
+              aria-hidden="true"
+              className={cn(
+                'mr-[5px] inline-block',
+                item.mark === 'tick' ? 'h-2.5 w-px' : 'h-0.5 w-2.5',
+                item.mark === 'dash'
+                  ? 'bg-[repeating-linear-gradient(90deg,currentColor_0_3px,var(--canvas)_3px_5px)]'
+                  : item.color,
+              )}
+            />
+          )}
           {item.label}
         </span>
       ))}

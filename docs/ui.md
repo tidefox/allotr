@@ -428,17 +428,22 @@ settings, so no ledger read is made that the server would refuse.
 
 ### Reports `/reports/…`
 
-A period menu (this cycle · last cycle · this month · last month · custom) in
-a toolbar on every sub-tab except cycles, which compares the recent cycles
-and has no period to pick.
+A toolbar under the sub-tabs (on `chrome`) on summary, trends and plan: the
+period menu (this cycle · last cycle · this month · last month; a custom
+range is not built) and the dates it covers, `sep 25 – oct 22 · day 15/28`
+(the day count only for a running period). Calendar has the layer toggles in
+that place; cycles has no toolbar. The sub-tabs sit in one stack with 1 px
+seams; the last tile grows to fill the screen. Columns are 8 px apart with the
+value on each column, a 1 px baseline and muted labels, and grow with the tile
+from their design height (`--h`).
 
 | Sub-tab | Content |
 |---|---|
-| summary | Stats (spent, income, saved, daily average) · by category (share bar + tree with bar, spent, budget, share; 2 wide) · top payees **(API +)** · spending per day (columns, over the daily number in `negative`) |
-| trends | Category spending across cycles (multi-line chart, 2 wide) · this cycle against the average per category, plus total spent per cycle **(API +: per-category series across cycles)** |
-| plan | Budget against actual · savings rate per cycle · net worth over time, with its change |
-| calendar | Layer toggles (spending heat, bills & dues) · month grid + picked-day list |
-| cycles | Spent and saved per cycle (columns) · table of past cycles |
+| summary | Stats (spent with `incl. $X bills`, income in `positive`, saved as the cycle's rate with a bar, daily average against the daily number) · by category (14 px share bar, tree rows like the budget rows with the even-pace tick and a pace legend, `[expand all]`; 2 wide) · top payees **(API +)** · spending per day (columns with a value on each, over the daily number in `negative`, a legend, 3 wide) |
+| trends | Category trends (multi-line chart with end labels and a legend, 2 wide; a category that dwarfs the others stays out of the scale and is named under it) · this period against the last per category with a sparkline, then total spent per cycle (the running one in orange) **(API +: per-category series across cycles)** |
+| plan | Budget vs actual (the budget rows without actions, 2 wide) · savings rate per cycle (columns) · net worth (area chart, 3 wide) |
+| calendar | Toolbar: layer toggles (spending heat, bills & dues) and the mark legend · month grid (heat fill, `b` `i` `$` marks, value per day; `[‹] [›] [table]` in its title bar) beside the picked day's list, 1.6 : 1 from 1000 px |
+| cycles | Spent and saved per cycle (columns, side by side from 720 px) · past cycles table (cycle, spent, saved in `positive`, rate) |
 
 ### Settings `/settings/…`
 

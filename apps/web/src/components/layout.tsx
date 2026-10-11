@@ -40,7 +40,10 @@ export function Frame({
   );
 }
 
-/** A grid of tiles: 1 column below 720, 2 from 720, 3 from 1100, 4 from 1500. */
+/**
+ * A grid of tiles: 1 column below 720, 2 from 720, 3 from 1100, 4 from 1500.
+ * A pinned `2` is one column below 720 and two from there.
+ */
 export function Grid({
   columns = 'auto',
   className,
@@ -58,7 +61,7 @@ export function Grid({
         columns === 'auto' &&
           'grid-cols-1 cols2:grid-cols-2 cols3:grid-cols-3 cols4:grid-cols-4',
         columns === 1 && 'grid-cols-1',
-        columns === 2 && 'grid-cols-2',
+        columns === 2 && 'grid-cols-1 cols2:grid-cols-2',
         columns === 3 && 'grid-cols-3',
         columns === 4 && 'grid-cols-4',
         className,

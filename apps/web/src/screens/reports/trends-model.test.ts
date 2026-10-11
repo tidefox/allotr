@@ -52,12 +52,12 @@ describe('trendLines', () => {
       { x: 2, y: 400 },
     ]);
     expect(lines.xTicks.map((t) => t.label)).toEqual([
-      'Aug 1',
-      'Sep 1',
-      'Oct 1',
+      'aug 01',
+      'sep 01',
+      'oct 01',
     ]);
     expect(lines.table.headers).toEqual(['Period', 'rent', 'food']);
-    expect(lines.table.rows[0]).toEqual(['Aug 1', '$9.00', '$3.00']);
+    expect(lines.table.rows[0]).toEqual(['aug 01', '$9.00', '$3.00']);
   });
 
   it('covers the data with its y ticks', () => {
@@ -65,6 +65,20 @@ describe('trendLines', () => {
     const top = Math.max(...lines.yTicks.map((t) => t.value));
     expect(top).toBeGreaterThanOrEqual(900);
     expect(lines.yTicks[0]?.value).toBe(0);
+  });
+
+  it('names the one that dwarfs the rest and keeps it out of the scale', () => {
+    const big = {
+      ...series,
+      groups: [
+        { categoryId: 'rent', points: [money(900), money(900), money(900)] },
+        { categoryId: 'food', points: [money(300), money(400), money(350)] },
+      ],
+    } as unknown as CategorySeriesView;
+    const lines = trendLines(big, categories, 'en');
+    expect(lines.series.map((s) => s.id)).toEqual(['food']);
+    expect(lines.leftOut).toEqual({ name: 'rent', amount: money(900) });
+    expect(trendLines(series, categories, 'en').leftOut).toBeNull();
   });
 
   it('gives a category with no id its own name', () => {
@@ -108,11 +122,11 @@ describe('totalsColumns', () => {
       85, 100, 95,
     ]);
     expect(columns.map((c) => c.color)).toEqual([
-      'series-3',
-      'series-3',
-      'series-1',
+      'primary',
+      'primary',
+      'series-4',
     ]);
-    expect(rows[2]).toEqual(['Oct 1', '$13.50']);
+    expect(rows[2]).toEqual(['oct 01', '$13.50']);
   });
 });
 
@@ -125,7 +139,7 @@ describe('helpers', () => {
   });
 
   it('labels each period by its first day', () => {
-    expect(periodLabels(series, 'en')).toEqual(['Aug 1', 'Sep 1', 'Oct 1']);
+    expect(periodLabels(series, 'en')).toEqual(['aug 01', 'sep 01', 'oct 01']);
   });
 
   it('keeps first and last ticks and never exceeds the maximum', () => {

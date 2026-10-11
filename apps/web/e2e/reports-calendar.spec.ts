@@ -87,12 +87,11 @@ test('the calendar shows the month, a picked day and opens its entry', async ({
   });
 
   await page.goto('/reports/calendar');
-  const month = page.getByRole('region', { name: t('reportsCalendar.title') });
+  // The month tile is the first tile and the picked day's the second.
+  const month = page.locator('main section').first();
   await expect(month).toBeVisible();
   // Today is picked: its entry is listed.
-  const day = page.getByRole('region', {
-    name: t('reportsCalendar.day.title'),
-  });
+  const day = page.locator('main section').nth(1);
   await expect(day.getByText('Corner market')).toBeVisible();
 
   // The bill's day lists it.
@@ -100,7 +99,7 @@ test('the calendar shows the month, a picked day and opens its entry', async ({
   await expect(day.getByText('Rent')).toBeVisible();
 
   // Layers toggle by keyboard.
-  const heat = month.getByRole('button', {
+  const heat = page.getByRole('button', {
     name: t('reportsCalendar.layers.heat'),
   });
   await expect(heat).toHaveAttribute('aria-pressed', 'true');
@@ -109,9 +108,9 @@ test('the calendar shows the month, a picked day and opens its entry', async ({
   await expect(heat).toHaveAttribute('aria-pressed', 'false');
 
   // The table view lists every day.
-  await month.getByRole('radio', { name: t('reportsCalendar.table') }).click();
+  await month.getByRole('button', { name: t('reportsCalendar.table') }).click();
   await expect(month.getByRole('table')).toBeVisible();
-  await month.getByRole('radio', { name: t('reportsCalendar.grid') }).click();
+  await month.getByRole('button', { name: t('reportsCalendar.grid') }).click();
 
   // Stepping back a month: its first day has nothing on it.
   await month

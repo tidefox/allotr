@@ -264,12 +264,19 @@ describe('budgetsByCategory', () => {
   ] as BudgetView[];
 
   it('only lines up with the current period of the same rule', () => {
-    expect(budgetsByCategory(budgets, 'cycle', 'cycle').get('food')).toEqual(
-      money(600),
-    );
-    expect(budgetsByCategory(budgets, 'cycle', 'month').size).toBe(0);
-    expect(budgetsByCategory(budgets, 'last-cycle', 'cycle').size).toBe(0);
-    expect(budgetsByCategory(budgets, 'month', 'month').size).toBe(1);
+    expect(
+      budgetsByCategory(budgets, [], 'cycle', 'cycle').get('food'),
+    ).toEqual(money(600));
+    expect(budgetsByCategory(budgets, [], 'cycle', 'month').size).toBe(0);
+    expect(budgetsByCategory(budgets, [], 'last-cycle', 'cycle').size).toBe(0);
+    expect(budgetsByCategory(budgets, [], 'month', 'month').size).toBe(1);
+  });
+
+  it('takes the server total for a parent', () => {
+    const parents = [{ categoryId: 'home', planned: money(900) }];
+    expect(
+      budgetsByCategory(budgets, parents, 'cycle', 'cycle').get('home'),
+    ).toEqual(money(900));
   });
 });
 
