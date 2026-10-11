@@ -110,8 +110,8 @@ function TreeTile({
 }) {
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
   const entries = useMemo(
-    () => budgetTree(data.budgets, categories),
-    [data.budgets, categories],
+    () => budgetTree(data.budgets, categories, data.parents),
+    [data.budgets, categories, data.parents],
   );
   const shown = visibleEntries(entries, folded);
   const toggle = (group: string) => {
@@ -204,9 +204,24 @@ function BudgetRow({
           });
         }
       : undefined;
+  const { total } = entry;
   const cells =
     budget === null
-      ? [name, null, null, null, null, null]
+      ? total === null
+        ? [name, null, null, null, null, null]
+        : [
+            name,
+            <Bar
+              key="bar"
+              value={entry.fraction}
+              over={entry.over}
+              label={t('budgetBudgets.tree.barLabel', { name: entry.name })}
+            />,
+            <Amount key="spent" amount={total.spent} />,
+            <Amount key="left" amount={total.left} />,
+            null,
+            null,
+          ]
       : [
           name,
           <Bar
