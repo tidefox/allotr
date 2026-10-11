@@ -26,6 +26,8 @@ function account(patch: Partial<AccountView> & { id: string }): AccountView {
     creditLimit: null,
     creditAvailable: null,
     dueDay: null,
+    minPayment: null,
+    subtype: null,
     nextDueOn: null,
     ...patch,
   };

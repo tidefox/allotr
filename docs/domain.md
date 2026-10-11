@@ -188,11 +188,17 @@ optionally a date, on one savings pool or one account in a savings pool.
 
 ## Credit limit and due day
 
-A credit account (kind `liability`) may carry a limit and a due day. Both are
-**display only**: they never change a balance, the daily number or a
-reminder, and a due day does **not** create a bill. A user who wants a
-reminder adds a bill separately. Other kinds cannot carry either
-(`credit_only`).
+A credit account (kind `liability`) may carry a limit, a due day and a
+minimum payment. All are **display only**: they never change a balance, the
+daily number or a reminder, and a due day or a minimum payment does **not**
+create a bill. A user who wants a reminder adds a bill separately. Other kinds
+cannot carry any of them (`credit_only`).
+
+- `minPayment` is more than zero, in the account's currency. It is what the
+  card asks for each month, as the owner entered it; nothing derives from it.
+- Any account may carry a `subtype`: free text up to 100 characters, trimmed
+  (for example "debit card"). It labels the account and means nothing to the
+  ledger.
 
 - `creditLimit` is more than zero, in the account's currency.
 - A debt is a negative balance, so `creditAvailable` is the limit plus the
@@ -734,7 +740,8 @@ accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
          conversion|receivables|payables], budget_group[on|off], currency,
          counterparty_id, archived, colour[series-1..8], icon,
-         credit_limit_minor[liability only], due_day[1..31, liability only])
+         credit_limit_minor[liability only], due_day[1..31, liability only],
+         min_payment_minor[liability only], subtype)
 budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
         mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
 budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)

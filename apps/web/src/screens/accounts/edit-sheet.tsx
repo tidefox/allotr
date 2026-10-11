@@ -87,6 +87,17 @@ export function EditSheet({
           error={errors.name === undefined ? undefined : t(errors.name)}
           autoFocus
         />
+        <TextField
+          label={t('accountsScreen.edit.subtype')}
+          value={draft.subtype}
+          onChange={(subtype) => {
+            update({ subtype });
+          }}
+          error={errors.subtype === undefined ? undefined : t(errors.subtype)}
+        />
+        <p className="-mt-2 font-sans text-small text-text-muted">
+          {t('accountsScreen.edit.subtypeHint')}
+        </p>
         <ColourField
           value={draft.colour}
           onChange={(colour) => {
@@ -141,6 +152,33 @@ export function EditSheet({
               }}
               error={errors.dueDay === undefined ? undefined : t(errors.dueDay)}
             />
+            <div
+              onBlur={() => {
+                update({
+                  minPayment: reformatAmountInput(
+                    draft.minPayment,
+                    account.currency,
+                    locale,
+                  ),
+                });
+              }}
+            >
+              <TextField
+                label={t('accountsScreen.edit.minPayment', {
+                  currency: account.currency,
+                })}
+                value={draft.minPayment}
+                inputMode="decimal"
+                onChange={(minPayment) => {
+                  update({ minPayment });
+                }}
+                error={
+                  errors.minPayment === undefined
+                    ? undefined
+                    : t(errors.minPayment)
+                }
+              />
+            </div>
             <p className="-mt-2 font-sans text-small text-text-muted">
               {t('accountsScreen.edit.creditHint')}
             </p>

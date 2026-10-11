@@ -19,6 +19,8 @@ function account(over: Partial<AccountView> = {}): AccountView {
     creditLimit: null,
     creditAvailable: null,
     dueDay: null,
+    minPayment: null,
+    subtype: null,
     nextDueOn: null,
     lastReconciledOn: null,
     reconcileDue: false,
@@ -41,6 +43,8 @@ describe('accountEditDraft', () => {
       icon: null,
       creditLimit: '2000.00',
       dueDay: '15',
+      minPayment: '',
+      subtype: '',
     });
   });
 });
@@ -122,6 +126,45 @@ describe('toUpdateBody', () => {
     const asset = account();
     const draft = { ...same(asset), creditLimit: '100', dueDay: '3' };
     expect(toUpdateBody(draft, asset, 'en-US')).toEqual({ ok: true, body: {} });
+  });
+
+  it('sets and clears a minimum payment on a card, in its currency', () => {
+    expect(
+      toUpdateBody({ ...same(card), minPayment: '25' }, card, 'en-US'),
+    ).toEqual({ ok: true, body: { minPayment: money(2_500, 'USD') } });
+    const paying = { ...card, minPayment: money(2_500, 'USD') };
+    expect(
+      toUpdateBody({ ...same(paying), minPayment: '' }, paying, 'en-US'),
+    ).toEqual({ ok: true, body: { minPayment: null } });
+    for (const minPayment of ['0', '-5', 'abc']) {
+      expect(
+        toUpdateBody({ ...same(card), minPayment }, card, 'en-US'),
+      ).toEqual({
+        ok: false,
+        errors: { minPayment: 'accountsScreen.edit.errors.paymentInvalid' },
+      });
+    }
+  });
+
+  it('trims the subtype, clears it when emptied and caps its length', () => {
+    expect(
+      toUpdateBody({ ...same(card), subtype: '  debit card ' }, card, 'en-US'),
+    ).toEqual({ ok: true, body: { subtype: 'debit card' } });
+    const labelled = { ...card, subtype: 'debit card' };
+    expect(
+      toUpdateBody({ ...same(labelled), subtype: '  ' }, labelled, 'en-US'),
+    ).toEqual({ ok: true, body: { subtype: null } });
+    expect(
+      toUpdateBody({ ...same(card), subtype: 'x'.repeat(101) }, card, 'en-US'),
+    ).toEqual({
+      ok: false,
+      errors: { subtype: 'accountsScreen.edit.errors.subtypeLong' },
+    });
+    // A subtype belongs to every kind of account.
+    const asset = account({});
+    expect(
+      toUpdateBody({ ...same(asset), subtype: 'wallet' }, asset, 'en-US'),
+    ).toEqual({ ok: true, body: { subtype: 'wallet' } });
   });
 
   it('refuses an empty or long name', () => {

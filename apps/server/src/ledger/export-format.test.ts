@@ -53,6 +53,8 @@ describe('bundleAccountNames', () => {
     icon: null,
     creditLimitMinor: null,
     dueDay: null,
+    minPaymentMinor: null,
+    subtype: null,
   });
 
   it('keeps open names and numbers archived clashes', () => {

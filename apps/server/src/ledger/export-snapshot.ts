@@ -38,6 +38,8 @@ export type SnapshotAccount = Readonly<{
   /** Credit accounts only. */
   creditLimitMinor: number | null;
   dueDay: number | null;
+  minPaymentMinor: number | null;
+  subtype: string | null;
 }>;
 
 export type SystemRole =
@@ -169,6 +171,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'icon',
         'credit_limit_minor',
         'due_day',
+        'min_payment_minor',
+        'subtype',
       ])
       .where('user_id', '=', userId)
       .orderBy('created_at')
@@ -315,6 +319,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       icon: row.icon as SnapshotAccount['icon'],
       creditLimitMinor: row.credit_limit_minor,
       dueDay: row.due_day,
+      minPaymentMinor: row.min_payment_minor,
+      subtype: row.subtype,
     });
   }
 

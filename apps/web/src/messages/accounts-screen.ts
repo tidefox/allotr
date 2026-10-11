@@ -80,9 +80,14 @@ export const accountsScreen = {
     colourHint: 'Colours follow the theme. Auto uses the pool’s colour.',
     limit: 'Credit limit ({currency})',
     dueDay: 'Payment due day (1 to 31)',
+    minPayment: 'Minimum payment ({currency})',
+    subtype: 'Account type (optional)',
+    subtypeHint: 'Your own label, such as debit card.',
     creditHint:
-      'Shown on the account only. A due day does not add a bill; add one in Budget if you want a reminder.',
+      'Shown on the account only. A due day or minimum payment does not add a bill; add one in Budget if you want a reminder.',
     errors: {
+      paymentInvalid: 'Enter an amount above zero, or leave it empty.',
+      subtypeLong: 'Use at most 100 characters.',
       limitInvalid: 'Enter an amount above zero, or leave it empty.',
       dayInvalid: 'Use a day from 1 to 31, or leave it empty.',
     },

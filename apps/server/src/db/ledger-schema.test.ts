@@ -13,8 +13,8 @@ import { openSqlite } from './sqlite.ts';
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
 // 0013_reminders.sql, 0014_entry_order_time.sql and
 // 0015_entry_replacements.sql, 0016_buffer_currency.sql,
-// 0017_implied_rates.sql, 0018_entry_client.sql, 0019_goals.sql and
-// 0020_pool_account_style_credit.sql against
+// 0017_implied_rates.sql, 0018_entry_client.sql, 0019_goals.sql,
+// 0020_pool_account_style_credit.sql and 0021_account_subtype_min_payment.sql against
 // real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
@@ -66,6 +66,7 @@ function migrationsUpTo(last: string): string {
     '0017_implied_rates.sql',
     '0018_entry_client.sql',
     '0019_goals.sql',
+    '0020_pool_account_style_credit.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -474,6 +475,7 @@ describe('migration 0005_reconciliations', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     insertReconciliation('r1');
@@ -574,6 +576,7 @@ describe('migration 0006_bill_prices', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(
@@ -669,6 +672,7 @@ describe('migration 0007_pools', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(pools()).toEqual([
@@ -830,6 +834,7 @@ describe('migration 0008_budgets', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(
@@ -999,6 +1004,7 @@ describe('migration 0009_budget_cover', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1071,6 +1077,7 @@ describe('migration 0010_category_style', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1163,6 +1170,7 @@ describe('migration 0012_ious', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1319,6 +1327,7 @@ describe('migration 0011_income_categories', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1402,6 +1411,7 @@ describe('migration 0013_reminders', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1623,6 +1633,7 @@ describe('migration 0015_entry_replacements', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1709,6 +1720,7 @@ describe('migration 0016_buffer_currency', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(
@@ -1799,6 +1811,7 @@ describe('migration 0018_entry_client', () => {
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(sql('SELECT id, client FROM transactions').all()).toEqual([
@@ -1884,6 +1897,7 @@ describe('migration 0020_pool_account_style_credit', () => {
 
     expect(migrateFrom(repoMigrations)).toEqual([
       '0020_pool_account_style_credit',
+      '0021_account_subtype_min_payment',
     ]);
 
     expect(
@@ -1970,6 +1984,70 @@ describe('migration 0020_pool_account_style_credit', () => {
     ).toThrow();
     expect(() =>
       sql(`UPDATE accounts SET due_day = 5 WHERE id = 'a1'`).run(),
+    ).toThrow();
+  });
+});
+
+describe('migration 0021_account_subtype_min_payment', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+
+  it('adds nullable columns to what is already there', () => {
+    migrateFrom(migrationsUpTo('0020'));
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD');
+    insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
+    sql(
+      `UPDATE accounts SET credit_limit_minor = 200000, due_day = 9 WHERE id = 'c1'`,
+    ).run();
+
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0021_account_subtype_min_payment',
+    ]);
+
+    expect(
+      sql(
+        `SELECT id, subtype, min_payment_minor, credit_limit_minor FROM accounts WHERE id IN ('a1', 'c1') ORDER BY id`,
+      ).all(),
+    ).toEqual([
+      {
+        id: 'a1',
+        subtype: null,
+        min_payment_minor: null,
+        credit_limit_minor: null,
+      },
+      {
+        id: 'c1',
+        subtype: null,
+        min_payment_minor: null,
+        credit_limit_minor: 200000,
+      },
+    ]);
+  });
+
+  it('keeps a minimum payment to credit accounts and a subtype trimmed', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD');
+    insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
+
+    sql(
+      `UPDATE accounts SET min_payment_minor = 2500, subtype = 'credit card' WHERE id = 'c1'`,
+    ).run();
+    sql(`UPDATE accounts SET subtype = 'debit card' WHERE id = 'a1'`).run();
+    sql(`UPDATE accounts SET subtype = NULL WHERE id = 'a1'`).run();
+    for (const [column, value] of [
+      ['min_payment_minor', '0'],
+      ['min_payment_minor', '-1'],
+      ['subtype', `''`],
+      ['subtype', `' padded '`],
+      ['subtype', `'${'x'.repeat(101)}'`],
+    ] as const) {
+      expect(() =>
+        sql(`UPDATE accounts SET ${column} = ${value} WHERE id = 'c1'`).run(),
+      ).toThrow();
+    }
+    expect(() =>
+      sql(`UPDATE accounts SET min_payment_minor = 100 WHERE id = 'a1'`).run(),
     ).toThrow();
   });
 });

@@ -2429,6 +2429,31 @@
                             "minimum": 1,
                             "maximum": 31
                           },
+                          "minPayment": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "subtype": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "nextDueOn": {
                             "type": [
                               "string",
@@ -2462,6 +2487,8 @@
                           "creditLimit",
                           "creditAvailable",
                           "dueDay",
+                          "minPayment",
+                          "subtype",
                           "nextDueOn",
                           "lastReconciledOn",
                           "reconcileDue"
@@ -2821,7 +2848,7 @@
           "Ledger accounts"
         ],
         "summary": "Open an account",
-        "description": "The currency is fixed at creation. An opening balance is posted against Equity:Opening. `creditLimit` and `dueDay` are for credit (liability) accounts only (`credit_only`).",
+        "description": "The currency is fixed at creation. An opening balance is posted against Equity:Opening. `creditLimit`, `dueDay` and `minPayment` are for credit (liability) accounts only (`credit_only`). `subtype` is free text for any account.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2941,6 +2968,27 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 31
+                  },
+                  "minPayment": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "subtype": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "openingBalance": {
                     "type": "object",
@@ -3155,6 +3203,31 @@
                       "minimum": 1,
                       "maximum": 31
                     },
+                    "minPayment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "subtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "nextDueOn": {
                       "type": [
                         "string",
@@ -3188,6 +3261,8 @@
                     "creditLimit",
                     "creditAvailable",
                     "dueDay",
+                    "minPayment",
+                    "subtype",
                     "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
@@ -3621,6 +3696,31 @@
                       "minimum": 1,
                       "maximum": 31
                     },
+                    "minPayment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "subtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "nextDueOn": {
                       "type": [
                         "string",
@@ -3654,6 +3754,8 @@
                     "creditLimit",
                     "creditAvailable",
                     "dueDay",
+                    "minPayment",
+                    "subtype",
                     "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
@@ -3834,7 +3936,7 @@
           "Ledger accounts"
         ],
         "summary": "Rename an account, restyle it or move it on or off budget",
-        "description": "A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool. `colour` and `icon` only change how the account is drawn; null clears them. `creditLimit` (in the account's currency) and `dueDay` are for credit (liability) accounts only (`credit_only`); null clears them. They are shown, never acted on: a due day creates no bill.",
+        "description": "A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool. `colour` and `icon` only change how the account is drawn; null clears them. `creditLimit` (in the account's currency) and `dueDay` are for credit (liability) accounts only (`credit_only`); null clears them. `minPayment` is credit only too, in the account's currency; `subtype` is free text and null clears it. All of them are shown, never acted on: a due day or a minimum payment creates no bill.",
         "parameters": [
           {
             "schema": {
@@ -3965,6 +4067,33 @@
                     ],
                     "minimum": 1,
                     "maximum": 31
+                  },
+                  "minPayment": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "subtype": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 100
                   }
                 }
               }
@@ -4155,6 +4284,31 @@
                       "minimum": 1,
                       "maximum": 31
                     },
+                    "minPayment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "subtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "nextDueOn": {
                       "type": [
                         "string",
@@ -4188,6 +4342,8 @@
                     "creditLimit",
                     "creditAvailable",
                     "dueDay",
+                    "minPayment",
+                    "subtype",
                     "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
@@ -4727,6 +4883,31 @@
                       "minimum": 1,
                       "maximum": 31
                     },
+                    "minPayment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "subtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "nextDueOn": {
                       "type": [
                         "string",
@@ -4760,6 +4941,8 @@
                     "creditLimit",
                     "creditAvailable",
                     "dueDay",
+                    "minPayment",
+                    "subtype",
                     "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
@@ -8243,6 +8426,31 @@
                       "minimum": 1,
                       "maximum": 31
                     },
+                    "minPayment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "subtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "nextDueOn": {
                       "type": [
                         "string",
@@ -8276,6 +8484,8 @@
                     "creditLimit",
                     "creditAvailable",
                     "dueDay",
+                    "minPayment",
+                    "subtype",
                     "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
@@ -44656,6 +44866,27 @@
                           "minimum": 1,
                           "maximum": 31
                         },
+                        "minPayment": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "subtype": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
                         "openingBalance": {
                           "type": "object",
                           "properties": {
@@ -46655,6 +46886,27 @@
                             "type": "integer",
                             "minimum": 1,
                             "maximum": 31
+                          },
+                          "minPayment": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "subtype": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
                           },
                           "openingBalance": {
                             "type": "object",
