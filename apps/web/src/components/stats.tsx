@@ -39,8 +39,10 @@ export function Stats({ stats }: { stats: readonly Stat[] }) {
             </div>
             <div
               className={cn(
-                'my-0.5 truncate leading-[1.45] font-semibold',
+                // The size comes before `leading-*`: cn() lets a later size
+                // reset the line height.
                 highlight ? 'text-stat tracking-[-0.01em]' : 'text-stat-sub',
+                'my-0.5 truncate leading-[1.45] font-semibold',
                 highlight && tone === 'positive' && 'text-positive',
               )}
             >

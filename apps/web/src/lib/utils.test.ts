@@ -13,3 +13,9 @@ describe('cn', () => {
     expect(cn('text-text', 'text-primary')).toBe('text-primary');
   });
 });
+
+describe('cn and line heights', () => {
+  it('keeps a line height set after the size', () => {
+    expect(cn('text-stat', 'leading-[1.45]')).toBe('text-stat leading-[1.45]');
+  });
+});

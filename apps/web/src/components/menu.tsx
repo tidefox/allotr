@@ -161,6 +161,9 @@ export function MenuButton({
   };
 
   const strip = variant === 'strip';
+  // The strip face shows only the value, so the name carries both (the
+  // visible text stays part of the name, WCAG 2.5.3).
+  const stripName = value === undefined ? label : `${label}: ${value}`;
   const faceClass = strip ? stripButtonClass : menuButtonClass;
   const face = strip ? (
     <>
@@ -227,7 +230,7 @@ export function MenuButton({
           }}
           aria-haspopup="menu"
           aria-expanded={open}
-          {...(strip ? { 'aria-label': label } : {})}
+          {...(strip ? { 'aria-label': stripName } : {})}
           className={cn(faceClass, className)}
         >
           {face}
@@ -241,7 +244,7 @@ export function MenuButton({
   return (
     <MenuTrigger isOpen={open} onOpenChange={setOpen}>
       <Button
-        {...(strip ? { 'aria-label': label } : {})}
+        {...(strip ? { 'aria-label': stripName } : {})}
         className={cn(faceClass, className)}
       >
         {face}
