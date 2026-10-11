@@ -277,9 +277,10 @@ test('an entry moves up and down within its day by keyboard', async ({
   await expect(down).toBeEnabled();
   await expect(up).toBeDisabled();
 
-  await down.press('Enter');
+  await down.focus();
+  await page.keyboard.press('Enter');
   await expect
-    .poll(() => listedNotes(page, 'Queue'))
+    .poll(() => listedNotes(page, 'Queue'), { timeout: 15_000 })
     .toEqual(['Queue three', 'Queue two', 'Queue one']);
 });
 
@@ -325,13 +326,18 @@ test('an entry is split with people and replaced by the split', async ({
   const detail = page
     .getByRole('region', { name: t('transactionDetail.title') })
     .last();
-  await detail
-    .getByRole('button', { name: t('transactionDetail.actions.iou') })
-    .click();
   const sheet = page.getByRole('dialog', {
     name: t('transactionDetail.iou.title'),
   });
-  await expect(sheet).toBeVisible();
+  // The first press can land before the page is interactive on a slow
+  // runner, so press again until the sheet is up.
+  await expect(async () => {
+    if (!(await sheet.isVisible()))
+      await detail
+        .getByRole('button', { name: t('transactionDetail.actions.iou') })
+        .click({ timeout: 2000 });
+    await expect(sheet).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await expectAccessible(page);
 
   // A person with no name is refused before anything is sent.

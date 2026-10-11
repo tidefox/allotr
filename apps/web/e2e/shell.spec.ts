@@ -86,18 +86,20 @@ test('every destination is reachable from the nav and accessible', async ({
   }
 });
 
-test('signed-in routes outside the nav are accessible', async ({
-  page,
-  baseURL,
-}) => {
-  await apiSignIn(page, baseURL);
-  const navPaths: readonly string[] = navItems.map((item) => item.to);
-  for (const path of shellPaths.filter((p) => !navPaths.includes(p))) {
+// One test per route so each gets its own timeout; a single loop over
+// every route outgrows it as routes are added.
+const navPaths: readonly string[] = navItems.map((item) => item.to);
+for (const path of new Set(shellPaths.filter((p) => !navPaths.includes(p)))) {
+  test(`signed-in route ${path} outside the nav is accessible`, async ({
+    page,
+    baseURL,
+  }) => {
+    await apiSignIn(page, baseURL);
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expectAccessible(page);
-  }
-});
+  });
+}
 
 test('sub-tabs change the address and the selected one is filled', async ({
   page,
