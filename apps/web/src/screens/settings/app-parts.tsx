@@ -1,6 +1,9 @@
 import type { PaletteTheme, Role } from '@allotr/shared';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import { Checkbox } from 'react-aria-components';
+import { IconCheckboxBlankLine, IconCheckboxLine } from '@/generated/icons';
+import { Brackets, bracketClass } from '@/components/buttons';
 import { cn } from '@/lib/utils';
 
 // Small pieces the App tab and the theme editor share.
@@ -12,20 +15,8 @@ export function BracketLink({
   ...props
 }: LinkProps & { className?: string; children: ReactNode }) {
   return (
-    <Link
-      {...props}
-      className={cn(
-        'press inline-flex min-h-hit min-w-hit items-center gap-1 px-1 text-small text-primary',
-        className,
-      )}
-    >
-      <span aria-hidden="true" className="text-outline">
-        [
-      </span>
-      <span>{children}</span>
-      <span aria-hidden="true" className="text-outline">
-        ]
-      </span>
+    <Link {...props} className={cn(bracketClass, className)}>
+      <Brackets>{children}</Brackets>
     </Link>
   );
 }
@@ -70,6 +61,65 @@ export function Swatch({
   );
 }
 
+/** A label and its control, as one `kv` line (`dt` and `dd`). */
+export function KvRow({
+  label,
+  tag,
+  children,
+}: {
+  label: string;
+  tag?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <>
+      <dt className="text-text-muted">
+        {label}
+        {tag}
+      </dt>
+      <dd className="m-0 flex min-w-0 items-center justify-end font-ui">
+        {children}
+      </dd>
+    </>
+  );
+}
+
+/** The `kv` list: labels left, values right. */
+export function KvList({ children }: { children: ReactNode }) {
+  return (
+    <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5">
+      {children}
+    </dl>
+  );
+}
+
+/** A checkbox in the mockup's `check` style: ☑ and a short word. */
+export function CheckControl({
+  label,
+  text,
+  checked,
+  onChange,
+}: {
+  /** The accessible name. */
+  label: string;
+  text: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const Icon = checked ? IconCheckboxLine : IconCheckboxBlankLine;
+  return (
+    <Checkbox
+      aria-label={label}
+      isSelected={checked}
+      onChange={onChange}
+      className="press inline-flex min-h-hit items-center gap-1.5 whitespace-nowrap text-text-muted"
+    >
+      <Icon aria-hidden="true" className="size-4 text-primary" />
+      {text}
+    </Checkbox>
+  );
+}
+
 /** A strip of a theme's key roles. */
 export function Swatches({
   theme,
@@ -84,7 +134,7 @@ export function Swatches({
         <Swatch
           key={role}
           color={theme.resolved.roles[role]}
-          className="-ml-px first:ml-0"
+          className="size-3.5 border-0"
         />
       ))}
     </span>

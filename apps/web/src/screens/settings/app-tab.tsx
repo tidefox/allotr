@@ -1,24 +1,26 @@
 import {
   CUSTOM_THEME_LIMIT,
+  PALETTE_THEMES,
   slotPaletteTheme,
   THEME_MODES,
-  THEME_SCHEMES,
   type CustomThemeView,
   type PaletteTheme,
-  type ThemeScheme,
 } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type SyntheticEvent } from 'react';
-import { FileTrigger, type Selection } from 'react-aria-components';
+import { Button, FileTrigger } from 'react-aria-components';
 import { BracketButton, ToggleGroup } from '@/components/buttons';
 import { Grid, Tile } from '@/components/layout';
-import { MenuButton, MenuRadioItem } from '@/components/menu';
-import { Row } from '@/components/row';
-import type { RowColumn } from '@/components/row-columns';
 import { Sheet } from '@/components/sheet';
-import { EmptyState } from '@/components/states';
 import { useTheme } from '@/components/theme-provider';
-import { IconDownload2Line } from '@/generated/icons';
+import {
+  IconCheckboxBlankCircleLine,
+  IconDownload2Line,
+  IconKeyboardLine,
+  IconLayoutGridLine,
+  IconPaletteLine,
+  IconRadioButtonLine,
+} from '@/generated/icons';
 import { appearanceQuery, deleteTheme, themesQuery } from '@/lib/appearance';
 import { useDevicePref, useEffectiveMotion } from '@/lib/device-prefs';
 import { describeProblem } from '@/lib/problem';
@@ -28,18 +30,24 @@ import { t } from '@/messages/t';
 import { TextField } from '@/screens/transactions/detail/fields.tsx';
 import {
   creditedThemes,
-  slotOptions,
   SWATCH_ROLES,
   themeFileName,
   themeFileText,
 } from './app-model.ts';
-import { BracketLink, PreferenceRow, Swatches } from './app-parts.tsx';
+import {
+  BracketLink,
+  CheckControl,
+  KvList,
+  KvRow,
+  Swatches,
+} from './app-parts.tsx';
 import { NotificationsTile } from './notifications-tile.tsx';
+import { PlannedTag } from './setting-parts.tsx';
 import { useThemeImport } from './use-theme-import.ts';
 
-// Settings, App (docs/ui.md §6): the palette for each mode, the user's own
-// palettes, and how the interface looks and moves on this device. Fonts,
-// tab order, the top bar and layouts are planned (ADR 0029).
+// Settings, App (docs/ui.md §6): the palette list, then how the interface
+// looks and moves on this device. Fonts, tab order, the top bar and layouts
+// are planned (ADR 0029) and only noted.
 
 function deviceStorage(): Storage | undefined {
   try {
@@ -49,118 +57,6 @@ function deviceStorage(): Storage | undefined {
   }
 }
 
-function onOff() {
-  return [
-    { id: 'on' as const, label: t('settingsApp.interface.on') },
-    { id: 'off' as const, label: t('settingsApp.interface.off') },
-  ];
-}
-
-function SlotMenu({
-  scheme,
-  custom,
-}: {
-  scheme: ThemeScheme;
-  custom: readonly PaletteTheme[];
-}) {
-  const { appearance, setSlot } = useTheme();
-  const current = slotPaletteTheme(appearance[scheme], scheme, custom);
-  const label = t(`settingsApp.palette.${scheme}`);
-  return (
-    <PreferenceRow label={label}>
-      <MenuButton
-        label={t('settingsApp.palette.pick', {
-          scheme: t(`themes.schemes.${scheme}`),
-        })}
-        value={current.name}
-        title={label}
-        selectionMode="single"
-        selectedKeys={new Set([current.id])}
-        onSelectionChange={(keys: Selection) => {
-          const [first] = keys === 'all' ? [] : [...keys];
-          if (first !== undefined) setSlot(scheme, String(first));
-        }}
-      >
-        {slotOptions(scheme, custom).map((option) => (
-          <MenuRadioItem
-            key={option.id}
-            id={option.id}
-            label={
-              option.custom
-                ? `${option.name} · ${t('settingsApp.palette.custom')}`
-                : option.name
-            }
-          />
-        ))}
-      </MenuButton>
-    </PreferenceRow>
-  );
-}
-
-function PaletteTile({ custom }: { custom: readonly PaletteTheme[] }) {
-  const { mode, setMode, appearance, saveError } = useTheme();
-  const credited = creditedThemes(appearance, custom);
-  return (
-    <Tile
-      title={t('settingsApp.palette.title')}
-      subtitle={t('settingsApp.palette.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
-      <PreferenceRow
-        label={t('settingsApp.palette.mode')}
-        hint={t('settingsApp.palette.modeHint')}
-      >
-        <ToggleGroup
-          label={t('settingsApp.palette.mode')}
-          options={THEME_MODES.map((id) => ({
-            id,
-            label: t(`settingsApp.palette.modes.${id}`),
-          }))}
-          value={mode}
-          onChange={setMode}
-        />
-      </PreferenceRow>
-      {THEME_SCHEMES.map((scheme) => (
-        <SlotMenu key={scheme} scheme={scheme} custom={custom} />
-      ))}
-      {credited.length === 0 ? null : (
-        <ul data-testid="theme-credits" className="px-3 py-1">
-          {credited.map((theme) =>
-            theme.credit === undefined ? null : (
-              <li key={theme.id}>
-                <a
-                  href={theme.credit.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-hit items-center font-ui text-tiny text-text-muted underline underline-offset-2"
-                >
-                  {t('settingsApp.palette.credit', {
-                    name: theme.name,
-                    author: theme.credit.author,
-                    licence: theme.credit.licence,
-                  })}
-                </a>
-              </li>
-            ),
-          )}
-        </ul>
-      )}
-      {saveError ? (
-        <p role="status" className="px-3 py-1 text-small text-negative">
-          {t('settingsApp.palette.notSaved')}
-        </p>
-      ) : null}
-    </Tile>
-  );
-}
-
-const columns: readonly RowColumn[] = [
-  { width: 'auto', from: 'wide' },
-  { width: 'minmax(0, 1fr)' },
-  { width: 'auto', from: 'medium' },
-  { width: 'auto' },
-];
-
 function downloadTheme(theme: CustomThemeView) {
   const blob = new Blob([themeFileText(theme)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -169,63 +65,6 @@ function downloadTheme(theme: CustomThemeView) {
   link.download = themeFileName(theme.name);
   link.click();
   URL.revokeObjectURL(url);
-}
-
-function ThemeRow({
-  theme,
-  palette,
-  onDelete,
-}: {
-  theme: CustomThemeView;
-  palette: PaletteTheme | undefined;
-  onDelete: () => void;
-}) {
-  return (
-    <Row
-      columns={columns}
-      cells={[
-        palette === undefined ? null : (
-          <Swatches key="s" theme={palette} roles={SWATCH_ROLES} />
-        ),
-        <span key="n" className="font-ui">
-          {theme.name}
-        </span>,
-        <span key="m" className="text-text-muted">
-          {t(`themes.schemes.${theme.scheme}`)}
-        </span>,
-        <span key="a" className="flex items-center">
-          <BracketLink to="/settings/themes/$id" params={{ id: theme.id }}>
-            <span aria-hidden="true">{t('settingsApp.themes.edit')}</span>
-            <span className="sr-only">
-              {t('settingsApp.themes.editLabel', { name: theme.name })}
-            </span>
-          </BracketLink>
-          <BracketButton
-            icon={IconDownload2Line}
-            aria-label={t('settingsApp.themes.downloadLabel', {
-              name: theme.name,
-            })}
-            onPress={() => {
-              downloadTheme(theme);
-            }}
-          >
-            <span aria-hidden="true" className="compact:sr-only">
-              {t('settingsApp.themes.download')}
-            </span>
-          </BracketButton>
-          <BracketButton
-            tone="destructive"
-            aria-label={t('settingsApp.themes.deleteLabel', {
-              name: theme.name,
-            })}
-            onPress={onDelete}
-          >
-            <span aria-hidden="true">{t('settingsApp.themes.delete')}</span>
-          </BracketButton>
-        </span>,
-      ]}
-    />
-  );
 }
 
 function DeleteSheet({
@@ -301,7 +140,79 @@ function DeleteSheet({
   );
 }
 
-function ThemesTile({
+/**
+ * One palette: a radio-style row that picks it for its scheme's slot, with
+ * the colours of the palette. Your own palettes add edit, download, delete.
+ */
+function PaletteRow({
+  theme,
+  selected,
+  custom,
+  onPick,
+  onDelete,
+}: {
+  theme: PaletteTheme;
+  selected: boolean;
+  custom: CustomThemeView | undefined;
+  onPick: () => void;
+  onDelete: () => void;
+}) {
+  const Radio = selected ? IconRadioButtonLine : IconCheckboxBlankCircleLine;
+  return (
+    <div className="flex min-h-row items-center border-b">
+      <Button
+        aria-pressed={selected}
+        onPress={onPick}
+        className="press grid min-h-row min-w-0 flex-1 grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3 text-left"
+      >
+        <Radio aria-hidden="true" className="size-4 text-primary" />
+        <span className="min-w-0 truncate font-ui">
+          <span>{theme.name}</span>{' '}
+          <span className="text-text-muted">
+            {t(`themes.schemes.${theme.scheme}`)}
+          </span>
+          {custom === undefined ? null : (
+            <span className="text-text-muted">
+              {' · '}
+              {t('settingsApp.palette.custom')}
+            </span>
+          )}
+        </span>
+        <Swatches theme={theme} roles={SWATCH_ROLES} />
+      </Button>
+      {custom === undefined ? null : (
+        <span className="flex shrink-0 items-center pr-1.5">
+          <BracketLink to="/settings/themes/$id" params={{ id: custom.id }}>
+            <span aria-hidden="true">{t('settingsApp.themes.edit')}</span>
+            <span className="sr-only">
+              {t('settingsApp.themes.editLabel', { name: custom.name })}
+            </span>
+          </BracketLink>
+          <BracketButton
+            icon={IconDownload2Line}
+            aria-label={t('settingsApp.themes.downloadLabel', {
+              name: custom.name,
+            })}
+            onPress={() => {
+              downloadTheme(custom);
+            }}
+          />
+          <BracketButton
+            tone="destructive"
+            aria-label={t('settingsApp.themes.deleteLabel', {
+              name: custom.name,
+            })}
+            onPress={onDelete}
+          >
+            <span aria-hidden="true">{t('settingsApp.themes.delete')}</span>
+          </BracketButton>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PaletteTile({
   userId,
   customThemes,
   customPalettes,
@@ -310,6 +221,7 @@ function ThemesTile({
   customThemes: readonly CustomThemeView[] | undefined;
   customPalettes: readonly PaletteTheme[];
 }) {
+  const { mode, setMode, appearance, setSlot, saveError } = useTheme();
   const session = useQuery(sessionQuery).data;
   const custom = customThemes ?? [];
   const full = custom.length >= CUSTOM_THEME_LIMIT;
@@ -321,67 +233,104 @@ function ThemesTile({
     event.preventDefault();
     if (url.trim() !== '') void importer.fromUrl(url.trim());
   };
+  const credited = creditedThemes(appearance, customPalettes);
+  const inUse = new Set(
+    (['light', 'dark'] as const).map(
+      (scheme) =>
+        slotPaletteTheme(appearance[scheme], scheme, customPalettes).id,
+    ),
+  );
+  const themes = [...PALETTE_THEMES, ...customPalettes];
   return (
     <Tile
-      title={t('settingsApp.themes.title')}
-      subtitle={
-        customThemes === undefined
-          ? undefined
-          : t('settingsApp.themes.subtitle', {
-              count: custom.length,
-              limit: CUSTOM_THEME_LIMIT,
-            })
-      }
+      title={t('settingsApp.palette.title')}
+      icon={IconPaletteLine}
       bodyClassName="px-0 pb-0"
+      actions={
+        full || customThemes === undefined ? null : (
+          <>
+            <FileTrigger
+              acceptedFileTypes={['.json', '.yaml', '.yml', '.toml', '.txt']}
+              onSelect={(files) => {
+                const file = files?.[0];
+                if (file !== undefined) void importer.fromFile(file);
+              }}
+            >
+              <BracketButton isDisabled={importer.busy}>
+                {t('settingsApp.themes.import')}
+              </BracketButton>
+            </FileTrigger>
+            <BracketLink to="/settings/themes/new">
+              {t('settingsApp.themes.create')}
+            </BracketLink>
+          </>
+        )
+      }
     >
       <p aria-live="polite" className="sr-only">
         {announcement || importer.done}
       </p>
-      {customThemes === undefined ? (
-        <p role="status" className="px-3 py-2 text-small text-text-muted">
-          {t('settingsApp.loading')}
-        </p>
-      ) : custom.length === 0 ? (
-        <EmptyState
-          title={t('settings.appearance.noThemes')}
-          hint={t('settingsApp.themes.none')}
-        />
-      ) : (
-        <ul>
-          {custom.map((theme) => (
-            <li key={theme.id}>
-              <ThemeRow
-                theme={theme}
-                palette={customPalettes.find((p) => p.id === theme.id)}
-                onDelete={() => {
-                  setAnnouncement('');
-                  setDeleting(theme);
-                }}
-              />
-            </li>
-          ))}
+      <div className="border-b px-3 py-2">
+        <KvList>
+          <KvRow label={t('settingsApp.palette.mode')}>
+            <ToggleGroup
+              label={t('settingsApp.palette.mode')}
+              options={THEME_MODES.map((id) => ({
+                id,
+                label: t(`settingsApp.palette.modes.${id}`),
+              }))}
+              value={mode}
+              onChange={setMode}
+            />
+          </KvRow>
+        </KvList>
+      </div>
+      <div role="group" aria-label={t('settingsApp.palette.list')}>
+        {themes.map((theme) => (
+          <PaletteRow
+            key={theme.id}
+            theme={theme}
+            selected={inUse.has(theme.id)}
+            custom={custom.find((c) => c.id === theme.id)}
+            onPick={() => {
+              setSlot(theme.scheme, theme.id);
+            }}
+            onDelete={() => {
+              setAnnouncement('');
+              setDeleting(custom.find((c) => c.id === theme.id) ?? null);
+            }}
+          />
+        ))}
+      </div>
+      {credited.length === 0 ? null : (
+        <ul data-testid="theme-credits" className="px-3 py-1">
+          {credited.map((theme) =>
+            theme.credit === undefined ? null : (
+              <li key={theme.id}>
+                <a
+                  href={theme.credit.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-hit items-center font-ui text-tiny text-text-muted underline underline-offset-2"
+                >
+                  {t('settingsApp.palette.credit', {
+                    name: theme.name,
+                    author: theme.credit.author,
+                    licence: theme.credit.licence,
+                  })}
+                </a>
+              </li>
+            ),
+          )}
         </ul>
       )}
+      {saveError ? (
+        <p role="status" className="px-3 py-1 text-small text-negative">
+          {t('settingsApp.palette.notSaved')}
+        </p>
+      ) : null}
       {full || customThemes === undefined ? null : (
-        <div className="flex flex-wrap items-center gap-x-2 px-3 py-1">
-          <BracketLink to="/settings/themes/new">
-            {t('settingsApp.themes.create')}
-          </BracketLink>
-          <FileTrigger
-            acceptedFileTypes={['.json', '.yaml', '.yml', '.toml', '.txt']}
-            onSelect={(files) => {
-              const file = files?.[0];
-              if (file !== undefined) void importer.fromFile(file);
-            }}
-          >
-            <BracketButton isDisabled={importer.busy}>
-              {t('settingsApp.themes.import')}
-            </BracketButton>
-          </FileTrigger>
-        </div>
-      )}
-      {full || customThemes === undefined ? null : (
-        <p className="px-3 pb-1 font-ui text-tiny text-text-muted">
+        <p className="px-3 py-2 font-ui text-tiny text-text-muted">
           {t('settings.appearance.importHint')}
         </p>
       )}
@@ -443,33 +392,33 @@ function canVibrate(): boolean {
   return typeof navigator !== 'undefined' && 'vibrate' in navigator;
 }
 
-function OnOffPref({
+function PrefCheck({
   pref,
   label,
-  hint,
   disabled = false,
 }: {
   pref: 'hints' | 'haptics' | 'celebrations';
   label: string;
-  hint?: string;
   disabled?: boolean;
 }) {
   const [value, setValue] = useDevicePref(pref);
   return (
-    <PreferenceRow label={label} hint={hint}>
+    <KvRow label={label}>
       {disabled ? (
-        <span className="text-small text-text-muted">
+        <span className="text-text-muted">
           {t('settingsApp.interface.off')}
         </span>
       ) : (
-        <ToggleGroup
+        <CheckControl
           label={label}
-          options={onOff()}
-          value={value}
-          onChange={setValue}
+          text={t('settingsApp.interface.show')}
+          checked={value === 'on'}
+          onChange={(on) => {
+            setValue(on ? 'on' : 'off');
+          }}
         />
       )}
-    </PreferenceRow>
+    </KvRow>
   );
 }
 
@@ -481,86 +430,79 @@ function InterfaceTile() {
   );
   const still = useEffectiveMotion() !== 'full';
   return (
-    <Tile
-      title={t('settingsApp.interface.title')}
-      subtitle={t('settingsApp.interface.subtitle')}
-      bodyClassName="px-0 pb-0"
-    >
-      <PreferenceRow label={t('settingsApp.interface.density')}>
-        <ToggleGroup
-          label={t('settingsApp.interface.density')}
-          options={(['comfortable', 'compact'] as const).map((id) => ({
-            id,
-            label: t(`settingsApp.interface.densities.${id}`),
-          }))}
-          value={density}
-          onChange={setDensity}
-        />
-      </PreferenceRow>
-      <PreferenceRow label={t('settingsApp.interface.motion')}>
-        <ToggleGroup
-          label={t('settingsApp.interface.motion')}
-          options={(['system', 'full', 'reduced', 'off'] as const).map(
-            (id) => ({
+    <Tile title={t('settingsApp.interface.title')} icon={IconKeyboardLine}>
+      <KvList>
+        <KvRow label={t('settingsApp.interface.density')}>
+          <ToggleGroup
+            label={t('settingsApp.interface.density')}
+            options={(['compact', 'comfortable'] as const).map((id) => ({
               id,
-              label: t(`settingsApp.interface.motions.${id}`),
-            }),
-          )}
-          value={motion}
-          onChange={setMotion}
+              label: t(`settingsApp.interface.densities.${id}`),
+            }))}
+            value={density}
+            onChange={setDensity}
+          />
+        </KvRow>
+        <KvRow
+          label={t('settingsApp.interface.textFont')}
+          tag={<PlannedTag />}
         />
-      </PreferenceRow>
-      <OnOffPref
-        pref="hints"
-        label={t('settingsApp.interface.hints')}
-        hint={t('settingsApp.interface.hintsHint')}
-      />
-      <PreferenceRow
-        label={t('settingsApp.interface.shortcuts')}
-        hint={t('settings.shortcutsHint')}
-      >
-        <ToggleGroup
-          label={t('settingsApp.interface.shortcuts')}
-          options={onOff()}
-          value={shortcuts ? 'on' : 'off'}
-          onChange={(next) => {
-            saveShortcutsEnabled(deviceStorage(), next === 'on');
-            setShortcuts(next === 'on');
-          }}
+        <KvRow
+          label={t('settingsApp.interface.numberFont')}
+          tag={<PlannedTag />}
         />
-      </PreferenceRow>
-      {canVibrate() ? (
-        <OnOffPref pref="haptics" label={t('settingsApp.interface.haptics')} />
-      ) : null}
-      <OnOffPref
-        pref="celebrations"
-        label={t('settingsApp.interface.celebrations')}
-        hint={
-          still
-            ? t('settingsApp.interface.celebrationsOff')
-            : t('settingsApp.interface.celebrationsHint')
-        }
-        disabled={still}
-      />
+        <KvRow label={t('settingsApp.interface.motion')}>
+          <ToggleGroup
+            label={t('settingsApp.interface.motion')}
+            options={(['system', 'full', 'reduced', 'off'] as const).map(
+              (id) => ({
+                id,
+                label: t(`settingsApp.interface.motions.${id}`),
+              }),
+            )}
+            value={motion}
+            onChange={setMotion}
+          />
+        </KvRow>
+        <PrefCheck pref="hints" label={t('settingsApp.interface.hints')} />
+        <KvRow label={t('settingsApp.interface.shortcuts')}>
+          <CheckControl
+            label={t('settingsApp.interface.shortcuts')}
+            text={t('settingsApp.interface.on')}
+            checked={shortcuts}
+            onChange={(on) => {
+              saveShortcutsEnabled(deviceStorage(), on);
+              setShortcuts(on);
+            }}
+          />
+        </KvRow>
+        {canVibrate() ? (
+          <PrefCheck
+            pref="haptics"
+            label={t('settingsApp.interface.haptics')}
+          />
+        ) : null}
+        <PrefCheck
+          pref="celebrations"
+          label={t('settingsApp.interface.celebrations')}
+          disabled={still}
+        />
+      </KvList>
     </Tile>
   );
 }
 
-function PlannedTile() {
-  const items = ['fonts', 'tabs', 'topBar', 'layouts'] as const;
+/** A tile for something planned (ADR 0029): the title says so, nothing else. */
+function PlannedTile({ item }: { item: 'tabs' | 'topBar' | 'layouts' }) {
   return (
     <Tile
-      title={t('settingsApp.planned.title')}
-      subtitle={t('settingsApp.planned.subtitle')}
-      bodyClassName="px-0 pb-0"
+      title={t(`settingsApp.planned.${item}`)}
+      icon={item === 'tabs' ? IconLayoutGridLine : undefined}
+      subtitle={t('settingsApp.planned.title')}
     >
-      {items.map((item) => (
-        <PreferenceRow key={item} label={t(`settingsApp.planned.${item}`)}>
-          <span className="text-small text-text-muted">
-            {t('settingsApp.planned.note')}
-          </span>
-        </PreferenceRow>
-      ))}
+      <p className="font-ui text-text-muted">
+        {t(`settingsApp.planned.${item}Note`)}
+      </p>
     </Tile>
   );
 }
@@ -569,16 +511,19 @@ export function AppTab() {
   const { customThemes, customPalettes } = useTheme();
   const session = useQuery(sessionQuery).data;
   return (
-    <Grid className="min-h-full content-start">
-      <PaletteTile custom={customPalettes} />
-      <InterfaceTile />
-      <NotificationsTile />
-      <ThemesTile
+    <Grid columns={2} className="min-h-full content-start">
+      <PaletteTile
         userId={session?.user.id ?? ''}
         customThemes={customThemes}
         customPalettes={customPalettes}
       />
-      <PlannedTile />
+      <div className="flex min-w-0 flex-col">
+        <PlannedTile item="tabs" />
+        <PlannedTile item="topBar" />
+        <PlannedTile item="layouts" />
+        <InterfaceTile />
+        <NotificationsTile />
+      </div>
     </Grid>
   );
 }

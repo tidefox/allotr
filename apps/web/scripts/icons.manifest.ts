@@ -116,6 +116,8 @@ export const INTERFACE_ICONS = [
   'shield-check-line',
   'checkbox-line',
   'checkbox-blank-line',
+  'radio-button-line',
+  'checkbox-blank-circle-line',
   'swap-line',
   'pencil-line',
   'arrow-up-down-line',

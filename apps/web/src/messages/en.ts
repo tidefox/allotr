@@ -848,7 +848,7 @@ export const en = {
       'Set a palette and choose which colour each part of the app uses. Allotr adjusts colours that are too faint so every text and control meets WCAG 2.2 AA.',
     name: 'Name',
     scheme: 'Scheme',
-    schemes: { light: 'Light', dark: 'Dark' },
+    schemes: { light: 'light', dark: 'dark' },
     startFrom: 'Start from',
     tabs: { roles: 'roles' },
     neutralsHint:
