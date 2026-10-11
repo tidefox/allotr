@@ -69,7 +69,10 @@ test('a goal is added on a savings account and shows its progress', async ({
   await expectAccessible(page);
 
   await page
-    .getByRole('button', { name: t('budgetGoalsIous.goals.add') })
+    .getByRole('button', {
+      name: t('budgetGoalsIous.goals.addLabel'),
+      exact: true,
+    })
     .click();
   const sheet = page.getByRole('dialog', {
     name: t('budgetGoalsIous.goals.form.title'),
@@ -119,9 +122,25 @@ test('the payday plan and weekly review open as sheets', async ({
   baseURL,
 }) => {
   await signIn(page, baseURL ?? '');
-  await page.goto('/budget/goals');
+  // The scheduler records the weekly review within a second or two; it
+  // opens from "needs attention" on the dashboard.
+  await expect
+    .poll(async () => {
+      const response = await page.request.get('/v1/reminders');
+      const body = (await response.json()) as {
+        reminders: { kind: string }[];
+      };
+      return body.reminders.some((r) => r.kind === 'weekly_review');
+    })
+    .toBe(true);
+  await page.goto('/');
   await page
-    .getByRole('button', { name: t('budgetGoalsIous.goals.weekly') })
+    .getByRole('region', { name: t('dashboardTiles.needsAttention.title') })
+    .locator('.row-grid')
+    .filter({ hasText: t('dashboardTiles.needsAttention.tagReview') })
+    .getByRole('button', {
+      name: t('dashboardTiles.needsAttention.actionOpen'),
+    })
     .click();
   const review = page.getByRole('dialog', {
     name: t('budgetGoalsIous.weekly.title'),
@@ -134,8 +153,9 @@ test('the payday plan and weekly review open as sheets', async ({
   await page.keyboard.press('Escape');
   await expect(review).toBeHidden();
 
+  await page.goto('/budget/budgets');
   await page
-    .getByRole('button', { name: t('budgetGoalsIous.goals.payday') })
+    .getByRole('button', { name: t('budgetBudgets.tree.plan') })
     .click();
   const payday = page.getByRole('dialog', {
     name: t('budgetGoalsIous.payday.title'),
@@ -152,8 +172,11 @@ test('a goal can be archived', async ({ page, baseURL }) => {
   await page.goto('/budget/goals');
   await page
     .getByRole('button', {
-      name: t('budgetGoalsIous.goals.archiveLabel', { name: 'Trip' }),
+      name: t('budgetGoalsIous.goals.actionsOf', { name: 'Trip' }),
     })
+    .click();
+  await page
+    .getByRole('menuitem', { name: t('budgetGoalsIous.goals.archive') })
     .click();
   await expect(page.getByRole('region', { name: 'Trip' })).toBeHidden();
 });
@@ -285,7 +308,7 @@ test('a due date can be set and an IOU written off', async ({
     .getByRole('button', { name: t('budgetGoalsIous.ious.form.saveDue') })
     .click();
   await expect(due).toBeHidden();
-  await expect(pane).toContainText('Jan 1');
+  await expect(pane).toContainText('due jan 01');
   await expect(pane).not.toContainText('late');
 
   await pane
@@ -315,7 +338,7 @@ test('a new IOU is recorded from the form', async ({ page, baseURL }) => {
   await signIn(page, baseURL ?? '');
   await page.goto('/budget/ious');
   await page
-    .getByRole('button', { name: t('budgetGoalsIous.ious.add') })
+    .getByRole('button', { name: t('budgetGoalsIous.ious.lendLabel') })
     .click();
   const sheet = page.getByRole('dialog', {
     name: t('budgetGoalsIous.ious.sheets.loan'),

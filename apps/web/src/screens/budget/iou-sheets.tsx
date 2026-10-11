@@ -54,7 +54,7 @@ const locale = 'en';
 export type CreatedIous = Awaited<ReturnType<typeof createIou>>;
 
 export type IouFlow =
-  | Readonly<{ kind: 'loan' }>
+  | Readonly<{ kind: 'loan'; direction?: IouDirectionView }>
   | Readonly<{ kind: 'repay' | 'writeoff' | 'due' | 'delete'; iou: IouView }>;
 
 function titleOf(flow: IouFlow): string {
@@ -127,6 +127,7 @@ function Forms({
     case 'loan':
       return (
         <LoanForm
+          direction={flow.direction ?? 'owed-to-me'}
           accounts={accounts}
           today={today}
           onClose={onClose}
@@ -239,18 +240,21 @@ function dateError(
 }
 
 function LoanForm({
+  direction: initialDirection,
   accounts,
   today,
   onClose,
   onRecorded,
 }: {
+  direction: IouDirectionView;
   accounts: readonly AccountView[];
   today: LocalDate;
   onClose: () => void;
   onRecorded: ((created: CreatedIous) => void) | undefined;
 }) {
   const open = accounts.filter((a) => !a.archived);
-  const [direction, setDirection] = useState<IouDirectionView>('owed-to-me');
+  const [direction, setDirection] =
+    useState<IouDirectionView>(initialDirection);
   const [accountId, setAccountId] = useState(open[0]?.id ?? '');
   const [person, setPerson] = useState('');
   const [amount, setAmount] = useState('');

@@ -1,6 +1,7 @@
 import {
   isLocalDate,
   localDate,
+  money,
   type AccountView,
   type CreateGoalBody,
   type GoalView,
@@ -10,7 +11,7 @@ import {
 import type { ChartTick } from '@/charts/chart';
 import type { Point } from '@/charts/math';
 import { positive } from '@/features/ious/draft';
-import { formatDay } from '@/features/today/format';
+import { formatTerminalDate } from '@/features/today/format';
 import { formatMoneyShort } from '@/lib/format-money';
 
 // Goals as view models. The figures (saved, target, remaining) are the
@@ -114,10 +115,11 @@ export function goalChart(
       { x: 0, y: goal.saved.amountMinor },
       { x: end, y: goal.target.amountMinor },
     ],
+    // From zero, as the locked design's goal charts.
     yTicks: [
       {
-        value: goal.saved.amountMinor,
-        label: formatMoneyShort(goal.saved, locale),
+        value: 0,
+        label: formatMoneyShort(money(0, goal.target.currency), locale),
       },
       {
         value: goal.target.amountMinor,
@@ -125,8 +127,8 @@ export function goalChart(
       },
     ],
     xTicks: [
-      { value: 0, label: formatDay(today, locale) },
-      { value: end, label: formatDay(goal.targetOn, locale) },
+      { value: 0, label: formatTerminalDate(today, locale) },
+      { value: end, label: formatTerminalDate(goal.targetOn, locale) },
     ],
   };
 }

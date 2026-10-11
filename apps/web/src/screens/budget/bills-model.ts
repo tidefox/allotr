@@ -18,6 +18,10 @@ export type DueItem = Readonly<{
   billId: string;
   /** Empty when the bill no longer exists. */
   name: string;
+  /** The account it is paid from; null when the bill no longer exists. */
+  accountId: string | null;
+  /** The entry that paid this due date, when one is linked. */
+  paymentEntryId: string | null;
   dueOn: LocalDate;
   paidOn: LocalDate | null;
   amount: Money;
@@ -48,6 +52,8 @@ export function billsView(
   today: TodayView,
   bills: readonly BillView[],
   labels: Readonly<{ payday: string; unknown: string }>,
+  /** A short amount for the timeline's labels, such as "$950". */
+  short?: (amount: Money) => string,
 ): BillsView {
   const byId = new Map(bills.map((bill) => [bill.id, bill]));
   const items: DueItem[] = today.cycleBills.map((due) => {
@@ -57,6 +63,10 @@ export function billsView(
       id: `${due.billId}:${due.dueOn}`,
       billId: due.billId,
       name: bill?.name ?? '',
+      accountId: bill?.accountId ?? null,
+      paymentEntryId:
+        bill?.payments.find((p) => p.dueOn === due.dueOn)?.transactionId ??
+        null,
       dueOn: due.dueOn,
       paidOn: due.paidOn,
       amount: due.amount,
@@ -81,6 +91,7 @@ export function billsView(
       day: Math.min(days - 1, Math.max(0, daysBetween(opened, item.dueOn))),
       kind: 'bill' as const,
       label: item.name === '' ? labels.unknown : item.name,
+      ...(short === undefined ? {} : { detail: short(item.amount) }),
       paid: item.paidOn !== null,
     })),
     {

@@ -1,4 +1,5 @@
 import type { AccountView, Money, PoolView } from '@allotr/shared';
+import type { SeriesColor } from '@/components/bars';
 import { barFraction } from '@/shell/summary-math';
 
 // View model for the Budget · pools sub-tab. Every figure is the server's;
@@ -9,6 +10,8 @@ export type PoolTile = Readonly<{
   name: string;
   kind: PoolView['kind'];
   balance: Money;
+  /** The series colour by the pool's place among the open pools. */
+  color: SeriesColor;
   /** The pool's own daily switch. */
   checked: boolean;
   /** The Budget pool always counts; the server refuses to switch it off. */
@@ -24,8 +27,9 @@ export function poolTiles(
 ): PoolTile[] {
   return pools
     .filter((pool) => !pool.archived)
-    .map((pool) => ({
+    .map((pool, index) => ({
       id: pool.id,
+      color: `series-${String((index % 8) + 1)}` as SeriesColor,
       name: pool.name,
       kind: pool.kind,
       balance: pool.balance.amount,

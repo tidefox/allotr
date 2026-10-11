@@ -1,41 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Amount } from '@/components/amount';
-import {
-  Bar,
-  SkeletonTile,
-  seriesBg,
-  type SeriesColor,
-} from '@/components/bars';
+import { SkeletonTile } from '@/components/bars';
 import { Brackets, bracketClass } from '@/components/buttons';
 import { Tile } from '@/components/layout';
-import { Row } from '@/components/row';
-import type { RowColumn } from '@/components/row-columns';
-import { CategoryIcon, EmptyState } from '@/components/states';
+import { EmptyState } from '@/components/states';
 import { ChartLegend } from '@/charts/chart';
-import {
-  IconArrowDownSLine,
-  IconArrowRightSLine,
-  IconPieChart2Line,
-} from '@/generated/icons';
+import { IconPieChart2Line } from '@/generated/icons';
 import { budgetsQuery } from '@/lib/budgets';
 import { categoriesQuery } from '@/lib/ledger';
-import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
+import { BudgetLine } from '@/screens/budget/budget-line';
 import { TileFailed } from './tile-failed.tsx';
-import { budgetRows, periodPace, type BudgetRow } from './budgets.ts';
-
-// Lead (fold handle or tree line), icon, name, bar, spent, left. Phones
-// drop the left column.
-const columns: readonly RowColumn[] = [
-  { width: '1.5rem' },
-  { width: '1.125rem' },
-  { width: 'minmax(0, 1fr)' },
-  { width: 'minmax(2.25rem, 2.4fr)' },
-  { width: '9ch' },
-  { width: '9ch', from: 'medium' },
-];
+import { budgetRows, periodPace } from './budgets.ts';
 
 export function BudgetsTile() {
   const budgets = useQuery(budgetsQuery);
@@ -100,6 +77,17 @@ export function BudgetsTile() {
               onToggle={() => {
                 toggle(row.group);
               }}
+              foldLabel={t(
+                folded.has(row.group)
+                  ? 'dashboardTiles.budgets.expand'
+                  : 'dashboardTiles.budgets.collapse',
+                { name: row.name },
+              )}
+              setAsideLabel={t('dashboardTiles.budgets.setAside')}
+              barLabel={t('dashboardTiles.budgets.barLabel', {
+                name: row.name,
+              })}
+              className="border-b-0"
             />
           ))}
           {pace === null ? null : (
@@ -120,96 +108,5 @@ export function BudgetsTile() {
         </>
       )}
     </Tile>
-  );
-}
-
-function BudgetLine({
-  row,
-  pace,
-  expanded,
-  onToggle,
-}: {
-  row: BudgetRow;
-  pace: number | undefined;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const parent = row.role === 'parent';
-  const lead = parent ? (
-    <button
-      type="button"
-      aria-expanded={expanded}
-      aria-label={t(
-        expanded
-          ? 'dashboardTiles.budgets.collapse'
-          : 'dashboardTiles.budgets.expand',
-        { name: row.name },
-      )}
-      onClick={onToggle}
-      className="press flex size-hit items-center justify-center text-text-muted"
-    >
-      {expanded ? (
-        <IconArrowDownSLine className="size-4" />
-      ) : (
-        <IconArrowRightSLine className="size-4" />
-      )}
-    </button>
-  ) : (
-    <span aria-hidden="true" className="block w-6 text-center text-outline">
-      {row.role === 'child' ? '├' : row.role === 'last-child' ? '└' : ''}
-    </span>
-  );
-  const overLeft = row.left.amountMinor < 0;
-  return (
-    <Row
-      columns={columns}
-      className="border-b-0"
-      cells={[
-        lead,
-        row.icon === null ? null : (
-          <CategoryIcon key="i" name={row.icon} color={row.colour} />
-        ),
-        <span key="n" className={cn('font-sans', parent && 'font-semibold')}>
-          {row.name}
-          {row.setAside ? (
-            <span className="font-normal text-text-muted">
-              {' '}
-              {t('dashboardTiles.budgets.setAside')}
-            </span>
-          ) : null}
-        </span>,
-        // Room for the pace tick, which reaches past the track; a row cell
-        // clips what overflows it.
-        <div key="b" className="py-[3px]">
-          <Bar
-            value={row.fraction}
-            over={row.over}
-            pace={row.setAside ? undefined : pace}
-            fillClassName={
-              seriesBg[`series-${String(row.colour)}` as SeriesColor]
-            }
-            label={t('dashboardTiles.budgets.barLabel', { name: row.name })}
-          />
-        </div>,
-        <span
-          key="s"
-          className={cn(
-            'block text-right',
-            row.over ? 'text-negative' : 'text-text-muted',
-          )}
-        >
-          <Amount amount={row.spent} />
-        </span>,
-        <span
-          key="l"
-          className={cn(
-            'block text-right font-semibold',
-            overLeft && 'text-negative',
-          )}
-        >
-          <Amount amount={row.left} />
-        </span>,
-      ]}
-    />
   );
 }

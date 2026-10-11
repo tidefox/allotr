@@ -113,9 +113,10 @@ test('the budgets tab shows the tree, totals and cover', async ({
   await expect(tree.getByText('Takeaway', { exact: true })).toBeVisible();
   // The Household header carries the server's totals for both children.
   await expect(tree.getByText('$42.00', { exact: true })).toHaveCount(2);
+  // Phones drop the left column, so the figure is only in the page there.
   await expect(
     tree.getByText('$508.00', { exact: true }).first(),
-  ).toBeVisible();
+  ).toBeAttached();
   await expect(
     tree.getByText(t('budgetBudgets.tree.totalDaily')),
   ).toBeVisible();
@@ -143,7 +144,12 @@ test('the budgets tab shows the tree, totals and cover', async ({
 test('a budget is added from the sheet', async ({ page, baseURL }) => {
   await apiSignIn(page, baseURL ?? '');
   await page.goto('/budget/budgets');
-  await page.getByRole('button', { name: t('budgetBudgets.tree.add') }).click();
+  await page
+    .getByRole('button', {
+      name: t('budgetBudgets.tree.addLabel'),
+      exact: true,
+    })
+    .click();
   const sheet = page.getByRole('dialog', {
     name: t('budgetBudgets.sheet.newTitle'),
   });
@@ -171,15 +177,17 @@ test('the cover order moves a source and previews an overspend', async ({
   });
   const rows = list.getByRole('row');
   await expect(rows.first()).toBeVisible();
-  // The row reads "1", then the name (a hidden drag button may come first).
-  const parts = (await rows.first().innerText())
-    .split('\n')
-    .map((part) => part.trim());
-  const first = parts[parts.indexOf('1') + 1] ?? '';
+  // The first row's name, from its "Move … down" button.
+  const downName =
+    (await rows
+      .first()
+      .getByRole('button', { name: /^Move .* down$/ })
+      .getAttribute('aria-label')) ?? '';
+  const first = downName.replace(/^Move /, '').replace(/ down$/, '');
   await rows
     .first()
     .getByRole('button', {
-      name: t('budgetBudgets.order.down', { name: first.trim() }),
+      name: t('budgetBudgets.order.down', { name: first }),
     })
     .click();
   await expect(rows.nth(1)).toContainText(first.trim());

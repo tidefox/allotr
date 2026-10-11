@@ -1,30 +1,51 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
+import { useState, type ComponentType } from 'react';
 import { ToggleButton } from 'react-aria-components';
 import type { AccountView } from '@allotr/shared';
 import { Amount } from '@/components/amount';
-import { LeftBar, SkeletonTile } from '@/components/bars';
+import {
+  LeftBar,
+  SkeletonTile,
+  seriesBg,
+  type SeriesColor,
+} from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
 import { Grid, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { EmptyState } from '@/components/states';
 import { Sparkline } from '@/charts/sparkline';
-import { IconCheckLine } from '@/generated/icons';
+import {
+  IconAddLine,
+  IconCheckboxBlankLine,
+  IconCheckboxLine,
+  IconFundsLine,
+  IconSafe2Line,
+  IconWallet3Line,
+  type IconProps,
+} from '@/generated/icons';
 import { poolQueryKeys, poolsQuery, updatePool } from '@/lib/budgets';
 import { formatMoney } from '@/lib/format-money';
 import { accountHistoryQuery, accountsQuery, todayQuery } from '@/lib/ledger';
-import { cn } from '@/lib/utils';
 import { sparkPoints } from '@/lib/spark-points';
 import { t } from '@/messages/t';
+import { AccountIcon } from '../accounts/account-list.tsx';
+import { NewAccountSheet } from '../accounts/new-account-sheet.tsx';
+import { Formula } from '../dashboard/tiles/this-cycle.tsx';
 import { poolTiles, type PoolTile } from './pools-model.ts';
 
 const locale = 'en';
 const money = (amount: Parameters<typeof formatMoney>[0]) =>
   formatMoney(amount, 'symbol', locale);
 
+// Tree line, kind icon, name, sparkline, balance (the locked design's
+// pool tile rows).
 const columns: readonly RowColumn[] = [
+  { width: '1.5rem' },
+  { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
-  { width: '5rem', from: 'medium' },
+  { width: '4.375rem' },
   { width: 'auto' },
 ];
 
@@ -43,6 +64,7 @@ function useToggleDaily() {
   });
 }
 
+/** `☑ counts toward daily`: the pool's own switch, in the tile body. */
 function DailyToggle({
   tile,
   onChange,
@@ -59,102 +81,155 @@ function DailyToggle({
         tile.fixed ? 'budgetPools.dailyFixedLabel' : 'budgetPools.dailyLabel',
         { name: tile.name },
       )}
-      className="press flex size-8 shrink-0 items-center justify-center disabled:cursor-not-allowed"
+      className="press inline-flex min-h-hit shrink-0 items-center gap-1.5 whitespace-nowrap text-text-muted disabled:cursor-not-allowed"
     >
-      {({ isSelected, isDisabled }) => (
-        <span
-          className={cn(
-            'flex size-4 items-center justify-center border border-outline',
-            isSelected &&
-              (isDisabled ? 'text-text-muted' : 'bg-primary text-on-primary'),
+      {({ isSelected }) => (
+        <>
+          {isSelected ? (
+            <IconCheckboxLine className="size-4 text-primary" />
+          ) : (
+            <IconCheckboxBlankLine className="size-4 text-primary" />
           )}
-        >
-          {isSelected ? <IconCheckLine className="size-3" /> : null}
-        </span>
+          {t('budgetPools.counts')}
+        </>
       )}
     </ToggleButton>
   );
 }
 
-function Trend({ account }: { account: AccountView }) {
+function Trend({
+  account,
+  color,
+}: {
+  account: AccountView;
+  color: SeriesColor;
+}) {
   const history = useQuery(accountHistoryQuery(account.id));
   const points =
     history.data === undefined ? [] : sparkPoints(history.data.points);
   return (
-    <div className="h-6 w-16">
+    <div className="min-h-[1.25rem]">
       {points.length < 2 ? null : (
         <Sparkline
           points={points}
+          color={account.balance.amountMinor < 0 ? 'negative' : color}
           label={t('budgetPools.sparkline', { name: account.name })}
+          // The mockup's 200 × 20 line, as wide as the column.
+          className="aspect-[10/1] h-auto"
         />
       )}
     </div>
   );
 }
 
+const poolIcon: Record<PoolTile['kind'], ComponentType<IconProps>> = {
+  spending: IconWallet3Line,
+  savings: IconSafe2Line,
+};
+
 function PoolCard({
   tile,
   failed,
   onToggle,
+  onAdd,
 }: {
   tile: PoolTile;
   failed: boolean;
   onToggle: (checked: boolean) => void;
+  onAdd: () => void;
 }) {
+  const navigate = useNavigate();
   return (
     <Tile
       title={tile.name}
-      subtitle={t(`budgetPools.kind.${tile.kind}`)}
-      actions={<DailyToggle tile={tile} onChange={onToggle} />}
-      bodyClassName="px-0 pb-0"
+      icon={poolIcon[tile.kind]}
+      subtitle={t(
+        tile.checked ? 'budgetPools.onBudget' : 'budgetPools.offBudget',
+      )}
+      primary={tile.checked}
+      actions={
+        <BracketButton
+          icon={IconAddLine}
+          aria-label={t('budgetPools.addAccountTo', { name: tile.name })}
+          onPress={onAdd}
+        >
+          {t('budgetPools.addAccount')}
+        </BracketButton>
+      }
     >
-      <div className="px-3 py-2">
-        <p className="text-small text-text-muted">{t('budgetPools.balance')}</p>
-        <p className="text-stat-sub font-semibold">
+      <div className="flex items-baseline justify-between gap-2">
+        <DailyToggle tile={tile} onChange={onToggle} />
+        <span className="text-big leading-[1.15] font-semibold tracking-[-0.01em]">
           <Amount amount={tile.balance} locale={locale} />
-        </p>
-        {tile.cycle === null ? null : (
-          <>
-            <p className="num mt-1 truncate text-small text-text-muted">
-              {t('budgetPools.left', {
-                left: money(tile.cycle.left),
-                start: money(tile.cycle.start),
-              })}
-            </p>
-            <LeftBar
-              fraction={tile.cycle.fraction}
-              label={t('budgetPools.leftLabel', { name: tile.name })}
-              className="mt-1"
-            />
-          </>
-        )}
-        {tile.kind === 'savings' ? (
-          <p className="mt-1 text-small text-text-muted">
-            {t('budgetPools.savingsNote')}
-          </p>
-        ) : null}
-        {failed ? (
-          <p role="alert" className="mt-1 text-small text-negative">
-            {t('budgetPools.saveFailed', { name: tile.name })}
-          </p>
-        ) : null}
+        </span>
       </div>
+      {tile.cycle === null ? (
+        <div className="h-2" />
+      ) : (
+        <div className="pt-0.5 pb-2">
+          <LeftBar
+            fraction={tile.cycle.fraction}
+            height={4}
+            fillClassName={seriesBg[tile.color]}
+            label={t('budgetPools.leftLabel', { name: tile.name })}
+            className="mt-1.5"
+          />
+          <p className="num truncate text-tiny text-text-muted">
+            {t('budgetPools.left', {
+              left: money(tile.cycle.left),
+              start: money(tile.cycle.start),
+            })}
+          </p>
+        </div>
+      )}
+      {failed ? (
+        <p role="alert" className="mb-1 text-small text-negative">
+          {t('budgetPools.saveFailed', { name: tile.name })}
+        </p>
+      ) : null}
       {tile.accounts.length === 0 ? (
-        <p className="border-t px-3 py-2 text-small text-text-muted">
+        <p className="font-sans text-text-muted">
           {t('budgetPools.noAccounts')}
         </p>
       ) : (
-        <ul className="border-t">
-          {tile.accounts.map((account) => (
+        <ul className="-mx-3">
+          {tile.accounts.map((account, index) => (
             <li key={account.id}>
               <Row
                 columns={columns}
+                onPress={() => {
+                  void navigate({
+                    to: '/accounts',
+                    search: { account: account.id },
+                  });
+                }}
                 cells={[
+                  <span
+                    key="l"
+                    aria-hidden="true"
+                    className="block w-6 text-center text-outline"
+                  >
+                    {index === tile.accounts.length - 1 ? '└' : '├'}
+                  </span>,
+                  <AccountIcon
+                    key="i"
+                    account={account}
+                    className="size-4 text-text-muted"
+                  />,
                   <span key="n" className="font-sans">
                     {account.name}
                   </span>,
-                  <Trend key="t" account={account} />,
-                  <Amount key="a" amount={account.balance} locale={locale} />,
+                  <Trend key="t" account={account} color={tile.color} />,
+                  <Amount
+                    key="a"
+                    amount={account.balance}
+                    locale={locale}
+                    className={
+                      account.balance.amountMinor < 0
+                        ? 'text-negative'
+                        : 'text-text-muted'
+                    }
+                  />,
                 ]}
               />
             </li>
@@ -169,32 +244,23 @@ function HowItWorks() {
   const today = useQuery(todayQuery);
   const view = today.data;
   return (
-    <Tile
-      title={t('budgetPools.how.title')}
-      subtitle={t('budgetPools.how.subtitle')}
-      span="full"
-      bodyClassName="grid content-start gap-2 pt-2.5"
-    >
-      {view === undefined ? (
-        <p className="num text-small text-text-muted">…</p>
-      ) : (
-        <p className="num truncate text-base">
-          {t(`budgetPools.how.formula.${view.dailyMode}`, {
-            onBudget: money(view.onBudget),
-            bills: money(view.reservedBills),
-            held: money(view.held),
-            base: money(view.dailyBase),
-            days: view.daysLeft,
-            daily: money(view.liveDaily),
-          })}
-        </p>
-      )}
-      <p className="font-sans text-small text-text-muted">
+    <Tile title={t('budgetPools.how.title')} icon={IconFundsLine} span="full">
+      <p className="mb-1.5 font-sans text-text-muted">
         {t('budgetPools.how.body')}
       </p>
+      {view === undefined ? null : (
+        <Formula
+          figures={view}
+          daysLeft={view.daysLeft}
+          className="mt-0 border-t-0 pt-0"
+        />
+      )}
     </Tile>
   );
 }
+
+// The locked design's `data-cols="2"`: one column on phones, two from 720.
+const twoColumns = 'min-h-full cols3:grid-cols-2 cols4:grid-cols-2';
 
 // Budget · pools (docs/ui.md §6): one tile per pool, then how the daily
 // number works. Switching a pool changes what counts toward the daily
@@ -203,6 +269,8 @@ export function PoolsTab() {
   const pools = useQuery(poolsQuery);
   const accounts = useQuery(accountsQuery);
   const toggle = useToggleDaily();
+  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
 
   if (pools.isError || accounts.isError) {
     return (
@@ -226,7 +294,7 @@ export function PoolsTab() {
   }
   if (pools.data === undefined || accounts.data === undefined) {
     return (
-      <Grid>
+      <Grid className={twoColumns}>
         <SkeletonTile rows={4} />
         <SkeletonTile rows={4} />
       </Grid>
@@ -234,27 +302,43 @@ export function PoolsTab() {
   }
   const tiles = poolTiles(pools.data.pools, accounts.data.accounts);
   return (
-    <Grid>
-      {tiles.length === 0 ? (
-        <Tile title={t('nav.budget')} span="full">
-          <EmptyState
-            title={t('budgetPools.empty')}
-            hint={t('budgetPools.emptyHint')}
-          />
-        </Tile>
-      ) : (
-        tiles.map((tile) => (
-          <PoolCard
-            key={tile.id}
-            tile={tile}
-            failed={toggle.isError && toggle.variables.id === tile.id}
-            onToggle={(checked) => {
-              toggle.mutate({ id: tile.id, checked });
-            }}
-          />
-        ))
-      )}
-      <HowItWorks />
-    </Grid>
+    <>
+      <Grid className={twoColumns}>
+        {tiles.length === 0 ? (
+          <Tile title={t('nav.budget')} span="full">
+            <EmptyState
+              title={t('budgetPools.empty')}
+              hint={t('budgetPools.emptyHint')}
+            />
+          </Tile>
+        ) : (
+          tiles.map((tile) => (
+            <PoolCard
+              key={tile.id}
+              tile={tile}
+              failed={toggle.isError && toggle.variables.id === tile.id}
+              onToggle={(checked) => {
+                toggle.mutate({ id: tile.id, checked });
+              }}
+              onAdd={() => {
+                setAdding(true);
+              }}
+            />
+          ))
+        )}
+        <HowItWorks />
+      </Grid>
+      {adding ? (
+        <NewAccountSheet
+          onClose={() => {
+            setAdding(false);
+          }}
+          onCreated={(account) => {
+            setAdding(false);
+            void navigate({ to: '/accounts', search: { account: account.id } });
+          }}
+        />
+      ) : null}
+    </>
   );
 }

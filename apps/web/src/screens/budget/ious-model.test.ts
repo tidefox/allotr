@@ -2,7 +2,9 @@ import { localDate, money, type IouView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
   groupPeople,
+  nextDue,
   openCount,
+  personFigure,
   overdueCount,
   personKey,
   soleOpen,
@@ -98,5 +100,50 @@ describe('soleOpen', () => {
 describe('personKey', () => {
   it('trims and lower-cases', () => {
     expect(personKey('  Alex ')).toBe('alex');
+  });
+});
+
+describe('personFigure', () => {
+  it("uses the server's per-person total when IOUs run one way", () => {
+    const total = money(9000, 'USD');
+    const [alex] = groupPeople(
+      [
+        iou({ id: '1', personOpen: { count: 2, outstanding: total } }),
+        iou({ id: '2', personOpen: { count: 2, outstanding: total } }),
+      ],
+      false,
+    );
+    expect(alex && personFigure(alex)).toEqual({ amount: total, toMe: true });
+  });
+
+  it('is null when IOUs run both ways', () => {
+    const [alex] = groupPeople(
+      [iou({ id: '1' }), iou({ id: '2', direction: 'owed-by-me' })],
+      false,
+    );
+    expect(alex && personFigure(alex)).toBeNull();
+  });
+
+  it('is the settled zero when nothing is open', () => {
+    const zero = money(0, 'USD');
+    const [cy] = groupPeople(
+      [iou({ id: '1', settled: true, outstanding: zero })],
+      true,
+    );
+    expect(cy && personFigure(cy)?.amount).toEqual(zero);
+  });
+});
+
+describe('nextDue', () => {
+  it('is the earliest due date among open IOUs', () => {
+    const [alex] = groupPeople(
+      [
+        iou({ id: '1', dueOn: localDate('2026-11-02') }),
+        iou({ id: '2', dueOn: localDate('2026-10-20') }),
+        iou({ id: '3' }),
+      ],
+      false,
+    );
+    expect(alex && nextDue(alex)).toBe('2026-10-20');
   });
 });

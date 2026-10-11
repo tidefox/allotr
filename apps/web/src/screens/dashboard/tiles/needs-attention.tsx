@@ -13,10 +13,12 @@ import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
 import { markRead, remindersQuery } from '@/lib/reminders';
 import { t } from '@/messages/t';
+import { openBudgetSheet } from '@/screens/budget/sheets/store';
 import { TileFailed } from './tile-failed.tsx';
 import { attentionItems, type AttentionItem } from './needs-attention-model.ts';
 
 const locale = 'en';
+const WEEKLY_REVIEW = '#weekly-review';
 
 const columns: readonly RowColumn[] = [
   { width: 'auto' },
@@ -78,7 +80,8 @@ function present(item: AttentionItem, today: LocalDate): Presented {
         tone: 'muted',
         text: item.body,
         action: t('dashboardTiles.needsAttention.actionOpen'),
-        href: item.url,
+        // The weekly review is a sheet, not a page.
+        href: item.reminderKind === 'weekly_review' ? WEEKLY_REVIEW : item.url,
       };
   }
 }
@@ -118,7 +121,8 @@ export function NeedsAttentionTile() {
 
   const items = attentionItems(today.data, reminders.data.reminders);
   const go = (href: string) => {
-    void router.navigate({ href });
+    if (href === WEEKLY_REVIEW) openBudgetSheet('weekly-review');
+    else void router.navigate({ href });
   };
 
   return (

@@ -2,7 +2,8 @@
 // errors are shared with `settings.bills`.
 export const billForm = {
   title: 'New bill',
-  add: '+ bill',
+  add: 'bill',
+  addLabel: 'Add a bill',
   category: 'Category (optional)',
   noCategory: 'None',
   dueDayValue: 'day {day}',

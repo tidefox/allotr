@@ -83,10 +83,9 @@ test('the pools sub-tab shows a tile per pool and the formula', async ({
     page.getByRole('region', { name: 'Travel', exact: true }),
   ).toBeVisible();
   await expect(budget.getByText('Everyday')).toBeVisible();
-  await expect(
-    page.getByRole('region', { name: t('budgetPools.how.title') }),
-  ).toBeVisible();
-  await expect(page.getByText(/on-budget .* − bills .* = free/)).toBeVisible();
+  const how = page.getByRole('region', { name: t('budgetPools.how.title') });
+  await expect(how).toBeVisible();
+  await expect(how).toContainText(/on-budget.*bills.*free/);
   await expectAccessible(page);
   expect(await smallTargets(page)).toEqual([]);
 });
@@ -152,7 +151,7 @@ test('the bills sub-tab shows the timeline and the unpaid bill', async ({
     }),
   ).toHaveCount(0);
   // Rent is due on the 28th, so it sits in this cycle or in "not due".
-  await expect(page.getByText('Rent').first()).toBeVisible();
+  await expect(page.getByText('Rent', { exact: true }).first()).toBeVisible();
   await expect(
     page.getByRole('region', { name: t('budgetBills.paid.title') }),
   ).toBeVisible();
