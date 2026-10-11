@@ -43,6 +43,7 @@ export function CycleAllocationTile() {
             paidBills: t('dashboardTiles.allocation.paidBills'),
             savings: t('dashboardTiles.allocation.savings'),
             spent: t('dashboardTiles.allocation.spent'),
+            other: t('dashboardTiles.allocation.other'),
             reserved: t('dashboardTiles.allocation.reserved'),
             free: t('dashboardTiles.allocation.free'),
           })}

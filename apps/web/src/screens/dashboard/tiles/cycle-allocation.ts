@@ -1,7 +1,7 @@
 import type { CycleAllocationView, Money } from '@allotr/shared';
 import type { AllocationSegment } from '@/charts/allocation';
 
-// The server sends the five parts of the cycle start but no shares. A share
+// The server sends the six parts of the cycle start but no shares. A share
 // here only sizes a bar segment (and the percentage under it); it is never a
 // money figure. Parts that are negative or zero get an empty share.
 
@@ -14,6 +14,7 @@ export type AllocationLabels = Readonly<{
   paidBills: string;
   savings: string;
   spent: string;
+  other: string;
   reserved: string;
   free: string;
 }>;
@@ -31,6 +32,7 @@ export function allocationSegments(
     ['paidBills', a.paidBills, 'series-2'],
     ['savings', a.savings, 'series-3'],
     ['spent', a.spent, 'series-1'],
+    ['other', a.other, 'series-6'],
     ['reserved', a.reserved, 'series-5'],
     ['free', a.free, 'series-4'],
   ];

@@ -68,6 +68,26 @@ describe('budgetTree', () => {
       ['fun', 'flat'],
     ]);
     expect(tree[0]?.budget).toBeNull();
+    expect(tree[0]?.total).toBeNull();
+  });
+
+  it('gives a header with no budget the server totals and a bar', () => {
+    const tree = budgetTree(
+      [budget('b1', 'groceries'), budget('b2', 'dining')],
+      categories,
+      [
+        {
+          categoryId: 'food',
+          budgetIds: ['b1', 'b2'],
+          planned: money(400),
+          spent: money(300),
+          left: money(100),
+        },
+      ],
+    );
+    expect(tree[0]?.total?.spent).toEqual(money(300));
+    expect(tree[0]?.fraction).toBeCloseTo(0.75);
+    expect(tree[1]?.total).toBeNull();
   });
 
   it('gives a parent its own budget and fills the bar from spent and left', () => {

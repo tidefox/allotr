@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 export type AllocationSegment = Readonly<{
   id: string;
-  /** "Bills paid", "To savings", "Spent", "Bills set aside", "Free to spend". */
+  /** "Bills paid", "To savings", "Spent", "other", "Bills set aside", "Free to spend". */
   label: string;
   amount: Money;
   /** The segment's share of the cycle start, 0..1, as the server computed it. */
@@ -75,7 +75,7 @@ export function Allocation({
         {leftLabel} {formatMoney(left.amount, mode, locale)} {ofLabel}{' '}
         {formatMoney(left.of, mode, locale)}
       </p>
-      <ul className="grid grid-cols-5 gap-x-2 gap-y-1.5 compact:grid-cols-3">
+      <ul className="grid grid-cols-6 gap-x-2 gap-y-1.5 compact:grid-cols-3">
         {segments.map((s) => (
           <li key={s.id} className="min-w-0">
             <div className="flex items-center gap-1">

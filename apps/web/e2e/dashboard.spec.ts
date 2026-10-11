@@ -78,6 +78,20 @@ test('the dashboard shows every tile with seeded data', async ({
     target: { kind: 'category', categoryId: groceries.id },
     amount: usd(40_000),
   });
+  const household = await post(page, origin, '/v1/categories', {
+    name: 'Household',
+    kind: 'expense',
+  });
+  const repairs = await post(page, origin, '/v1/categories', {
+    name: 'Repairs',
+    kind: 'expense',
+    parentId: household.id,
+  });
+  await post(page, origin, '/v1/budgets', {
+    name: 'Repairs',
+    target: { kind: 'category', categoryId: repairs.id },
+    amount: usd(10_000),
+  });
 
   await page.goto('/');
   for (const key of titles) {
@@ -93,6 +107,32 @@ test('the dashboard shows every tile with seeded data', async ({
     name: t('dashboardTiles.budgets.title'),
   });
   await expect(budgets.getByText('Groceries')).toBeVisible();
+  // A parent row stands over its subcategory, with the server's total.
+  await expect(budgets.getByText('Household', { exact: true })).toBeVisible();
+  await expect(budgets.getByText('Repairs', { exact: true })).toBeVisible();
+  const allocation = page.getByRole('region', {
+    name: t('dashboardTiles.allocation.title'),
+  });
+  await expect(
+    allocation.getByText(t('dashboardTiles.allocation.other'), {
+      exact: true,
+    }),
+  ).toBeVisible();
+  const fund = page.getByRole('region', {
+    name: t('dashboardTiles.emergencyFund.title'),
+  });
+  await expect(
+    fund.getByText(t('dashboardTiles.emergencyFund.thisCycle')),
+  ).toBeVisible();
+  await expect(
+    fund.getByText(t('dashboardTiles.emergencyFund.atThisRate')),
+  ).toBeVisible();
+  const worth = page.getByRole('region', {
+    name: t('dashboardTiles.netWorth.title'),
+  });
+  await expect(
+    worth.getByText(t('dashboardTiles.netWorth.change', { days: 30 })),
+  ).toBeVisible();
   await expectAccessible(page);
 });
 

@@ -37,21 +37,21 @@ on every screen, and savings never count toward it.
 
 The interface uses only existing roles, so the theme format does not change.
 
-| Use | Role |
-|---|---|
-| Tile and content background | `canvas` |
-| Title bars, top bar, sidebar, status line, menus, sheets | `chrome` |
-| Hover, selected row, bar tracks, raised controls | `card` |
-| Seams between tiles and rows (1 px) | `outline-variant` |
-| Strong lines: axes, chart borders, control borders, decorative glyphs (tree lines, `[ ]` brackets) | `outline` |
-| Primary text | `text` |
-| Secondary text, labels, axis labels, units | `text-muted` |
-| Accent: selection fill, links, bracket-button labels, focus ring, primary action | `primary` (+ `on-primary` for text on it), `ring` |
-| Money in / out / transfer | `positive` / `negative` / `text` (text); `success` / `danger` / `info` (fills and marks) |
-| Warnings, bills set aside (borders, marks and fills, never text) | `warning` |
-| Left-today edge and figure | `positive` (`hero-tight` / `hero-over` when tight or over) |
-| Category, pool and chart series colours | `series-1` … `series-8` |
-| Calendar heat | `negative` mixed into `canvas` at 0–55 % (an opaque mix, never transparency) |
+| Use                                                                                                | Role                                                                                     |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Tile and content background                                                                        | `canvas`                                                                                 |
+| Title bars, top bar, sidebar, status line, menus, sheets                                           | `chrome`                                                                                 |
+| Hover, selected row, bar tracks, raised controls                                                   | `card`                                                                                   |
+| Seams between tiles and rows (1 px)                                                                | `outline-variant`                                                                        |
+| Strong lines: axes, chart borders, control borders, decorative glyphs (tree lines, `[ ]` brackets) | `outline`                                                                                |
+| Primary text                                                                                       | `text`                                                                                   |
+| Secondary text, labels, axis labels, units                                                         | `text-muted`                                                                             |
+| Accent: selection fill, links, bracket-button labels, focus ring, primary action                   | `primary` (+ `on-primary` for text on it), `ring`                                        |
+| Money in / out / transfer                                                                          | `positive` / `negative` / `text` (text); `success` / `danger` / `info` (fills and marks) |
+| Warnings, bills set aside (borders, marks and fills, never text)                                   | `warning`                                                                                |
+| Left-today edge and figure                                                                         | `positive` (`hero-tight` / `hero-over` when tight or over)                               |
+| Category, pool and chart series colours                                                            | `series-1` … `series-8`                                                                  |
+| Calendar heat                                                                                      | `negative` mixed into `canvas` at 0–55 % (an opaque mix, never transparency)             |
 
 Text may use only roles fitted for text (4.5:1): `text`, `text-muted`,
 `primary`, `positive`, `negative` and the `on-*` roles. `info`, `success`,
@@ -63,10 +63,10 @@ on an item while it is being dragged.
 
 ### 2.2 Type
 
-| Face | Default | Used for |
-|---|---|---|
-| Interface & numbers | Geist Mono | Everything by default: buttons, tags, titles, headers, tabs, labels, menus, amounts, times, axes, command line, status line |
-| Text | Geist | Content text only: names in rows (payees, accounts, bills, people, budgets), detail values, paragraphs, notes, the log result line |
+| Face                | Default    | Used for                                                                                                                           |
+| ------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Interface & numbers | Geist Mono | Everything by default: buttons, tags, titles, headers, tabs, labels, menus, amounts, times, axes, command line, status line        |
+| Text                | Geist      | Content text only: names in rows (payees, accounts, bills, people, budgets), detail values, paragraphs, notes, the log result line |
 
 Numbers use `font-variant-numeric: tabular-nums`.
 
@@ -76,35 +76,35 @@ The root is `font-size: 85%` and every size is in `rem`. The table lists
 design sizes in px at 100 %; divide by 16 for `rem`. The rendered size is
 85 % of these.
 
-| Token | Desktop / tablet | Phone (< 600) |
-|---|---|---|
-| Base text | 13 | 12 |
-| Small text (labels, sub-lines) | 11–12 | 10–11 |
-| Top bar figure: left today | 34 (≥ 1000) / 26 (≥ 600) | 18 |
-| Top bar figure: other | 23 / 19 | 15 |
-| Stat figure (primary / other) | 32 / 26 (≥ 1000) | 20 / 16 |
-| Big figure in tiles | 26 | 20 |
-| Title strip height | 36 | 34 |
-| Tile title bar height | 32 | 28 |
-| Row min height | 30 (46 for tall lists) | 38 |
-| Command line height | 42 | 40 |
-| Tab bar button | — | 46 |
-| Rail button / sidebar row | 58 / 36 (= title strip) | — |
-| Top bar height | 82 (600–999) / 104 (≥ 1000) | auto (two rows) |
-| Tile padding | 0 12 10 | 0 12 10 |
-| Seam | 1 | 1 |
-| Bar height (exact / "left of" / pool) | 8 / 4 / 2–3 | same |
+| Token                                 | Desktop / tablet            | Phone (< 600)   |
+| ------------------------------------- | --------------------------- | --------------- |
+| Base text                             | 13                          | 12              |
+| Small text (labels, sub-lines)        | 11–12                       | 10–11           |
+| Top bar figure: left today            | 34 (≥ 1000) / 26 (≥ 600)    | 18              |
+| Top bar figure: other                 | 23 / 19                     | 15              |
+| Stat figure (primary / other)         | 32 / 26 (≥ 1000)            | 20 / 16         |
+| Big figure in tiles                   | 26                          | 20              |
+| Title strip height                    | 36                          | 34              |
+| Tile title bar height                 | 32                          | 28              |
+| Row min height                        | 30 (46 for tall lists)      | 38              |
+| Command line height                   | 42                          | 40              |
+| Tab bar button                        | —                           | 46              |
+| Rail button / sidebar row             | 58 / 36 (= title strip)     | —               |
+| Top bar height                        | 82 (600–999) / 104 (≥ 1000) | auto (two rows) |
+| Tile padding                          | 0 12 10                     | 0 12 10         |
+| Seam                                  | 1                           | 1               |
+| Bar height (exact / "left of" / pool) | 8 / 4 / 2–3                 | same            |
 
 The rendered minimum interactive size must stay ≥ 24 × 24 CSS px (WCAG 2.2
 target size).
 
 ### 2.4 Breakpoints (container queries on the app frame)
 
-| Width | Navigation | Notes |
-|---|---|---|
-| < 600 | bottom tab bar | top bar on two rows; extra columns hidden; menus are bottom sheets |
-| 600–999 | 72 px icon rail | status line on; menus are popovers |
-| ≥ 1000 | 212 px sidebar | list + detail split; top bar shows payday and extras |
+| Width   | Navigation      | Notes                                                              |
+| ------- | --------------- | ------------------------------------------------------------------ |
+| < 600   | bottom tab bar  | top bar on two rows; extra columns hidden; menus are bottom sheets |
+| 600–999 | 72 px icon rail | status line on; menus are popovers                                 |
+| ≥ 1000  | 212 px sidebar  | list + detail split; top bar shows payday and extras               |
 
 Tile grids: 1 column below 720, 2 from 720, 3 from 1100. With the "auto"
 column setting, 4 from 1500.
@@ -168,37 +168,37 @@ column setting, 4 from 1500.
 
 ## 4. Components
 
-| Component | Spec |
-|---|---|
-| **Tile** (`pane`) | `canvas` background. A title bar on `chrome` with an icon, title, muted subtitle and actions on the right. Focused or primary tiles get a 3 px `primary` inset on the title bar. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. |
-| **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000). |
-| **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
-| **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the sum of their children. React Aria `Tree`. |
-| **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
-| **Bracket button** | `[pay]`. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
-| **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
-| **Menu button** | Bordered, with label · value · ▾. Opens a menu. |
-| **Toggle group** | Bordered segments. The pressed segment is filled `primary`. |
-| **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative`, `positive` and muted colour the label; `warning` colours the border and keeps a `text` label. |
-| **Chip** | A filter chip with a remove (×) button. Lives in the chip bar above a list. |
-| **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
-| **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
-| **Bar** | Exact width on a `card` track. A 1 px `text` tick at even pace (days elapsed ÷ cycle length). Over budget fills `negative`. |
-| **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
-| **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
-| **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · bills set aside · free to spend. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (5 columns, 3 on phone) shows the amount and the share. |
-| **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge (`positive`, or `primary` when neutral). |
-| **Key figures** | One line of up to 4 label-over-figure pairs, each truncated with "…". |
-| **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone. |
-| **Chart** | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace) and a vertical "today" line. Base heights grow ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px, and charts fill their tile. |
-| **Columns** | Bar columns with value labels above, x labels below, and a 1 px baseline. |
-| **Sparkline** | 20–28 px tall, monotone line, no axes. |
-| **Timeline** | A cycle-day axis with ticks and date labels. Events alternate above and below on two levels: bills (`warning`, paid ones muted), payday (`positive`). A "today" marker and an elapsed fill (`primary`). Labels are hidden on phone. |
-| **Calendar** | A 7-column month grid. Day cells show the day number, marks (b bill, i IOU, $ payday) and the spent amount over a heat fill. Each sits on a small opaque `canvas` chip so the text keeps its contrast at any heat. Blank `canvas` cells pad the first and last weeks. Today is outlined in `primary` and the picked day in `text`. Every day has a text label and there is a table view. |
-| **Summary line** | `14 entries · spent $1,201.60 · income $2,140.00 · net +$938.40`. The figures come from the server. |
-| **Result line** | After logging: ✓, category icon, amount, account, "left today", **undo**. Stays for 5 s. |
-| **Skeleton** | Content-shaped skeleton tiles while loading, never page spinners (kept from 0022). |
-| **Category icon** | A Remix glyph (§7) in the category's series colour, 16 design px. |
+| Component                | Spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tile** (`pane`)        | `canvas` background. A title bar on `chrome` with an icon, title, muted subtitle and actions on the right. Focused or primary tiles get a 3 px `primary` inset on the title bar. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`.                                                                                                                                                                                                                                                    |
+| **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000).                                                                                                                                                                                                                                                                                                                            |
+| **Row**                  | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped.                                                                                                                                                                                                                                                        |
+| **Tree row**             | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`.                                                                                                                                                                                                                                                                                         |
+| **Amount**               | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1).                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Bracket button**       | `[pay]`. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px.                                                                                                                                                                                                                                                                                                                                                                   |
+| **Primary button**       | Filled `primary` with `on-primary`. One per strip (for example **+ new**).                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Menu button**          | Bordered, with label · value · ▾. Opens a menu.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Toggle group**         | Bordered segments. The pressed segment is filled `primary`.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Tag**                  | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative`, `positive` and muted colour the label; `warning` colours the border and keeps a `text` label.                                                                                                                                                                                                                                                                                                                      |
+| **Chip**                 | A filter chip with a remove (×) button. Lives in the chip bar above a list.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Menu**                 | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render.                                                                                                                                |
+| **Sheet**                | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px.                                                                                                                                                                                                                                                                                                                                                                                |
+| **Bar**                  | Exact width on a `card` track. A 1 px `text` tick at even pace (days elapsed ÷ cycle length). Over budget fills `negative`.                                                                                                                                                                                                                                                                                                                                                                                          |
+| **"Left of" bar**        | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Share bar**            | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Allocation**           | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (6 columns, 3 on phone) shows the amount and the share.                                                                                                         |
+| **Stats**                | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge (`positive`, or `primary` when neutral).                                                                                                                                                                                                                                                                                                                                                      |
+| **Key figures**          | One line of up to 4 label-over-figure pairs, each truncated with "…".                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Formula line**         | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone.                                                                                                                                                                                                                                                                                                                                                                             |
+| **Chart**                | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace) and a vertical "today" line. Base heights grow ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px, and charts fill their tile. |
+| **Columns**              | Bar columns with value labels above, x labels below, and a 1 px baseline.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Sparkline**            | 20–28 px tall, monotone line, no axes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Timeline**             | A cycle-day axis with ticks and date labels. Events alternate above and below on two levels: bills (`warning`, paid ones muted), payday (`positive`). A "today" marker and an elapsed fill (`primary`). Labels are hidden on phone.                                                                                                                                                                                                                                                                                  |
+| **Calendar**             | A 7-column month grid. Day cells show the day number, marks (b bill, i IOU, $ payday) and the spent amount over a heat fill. Each sits on a small opaque `canvas` chip so the text keeps its contrast at any heat. Blank `canvas` cells pad the first and last weeks. Today is outlined in `primary` and the picked day in `text`. Every day has a text label and there is a table view.                                                                                                                             |
+| **Summary line**         | `14 entries · spent $1,201.60 · income $2,140.00 · net +$938.40`. The figures come from the server.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Result line**          | After logging: ✓, category icon, amount, account, "left today", **undo**. Stays for 5 s.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Skeleton**             | Content-shaped skeleton tiles while loading, never page spinners (kept from 0022).                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Category icon**        | A Remix glyph (§7) in the category's series colour, 16 design px.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## 5. Patterns
 
@@ -249,22 +249,22 @@ Default tiles, in order: this cycle (2 × 2) · needs attention · today's
 entries · cycle allocation (full width) · budgets · next 7 days · pools ·
 emergency fund · net worth (2 wide).
 
-| Tile | Content | Data |
-|---|---|---|
-| this cycle | Key figures (spent day-to-day, which leaves bills out, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
-| needs attention | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread | `/v1/today` attention items, `/v1/reminders` |
-| today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
-| cycle allocation | Allocation component | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; segment shares are a ratio of two server figures) |
-| budgets | Category tree with bar, spent and left | `/v1/budgets` (`parents`: totals per parent category) |
-| next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
-| pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
-| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
-| net worth | Figure, change, area chart | `/v1/insights/net-worth` (`change`) |
+| Tile             | Content                                                                                                                                                  | Data                                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| this cycle       | Key figures (spent day-to-day, which leaves bills out, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days`                                                                                                  |
+| needs attention  | Tag, text, action, ⋮; `[mark all read]` in the title bar while a reminder is unread                                                                      | `/v1/today` attention items, `/v1/reminders`                                                                                               |
+| today's entries  | Time, icon, payee, category, amount                                                                                                                      | `/v1/transactions?on=today`                                                                                                                |
+| cycle allocation | Allocation component                                                                                                                                     | `/v1/today` `allocation` (six parts: paid bills, savings, spent, set aside, free, other; segment shares are a ratio of two server figures) |
+| budgets          | Category tree: parent rows with the server's totals, children under them, each with bar and left                                                         | `/v1/budgets` (`parents`: totals per parent category)                                                                                      |
+| next 7 days      | Day, icon, item, amount                                                                                                                                  | `/v1/reports/calendar`                                                                                                                     |
+| pools            | Pool rows with a daily checkbox, plus a share bar                                                                                                        | `/v1/pools`                                                                                                                                |
+| emergency fund   | Figure, bar, covers, this cycle, at this rate                                                                                                            | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`)                                                                         |
+| net worth        | Figure, change, area chart                                                                                                                               | `/v1/insights/net-worth` (`change`)                                                                                                        |
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
 - Stats: net worth (primary) · savings & invest (the off-budget total) ·
-  credit owed · to reconcile (accounts never reconciled, or not for 30 days).
+  credit owed · to reconcile (accounts the server flags `reconcileDue`: never reconciled, or not for 30 days; rows carry a `due` tag).
   Credit owed is `totals.creditOwed` on `/v1/accounts` and to reconcile
   counts `reconcileDue` accounts; neither is summed in the browser. Credit
   limits are not in the API yet, so there is no limit bar.
@@ -317,27 +317,27 @@ emergency fund · net worth (2 wide).
 
 ### Budget `/budget/…`
 
-| Sub-tab | Content |
-|---|---|
-| budgets | Allocation (full width) · budget tree with spent, left, `[+ sub]` and ⋮, and a total row (2 wide) · cover this period with what's next in line |
-| pools | One tile per pool (daily checkbox, balance, "left of" bar for on-budget pools, accounts with sparklines), plus "how the daily number works" |
-| bills | Timeline tile with set aside, paid and next · upcoming (with a "set aside of" bar) · paid this cycle |
-| goals | One tile per goal: figure, bar, plan line, progress chart |
-| ious | People list (owes you, you owe, settled, with tags) + person detail (history; repay, due date, write off) |
-| cover order | Ordered list (drag or ↑ ↓) + "what happens next", which previews where an overspend would take money from **(server preview: `/v1/budgets/cover-preview`)** |
+| Sub-tab     | Content                                                                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| budgets     | Allocation (full width) · budget tree with spent, left (parent rows show `parents` totals), `[+ sub]` and ⋮, and a total row (2 wide) · cover this period with what's next in line |
+| pools       | One tile per pool (daily checkbox, balance, "left of" bar for on-budget pools, accounts with sparklines), plus "how the daily number works"                                        |
+| bills       | Timeline tile with set aside, paid and next · upcoming (with a "set aside of" bar) · paid this cycle                                                                               |
+| goals       | One tile per goal: figure, bar, plan line, progress chart                                                                                                                          |
+| ious        | People list (owes you, you owe, settled, with tags) + person detail (history; repay, due date, write off)                                                                          |
+| cover order | Ordered list (drag or ↑ ↓) + "what happens next", which previews where an overspend would take money from **(server preview: `/v1/budgets/cover-preview`)**                        |
 
 ### Reports `/reports/…`
 
 A period menu (this cycle · last cycle · this month · last month · custom) in
 a toolbar.
 
-| Sub-tab | Content |
-|---|---|
-| summary | Stats (spent, income, saved, daily average) · by category (share bar + tree with bar, spent, budget, share; 2 wide) · top payees **(API +)** · spending per day (columns, over the daily number in `negative`) |
-| trends | Category spending across cycles (multi-line chart, 2 wide) · this cycle against the average per category, plus total spent per cycle **(API +: per-category series across cycles)** |
-| plan | Budget against actual · savings rate per cycle · net worth over time |
-| calendar | Layer toggles (spending heat, bills & dues) · month grid + picked-day list |
-| cycles | Spent and saved per cycle (columns) · table of past cycles |
+| Sub-tab  | Content                                                                                                                                                                                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| summary  | Stats (spent, income, saved, daily average) · by category (share bar + tree with bar, spent, budget, share; 2 wide) · top payees **(API +)** · spending per day (columns, over the daily number in `negative`) |
+| trends   | Category spending across cycles (multi-line chart, 2 wide) · this cycle against the average per category, plus total spent per cycle **(API +: per-category series across cycles)**                            |
+| plan     | Budget against actual · savings rate per cycle · net worth over time, with its change                                                                                                                          |
+| calendar | Layer toggles (spending heat, bills & dues) · month grid + picked-day list                                                                                                                                     |
+| cycles   | Spent and saved per cycle (columns) · table of past cycles                                                                                                                                                     |
 
 ### Settings `/settings/…`
 
@@ -356,24 +356,24 @@ Every value row opens a menu or form. There are no inline native controls.
 Stored keys (`categoryIcons` in `@allotr/shared`) stay unchanged. The web app
 renders these Remix Icon 4.5.0 glyphs (`-line` variants):
 
-| Key | Remix | Key | Remix | Key | Remix |
-|---|---|---|---|---|---|
-| banknote | money-dollar-box | baby | parent | beer | beer |
-| bike | riding | book-open | book-open | briefcase | briefcase-4 |
-| bus | bus | car | car | circle-dollar-sign | money-dollar-circle |
-| coffee | cup | credit-card | bank-card | dumbbell | run |
-| film | film | fuel | gas-station | gamepad-2 | gamepad |
-| gift | gift | graduation-cap | graduation-cap | hand-coins | hand-coin |
-| heart-pulse | heart-pulse | house | home-4 | landmark | bank |
-| laptop | macbook | lightbulb | lightbulb-flash | music | music-2 |
-| paw-print | bear-smile | percent | percent | piggy-bank | safe-2 |
-| pill | capsule | plane | plane | receipt | bill |
-| repeat | repeat | scissors | scissors-cut | shirt | t-shirt |
-| shopping-bag | shopping-bag | shopping-basket | shopping-basket | smartphone | smartphone |
-| sparkles | sparkling | tag | price-tag-3 | ticket | ticket |
-| train-front | train | tree-pine | tree | trending-up | line-chart |
-| umbrella | umbrella | utensils | restaurant-2 | utensils-crossed | restaurant |
-| wallet | wallet-3 | wifi | wifi | wrench | tools |
+| Key          | Remix            | Key             | Remix           | Key                | Remix               |
+| ------------ | ---------------- | --------------- | --------------- | ------------------ | ------------------- |
+| banknote     | money-dollar-box | baby            | parent          | beer               | beer                |
+| bike         | riding           | book-open       | book-open       | briefcase          | briefcase-4         |
+| bus          | bus              | car             | car             | circle-dollar-sign | money-dollar-circle |
+| coffee       | cup              | credit-card     | bank-card       | dumbbell           | run                 |
+| film         | film             | fuel            | gas-station     | gamepad-2          | gamepad             |
+| gift         | gift             | graduation-cap  | graduation-cap  | hand-coins         | hand-coin           |
+| heart-pulse  | heart-pulse      | house           | home-4          | landmark           | bank                |
+| laptop       | macbook          | lightbulb       | lightbulb-flash | music              | music-2             |
+| paw-print    | bear-smile       | percent         | percent         | piggy-bank         | safe-2              |
+| pill         | capsule          | plane           | plane           | receipt            | bill                |
+| repeat       | repeat           | scissors        | scissors-cut    | shirt              | t-shirt             |
+| shopping-bag | shopping-bag     | shopping-basket | shopping-basket | smartphone         | smartphone          |
+| sparkles     | sparkling        | tag             | price-tag-3     | ticket             | ticket              |
+| train-front  | train            | tree-pine       | tree            | trending-up        | line-chart          |
+| umbrella     | umbrella         | utensils        | restaurant-2    | utensils-crossed   | restaurant          |
+| wallet       | wallet-3         | wifi            | wifi            | wrench             | tools               |
 
 Interface icons (destinations, tile titles, actions) are chosen from the same
 set and compiled with them.

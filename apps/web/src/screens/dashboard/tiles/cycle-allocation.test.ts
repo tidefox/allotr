@@ -7,6 +7,7 @@ const labels = {
   paidBills: 'a',
   savings: 'b',
   spent: 'c',
+  other: 'f',
   reserved: 'd',
   free: 'e',
 };
@@ -32,7 +33,7 @@ describe('allocationSegments', () => {
         spent: m(300),
         reserved: m(200),
         free: m(450),
-        other: m(0),
+        other: m(-20),
       },
       labels,
     );
@@ -40,10 +41,13 @@ describe('allocationSegments', () => {
       'paidBills',
       'savings',
       'spent',
+      'other',
       'reserved',
       'free',
     ]);
     expect(segments[1]?.fraction).toBe(0);
-    expect(segments[4]?.fraction).toBe(0.45);
+    expect(segments[3]?.fraction).toBe(0);
+    expect(segments[3]?.color).toBe('series-6');
+    expect(segments[5]?.fraction).toBe(0.45);
   });
 });

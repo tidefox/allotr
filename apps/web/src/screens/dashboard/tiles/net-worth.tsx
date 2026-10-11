@@ -47,14 +47,10 @@ export function NetWorthTile() {
             <div className="text-stat font-semibold">
               <Amount amount={data.amount} locale={locale} />
             </div>
-            {first === undefined ? null : (
-              <p className="num truncate text-small text-text-muted">
-                {t('dashboardTiles.netWorth.since', {
-                  start: formatMoney(first.amount, 'symbol', locale),
-                  date: formatDay(first.date, locale),
-                })}
-              </p>
-            )}
+            <p className="num truncate text-small text-text-muted">
+              <Amount amount={data.change} kind="change" locale={locale} />{' '}
+              {t('dashboardTiles.netWorth.change', { days: DAYS })}
+            </p>
           </div>
           {first === undefined || last === undefined ? (
             <EmptyState
@@ -65,8 +61,8 @@ export function NetWorthTile() {
             <Chart
               label={t('dashboardTiles.netWorth.summary', {
                 days: DAYS,
-                start: formatMoney(first.amount, 'symbol', locale),
-                end: formatMoney(last.amount, 'symbol', locale),
+                end: formatMoney(data.amount, 'symbol', locale),
+                change: formatMoney(data.change, 'symbol', locale),
               })}
               series={[
                 {

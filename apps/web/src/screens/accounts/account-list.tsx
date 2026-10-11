@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { AccountView } from '@allotr/shared';
 import { Amount } from '@/components/amount';
+import { Tag } from '@/components/buttons';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { TreeRow } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
@@ -112,9 +113,13 @@ function AccountRow({
         </button>,
         <Trend key="trend" account={account} />,
         <span key="date" className="num text-text-muted">
-          {account.lastReconciledOn === null
-            ? t('accountsScreen.list.notReconciled')
-            : formatDay(account.lastReconciledOn, locale)}
+          {account.reconcileDue ? (
+            <Tag tone="warning">{t('accountsScreen.list.reconcileDue')}</Tag>
+          ) : account.lastReconciledOn === null ? (
+            t('accountsScreen.list.notReconciled')
+          ) : (
+            formatDay(account.lastReconciledOn, locale)
+          )}
         </span>,
         <Amount key="balance" amount={account.balance} locale={locale} />,
         <MenuButton

@@ -1,13 +1,7 @@
-import {
-  money,
-  type AccountView,
-  type LocalDate,
-  type PoolView,
-} from '@allotr/shared';
+import { money, type AccountView, type PoolView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
   accountGroups,
-  creditStat,
   inFilter,
   movePools,
   needsReconcile,
@@ -107,38 +101,13 @@ describe('accountGroups', () => {
 });
 
 describe('needsReconcile', () => {
-  const today = '2026-10-10' as LocalDate;
-
-  it('counts never reconciled and stale accounts, not recent or archived', () => {
-    const fresh = account({
-      id: 'fresh',
-      lastReconciledOn: '2026-10-01' as LocalDate,
-    });
-    const edge = account({
-      id: 'edge',
-      lastReconciledOn: '2026-09-10' as LocalDate,
-    });
-    const stale = account({
-      id: 'stale',
-      lastReconciledOn: '2026-09-09' as LocalDate,
-    });
-    const never = account({ id: 'never' });
-    const gone = account({ id: 'gone', archived: true });
-    expect(
-      needsReconcile([fresh, edge, stale, never, gone], today).map((a) => a.id),
-    ).toEqual(['stale', 'never']);
-  });
-});
-
-describe('creditStat', () => {
-  it('shows none, the one balance, or how many', () => {
-    expect(creditStat([cash])).toEqual({ kind: 'none' });
-    expect(creditStat([cash, card])).toEqual({
-      kind: 'one',
-      balance: money(-4500, 'USD'),
-    });
-    const second = account({ id: 'loan', kind: 'liability' });
-    expect(creditStat([card, second])).toEqual({ kind: 'many', count: 2 });
+  it('lists the open accounts the server flags', () => {
+    const due = account({ id: 'due', reconcileDue: true });
+    const fresh = account({ id: 'fresh' });
+    const gone = account({ id: 'gone', archived: true, reconcileDue: true });
+    expect(needsReconcile([due, fresh, gone]).map((a) => a.id)).toEqual([
+      'due',
+    ]);
   });
 });
 

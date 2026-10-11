@@ -1,48 +1,94 @@
-import { money, type BudgetView, type CategoryView } from '@allotr/shared';
+import {
+  money,
+  type BudgetStatusView,
+  type BudgetView,
+  type CategoryView,
+} from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import { budgetRows } from './budgets.ts';
 
 const m = (n: number) => money(n, 'USD');
-const budget = (over: Partial<BudgetView>): BudgetView =>
+const budget = (id: string, categoryId: string, over?: Partial<BudgetView>) =>
   ({
-    id: 'b1',
-    name: 'Food',
-    target: { kind: 'category', categoryId: 'c1' },
+    id,
+    name: id,
+    target: { kind: 'category', categoryId },
     spent: m(300),
     left: m(700),
     overflow: m(0),
     ...over,
   }) as BudgetView;
-const category = {
-  id: 'c1',
-  name: 'Food',
-  parentId: null,
-  colour: 'series-3',
-  icon: 'beer',
-} as CategoryView;
+const category = (id: string, parentId: string | null): CategoryView =>
+  ({
+    id,
+    name: id,
+    kind: 'expense',
+    parentId,
+    position: 1,
+    colour: 'series-3',
+    icon: 'beer',
+    mergedIntoId: null,
+  }) as CategoryView;
+const categories = [
+  category('c1', null),
+  category('c2', 'c1'),
+  category('c3', 'c1'),
+];
+const status = (
+  b: BudgetView[],
+  parents: BudgetStatusView['parents'] = [],
+) => ({ budgets: b, parents });
 
 describe('budgetRows', () => {
   it('sizes the bar from spent against what it had', () => {
-    const [row] = budgetRows([budget({})], [category]);
+    const [row] = budgetRows(status([budget('b1', 'c1')]), categories);
     expect(row?.fraction).toBeCloseTo(0.3);
     expect(row?.over).toBe(false);
     expect(row?.icon).toBe('beer');
     expect(row?.colour).toBe(3);
+    expect(row?.depth).toBe(0);
   });
   it('marks overflow and falls back for the buffer', () => {
     const [row] = budgetRows(
-      [
-        budget({
+      status([
+        budget('buf', 'x', {
           target: { kind: 'buffer' },
           overflow: m(50),
           spent: m(100),
           left: m(0),
         }),
-      ],
-      [category],
+      ]),
+      categories,
     );
     expect(row?.over).toBe(true);
     expect(row?.fraction).toBe(1);
     expect(row?.icon).toBeNull();
+  });
+  it('puts a parent row with the server total over its children', () => {
+    const rows = budgetRows(
+      status(
+        [
+          budget('b2', 'c2', { spent: m(100), left: m(100) }),
+          budget('b3', 'c3', { spent: m(50), left: m(250) }),
+        ],
+        [
+          {
+            categoryId: 'c1',
+            budgetIds: ['b2', 'b3'],
+            planned: m(500),
+            spent: m(150),
+            left: m(350),
+          },
+        ],
+      ),
+      categories,
+    );
+    expect(rows.map((r) => [r.id, r.depth])).toEqual([
+      ['c1', 0],
+      ['b2', 1],
+      ['b3', 1],
+    ]);
+    expect(rows[0]?.left).toEqual(m(350));
+    expect(rows[0]?.fraction).toBeCloseTo(0.3);
   });
 });

@@ -116,7 +116,7 @@ export function SummaryBar() {
               </span>
               <span className="truncate text-tiny text-text-muted">
                 {t('shell.summary.onBudgetSub', {
-                  reserved: formatMoney(data.reserved, 'symbol', locale),
+                  reserved: formatMoney(data.reservedBills, 'symbol', locale),
                   free: formatMoney(data.available, 'symbol', locale),
                 })}
               </span>

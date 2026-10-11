@@ -39,6 +39,31 @@ export function EmergencyFundTile() {
             value={data.progressBasisPoints / 10000}
             label={t('dashboardTiles.emergencyFund.progress')}
           />
+          <KeyFigures
+            figures={[
+              {
+                label: t('dashboardTiles.emergencyFund.thisCycle'),
+                figure: (
+                  <Amount
+                    amount={data.addedThisCycle}
+                    kind="change"
+                    locale={locale}
+                  />
+                ),
+              },
+              {
+                label: t('dashboardTiles.emergencyFund.atThisRate'),
+                figure:
+                  data.cyclesToTarget === null
+                    ? '–'
+                    : data.cyclesToTarget === 0
+                      ? t('dashboardTiles.emergencyFund.reached')
+                      : t('dashboardTiles.emergencyFund.cyclesValue', {
+                          count: data.cyclesToTarget,
+                        }),
+              },
+            ]}
+          />
           {data.historyCycles === 0 ? (
             <p className="font-sans text-small text-text-muted">
               {t('dashboardTiles.emergencyFund.noHistory')}
