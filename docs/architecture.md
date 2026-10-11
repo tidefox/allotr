@@ -360,7 +360,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`categorySeries` in `packages/core`). Each point equals the single-period
   figure for that period; `totals` is the spent per period. Each group's
   `average` and `totalAverage` are the mean over every period in the series
-  (the running one and empty ones included), rounded down. The summary also
+  (the running one and empty ones included), rounded down. Each group's
+  `changeBp` is the last period against that average in basis points, signed
+  and truncated toward zero; null with one period or a non-positive average.
+  The summary also
   carries `spendingTotal`, `incomeTotal`, `days` (the period's days so far,
   today included, at least 1), `dailyAverage` (spending over `days`, rounded
   down) and `saved` (what the period added to the off-budget accounts, from

@@ -277,6 +277,7 @@ export {
 } from './projections/payees.ts';
 export {
   averageOf,
+  changeBp,
   categorySeries,
   cyclePeriods,
   monthPeriods,

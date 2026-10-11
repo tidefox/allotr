@@ -962,6 +962,12 @@ export const categorySeriesSchema = z.object({
        * periods included, rounded down.
        */
       average: moneySchema,
+      /**
+       * The last period against `average` in basis points (1200 is 12%
+       * above), signed and truncated toward zero; null with one period or an
+       * average that is not positive.
+       */
+      changeBp: z.int().nullable(),
     }),
   ),
   /** Everything spent per period. */

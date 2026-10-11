@@ -6,6 +6,7 @@ import { categoryId } from '../ledger/types.ts';
 import {
   averageOf,
   categorySeries,
+  changeBp,
   cyclePeriods,
   monthPeriods,
 } from './category-series.ts';
@@ -83,11 +84,14 @@ describe('categorySeries', () => {
         categoryId: fun,
         points: [usd(0), usd(6000), usd(2500)],
         average: usd(2833),
+        // (2 500 - 2 833) / 2 833, truncated toward zero.
+        changeBp: -1175,
       },
       {
         categoryId: food,
         points: [usd(0), usd(5000), usd(0)],
         average: usd(1666),
+        changeBp: -10000,
       },
     ]);
     expect(series.totals).toEqual([usd(0), usd(11000), usd(2500)]);
@@ -192,5 +196,48 @@ describe('averageOf', () => {
         },
       ),
     );
+  });
+});
+
+describe('changeBp', () => {
+  it('is signed, truncated toward zero and against the floored average', () => {
+    expect(changeBp(usd(112), usd(100))).toBe(1200);
+    expect(changeBp(usd(88), usd(100))).toBe(-1200);
+    expect(changeBp(usd(87_600), usd(100_000))).toBe(-1240);
+    expect(changeBp(usd(3), usd(7))).toBe(-5714);
+    expect(changeBp(usd(100), usd(100))).toBe(0);
+    expect(changeBp(usd(-50), usd(100))).toBe(-15000);
+  });
+
+  it('is null without a positive average', () => {
+    expect(changeBp(usd(10), usd(0))).toBeNull();
+    expect(changeBp(usd(10), usd(-5))).toBeNull();
+  });
+
+  it('property: its sign follows the comparison with the average', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: -1_000_000, max: 1_000_000 }),
+        fc.integer({ min: 1, max: 1_000_000 }),
+        (current, average) => {
+          const bp = changeBp(usd(current), usd(average));
+          expect(bp).not.toBeNull();
+          if (current > average) expect(bp).toBeGreaterThanOrEqual(0);
+          if (current < average) expect(bp).toBeLessThanOrEqual(0);
+          if (current === average) expect(bp).toBe(0);
+        },
+      ),
+    );
+  });
+});
+
+describe('categorySeries changeBp', () => {
+  it('is null for a single period', () => {
+    const series = categorySeries(
+      view([spend('2026-04-02', 2500, fun)]),
+      monthPeriods('2026-04', 1),
+      new Map(),
+    );
+    expect(series.groups[0]?.changeBp).toBeNull();
   });
 });
