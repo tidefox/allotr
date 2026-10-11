@@ -5,7 +5,8 @@ import type {
   TransactionListView,
   TransactionView,
 } from '@allotr/shared';
-import { formatLongDay, rowTitle } from '@/features/ledger/format';
+import { rowTitle } from '@/features/ledger/format';
+import { formatTerminalDay } from '@/features/today/format';
 import { ledgerRows, type LedgerKind } from '@/features/ledger/rows';
 import { entryCategoryIds } from '@/lib/entry-categories';
 import { type CategoryStyle } from '@/lib/category-style';
@@ -28,6 +29,8 @@ export interface TxRow {
   payee: string;
   /** `Parent › Category`, "Split: …", or null. */
   category: string | null;
+  /** The parent (shown muted) and the category's own name; null for a split. */
+  categoryParts: { parent: string | null; name: string } | null;
   /** One account, or `from → to` for a transfer. */
   account: string;
   /** Signed from the user's side; unsigned for a transfer. */
@@ -47,6 +50,22 @@ export interface TxSection {
   /** The group's figure, formatted by the server's own numbers. */
   total: string | null;
   rows: TxRow[];
+}
+
+/** One category's parent and own name; null for none or a split. */
+export function entryCategoryParts(
+  entry: TransactionView,
+  categories: readonly CategoryView[],
+): { parent: string | null; name: string } | null {
+  const ids = entryCategoryIds(entry);
+  const [id] = ids;
+  if (ids.length !== 1 || id === undefined) return null;
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const category = byId.get(id);
+  if (category === undefined) return null;
+  const parent =
+    category.parentId === null ? undefined : byId.get(category.parentId);
+  return { parent: parent?.name ?? null, name: category.name };
 }
 
 /** `Parent › Category` for one category; a split lists its names. */
@@ -92,6 +111,8 @@ export function txRows(
         row.kind === 'reversal' ? rowTitle(row) : (row.note ?? rowTitle(row)),
       category:
         source === undefined ? null : entryCategoryLabel(source, categories),
+      categoryParts:
+        source === undefined ? null : entryCategoryParts(source, categories),
       account: row.accounts.join(' → '),
       amount: row.amount,
       bill: entry?.billId == null ? null : (entry.billName ?? null),
@@ -102,33 +123,51 @@ export function txRows(
   });
 }
 
-/** `spent $12.00 · income $3.00`, one block per currency, from the server. */
-export function totalsParts(totals: EntryTotals): string[] {
-  const blocks = totals.byCurrency;
-  return blocks.flatMap((block) => {
-    const parts: string[] = [];
-    if (block.spent.amountMinor !== 0) {
-      parts.push(
-        t('transactions.list.spent', { amount: formatMoney(block.spent) }),
-      );
-    }
-    if (block.income.amountMinor !== 0) {
-      parts.push(
-        t('transactions.list.income', { amount: formatMoney(block.income) }),
-      );
-    }
-    if (blocks.length > 0 && parts.length === 2) {
-      parts.push(
-        t('transactions.list.net', { amount: formatSigned(block.net) }),
-      );
-    }
-    return parts;
+/**
+ * One figure of the summary line: `14 entries`, `spent $12.00`. The value
+ * is set in bold; the count comes before its word, money after.
+ */
+export interface SummaryPart {
+  key: string;
+  label: string;
+  value: string;
+  valueFirst?: boolean;
+  tone?: 'positive';
+}
+
+/** Spent, income and net, one block per currency, from the server. */
+export function totalsParts(totals: EntryTotals): SummaryPart[] {
+  return totals.byCurrency.flatMap((block) => {
+    const currency = block.spent.currency;
+    return [
+      {
+        key: `spent-${currency}`,
+        label: t('transactions.list.spent'),
+        value: formatMoney(block.spent),
+      },
+      {
+        key: `income-${currency}`,
+        label: t('transactions.list.income'),
+        value: formatMoney(block.income),
+        tone: 'positive' as const,
+      },
+      {
+        key: `net-${currency}`,
+        label: t('transactions.list.net'),
+        value: formatSigned(block.net),
+      },
+    ];
   });
 }
 
-export function summaryParts(totals: EntryTotals): string[] {
+export function summaryParts(totals: EntryTotals): SummaryPart[] {
   return [
-    t('transactions.list.count', { count: totals.count }),
+    {
+      key: 'count',
+      label: t('transactions.list.countLabel', { count: totals.count }),
+      value: String(totals.count),
+      valueFirst: true,
+    },
     ...totalsParts(totals),
   ];
 }
@@ -157,6 +196,8 @@ export function sections(input: {
   groups: TransactionListView['groups'];
   /** Every loaded page's day nets. */
   dayTotals: TransactionListView['dayTotals'];
+  /** The user's today, to mark its day header. */
+  today?: string | undefined;
   locale: string;
 }): TxSection[] {
   const { transactions, accounts, categories, group, sort, locale } = input;
@@ -176,9 +217,13 @@ export function sections(input: {
         return;
       }
       const dayNet = net.get(day);
+      const label = formatTerminalDay(day as never, locale);
       days.push({
         key: day,
-        title: formatLongDay(day as never, locale),
+        title:
+          day === input.today
+            ? t('transactions.list.today', { day: label })
+            : label,
         total: dayNet === undefined ? null : formatSigned(dayNet),
         rows: [row],
       });

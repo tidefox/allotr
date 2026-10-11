@@ -122,6 +122,8 @@ describe('txRows', () => {
       time: '08:30',
     });
     expect(second).toMatchObject({ payee: 'Fun', category: 'Fun', time: null });
+    expect(first?.categoryParts).toEqual({ parent: 'Food', name: 'Cafés' });
+    expect(second?.categoryParts).toEqual({ parent: null, name: 'Fun' });
   });
 
   it('labels a split with its categories', () => {
@@ -143,16 +145,23 @@ describe('bill tag', () => {
 
 describe('totals', () => {
   it('describes the server figures without adding anything', () => {
-    expect(summaryParts(totals(2550, 0, 3))).toEqual([
+    const text = (parts: ReturnType<typeof summaryParts>) =>
+      parts.map((p) =>
+        p.valueFirst ? `${p.value} ${p.label}` : `${p.label} ${p.value}`,
+      );
+    expect(text(summaryParts(totals(2550, 0, 3)))).toEqual([
       '3 entries',
       'spent $25.50',
+      'income $0.00',
+      'net −$25.50',
     ]);
-    expect(summaryParts(totals(2550, 10000, 4))).toEqual([
+    expect(text(summaryParts(totals(2550, 10000, 4)))).toEqual([
       '4 entries',
       'spent $25.50',
       'income $100.00',
       'net +$74.50',
     ]);
+    expect(summaryParts(totals(2550, 10000, 4))[2]?.tone).toBe('positive');
     expect(groupTotal(totals(450, 0, 1))).toBe('$4.50');
     expect(groupTotal(totals(0, 0, 1))).toBeNull();
   });
@@ -177,6 +186,14 @@ describe('sections', () => {
     expect(days.map((d) => [d.key, d.rows.length, d.total])).toEqual([
       ['2026-03-12', 1, '−$4.50'],
       ['2026-03-11', 2, '−$21.00'],
+    ]);
+  });
+
+  it('titles days in lower case and marks today', () => {
+    const days = sections({ ...base, group: 'day', today: '2026-03-12' });
+    expect(days.map((d) => d.title)).toEqual([
+      'thu mar 12 · today',
+      'wed mar 11',
     ]);
   });
 
@@ -216,7 +233,7 @@ describe('sections', () => {
       transactions: [plain, ...entries],
       group: 'category',
     });
-    expect(byCategory.at(-1)?.title).toBe('No category');
+    expect(byCategory.at(-1)?.title).toBe('no category');
   });
 
   it('is one flat list when sorted by amount, whatever the day grouping', () => {

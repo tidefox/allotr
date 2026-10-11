@@ -94,20 +94,22 @@ test('an entry shows its category, account, budget and same-payee entries', asyn
     detail.getByRole('heading', { name: 'Corner cafe' }),
   ).toBeVisible();
   await expect(detail.getByText('Treats › Pastry shop')).toBeVisible();
-  await expect(detail.getByText('Everyday')).toBeVisible();
+  // (Same-payee rows name their account too: read the key-value list.)
   await expect(
-    page.getByRole('region', { name: t('transactionDetail.budget.title') }),
-  ).toContainText('Cafe budget');
-  await expect(
-    page.getByRole('region', { name: t('transactionDetail.budget.title') }),
-  ).toContainText(t('transactionDetail.budget.leftAfter', { left: '' }).trim());
+    detail.getByRole('definition').filter({ hasText: 'Everyday' }),
+  ).toBeVisible();
+  // The budget line sits in the key-value list: name and what was left after.
+  await expect(detail).toContainText('Cafe budget');
+  await expect(detail).toContainText(
+    t('transactionDetail.budget.leftAfter', { left: '' }).trim(),
+  );
   const samePayee = page.getByRole('region', {
     name: t('transactionDetail.payee.title'),
   });
   await expect(samePayee.getByRole('button')).toHaveCount(1);
   await expectAccessible(page);
 
-  // The preview is five rows; the link scopes the whole list to the payee.
+  // The preview is three rows; the link scopes the whole list to the payee.
   await samePayee
     .getByRole('link', { name: t('transactionDetail.payee.all') })
     .click();
@@ -388,16 +390,11 @@ test('an entry past its budget shows what is left and who covered it', async ({
   const detail = page
     .getByRole('region', { name: t('transactionDetail.title') })
     .last();
-  const budget = detail.getByRole('region', {
-    name: t('transactionDetail.budget.title'),
-  });
-  await expect(budget).toContainText('Cafe budget');
-  await expect(budget).toContainText(
+  await expect(detail).toContainText('Cafe budget');
+  await expect(detail).toContainText(
     t('transactionDetail.budget.leftAfter', { left: '' }).trim(),
   );
-  await expect(
-    detail.getByRole('region', { name: t('transactionDetail.cover.title') }),
-  ).toContainText(/Free money|not covered/);
+  await expect(detail).toContainText(/Free money|not covered/);
   await detail
     .getByRole('button', { name: t('transactionDetail.actions.cover') })
     .click();

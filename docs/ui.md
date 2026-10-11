@@ -221,10 +221,10 @@ column setting, 4 from 1500.
 | **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
 | **Bracket button** | `[pay]`, with no space inside the brackets, in the surrounding text size. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. Links (`[all]`, `[history]`) use the same face. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
-| **Menu button** | Bordered, with label · value · ▾. Opens a menu. The strip variant is a full-height `hbtn`; the bracket variant is `[⋮]`, named by its label. |
+| **Menu button** | Bordered (`ddb`, 28 px): muted label, value, ▾; with no value the label shows alone (`sort ▾`). Opens a menu. The strip variant is a full-height `hbtn` (icon, value or label, ▾ unless left out, an optional filled count); the bracket variant is `[⋮]`, named by its label. |
 | **Toggle group** | Bordered segments. The pressed segment is filled `primary`. |
 | **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative` and `positive` colour the label and border; muted text has an `outline` border; `warning` colours the border and keeps a `text` label. |
-| **Chip** | A filter chip with a remove (×) button. Lives in the chip bar above a list. |
+| **Chip** | A filter chip: a muted kind, the value and a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
 | **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
 | **Bar** | Exact width on a `card` track, filled `primary` or a category's series colour. A 1 px `text` tick at even pace (days elapsed ÷ period length) reaching 3 px past the track above and below. Over budget fills `negative`. |
@@ -333,25 +333,47 @@ settings, so no ledger read is made that the server would refuse.
 
 ### Transactions `/transactions`
 
-- The title strip holds search, a period menu and a filter menu.
-- Chip bar for active filters.
-- The list tile has a summary line (`totals`) and day headers with day totals
-  (`dayTotals`, over exactly the filtered accounts), or groups by category
-  (`groups`, with each row's `groupKeys` saying which groups it is counted in,
-  so a split shows under each of its categories), or none.
-- Rows: time, icon, payee (with a `bill` tag from `billId` / `billName`),
-  `parent › category`, account, amount.
+- The title strip holds search (borderless, full height; it matches the
+  note, so the placeholder says "search notes"), a period strip button and a
+  filter strip button (the word `filter` and a filled count when filters are
+  on). Below 600 px they show only their icons.
+- Chip bar for active filters, full width above the list and detail, on
+  `chrome`: a filter icon, one chip per filter (a muted kind, `type`,
+  `category` or `account`, then the value) and `[clear all]`.
+- The `entries` tile: the period as its subtitle, `group day ▾` and `sort ▾`
+  bordered menus in its title bar. A summary line (`totals`: count, spent,
+  income in `positive`, net; values bold, one block per currency, no
+  separators, wrapping on phones), then day headers (lower-case
+  `fri oct 09`, `· today` on the user's today, the day total from
+  `dayTotals` over exactly the filtered accounts; sticky, a `line2` rule
+  under each), or groups by category (`groups`, with each row's `groupKeys`
+  saying which groups it is counted in, so a split shows under each of its
+  categories), or none.
+- Rows (30 px, 38 px on phones; seams between rows only): time (from 600 px),
+  category icon, payee (with a `bill` tag from `billId` / `billName`),
+  muted `parent ›` category (from 600 px, 16ch below 1000 px and 18ch from
+  there), account (from 1000 px), amount with its arrow, right-aligned. The
+  selected row has the `card` fill and a 3 px `primary` edge.
 - The sort menu sends `sort=date-desc|date-asc|amount-desc|amount-asc`; it is in
   the URL (`?sort=`, default left out). By amount the list is flat (no day
   headers or totals) and same-day reordering is off, as it is for `date-asc`.
   The filter menu takes several accounts and categories (comma-separated
   `accountId` and `categoryId`).
-- Detail (`GET /v1/transactions/{id}`): icon and payee, amount, date,
-  category path, account, budget left after this entry (text, from `budget.lines[].leftAfter`; no
-  bar, since a past period's budget amount is not sent), cover (`budget.lines[].covers`, in any
-  period), source, history, the newest five other entries from the same payee (any date; a `[see all]`
-  link opens `/transactions?payee=…&type=expense&period=all`), then edit ·
-  split · cover · delete.
+- Detail (`GET /v1/transactions/{id}`): an `entry` tile with the primary
+  edge beside the list from 1000 px; below, a sheet titled with the payee
+  that holds the same body. Icon and payee with the amount (20 px) on one
+  line, then a key-value list (muted keys, values right-aligned): date
+  (`fri oct 09 · 12:30`), category (icon and path), account, budget (name
+  and what was left after this entry, one row per budget line, from
+  `budget.lines[].leftAfter`; no bar, since the budget's amount and spent
+  are not sent), cover (`budget.lines[].covers` and what was not covered,
+  or `none`), source, history (`earlier version`, `edited since`, `—`).
+  Below: the versions with `[go back to this]` when there is history, the
+  newest three other entries from the same payee (date, account, amount;
+  any date; `first time` when none; a `[see all]` link opens
+  `/transactions?payee=…&type=expense&period=all`), then a ruled action row:
+  edit · split · split with people · cover · move up · move down · delete
+  (restore on a deleted entry).
 - Lists over 200 rows are virtualised.
 - Moving within a day: when grouped by day, rows of a day with more than one
   entry can be dragged (long press on touch) to change their place; there is

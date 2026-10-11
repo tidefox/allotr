@@ -7,6 +7,7 @@ import { Split, Tile } from '@/components/layout';
 import { Sheet } from '@/components/sheet';
 import { EmptyState } from '@/components/states';
 import { useFrameWidth } from '@/components/use-frame-width';
+import { IconFileList3Line } from '@/generated/icons';
 import {
   accountsQuery,
   allAccountsQuery,
@@ -34,7 +35,7 @@ import {
   viewOf,
   type TransactionsView,
 } from './search-params.ts';
-import { TransactionsToolbar } from './toolbar.tsx';
+import { ListMenus, TransactionsToolbar } from './toolbar.tsx';
 import { useDayMove } from './use-day-move.ts';
 
 const locale = 'en';
@@ -151,6 +152,7 @@ export function TransactionsScreen() {
   };
 
   const pages = list.data?.pages;
+  const todayDate = today.data?.today;
   const model = useMemo(() => {
     if (pages === undefined || allAccounts === undefined) return undefined;
     if (allCategories === undefined) return undefined;
@@ -162,9 +164,10 @@ export function TransactionsScreen() {
       sort: view.sort,
       groups: pages[0]?.groups ?? [],
       dayTotals: pages.flatMap((page) => page.dayTotals),
+      today: todayDate,
       locale,
     });
-  }, [pages, allAccounts, allCategories, view.group, view.sort]);
+  }, [pages, allAccounts, allCategories, view.group, view.sort, todayDate]);
 
   // A filter or search can hide entries of a day it shows, and only the
   // newest-first order lists a day the way moves read it: no moves then.
@@ -255,10 +258,11 @@ export function TransactionsScreen() {
   }
 
   const steps = stepsFor(model ?? [], dayRows, view.entry);
-  const detail =
+  const detail = (bare: boolean) =>
     view.entry === undefined ? null : (
       <EntryDetail
         entryId={view.entry}
+        bare={bare}
         order={
           steps === null
             ? undefined
@@ -270,11 +274,11 @@ export function TransactionsScreen() {
               }
         }
         onOpen={select}
-        onClose={() => {
-          select(undefined);
-        }}
       />
     );
+  const selectedPayee = model
+    ?.flatMap((section) => section.rows)
+    .find((row) => row.id === view.entry)?.payee;
 
   return (
     <>
@@ -287,62 +291,73 @@ export function TransactionsScreen() {
           onChange={change}
         />
       )}
-      <Split
-        list={
-          <Tile title={title} bodyClassName="px-0 pb-0">
-            <ChipBar
-              chips={chips}
-              onRemove={removeChip}
-              onClear={() => {
-                change({
-                  q: undefined,
-                  payee: undefined,
-                  type: undefined,
-                  categories: [],
-                  accounts: [],
-                });
-              }}
-            />
-            {dayMove.problem === null ? null : (
-              <p
-                role="alert"
-                className="border-b px-3 py-2 text-small text-negative"
-              >
-                {dayMove.problem}
-              </p>
-            )}
-            <p role="status" className="sr-only">
-              {dayMove.announcement}
-            </p>
-            {body}
-          </Tile>
-        }
-        detail={
-          wide ? (
+      <div className="flex min-h-full flex-col [&>:last-child]:flex-1">
+        <ChipBar
+          chips={chips}
+          onRemove={removeChip}
+          onClear={() => {
+            change({
+              q: undefined,
+              payee: undefined,
+              type: undefined,
+              categories: [],
+              accounts: [],
+            });
+          }}
+        />
+        <Split
+          className={chips.length === 0 ? '' : 'border-t-0'}
+          list={
             <Tile
-              title={t('transactions.list.detail')}
+              title={title}
+              icon={IconFileList3Line}
+              subtitle={t(`transactions.list.period.${view.period}`)}
+              actions={<ListMenus view={view} onChange={change} />}
+              className="min-h-full"
               bodyClassName="px-0 pb-0"
             >
-              {detail ?? (
-                <EmptyState
-                  title={t('transactions.list.pick')}
-                  hint={t('transactions.list.pickHint')}
-                />
+              {dayMove.problem === null ? null : (
+                <p
+                  role="alert"
+                  className="border-b px-3 py-2 text-small text-negative"
+                >
+                  {dayMove.problem}
+                </p>
               )}
+              <p role="status" className="sr-only">
+                {dayMove.announcement}
+              </p>
+              {body}
             </Tile>
-          ) : null
-        }
-      />
+          }
+          detail={
+            wide
+              ? (detail(false) ?? (
+                  <Tile
+                    title={t('transactions.list.detail')}
+                    icon={IconFileList3Line}
+                    className="h-full"
+                  >
+                    <EmptyState
+                      title={t('transactions.list.pick')}
+                      hint={t('transactions.list.pickHint')}
+                    />
+                  </Tile>
+                ))
+              : null
+          }
+        />
+      </div>
       {wide ? null : (
         <Sheet
           isOpen={view.entry !== undefined}
           onOpenChange={(open) => {
             if (!open) select(undefined);
           }}
-          title={t('transactions.list.detail')}
+          title={selectedPayee ?? t('transactions.list.detail')}
           closeLabel={t('transactions.list.closeDetail')}
         >
-          {detail}
+          {detail(true)}
         </Sheet>
       )}
     </>

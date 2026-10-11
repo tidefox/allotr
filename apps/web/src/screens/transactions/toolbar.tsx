@@ -7,13 +7,10 @@ import {
   MenuRadioItem,
   MenuSection,
 } from '@/components/menu';
-import { useFrameWidth } from '@/components/use-frame-width';
 import {
-  IconCalendarLine,
+  IconCalendar2Line,
   IconFilter3Line,
-  IconListCheck,
   IconSearchLine,
-  IconSortDesc,
 } from '@/generated/icons';
 import { categoryTree } from '@/features/settings/categories-model';
 import { t } from '@/messages/t';
@@ -29,8 +26,9 @@ import {
   type TransactionsView,
 } from './search-params.ts';
 
-// The title strip's controls (docs/ui.md §6): search, period, filter and
-// group by and sort. Below 600 px the menus show only their icons.
+// The title strip's controls (docs/ui.md §6): search, period and filter as
+// full-height strip buttons; below 600 px they show only their icons. Group
+// by and sort sit in the entries tile's title bar.
 
 const SEARCH_DELAY_MS = 300;
 
@@ -55,7 +53,6 @@ export function TransactionsToolbar({
   filterCount: number;
   onChange: (next: Partial<TransactionsView>) => void;
 }) {
-  const compact = useFrameWidth() < 600;
   const [filterOpen, setFilterOpen] = useState(false);
   const [text, setText] = useState(view.q ?? '');
   const [seenQ, setSeenQ] = useState(view.q);
@@ -93,19 +90,20 @@ export function TransactionsToolbar({
         aria-label={t('transactions.list.search')}
         value={text}
         onChange={setText}
-        className="flex min-w-0 flex-[1_1_8rem] items-center gap-1 border border-outline px-2 medium:max-w-60"
+        className="flex min-w-0 flex-1 items-center gap-2 px-3 text-text-muted"
       >
-        <IconSearchLine aria-hidden="true" className="size-3.5 shrink-0" />
+        <IconSearchLine aria-hidden="true" className="size-[1.15em] shrink-0" />
         <Input
           placeholder={t('transactions.list.search')}
-          className="h-hit min-w-0 flex-1 bg-transparent text-small outline-none placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-ring"
+          className="h-full min-w-0 flex-1 bg-canvas text-text outline-none placeholder:text-text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
         />
       </SearchField>
       <MenuButton
+        variant="strip"
+        chevron={false}
         label={t('transactions.list.period.label')}
         value={t(`transactions.list.period.${view.period}`)}
-        icon={IconCalendarLine}
-        iconOnly={compact}
+        icon={IconCalendar2Line}
         selectionMode="single"
         selectedKeys={new Set([view.period])}
         onSelectionChange={(keys) => {
@@ -123,10 +121,12 @@ export function TransactionsToolbar({
         ))}
       </MenuButton>
       <MenuButton
+        variant="strip"
+        chevron={false}
         label={t('transactions.filter.label')}
-        {...(filterCount > 0 ? { value: String(filterCount) } : {})}
+        {...(filterCount > 0 ? { badge: String(filterCount) } : {})}
         icon={IconFilter3Line}
-        iconOnly={compact}
+        className={filterCount > 0 ? 'text-primary hover:text-primary' : ''}
         open={filterOpen}
         onOpenChange={setFilterOpen}
         selectionMode="multiple"
@@ -183,17 +183,29 @@ export function TransactionsToolbar({
           ))}
         </MenuSection>
       </MenuButton>
+    </StripControls>
+  );
+}
+
+/** The entries tile's title-bar menus: `group day ▾` and `sort ▾`. */
+export function ListMenus({
+  view,
+  onChange,
+}: {
+  view: TransactionsView;
+  onChange: (next: Partial<TransactionsView>) => void;
+}) {
+  return (
+    <>
       <MenuButton
         label={t('transactions.list.group.label')}
         value={t(`transactions.list.group.${view.group}`)}
-        icon={IconListCheck}
-        iconOnly={compact}
         selectionMode="single"
         selectedKeys={new Set([view.group])}
         onSelectionChange={(keys) => {
           const next = onlyKey(keys);
           const group = GROUPS.find((g) => g === next);
-          if (group !== undefined) onChange({ group: group });
+          if (group !== undefined) onChange({ group });
         }}
       >
         {GROUPS.map((group) => (
@@ -206,9 +218,6 @@ export function TransactionsToolbar({
       </MenuButton>
       <MenuButton
         label={t('transactions.list.sort.label')}
-        value={t(`transactions.list.sort.${view.sort}`)}
-        icon={IconSortDesc}
-        iconOnly={compact}
         selectionMode="single"
         selectedKeys={new Set([view.sort])}
         onSelectionChange={(keys) => {
@@ -225,6 +234,6 @@ export function TransactionsToolbar({
           />
         ))}
       </MenuButton>
-    </StripControls>
+    </>
   );
 }
