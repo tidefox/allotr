@@ -148,6 +148,7 @@ export {
 export {
   balanceHistory,
   cycleDays,
+  paceDiff,
   type CycleDay,
   type CycleDays,
 } from './projections/series.ts';
@@ -185,11 +186,14 @@ export {
 export {
   budgetCovers,
   budgetStatus,
+  budgetTotals,
   coverPreview,
   entryBudgetLines,
   type BudgetCover,
   type EntryBudgetLine,
   type BudgetLineStatus,
+  type BudgetTotals,
+  type CoverUsed,
   type BudgetStatus,
   type CoveredFigures,
   type CoverPreview,
@@ -272,6 +276,7 @@ export {
   type PayeeTotal,
 } from './projections/payees.ts';
 export {
+  averageOf,
   categorySeries,
   cyclePeriods,
   monthPeriods,
@@ -295,6 +300,7 @@ export {
   type DueReminder,
   type ReminderKind,
 } from './projections/reminders.ts';
+export { goalMonthlyNeeded } from './projections/goals.ts';
 export { savingsRate } from './projections/savings-rate.ts';
 export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';

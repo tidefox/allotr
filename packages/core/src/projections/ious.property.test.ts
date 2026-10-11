@@ -12,6 +12,7 @@ import {
   iouBalanceGaps,
   iouId,
   iouStatuses,
+  iouTotals,
   type Iou,
   type IouSettlement,
 } from './ious.ts';
@@ -282,6 +283,21 @@ describe('IOU invariants', () => {
         const built = play(ops);
         const v = viewOf(built);
         expect(iouBalanceGaps(v, addDays(march, offset)).size).toBe(0);
+      }),
+    );
+  });
+
+  it('nets what people owe the user against what the user owes', () => {
+    fc.assert(
+      fc.property(opsArb, fc.nat(45), (ops, offset) => {
+        const v = viewOf(play(ops));
+        const totals = iouTotals(v, addDays(march, offset));
+        expect(totals.net.currency).toBe('USD');
+        expect(totals.owedToMe.amountMinor).toBeGreaterThanOrEqual(0);
+        expect(totals.owedByMe.amountMinor).toBeGreaterThanOrEqual(0);
+        expect(totals.net.amountMinor).toBe(
+          totals.owedToMe.amountMinor - totals.owedByMe.amountMinor,
+        );
       }),
     );
   });

@@ -45,6 +45,25 @@ export type BudgetLineStatus = Readonly<{
   restored: Money;
   /** What a set-aside budget still holds out of free money; zero otherwise. */
   held: Money;
+  /**
+   * What other sources paid of this budget's shortfall this period, per
+   * source, in cover order. Only sources that paid something are listed.
+   */
+  coverUsed: readonly CoverUsed[];
+}>;
+
+/** What one source covered for one budget in the period. */
+export type CoverUsed = Readonly<{ source: CoverSource; amount: Money }>;
+
+/**
+ * Every budget's figures added up, each budget once (parent headers are not
+ * counted twice), in the default currency. The Buffer is a budget: it adds
+ * what it holds to `left` and nothing to `spent`.
+ */
+export type BudgetTotals = Readonly<{
+  planned: Money;
+  spent: Money;
+  left: Money;
 }>;
 
 /**
@@ -82,6 +101,8 @@ export type BudgetStatus = Readonly<{
    * children, summing every category budget under it.
    */
   parents: readonly ParentBudgetTotals[];
+  /** Every budget added up once; see `BudgetTotals`. */
+  totals: BudgetTotals;
   /** Counted accounts less unpaid reserved bills. */
   available: Money;
   /** Set-aside budgets' holds, Buffer included. */
@@ -143,12 +164,64 @@ export function parentBudgetTotals(
     }));
 }
 
+/** Adds every budget's planned, spent and left once. */
+export function budgetTotals(
+  view: Pick<LedgerView, 'settings'>,
+  lines: readonly Pick<BudgetLineStatus, 'planned' | 'spent' | 'left'>[],
+): BudgetTotals {
+  const currency = view.settings.defaultCurrency;
+  const total = (pick: (l: (typeof lines)[number]) => Money) =>
+    money(
+      lines.reduce((sum, l) => sum + pick(l).amountMinor, 0),
+      currency,
+    );
+  return {
+    planned: total((l) => l.planned),
+    spent: total((l) => l.spent),
+    left: total((l) => l.left),
+  };
+}
+
+/**
+ * What each source covered of the shortfalls of `lines` (one budget's spend
+ * in the period), summed per source and listed in cover order, then any
+ * source the order no longer names. Sources that covered nothing are left
+ * out.
+ */
+function coverUsedBy(
+  lines: readonly SpendLine[],
+  order: readonly CoverSource[],
+  currency: CurrencyCode,
+): CoverUsed[] {
+  const taken = new Map<CoverSource, bigint>();
+  for (const line of lines) {
+    for (const c of line.covers) {
+      taken.set(c.source, (taken.get(c.source) ?? 0n) + c.amount);
+    }
+  }
+  const rank = (source: CoverSource) => {
+    const at = order.indexOf(source);
+    return at < 0 ? order.length : at;
+  };
+  return [...taken]
+    .filter(([, amount]) => amount !== 0n)
+    .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+    .map(([source, amount]) => ({
+      source,
+      amount: money(Number(amount), currency),
+    }));
+}
+
 /** Budget figures as of `today`, from the same ledger the daily number reads. */
 export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
   const currency = view.settings.defaultCurrency;
   const fold = budgetFold(view, today);
   const daily = dailyFiguresOn(view, today);
   const m = (amount: bigint) => money(Number(amount), currency);
+  const inPeriod = (fold?.spend ?? []).filter(
+    (l) =>
+      fold !== null && l.date >= fold.period.from && l.date < fold.period.to,
+  );
   const lines = (fold?.lines ?? []).map((line): BudgetLineStatus => ({
     budget: line.budget,
     planned: m(line.amount),
@@ -159,13 +232,14 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
     coveredOut: m(line.coveredOut),
     restored: m(line.restored),
     held: m(heldBy(line)),
+    coverUsed: coverUsedBy(
+      inPeriod.filter((l) => l.budgetId === line.budget.id),
+      fold?.order ?? [],
+      currency,
+    ),
   }));
   const buffer = (fold?.lines ?? []).find(
     (l) => l.budget.target.kind === 'buffer',
-  );
-  const inPeriod = (fold?.spend ?? []).filter(
-    (l) =>
-      fold !== null && l.date >= fold.period.from && l.date < fold.period.to,
   );
   const sum = (pick: (l: SpendLine) => bigint) =>
     inPeriod.reduce((total, l) => total + pick(l), 0n);
@@ -182,6 +256,7 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
     daysLeft: daily.daysLeft,
     lines,
     parents: parentBudgetTotals(view, lines),
+    totals: budgetTotals(view, lines),
     available: daily.available,
     held: daily.held,
     free: daily.free,

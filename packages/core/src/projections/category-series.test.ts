@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { food } from '../ledger/testing.ts';
 import { categoryId } from '../ledger/types.ts';
 import {
+  averageOf,
   categorySeries,
   cyclePeriods,
   monthPeriods,
@@ -78,10 +79,20 @@ describe('categorySeries', () => {
       parents,
     );
     expect(series.groups).toEqual([
-      { categoryId: fun, points: [usd(0), usd(6000), usd(2500)] },
-      { categoryId: food, points: [usd(0), usd(5000), usd(0)] },
+      {
+        categoryId: fun,
+        points: [usd(0), usd(6000), usd(2500)],
+        average: usd(2833),
+      },
+      {
+        categoryId: food,
+        points: [usd(0), usd(5000), usd(0)],
+        average: usd(1666),
+      },
     ]);
     expect(series.totals).toEqual([usd(0), usd(11000), usd(2500)]);
+    // 13 500 over 3 periods, zero periods and all.
+    expect(series.totalAverage).toEqual(usd(4500));
   });
 
   it('property: points match the single-period summary and add up', () => {
@@ -129,9 +140,53 @@ describe('categorySeries', () => {
             expect(found?.points[i]).toEqual(g.amount);
           }
         });
-        for (const g of series.groups)
+        for (const g of series.groups) {
           expect(g.points).toHaveLength(periods.length);
+          expect(g.average).toEqual(averageOf(g.points, usd(0).currency));
+        }
+        expect(series.totalAverage).toEqual(
+          averageOf(series.totals, usd(0).currency),
+        );
       }),
+    );
+  });
+});
+
+describe('averageOf', () => {
+  it('rounds down, counts zero periods and is zero with no points', () => {
+    expect(averageOf([usd(100), usd(0), usd(1)], 'USD')).toEqual(usd(33));
+    expect(averageOf([usd(-1), usd(0)], 'USD')).toEqual(usd(-1));
+    expect(averageOf([], 'USD')).toEqual(usd(0));
+  });
+
+  it('keeps whole minor units in 0 and 3 digit currencies', () => {
+    expect(averageOf([money(5, 'JPY'), money(0, 'JPY')], 'JPY')).toEqual(
+      money(2, 'JPY'),
+    );
+    expect(averageOf([money(2_001, 'KWD'), money(0, 'KWD')], 'KWD')).toEqual(
+      money(1_000, 'KWD'),
+    );
+  });
+
+  it('property: stays between the smallest and largest point, and rounds down', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.integer({ min: -1_000_000, max: 1_000_000 }), {
+          minLength: 1,
+          maxLength: 24,
+        }),
+        (values) => {
+          const avg = averageOf(
+            values.map((v) => usd(v)),
+            'USD',
+          ).amountMinor;
+          const sum = values.reduce((a, b) => a + b, 0);
+          expect(avg).toBeGreaterThanOrEqual(Math.min(...values));
+          expect(avg).toBeLessThanOrEqual(Math.max(...values));
+          expect(avg * values.length).toBeLessThanOrEqual(sum);
+          expect((avg + 1) * values.length).toBeGreaterThan(sum);
+        },
+      ),
     );
   });
 });

@@ -12,6 +12,7 @@ export {
   localDateIn,
   isoWeekday,
   lastDayOfMonth,
+  monthsBetween,
   nextDayOfMonth,
   localDateSchema,
   isLocalTime,
