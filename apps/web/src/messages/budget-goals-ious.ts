@@ -95,6 +95,7 @@ export const budgetGoalsIous = {
     writtenOff: 'Written off',
     deletePayment: 'Delete {kind} {amount} on {date}',
     delete: 'delete',
+    deleteEntry: 'delete entry',
     repay: 'repay',
     payBack: 'pay back',
     dueDate: 'due date',
@@ -106,6 +107,7 @@ export const budgetGoalsIous = {
       payBack: 'Pay back {person}',
       writeOff: 'Write off {person}',
       due: 'Due date for {person}',
+      delete: 'Delete the entry for {person}',
     },
     form: {
       direction: 'Direction',
@@ -122,7 +124,15 @@ export const budgetGoalsIous = {
       due: 'Due date (optional)',
       note: 'Note (optional)',
       category: 'Recorded under',
+      deleteBody:
+        'This deletes the entry that recorded it, so its money goes back to where it came from.',
+      deleteShared:
+        'The same entry also recorded {names}; they are deleted with it, and so is your own share if it was a split bill.',
+      hasPayments: 'It has payments. Delete them first.',
+      confirmDelete: 'Delete it',
       stillOwed: 'Still owed: {amount}.',
+      stillOwedAcross:
+        'Still owed across {count} IOUs: {amount}. The oldest is settled first.',
       writeOffBody:
         'Write off {amount} that {person} owes you. It is recorded as an expense and cannot be collected afterwards.',
       writeOffOffered: 'A write-off is offered now.',

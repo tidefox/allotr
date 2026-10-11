@@ -2,6 +2,7 @@ import {
   categoryGroupsTotal,
   categoryId,
   categorySeries,
+  basisPointShares,
   categoryTotalsBetween,
   cyclePeriods,
   dailyAverage,
@@ -18,6 +19,7 @@ import {
   type CategorySeriesView,
   type CategorySummaryView,
   type LocalDate,
+  type Money,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
@@ -36,15 +38,32 @@ type Query = Readonly<{
   series?: number | undefined;
 }>;
 
-const view = (groups: CategoryGroup[]) =>
-  groups.map((group) => ({
-    categoryId: group.categoryId,
-    amount: group.amount,
-    children: group.children.map((child) => ({
-      categoryId: child.categoryId,
-      amount: child.amount,
-    })),
-  }));
+// Shares are of the period's total; a group's children split the group's
+// share, so a group and its children always agree.
+const view = (groups: CategoryGroup[], total: Money) => {
+  const shares = basisPointShares(
+    groups.map((g) => g.amount.amountMinor),
+    total.amountMinor,
+  );
+  return groups.map((group, index) => {
+    const shareBp = shares[index] ?? 0;
+    const childShares = basisPointShares(
+      group.children.map((c) => c.amount.amountMinor),
+      group.amount.amountMinor,
+      shareBp,
+    );
+    return {
+      categoryId: group.categoryId,
+      amount: group.amount,
+      shareBp,
+      children: group.children.map((child, i) => ({
+        categoryId: child.categoryId,
+        amount: child.amount,
+        shareBp: childShares[i] ?? 0,
+      })),
+    };
+  });
+};
 
 // The core result is readonly; the API view is plain arrays.
 const seriesView = (series: CategorySeries): CategorySeriesView => ({
@@ -108,16 +127,17 @@ export async function categorySummary(
   const spendingGroups = rollUpCategories(spending.totals, parentOf);
   const incomeGroups = rollUpCategories(income.totals, parentOf);
   const spendingTotal = categoryGroupsTotal(spendingGroups, currency);
+  const incomeTotal = categoryGroupsTotal(incomeGroups, currency);
   const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
   const savings = savedBetween(loaded.view, { from, to });
   return {
     period: query.period,
     from,
     to,
-    spending: view(spendingGroups),
-    income: view(incomeGroups),
+    spending: view(spendingGroups, spendingTotal),
+    income: view(incomeGroups, incomeTotal),
     spendingTotal,
-    incomeTotal: categoryGroupsTotal(incomeGroups, currency),
+    incomeTotal,
     days,
     dailyAverage: average,
     saved: savings.saved,

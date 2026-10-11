@@ -1,6 +1,7 @@
 import type { Money } from '@allotr/shared';
 import { ShareBar, seriesBg, type SeriesColor } from '@/components/bars';
-import { clampFraction, percent } from '@/components/bars-math';
+import { clampFraction } from '@/components/bars-math';
+import { shareText } from '@/lib/share-text';
 import { formatMoney, type CurrencyDisplay } from '@/lib/format-money';
 import { cn } from '@/lib/utils';
 
@@ -13,8 +14,10 @@ export type AllocationSegment = Readonly<{
   /** "Bills paid", "To savings", "Spent", "other", "Bills set aside", "Free to spend". */
   label: string;
   amount: Money;
-  /** The segment's share of the cycle start, 0..1, as the server computed it. */
+  /** The segment's size against the cycle start, 0..1, for the bar only. */
   fraction: number;
+  /** The segment's share of the cycle start in basis points, from the server. */
+  shareBp: number;
   color: SeriesColor;
 }>;
 
@@ -91,7 +94,7 @@ export function Allocation({
               {formatMoney(s.amount, mode, locale)}
             </div>
             <div className="num text-tiny text-text-muted">
-              {percent(s.fraction)}
+              {shareText(s.shareBp)}
             </div>
           </li>
         ))}

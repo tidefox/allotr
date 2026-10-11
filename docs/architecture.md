@@ -154,7 +154,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   person), `POST /v1/ious/repayments` records a payment that names the IOUs it
   settles, `POST /v1/ious/{id}/write-off` writes off what is left (any time the
   user asks; `iouWriteOffAfterDays` sets when it is offered), `PATCH /v1/ious/{id}` corrects a name
-  or due date, `GET /v1/ious/people` suggests earlier names and
+  or due date (each IOU carries `personOpen`, the open count and total for its
+  person, direction and currency, which is the most a payment to the person
+  may take), `GET /v1/ious/people` suggests earlier names and
   `POST /v1/ious/cover-preview` tells the entry sheet what lending would take.
   Undo goes through `POST /v1/transactions/{id}/reverse`. Figures are
   computed on read; the money is in the ledger.
@@ -240,7 +242,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   splits the cycle's on-budget start into `paidBills`, `savings` (money
   actually moved to savings), `spent`, `reserved`, `free` and `other` (what
   none of those explain, such as money lent), which add up to `start`
-  exactly (domain.md "Cycle allocation").
+  exactly (domain.md "Cycle allocation"). `allocation.shareBp` gives each
+  part's share of `start` in basis points (largest-remainder rounding; 0
+  for a part that is not positive). `/v1/reports/categories` groups and
+  children carry `shareBp` of the period's total the same way.
 - `GET /v1/accounts` marks each account `reconcileDue` (open, and never
   reconciled or not for more than 30 days before the user's today;
   `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit

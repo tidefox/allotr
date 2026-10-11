@@ -117,6 +117,10 @@ test('the summary tab shows figures, categories, payees and days', async ({
   await expect(categories.getByText('Household')).toBeVisible();
   await expect(categories.getByText('Pantry')).toBeVisible();
   await expect(categories.getByText('Leisure')).toBeVisible();
+  // Shares are the server's basis points: 6,000 and 2,500 of 8,500.
+  await expect(
+    categories.getByRole('img', { name: /Household 71%, Leisure 29%/ }),
+  ).toBeVisible();
   const payees = page.getByRole('region', {
     name: t('reportsSummary.payees.title'),
   });

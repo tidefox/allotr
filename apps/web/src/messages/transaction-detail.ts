@@ -45,6 +45,7 @@ export const transactionDetail = {
   },
   payee: {
     title: 'Same payee',
+    all: '[see all]',
     empty: 'No other entries from this payee.',
   },
   actions: {

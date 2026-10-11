@@ -18,7 +18,6 @@ import {
   fractionOf,
   reportParams,
   shareSegments,
-  sharePercent,
   statFigures,
   visibleRows,
 } from './summary-model.ts';
@@ -133,7 +132,7 @@ describe('cycleOf and statFigures', () => {
   });
 });
 
-describe('fractionOf and sharePercent', () => {
+describe('fractionOf', () => {
   it('stays within 0..1', () => {
     fc.assert(
       fc.property(fc.integer(), fc.integer(), (part, whole) => {
@@ -165,13 +164,6 @@ describe('fractionOf and sharePercent', () => {
     expect(fractionOf(0, 5)).toBe(0);
     expect(fractionOf(-1, 5)).toBe(0);
   });
-
-  it('writes a share as text', () => {
-    expect(sharePercent(0)).toBe('0%');
-    expect(sharePercent(0.004)).toBe('<1%');
-    expect(sharePercent(0.346)).toBe('35%');
-    expect(sharePercent(1)).toBe('100%');
-  });
 });
 
 describe('categoryRows', () => {
@@ -179,14 +171,15 @@ describe('categoryRows', () => {
     {
       categoryId: 'food',
       amount: money(700),
+      shareBp: 7000,
       children: [
-        { categoryId: 'pantry', amount: money(400) },
-        { categoryId: 'takeaway', amount: money(200) },
-        { categoryId: 'food', amount: money(100) },
+        { categoryId: 'pantry', amount: money(400), shareBp: 4000 },
+        { categoryId: 'takeaway', amount: money(200), shareBp: 2000 },
+        { categoryId: 'food', amount: money(100), shareBp: 1000 },
       ],
     },
-    { categoryId: 'rent', amount: money(300), children: [] },
-    { categoryId: null, amount: money(0), children: [] },
+    { categoryId: 'rent', amount: money(300), shareBp: 3000, children: [] },
+    { categoryId: null, amount: money(0), shareBp: 0, children: [] },
   ];
 
   it('lists parents, children and flat rows in the server order', () => {
@@ -206,6 +199,10 @@ describe('categoryRows', () => {
     ]);
     expect(rows[0]?.fraction).toBeCloseTo(0.7);
     expect(rows[3]?.name).toBe('food itself');
+    // The printed share is the server's.
+    expect(rows.map((r) => r.shareBp)).toEqual([
+      7000, 4000, 2000, 1000, 3000, 0,
+    ]);
   });
 
   it('treats a group whose only child is itself as flat', () => {
@@ -214,7 +211,10 @@ describe('categoryRows', () => {
         {
           categoryId: 'rent',
           amount: money(300),
-          children: [{ categoryId: 'rent', amount: money(300) }],
+          shareBp: 10000,
+          children: [
+            { categoryId: 'rent', amount: money(300), shareBp: 10000 },
+          ],
         },
       ]),
       money(300),

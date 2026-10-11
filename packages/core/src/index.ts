@@ -219,6 +219,9 @@ export {
   iouStatus,
   iouStatuses,
   iouTotals,
+  personOpenOf,
+  personOpenTotals,
+  type PersonOpen,
   iousOf,
   loanKey,
   type Iou,
@@ -293,6 +296,7 @@ export {
   type ReminderKind,
 } from './projections/reminders.ts';
 export { savingsRate } from './projections/savings-rate.ts';
+export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,

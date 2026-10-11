@@ -34,6 +34,14 @@ describe('allocationSegments', () => {
         reserved: m(200),
         free: m(450),
         other: m(-20),
+        shareBp: {
+          paidBills: 1000,
+          savings: 0,
+          spent: 3000,
+          reserved: 2000,
+          free: 4500,
+          other: 0,
+        },
       },
       labels,
     );
@@ -49,5 +57,9 @@ describe('allocationSegments', () => {
     expect(segments[3]?.fraction).toBe(0);
     expect(segments[3]?.color).toBe('series-6');
     expect(segments[5]?.fraction).toBe(0.45);
+    // The printed share is the server's, never derived from the amounts.
+    expect(segments.map((s) => s.shareBp)).toEqual([
+      1000, 0, 3000, 0, 2000, 4500,
+    ]);
   });
 });

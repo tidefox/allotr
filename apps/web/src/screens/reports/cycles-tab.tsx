@@ -14,7 +14,6 @@ import {
   savedColumns,
   spentColumns,
 } from './cycles-model.ts';
-import { PeriodMenu } from './period-menu.tsx';
 
 const locale = 'en';
 
@@ -28,14 +27,14 @@ const columns = [
 ] as const;
 
 // Cycles (docs/ui.md §6): what each cycle spent and saved, then the table of
-// them. Every figure is the cycle snapshot the server sent. The period menu
-// does not narrow it: comparing cycles needs several of them.
+// them. Every figure is the cycle snapshot the server sent. There is no
+// period menu here: the tab compares recent cycles, so one period would
+// have nothing to compare, and `/v1/cycles` takes no range.
 export function CyclesTab() {
   const cycles = useQuery(cyclesQuery);
   const list = cycles.data?.cycles;
   return (
     <>
-      <PeriodMenu />
       {cycles.isError ? (
         <Grid>
           <Tile title={t('reportsPlan.cycles.table.title')} span="full">

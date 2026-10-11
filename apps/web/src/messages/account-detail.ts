@@ -32,6 +32,7 @@ export const accountDetail = {
   },
   recent: {
     title: 'Recent entries',
+    all: '[all entries]',
     empty: 'No entries in this account yet.',
     failed: 'The entries could not be loaded.',
   },

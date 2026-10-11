@@ -1,9 +1,10 @@
 import type { CycleAllocationView, Money } from '@allotr/shared';
 import type { AllocationSegment } from '@/charts/allocation';
 
-// The server sends the six parts of the cycle start but no shares. A share
-// here only sizes a bar segment (and the percentage under it); it is never a
-// money figure. Parts that are negative or zero get an empty share.
+// The server sends the six parts of the cycle start and each part's share in
+// basis points; the percentage under a segment is that share. The ratio here
+// only sizes a bar segment and is never shown. Parts that are negative or
+// zero get an empty bar.
 
 export function segmentShare(part: Money, start: Money): number {
   if (start.amountMinor <= 0 || part.amountMinor <= 0) return 0;
@@ -41,6 +42,7 @@ export function allocationSegments(
     label: labels[id],
     amount,
     fraction: segmentShare(amount, a.start),
+    shareBp: a.shareBp[id],
     color,
   }));
 }

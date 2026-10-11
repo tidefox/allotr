@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
 import { Amount } from '@/components/amount';
@@ -334,9 +334,18 @@ function Recent({ accountId }: { accountId: string }) {
       aria-label={t('accountDetail.recent.title')}
       className="flex flex-col border-b py-2"
     >
-      <h3 className="px-3 pb-1 text-tiny font-semibold tracking-wide text-text-muted uppercase">
-        {t('accountDetail.recent.title')}
-      </h3>
+      <div className="flex items-center justify-between gap-2 px-3 pb-1">
+        <h3 className="text-tiny font-semibold tracking-wide text-text-muted uppercase">
+          {t('accountDetail.recent.title')}
+        </h3>
+        <Link
+          to="/transactions"
+          search={{ accounts: [accountId], period: 'all' }}
+          className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
+        >
+          {t('accountDetail.recent.all')}
+        </Link>
+      </div>
       {body()}
     </section>
   );

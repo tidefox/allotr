@@ -30,6 +30,10 @@ type Today = {
     reserved: Money;
     free: Money;
     other: Money;
+    shareBp: Record<
+      'paidBills' | 'savings' | 'spent' | 'reserved' | 'free' | 'other',
+      number
+    >;
   };
   reserved: Money;
   reservedBills: Money;
@@ -155,6 +159,14 @@ describe('today for a new user', () => {
         reserved: usd(0),
         free: usd(0),
         other: usd(0),
+        shareBp: {
+          paidBills: 0,
+          savings: 0,
+          spent: 0,
+          reserved: 0,
+          free: 0,
+          other: 0,
+        },
       },
       billsDue: [],
       cycleBills: [],
@@ -632,6 +644,14 @@ describe('cycle allocation', () => {
       reserved: usd(0),
       free: usd(77000),
       other: usd(0),
+      shareBp: {
+        paidBills: 0,
+        savings: 2000,
+        spent: 300,
+        reserved: 0,
+        free: 7700,
+        other: 0,
+      },
     });
     expect(figures.available).toEqual(figures.allocation.free);
   });
@@ -675,6 +695,13 @@ describe('cycle allocation', () => {
       ),
     ).toBe(a.start.amountMinor);
     expect(a.other.amountMinor).not.toBe(0);
+    // Shares are of the start; a part that is not positive has none.
+    for (const [name, share] of Object.entries(a.shareBp)) {
+      expect(share).toBeGreaterThanOrEqual(0);
+      expect(share).toBeLessThanOrEqual(10000);
+      const part = a[name as keyof typeof a.shareBp];
+      if (part.amountMinor <= 0) expect(share).toBe(0);
+    }
   });
 });
 

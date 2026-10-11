@@ -708,6 +708,20 @@ export const cycleAllocationSchema = z.object({
    * like. Often zero; may be negative.
    */
   other: moneySchema,
+  /**
+   * Each part's share of `start` in basis points (10 000 is all of it).
+   * 0 for a part that is not positive, and for every part when `start` is
+   * not positive; largest-remainder rounding, so the six add up to 10 000
+   * whenever no part is negative.
+   */
+  shareBp: z.object({
+    paidBills: z.int().min(0).max(10000),
+    savings: z.int().min(0).max(10000),
+    spent: z.int().min(0).max(10000),
+    reserved: z.int().min(0).max(10000),
+    free: z.int().min(0).max(10000),
+    other: z.int().min(0).max(10000),
+  }),
 });
 export type CycleAllocationView = z.infer<typeof cycleAllocationSchema>;
 
@@ -809,8 +823,19 @@ const categoryAmountSchema = z.object({
 });
 
 const categoryGroupSchema = categoryAmountSchema.extend({
+  /**
+   * The group's share of the period's total in basis points (10 000 is all
+   * of it); 0 when the amount or the total is not positive. Largest-remainder
+   * rounding, so the groups add up to 10 000 when none is negative.
+   */
+  shareBp: z.int().min(0).max(10000),
   /** Subcategories with figures, largest first; what was booked on the parent itself is listed under the parent's own id. */
-  children: z.array(categoryAmountSchema),
+  children: z.array(
+    categoryAmountSchema.extend({
+      /** The child's share of the period's total in basis points; the children add up to the group's `shareBp` when none is negative. */
+      shareBp: z.int().min(0).max(10000),
+    }),
+  ),
 });
 
 const periodSchema = z.object({ from: localDateSchema, to: localDateSchema });

@@ -20,6 +20,7 @@ type Iou = {
   overdue: boolean;
   writeOffOfferedOn: string | null;
   writeOffOffered: boolean;
+  personOpen: { count: number; outstanding: Money };
   settlements: { transactionId: string; kind: string; undone: boolean }[];
 };
 type Entry = {
@@ -345,6 +346,15 @@ describe('a split bill', () => {
       occurredOn: '2026-03-02',
     });
     expect(second.status).toBe(201);
+    // Each IOU tells how much the person has open in all, whatever the case.
+    const listed = await h.alice.get('/v1/ious?person=jo%20example');
+    const personOpen = (listed.body as { ious: Iou[] }).ious.map(
+      (i) => i.personOpen,
+    );
+    expect(personOpen).toEqual([
+      { count: 2, outstanding: usd(1_500) },
+      { count: 2, outstanding: usd(1_500) },
+    ]);
     const paid = await h.alice.post('/v1/ious/repayments', {
       accountId: everyday,
       person: 'JO EXAMPLE',
@@ -353,6 +363,8 @@ describe('a split bill', () => {
     expect(paid.status, JSON.stringify(paid.body)).toBe(201);
     const [oldest, newer] = (paid.body as { ious: Iou[] }).ious;
     expect(oldest).toMatchObject({ settled: true, repaid: usd(1_000) });
+    // What a repayment response shows is as of the payment.
+    expect(newer?.personOpen).toEqual({ count: 1, outstanding: usd(300) });
     expect(newer).toMatchObject({ repaid: usd(200), outstanding: usd(300) });
     const tooMuch = await h.alice.post('/v1/ious/repayments', {
       accountId: everyday,

@@ -107,6 +107,19 @@ test('an entry shows its category, account, budget and same-payee entries', asyn
   await expect(samePayee.getByRole('button')).toHaveCount(1);
   await expectAccessible(page);
 
+  // The preview is five rows; the link scopes the whole list to the payee.
+  await samePayee
+    .getByRole('link', { name: t('transactionDetail.payee.all') })
+    .click();
+  await expect(page).toHaveURL(/payee=Corner/);
+  await expect(page).toHaveURL(/type=expense/);
+  await expect(page).toHaveURL(/period=all/);
+  await expect(
+    page.getByText(t('transactions.filter.payee', { name: 'Corner cafe' })),
+  ).toBeVisible();
+  await page.goto(`/transactions?entry=${entryId}`);
+  await expect(detail).toBeVisible();
+
   const small = await detail
     .locator('a, button, [role=button], input')
     .evaluateAll((els) =>

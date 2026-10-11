@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { clampFraction, percent } from './bars-math.ts';
+import { shareText } from '@/lib/share-text';
 
 // Bars draw fractions the caller got from the server; they never derive
 // money (docs/ui.md §4).
@@ -103,6 +104,8 @@ export type ShareSegment = Readonly<{
   id: string;
   label: string;
   fraction: number;
+  /** The share in basis points from the server; read out instead of a ratio. */
+  shareBp?: number;
   color: SeriesColor;
 }>;
 
@@ -119,7 +122,11 @@ export function ShareBar({
   const summary = segments
     .map(
       (s) =>
-        `${s.label} ${String(Math.round(clampFraction(s.fraction) * 100))}%`,
+        `${s.label} ${
+          s.shareBp === undefined
+            ? `${String(Math.round(clampFraction(s.fraction) * 100))}%`
+            : shareText(s.shareBp)
+        }`,
     )
     .join(', ');
   return (

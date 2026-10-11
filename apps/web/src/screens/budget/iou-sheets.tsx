@@ -21,8 +21,15 @@ import {
 import { formatLongDay } from '@/features/ledger/format';
 import { amountExample } from '@/features/quick-entry/draft';
 import { formatMoney } from '@/lib/format-money';
-import { accountsQuery, categoriesQuery, todayQuery } from '@/lib/ledger';
+import { ApiError } from '@/lib/api';
 import {
+  accountsQuery,
+  categoriesQuery,
+  reverseTransaction,
+  todayQuery,
+} from '@/lib/ledger';
+import {
+  allIousQuery,
   createIou,
   iouQueryKeys,
   repayIous,
@@ -48,7 +55,7 @@ export type CreatedIous = Awaited<ReturnType<typeof createIou>>;
 
 export type IouFlow =
   | Readonly<{ kind: 'loan' }>
-  | Readonly<{ kind: 'repay' | 'writeoff' | 'due'; iou: IouView }>;
+  | Readonly<{ kind: 'repay' | 'writeoff' | 'due' | 'delete'; iou: IouView }>;
 
 function titleOf(flow: IouFlow): string {
   switch (flow.kind) {
@@ -64,6 +71,10 @@ function titleOf(flow: IouFlow): string {
       });
     case 'due':
       return t('budgetGoalsIous.ious.sheets.due', { person: flow.iou.person });
+    case 'delete':
+      return t('budgetGoalsIous.ious.sheets.delete', {
+        person: flow.iou.person,
+      });
   }
 }
 
@@ -144,6 +155,8 @@ function Forms({
       );
     case 'due':
       return <DueForm key={flow.iou.id} iou={flow.iou} onClose={onClose} />;
+    case 'delete':
+      return <DeleteForm key={flow.iou.id} iou={flow.iou} onClose={onClose} />;
   }
 }
 
@@ -165,6 +178,7 @@ function useIouChange<A, R>(
 function FormShell({
   onSubmit,
   error,
+  errorText,
   pending,
   submitLabel,
   disabled = false,
@@ -173,6 +187,8 @@ function FormShell({
 }: {
   onSubmit: () => void;
   error: unknown;
+  /** Shown instead of `error`'s own message. */
+  errorText?: string | undefined;
   pending: boolean;
   submitLabel: string;
   disabled?: boolean;
@@ -189,7 +205,11 @@ function FormShell({
       }}
     >
       {children}
-      {error === null || error === undefined ? null : (
+      {errorText !== undefined ? (
+        <p role="alert" className="text-small text-negative">
+          {errorText}
+        </p>
+      ) : error === null || error === undefined ? null : (
         <p role="alert" className="text-small text-negative">
           {describeProblem(error).message}
         </p>
@@ -364,10 +384,13 @@ function RepayForm({
     (a) => !a.archived && a.currency === currency,
   );
   const toMe = iou.direction === 'owed-to-me';
+  // With several open IOUs for the person, the payment goes to the person:
+  // the server settles the oldest first and moves the surplus on. The most it
+  // may take is the person's open total, which the server sends.
+  const byPerson = iou.personOpen.count > 1;
+  const owed = byPerson ? iou.personOpen.outstanding : iou.outstanding;
   const [accountId, setAccountId] = useState(options[0]?.id ?? '');
-  const [amount, setAmount] = useState(
-    formatMoneyInput(iou.outstanding, locale),
-  );
+  const [amount, setAmount] = useState(formatMoneyInput(owed, locale));
   const [date, setDate] = useState<string>(today);
   const [amountBad, setAmountBad] = useState(false);
   const [dateIssue, setDateIssue] = useState<DateError>();
@@ -379,12 +402,22 @@ function RepayForm({
     setAmountBad(parsed === null);
     setDateIssue(on.ok ? undefined : on.error);
     if (parsed === null || !on.ok) return;
-    repay.mutate({
-      accountId,
-      settles: [{ iouId: iou.id, amount: parsed }],
-      direction: iou.direction,
-      occurredOn: on.date,
-    });
+    repay.mutate(
+      byPerson
+        ? {
+            accountId,
+            person: iou.person,
+            amount: parsed,
+            direction: iou.direction,
+            occurredOn: on.date,
+          }
+        : {
+            accountId,
+            settles: [{ iouId: iou.id, amount: parsed }],
+            direction: iou.direction,
+            occurredOn: on.date,
+          },
+    );
   };
 
   return (
@@ -426,9 +459,14 @@ function RepayForm({
         onChange={setAmount}
       />
       <p className="num text-small text-text-muted">
-        {t('budgetGoalsIous.ious.form.stillOwed', {
-          amount: formatMoney(iou.outstanding, 'symbol', locale),
-        })}
+        {byPerson
+          ? t('budgetGoalsIous.ious.form.stillOwedAcross', {
+              count: iou.personOpen.count,
+              amount: formatMoney(owed, 'symbol', locale),
+            })
+          : t('budgetGoalsIous.ious.form.stillOwed', {
+              amount: formatMoney(owed, 'symbol', locale),
+            })}
       </p>
       <TextField
         label={t('budgetGoalsIous.ious.form.date')}
@@ -533,6 +571,47 @@ function DueForm({ iou, onClose }: { iou: IouView; onClose: () => void }) {
         error={bad ? t('budgetGoalsIous.ious.form.errors.dueDate') : undefined}
         onChange={setDueOn}
       />
+    </FormShell>
+  );
+}
+
+/**
+ * Deletes the entry that recorded the IOU, with everyone else it recorded
+ * (a split bill's other people, and the user's own share). The server
+ * refuses while a payment still stands.
+ */
+function DeleteForm({ iou, onClose }: { iou: IouView; onClose: () => void }) {
+  const all = useQuery(allIousQuery).data?.ious;
+  const shared = (all ?? []).filter(
+    (other) => other.originId === iou.originId && other.id !== iou.id,
+  );
+  const remove = useIouChange(() => reverseTransaction(iou.originId), onClose);
+  const hasPayments =
+    remove.error instanceof ApiError &&
+    remove.error.problem.code === 'iou_has_payments';
+  return (
+    <FormShell
+      onSubmit={() => {
+        remove.mutate(undefined);
+      }}
+      error={hasPayments ? null : remove.error}
+      errorText={
+        hasPayments ? t('budgetGoalsIous.ious.form.hasPayments') : undefined
+      }
+      pending={remove.isPending}
+      submitLabel={t('budgetGoalsIous.ious.form.confirmDelete')}
+      onClose={onClose}
+    >
+      <p className="font-sans text-small">
+        {t('budgetGoalsIous.ious.form.deleteBody')}
+      </p>
+      {shared.length > 0 ? (
+        <p className="font-sans text-small text-text-muted">
+          {t('budgetGoalsIous.ious.form.deleteShared', {
+            names: shared.map((other) => other.person).join(', '),
+          })}
+        </p>
+      ) : null}
     </FormShell>
   );
 }
