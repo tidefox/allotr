@@ -93,7 +93,7 @@ export function TransactionsToolbar({
         aria-label={t('transactions.list.search')}
         value={text}
         onChange={setText}
-        className="flex min-w-0 flex-1 items-center gap-1 border border-outline px-2 medium:max-w-60"
+        className="flex min-w-0 flex-[1_1_8rem] items-center gap-1 border border-outline px-2 medium:max-w-60"
       >
         <IconSearchLine aria-hidden="true" className="size-3.5 shrink-0" />
         <Input

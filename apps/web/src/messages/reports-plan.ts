@@ -4,7 +4,7 @@ export const reportsPlan = {
   loadFailed: 'This could not be loaded.',
   retry: 'Try again',
   budget: {
-    title: 'Budget against actual',
+    title: 'budget against actual',
     subtitle: 'this period',
     barLabel: '{name} spent',
     emptyTitle: 'No budgets yet',
@@ -12,7 +12,7 @@ export const reportsPlan = {
       'Add a budget on the Budget screen to compare it with what you spent.',
   },
   rate: {
-    title: 'Savings rate',
+    title: 'savings rate',
     subtitle: 'per cycle',
     summary: 'Savings rate per cycle',
     emptyTitle: 'No cycles yet',
@@ -20,7 +20,7 @@ export const reportsPlan = {
     none: '–',
   },
   netWorth: {
-    title: 'Net worth',
+    title: 'net worth',
     subtitle: 'over the period',
     summary: 'Net worth over {days} days: {end} now, a change of {change}',
     caption: 'Net worth by day',
@@ -33,17 +33,17 @@ export const reportsPlan = {
   cycles: {
     thisCycle: 'This cycle',
     spent: {
-      title: 'Spent per cycle',
+      title: 'spent per cycle',
       subtitle: 'newest cycles',
       summary: 'Spent per cycle',
     },
     saved: {
-      title: 'Saved per cycle',
+      title: 'saved per cycle',
       subtitle: 'change in savings',
       summary: 'Saved per cycle',
     },
     table: {
-      title: 'Past cycles',
+      title: 'past cycles',
       subtitle: 'newest first',
       cycle: 'Cycle',
       income: 'Income',

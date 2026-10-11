@@ -11,7 +11,7 @@ export const settingsMoney = {
     loading: 'Loading settings',
   },
   region: {
-    title: 'Currency and region',
+    title: 'currency and region',
     subtitle: 'how figures are shown',
     currency: 'Default currency',
     currencyHint: 'Accounts in other currencies need an exchange rate.',
@@ -29,7 +29,7 @@ export const settingsMoney = {
     currencyTitle: 'Default currency',
   },
   payday: {
-    title: 'Payday',
+    title: 'payday',
     next: {
       one: 'Next payday {date}, {count} day left in this cycle.',
       other: 'Next payday {date}, {count} days left in this cycle.',
@@ -60,7 +60,7 @@ export const settingsMoney = {
     overrideClear: 'Clear',
   },
   plan: {
-    title: 'Budget and daily number',
+    title: 'budget and daily number',
     subtitle: 'what budgets follow and what the daily number counts',
     period: 'Budget period',
     periodHint: 'Budgets and summaries follow this.',
@@ -85,7 +85,7 @@ export const settingsMoney = {
       'Savings are never included unless you turn this on and the pool itself counts.',
   },
   rates: {
-    title: 'Exchange rates',
+    title: 'exchange rates',
     subtitle: 'figures in {currency} use the latest rate on or before each day',
     missing:
       'No rate yet for {currencies}, so those accounts are left out of figures in {currency}.',

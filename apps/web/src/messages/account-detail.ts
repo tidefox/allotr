@@ -2,7 +2,7 @@
 // file and spread into `en` so the list side can grow its own block. The
 // reconcile and archive wording itself stays under `accounts.*`.
 export const accountDetail = {
-  title: 'Account',
+  title: 'account',
   close: 'Close account',
   failed: 'This account could not be loaded.',
   retry: 'Try again',

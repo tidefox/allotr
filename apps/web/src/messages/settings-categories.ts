@@ -7,7 +7,7 @@ export const settingsCategories = {
   },
   tiles: {
     expense: {
-      title: 'Expense categories',
+      title: 'expense categories',
       subtitle: 'What entries are spent on',
     },
     income: { title: 'Income categories', subtitle: 'Where money comes from' },
@@ -104,8 +104,8 @@ export const settingsCategories = {
     failed: 'Could not archive the category.',
   },
   tags: {
-    title: 'Tags',
-    subtitle: 'Labels you can add to any entry',
+    title: 'tags',
+    subtitle: 'labels you can add to any entry',
     add: '+ tag',
     rename: 'Rename',
     renameOf: 'Rename tag {name}',

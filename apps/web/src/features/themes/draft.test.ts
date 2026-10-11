@@ -30,7 +30,8 @@ describe('checkDraft', () => {
       family: 'catppuccin',
       palette: { neutrals: { base: '#1e1e2e' } },
     });
-    expect(check.body?.roles).toBeUndefined();
+    // The shipped roles (Catppuccin's blue accent) carry over unchanged.
+    expect(check.body?.roles).toEqual(mocha.roles);
   });
 
   it('points at a role set with fitting off that fails its contrast', () => {
@@ -82,12 +83,12 @@ describe('checkDraft', () => {
 describe('editing', () => {
   it('stores only roles that differ from the default map', () => {
     const base = draft();
-    const set = withRole(base, 'ring', { slot: 'pink' });
-    expect(set.roles).toEqual({ ring: { slot: 'pink' } });
-    expect(roleEntry(set, 'ring')).toEqual({ slot: 'pink' });
-    const back = withRole(set, 'ring', roleEntry(base, 'ring'));
-    expect(back.roles).toEqual({});
-    expect(withRole(set, 'ring', undefined).roles).toEqual({});
+    const set = withRole(base, 'pace', { slot: 'pink' });
+    expect(set.roles).toEqual({ ...base.roles, pace: { slot: 'pink' } });
+    expect(roleEntry(set, 'pace')).toEqual({ slot: 'pink' });
+    const back = withRole(set, 'pace', roleEntry(base, 'pace'));
+    expect(back.roles).toEqual(base.roles);
+    expect(withRole(set, 'pace', undefined).roles).toEqual(base.roles);
   });
 
   it('renames an accent with the hues and roles that use it', () => {

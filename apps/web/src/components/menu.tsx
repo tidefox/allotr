@@ -16,7 +16,7 @@ import {
   type IconProps,
 } from '@/generated/icons';
 import { cn } from '@/lib/utils';
-import { menuButtonClass } from './buttons.tsx';
+import { menuButtonClass, stripButtonClass } from './buttons.tsx';
 import { menuPresentation } from './menu-placement.ts';
 import { Sheet } from './sheet.tsx';
 import { useFrameWidth } from './use-frame-width.ts';
@@ -124,6 +124,14 @@ export type MenuButtonProps = {
   selectedKeys?: Selection;
   onSelectionChange?: (keys: Selection) => void;
   className?: string;
+  /**
+   * `bordered` (default): `label · value ▾` in a box. `strip`: a
+   * full-height strip button showing icon, value and ▾, with the label as
+   * its accessible name; the value hides on phones.
+   */
+  variant?: 'bordered' | 'strip';
+  /** Where the popover opens; the command line opens upwards. */
+  placement?: 'bottom start' | 'top end';
   children: ReactNode;
 };
 
@@ -140,6 +148,8 @@ export function MenuButton({
   selectedKeys,
   onSelectionChange,
   className,
+  variant = 'bordered',
+  placement = 'bottom start',
   children,
 }: MenuButtonProps) {
   const presentation = menuPresentation(useFrameWidth());
@@ -150,7 +160,20 @@ export function MenuButton({
     onOpenChange?.(next);
   };
 
-  const face = (
+  const strip = variant === 'strip';
+  // The strip face shows only the value, so the name carries both (the
+  // visible text stays part of the name, WCAG 2.5.3).
+  const stripName = value === undefined ? label : `${label}: ${value}`;
+  const faceClass = strip ? stripButtonClass : menuButtonClass;
+  const face = strip ? (
+    <>
+      {Icon === undefined ? null : <Icon className="size-[1.15em] shrink-0" />}
+      {value === undefined ? null : (
+        <span className="min-w-0 truncate compact:hidden">{value}</span>
+      )}
+      <IconArrowDownSLine className="size-[1.15em] shrink-0" />
+    </>
+  ) : (
     <>
       {Icon === undefined ? null : <Icon className="size-3.5" />}
       <span className={cn('text-text-muted', iconOnly && 'sr-only')}>
@@ -207,7 +230,8 @@ export function MenuButton({
           }}
           aria-haspopup="menu"
           aria-expanded={open}
-          className={cn(menuButtonClass, className)}
+          {...(strip ? { 'aria-label': stripName } : {})}
+          className={cn(faceClass, className)}
         >
           {face}
         </Button>
@@ -219,9 +243,14 @@ export function MenuButton({
   }
   return (
     <MenuTrigger isOpen={open} onOpenChange={setOpen}>
-      <Button className={cn(menuButtonClass, className)}>{face}</Button>
+      <Button
+        {...(strip ? { 'aria-label': stripName } : {})}
+        className={cn(faceClass, className)}
+      >
+        {face}
+      </Button>
       <Popover
-        placement="bottom start"
+        placement={placement}
         className="enter-pop max-h-[var(--visual-viewport-height)] min-w-[var(--trigger-width)] overflow-auto border border-outline bg-chrome text-text"
       >
         {menu}

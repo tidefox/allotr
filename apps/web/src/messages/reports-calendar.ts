@@ -18,7 +18,7 @@ export const reportsCalendar = {
   failed: 'The calendar could not be loaded.',
   retry: 'Try again',
   day: {
-    title: 'Day',
+    title: 'day',
     nothing: 'Nothing on this day',
     nothingHint: 'No entries, bills or dues fall on this day.',
     entry: 'Entry',

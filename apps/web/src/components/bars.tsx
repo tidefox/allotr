@@ -52,11 +52,14 @@ export function LeftBar({
   height = 3,
   label,
   className,
+  fillClassName = 'bg-positive',
 }: {
   fraction: number;
   height?: 2 | 3 | 4;
   label: string;
   className?: string;
+  /** The fill's colour: `positive` by default, `text` or a series. */
+  fillClassName?: string;
 }) {
   const value = clampFraction(fraction);
   return (
@@ -74,7 +77,10 @@ export function LeftBar({
         className,
       )}
     >
-      <div className="h-full bg-positive" style={{ width: percent(value) }} />
+      <div
+        className={cn('h-full', fillClassName)}
+        style={{ width: percent(value) }}
+      />
     </div>
   );
 }
@@ -98,6 +104,18 @@ export const seriesBg: Record<SeriesColor, string> = {
   'series-6': 'bg-series-6',
   'series-7': 'bg-series-7',
   'series-8': 'bg-series-8',
+};
+
+/** Series colours for icons and marks (never text: they are fitted 3:1). */
+export const seriesText: Record<SeriesColor, string> = {
+  'series-1': 'text-series-1',
+  'series-2': 'text-series-2',
+  'series-3': 'text-series-3',
+  'series-4': 'text-series-4',
+  'series-5': 'text-series-5',
+  'series-6': 'text-series-6',
+  'series-7': 'text-series-7',
+  'series-8': 'text-series-8',
 };
 
 export type ShareSegment = Readonly<{

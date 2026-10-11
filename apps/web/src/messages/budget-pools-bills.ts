@@ -16,7 +16,7 @@ export const budgetPools = {
   sparkline: '{name} balance, last 30 days',
   savingsNote: 'Savings never count unless you turn that on in Settings.',
   how: {
-    title: 'How the daily number works',
+    title: 'how the daily number works',
     subtitle: 'on-budget money only',
     formula: {
       free: 'on-budget {onBudget} − bills {bills} − budgets {held} = free {base} ÷ {days} days = {daily}/day',
@@ -32,7 +32,7 @@ export const budgetBills = {
   failed: 'Bills could not be loaded.',
   retry: 'Try again',
   timeline: {
-    title: 'Bills this cycle',
+    title: 'bills this cycle',
     subtitle: 'day {day} of {length}',
     label: 'Bills and payday across the cycle',
     payday: 'Payday',
@@ -46,7 +46,7 @@ export const budgetBills = {
     nextValue: '{name} · {date}',
   },
   upcoming: {
-    title: 'Upcoming',
+    title: 'upcoming',
     subtitle: 'unpaid this cycle',
     empty: 'Nothing left to pay',
     emptyHint: 'Every bill due this cycle is paid.',
@@ -54,12 +54,12 @@ export const budgetBills = {
     setAsideLabel: 'Set aside for {name}',
   },
   paid: {
-    title: 'Paid this cycle',
+    title: 'paid this cycle',
     empty: 'Nothing paid yet',
     emptyHint: 'Bills you pay this cycle show up here.',
   },
   later: {
-    title: 'Not due this cycle',
+    title: 'not due this cycle',
     subtitle: 'due again later',
     day: 'day {day}',
   },

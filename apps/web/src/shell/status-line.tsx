@@ -1,13 +1,16 @@
-import { daysBetween } from '@allotr/shared';
 import { useIsFetching, useQuery } from '@tanstack/react-query';
+import { useLocation } from '@tanstack/react-router';
 import { useSyncExternalStore } from 'react';
 import { BracketButton } from '@/components/buttons';
-import { formatDay } from '@/features/today/format';
+import { formatTerminalDay } from '@/features/today/format';
 import { todayQuery } from '@/lib/ledger';
 import { useLedgerReady } from '@/lib/session';
 import { useOnline } from '@/lib/online';
 import { applyUpdate, updateStore } from '@/lib/service-worker';
+import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
+import { cycleDays } from './summary-math.ts';
+import { screenOf } from './title-strip.tsx';
 
 // The status line, from 600 px (docs/ui.md §3): mode block, cycle day,
 // payday, currency, key hints and sync state. Days are dates, not money, so
@@ -80,52 +83,70 @@ export function UpdateBar() {
   );
 }
 
+const seg = 'flex h-full items-center border-r px-2.5';
+
+const timeFormat = new Intl.DateTimeFormat('en', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
 export function StatusLine() {
   const ready = useLedgerReady();
-  const today = useQuery({ ...todayQuery, enabled: ready }).data;
+  const todayQueryState = useQuery({ ...todayQuery, enabled: ready });
+  const today = todayQueryState.data;
+  const screen = screenOf(useLocation().pathname);
   const online = useOnline();
   const fetching = useIsFetching() > 0;
   const sync = !online ? 'offline' : fetching ? 'syncing' : 'synced';
+  const syncedAt = todayQueryState.dataUpdatedAt;
   return (
     <footer
       aria-label={t('shell.slots.status')}
       data-slot="status"
-      className="hidden h-bar items-center gap-3 border-t bg-chrome pr-3 text-small medium:col-span-full medium:row-start-5 medium:flex"
+      className="hidden h-status items-stretch overflow-hidden border-t bg-chrome text-tiny whitespace-nowrap text-text-muted medium:col-span-full medium:row-start-5 medium:flex"
     >
-      <span className="flex h-full items-center bg-primary px-3 font-semibold text-on-primary">
-        {t('shell.status.mode')}
+      <span
+        className={cn(
+          seg,
+          'border-r-0 bg-primary font-bold tracking-[0.06em] text-on-primary',
+        )}
+      >
+        {t(`shell.status.mode.${screen}`)}
       </span>
       {today === undefined ? null : (
         <>
-          <span>
+          <span className={seg}>
             {t('shell.status.cycleDay', {
-              day: daysBetween(today.cycle.openedOn, today.today) + 1,
+              ...cycleDays(today.cycle.openedOn, today.today, today.cycleEnd),
             })}
           </span>
-          <span>
+          <span className={seg}>
             {t('shell.status.payday', {
-              date: formatDay(today.cycleEnd, 'en'),
+              date: formatTerminalDay(today.cycleEnd, 'en'),
+              count: today.daysLeft,
             })}
           </span>
-          <span>{today.onBudget.currency}</span>
+          <span className={seg}>{today.onBudget.currency}</span>
         </>
       )}
-      <span
-        data-key-hints
-        className="hidden min-w-0 flex-1 truncate text-text-muted wide:inline"
-      >
-        {t('shell.status.keys')}
+      <span data-key-hints className={cn(seg, 'min-w-0')}>
+        <span className="truncate">{t('shell.status.keys')}</span>
       </span>
-      <span className="ml-auto flex items-center gap-3">
+      <span className="ml-auto flex items-center gap-3 border-l px-2.5">
         <UpdateNotice />
-        <span role="status" className="flex items-center gap-1">
+        <span role="status" className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
             className={sync === 'synced' ? 'text-positive' : 'text-text-muted'}
           >
             ●
           </span>
-          {t(`shell.status.${sync}`)}
+          {sync === 'synced' && syncedAt > 0
+            ? t('shell.status.syncedAt', {
+                time: timeFormat.format(new Date(syncedAt)),
+              })
+            : t(`shell.status.${sync}`)}
         </span>
       </span>
     </footer>

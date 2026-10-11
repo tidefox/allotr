@@ -4,7 +4,7 @@
 export const settingsApp = {
   loading: 'Loading…',
   palette: {
-    title: 'Palette',
+    title: 'palette',
     subtitle: 'colours of the app',
     mode: 'Mode',
     modes: { light: 'Light', dark: 'Dark', system: 'System' },
@@ -18,7 +18,7 @@ export const settingsApp = {
     credit: '{name}, by {author} ({licence})',
   },
   themes: {
-    title: 'Your palettes',
+    title: 'your palettes',
     subtitle: '{count} of {limit}',
     none: 'No custom palettes yet. Create one or import a file.',
     create: 'new palette',
@@ -39,7 +39,7 @@ export const settingsApp = {
     deleting: 'deleting…',
   },
   interface: {
-    title: 'Interface',
+    title: 'interface',
     subtitle: 'on this device',
     density: 'Density',
     densities: { comfortable: 'Comfortable', compact: 'Compact' },
@@ -56,7 +56,7 @@ export const settingsApp = {
     off: 'Off',
   },
   notifications: {
-    title: 'Notifications',
+    title: 'notifications',
     subtitle: 'on this device',
     privacy:
       "Off until you turn it on. Notifications go through your browser vendor's push service, which sees that a notification was sent but not your figures. Reminders still appear in the app without it.",
@@ -80,7 +80,7 @@ export const settingsApp = {
     },
   },
   planned: {
-    title: 'Planned',
+    title: 'planned',
     subtitle: 'ADR 0029',
     note: 'planned (ADR 0029)',
     fonts: 'Fonts',
