@@ -11,6 +11,25 @@ export const budgetPools = {
   counts: 'counts toward daily',
   onBudget: 'on-budget',
   offBudget: 'off-budget',
+  renameAction: 'rename',
+  renameOf: 'Rename {name}',
+  newPool: {
+    title: 'new pool',
+    action: 'pool',
+    body: 'A pool groups accounts. A spending pool can count toward the daily number; a savings pool never does unless you switch it on.',
+  },
+  edit: {
+    newTitle: 'New pool',
+    renameTitle: 'Rename {name}',
+    name: 'Name',
+    nameRequired: 'Give the pool a name.',
+    nameTaken: 'Another pool already has this name.',
+    kind: 'Kind',
+    kinds: { spending: 'Spending', savings: 'Savings' },
+    kindHint:
+      'A spending pool counts toward the daily number; a savings pool does not. You can switch this later, but not the kind.',
+    failed: 'Could not save the pool. Try again.',
+  },
   styleAction: 'style',
   styleOf: 'Change the icon and colour of {name}',
   style: {
