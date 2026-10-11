@@ -234,7 +234,9 @@ test('a bill is created from + new and from the Bills tab', async ({
   await expect(dialog).toBeHidden();
 
   await page.goto('/budget/bills');
-  await page.getByRole('button', { name: t('billForm.add') }).click();
+  await page
+    .getByRole('button', { name: t('billForm.addLabel'), exact: true })
+    .click();
   await expect(
     page.getByRole('dialog', { name: t('billForm.title') }),
   ).toBeVisible();

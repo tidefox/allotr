@@ -12,6 +12,8 @@ export type TimelineEvent = Readonly<{
   kind: 'bill' | 'payday';
   /** Short text, e.g. "Rent". Hidden on phone. */
   label: string;
+  /** Short text after the label, e.g. "$950". Hidden on phone. */
+  detail?: string;
   /** Bills only: a paid bill is muted. */
   paid?: boolean;
 }>;
@@ -56,15 +58,18 @@ export function anchorOf(day: number, days: number): 'start' | 'mid' | 'end' {
 
 // The column's edge (start, end) or centre (mid) sits on the day.
 const COLUMN = {
-  start: 'items-start',
+  start: '-translate-x-[3px] items-start',
   mid: '-translate-x-1/2 items-center',
-  end: '-translate-x-full items-end',
+  end: '-translate-x-[calc(100%-3px)] items-end',
 } as const;
 
-// Keeps an event's 8 px mark centred on the day in an edge column.
-const MARK = { start: '-ml-1', mid: '', end: '-mr-1' } as const;
-
-const STEM = { 0: 'h-5', 1: 'h-11' } as const;
+// The locked design's four lanes (`up`, `dn`, `up2`, `dn2`) around the axis
+// at 42 px in a 96 px band: labels above sit over their mark, labels below
+// under it.
+const LANE = {
+  up: ['bottom-14', 'bottom-[4.5rem]'],
+  down: ['top-12', 'top-[3.875rem]'],
+} as const;
 
 export function Timeline({
   days,
@@ -81,91 +86,81 @@ export function Timeline({
   const byId = new Map(events.map((e) => [e.id, e]));
   const summary = `${label}: ${events
     .map(
-      (e) => `${e.label}${e.paid === true ? ' (paid)' : ''} ${dayLabel(e.day)}`,
+      (e) =>
+        `${e.label}${e.detail === undefined ? '' : ` ${e.detail}`}${e.paid === true ? ' (paid)' : ''} ${dayLabel(e.day)}`,
     )
     .join(', ')}`;
   return (
     <div
       role="img"
       aria-label={summary}
-      className={cn('relative h-44 w-full px-3 compact:h-16', className)}
+      className={cn('relative mx-1 mt-1.5 mb-0.5 h-24', className)}
     >
-      <div className="relative h-full">
-        {/* Axis and elapsed fill */}
-        <div className="absolute inset-x-0 top-1/2 h-px bg-outline" />
-        <div
-          className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-primary"
-          style={{ width: `${String(pos(today, days))}%` }}
-        />
-        {/* Ticks and dates */}
-        {tickDays(days).map((day) => (
+      {/* Axis and elapsed fill */}
+      <div className="absolute inset-x-0 top-[2.625rem] h-px bg-outline" />
+      <div
+        className="absolute top-[2.5625rem] left-0 h-[3px] bg-primary"
+        style={{ width: `${String(pos(today, days))}%` }}
+      />
+      {/* Ticks, and their dates along the bottom */}
+      {tickDays(days).map((day) => (
+        <div key={day}>
           <div
-            key={day}
+            className="absolute top-[2.4375rem] h-[7px] w-px bg-outline"
+            style={{ left: `${String(pos(day, days))}%` }}
+          />
+          <div
             className={cn(
-              'absolute top-1/2 flex flex-col',
+              'num absolute bottom-0 flex text-[0.625rem] whitespace-nowrap text-text-muted',
               COLUMN[anchorOf(day, days)],
             )}
             style={{ left: `${String(pos(day, days))}%` }}
           >
-            <div className="h-1.5 w-px bg-outline" />
-            <div className="num pt-0.5 text-tiny whitespace-nowrap text-text-muted compact:hidden">
-              {dayLabel(day)}
-            </div>
+            {dayLabel(day)}
           </div>
-        ))}
-        {/* Today */}
-        <div
-          className="absolute inset-y-0 w-px bg-primary"
-          style={{ left: `${String(pos(today, days))}%` }}
-        />
-        {/* Events */}
-        {lanes.map((lane) => {
-          const event = byId.get(lane.id);
-          if (event === undefined) return null;
-          const muted = event.kind === 'bill' && event.paid === true;
-          const up = lane.side === 'up';
-          const anchor = anchorOf(event.day, days);
-          return (
-            <div
-              key={lane.id}
+        </div>
+      ))}
+      {/* Events */}
+      {lanes.map((lane) => {
+        const event = byId.get(lane.id);
+        if (event === undefined) return null;
+        const muted = event.kind === 'bill' && event.paid === true;
+        const up = lane.side === 'up';
+        const anchor = anchorOf(event.day, days);
+        return (
+          <div
+            key={lane.id}
+            className={cn(
+              'absolute flex flex-col text-[0.625rem] leading-[1.2] whitespace-nowrap text-text-muted',
+              COLUMN[anchor],
+              LANE[lane.side][lane.level],
+            )}
+            style={{ left: `${String(pos(event.day, days))}%` }}
+          >
+            <span
+              aria-hidden="true"
               className={cn(
-                'absolute flex',
-                COLUMN[anchor],
-                up ? 'bottom-1/2 flex-col-reverse' : 'top-1/2 flex-col',
+                'block size-[7px]',
+                up ? 'order-2 mt-0.5' : 'mb-0.5',
+                event.kind === 'payday'
+                  ? 'bg-positive'
+                  : muted
+                    ? 'bg-outline'
+                    : 'bg-warning',
               )}
-              style={{ left: `${String(pos(event.day, days))}%` }}
-            >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'size-2',
-                  MARK[anchor],
-                  event.kind === 'payday'
-                    ? 'bg-positive'
-                    : muted
-                      ? 'bg-outline'
-                      : 'bg-warning',
-                )}
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'w-px bg-outline-variant compact:h-2',
-                  STEM[lane.level],
-                )}
-              />
-              <span
-                className={cn(
-                  'num text-tiny whitespace-nowrap compact:hidden',
-                  muted ? 'text-text-muted' : 'text-text',
-                )}
-              >
-                {event.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            />
+            <span className="num compact:hidden">
+              {event.label}
+              {event.detail === undefined ? null : ` ${event.detail}`}
+            </span>
+          </div>
+        );
+      })}
+      {/* Today */}
+      <div
+        className="absolute top-8 h-[1.375rem] w-0.5 bg-text"
+        style={{ left: `${String(pos(today, days))}%` }}
+      />
     </div>
   );
 }

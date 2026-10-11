@@ -151,7 +151,7 @@ test('the bills sub-tab shows the timeline and the unpaid bill', async ({
     }),
   ).toHaveCount(0);
   // Rent is due on the 28th, so it sits in this cycle or in "not due".
-  await expect(page.getByText('Rent').first()).toBeVisible();
+  await expect(page.getByText('Rent', { exact: true }).first()).toBeVisible();
   await expect(
     page.getByRole('region', { name: t('budgetBills.paid.title') }),
   ).toBeVisible();
