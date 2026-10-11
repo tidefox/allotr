@@ -102,6 +102,18 @@ test('an account shows its balance, history, pool and recent entries', async ({
   await expect(recent.getByRole('button')).toHaveCount(3);
   await expectAccessible(page);
   await noSmallTargets(pane);
+
+  // The list shows only the newest few; the link opens them all, scoped to
+  // this account and to every period.
+  await recent
+    .getByRole('link', { name: t('accountDetail.recent.all') })
+    .click();
+  await expect(page).toHaveURL(/\/transactions\?/);
+  await expect(page).toHaveURL(new RegExp(`accounts=.*${everydayId}`));
+  await expect(page).toHaveURL(/period=all/);
+  await expect(
+    page.getByRole('main').getByText('Corner cafe').first(),
+  ).toBeVisible();
 });
 
 test('reconciling a different balance shows the difference and adjusts', async ({
