@@ -186,6 +186,37 @@ optionally a date, on one savings pool or one account in a savings pool.
   current month asks for all of `remaining` (1 month). It is null with no
   date, once the goal is reached, and when the date is before today.
 
+## Credit limit and due day
+
+A credit account (kind `liability`) may carry a limit and a due day. Both are
+**display only**: they never change a balance, the daily number or a
+reminder, and a due day does **not** create a bill. A user who wants a
+reminder adds a bill separately. Other kinds cannot carry either
+(`credit_only`).
+
+- `creditLimit` is more than zero, in the account's currency.
+- A debt is a negative balance, so `creditAvailable` is the limit plus the
+  balance: owing 400.00 on a 2,000.00 limit leaves 1,600.00. It is not
+  clamped. Past the limit it is negative, and a card in credit (a positive
+  balance) leaves more than the limit. It is null without a limit.
+- `dueDay` is 1 to 31. `nextDueOn` is the next date on or after the user's
+  today that falls on it; a month shorter than the day uses its last day, so
+  day 31 is 28 February (29 in a leap year). Today counts: a card due today
+  shows today's date.
+- `totals.creditLimit` and `totals.creditAvailable` sum the same set of
+  accounts, the open credit accounts that have a limit, converted once to the
+  default currency at today's rates (missing rates are listed). A card with
+  no limit is in the owed total but in neither of these, so available over
+  limit is a fair bar.
+
+## Look of pools and accounts
+
+Pools and accounts have an optional `colour` (a chart series role,
+`series-1` to `series-8`, never a hex value) and `icon` (a key from the
+category icon set). They change only how the item is drawn. When null, the
+web app uses the pool's place among the open pools for the colour and the
+kind's icon, and an account follows its pool.
+
 ## Budgets
 
 A budget (ADR 0021) is a planned amount per period on an expense category,
@@ -702,7 +733,8 @@ identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
          conversion|receivables|payables], budget_group[on|off], currency,
-         counterparty_id, archived)
+         counterparty_id, archived, colour[series-1..8], icon,
+         credit_limit_minor[liability only], due_day[1..31, liability only])
 budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
         mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
 budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)
@@ -713,7 +745,7 @@ ious(id, user_id, direction[owed-to-me|owed-by-me], person, amount_minor,
 iou_settlements(id, user_id, iou_id, transaction_id, kind[repayment|write-off],
                 amount_minor, currency)         -- append-only
 pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
-      default_for[on|off], position, archived)
+      default_for[on|off], position, archived, colour[series-1..8], icon)
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)
                                         -- append-only
 categories(id, user_id, name, kind[expense|income|transfer], parent_id,

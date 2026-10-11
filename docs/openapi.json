@@ -2309,6 +2309,133 @@
                             "type": "string",
                             "format": "date-time"
                           },
+                          "colour": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8",
+                              null
+                            ]
+                          },
+                          "icon": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench",
+                              null
+                            ]
+                          },
+                          "creditLimit": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "creditAvailable": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "dueDay": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 31
+                          },
+                          "nextDueOn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
                           "lastReconciledOn": {
                             "type": [
                               "string",
@@ -2330,6 +2457,12 @@
                           "balance",
                           "archived",
                           "createdAt",
+                          "colour",
+                          "icon",
+                          "creditLimit",
+                          "creditAvailable",
+                          "dueDay",
+                          "nextDueOn",
                           "lastReconciledOn",
                           "reconcileDue"
                         ]
@@ -2433,12 +2566,78 @@
                             "amount",
                             "missingRates"
                           ]
+                        },
+                        "creditLimit": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        },
+                        "creditAvailable": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
                         }
                       },
                       "required": [
                         "on",
                         "off",
-                        "creditOwed"
+                        "creditOwed",
+                        "creditLimit",
+                        "creditAvailable"
                       ]
                     }
                   },
@@ -2622,7 +2821,7 @@
           "Ledger accounts"
         ],
         "summary": "Open an account",
-        "description": "The currency is fixed at creation. An opening balance is posted against Equity:Opening.",
+        "description": "The currency is fixed at creation. An opening balance is posted against Equity:Opening. `creditLimit` and `dueDay` are for credit (liability) accounts only (`credit_only`).",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2655,6 +2854,93 @@
                       "off"
                     ],
                     "default": "on"
+                  },
+                  "colour": {
+                    "type": "string",
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8"
+                    ]
+                  },
+                  "icon": {
+                    "type": "string",
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench"
+                    ]
+                  },
+                  "creditLimit": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "dueDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31
                   },
                   "openingBalance": {
                     "type": "object",
@@ -2749,6 +3035,133 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
+                    "creditLimit": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "creditAvailable": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dueDay": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 1,
+                      "maximum": 31
+                    },
+                    "nextDueOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
                     "lastReconciledOn": {
                       "type": [
                         "string",
@@ -2770,6 +3183,12 @@
                     "balance",
                     "archived",
                     "createdAt",
+                    "colour",
+                    "icon",
+                    "creditLimit",
+                    "creditAvailable",
+                    "dueDay",
+                    "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
                   ]
@@ -3082,6 +3501,133 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
+                    "creditLimit": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "creditAvailable": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dueDay": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 1,
+                      "maximum": 31
+                    },
+                    "nextDueOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
                     "lastReconciledOn": {
                       "type": [
                         "string",
@@ -3103,6 +3649,12 @@
                     "balance",
                     "archived",
                     "createdAt",
+                    "colour",
+                    "icon",
+                    "creditLimit",
+                    "creditAvailable",
+                    "dueDay",
+                    "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
                   ]
@@ -3281,8 +3833,8 @@
         "tags": [
           "Ledger accounts"
         ],
-        "summary": "Rename an account or move it on or off budget",
-        "description": "A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool.",
+        "summary": "Rename an account, restyle it or move it on or off budget",
+        "description": "A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool. `colour` and `icon` only change how the account is drawn; null clears them. `creditLimit` (in the account's currency) and `dueDay` are for credit (liability) accounts only (`credit_only`); null clears them. They are shown, never acted on: a due day creates no bill.",
         "parameters": [
           {
             "schema": {
@@ -3312,6 +3864,107 @@
                       "on",
                       "off"
                     ]
+                  },
+                  "colour": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8",
+                      null
+                    ]
+                  },
+                  "icon": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench",
+                      null
+                    ]
+                  },
+                  "creditLimit": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "dueDay": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 31
                   }
                 }
               }
@@ -3382,6 +4035,133 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
+                    "creditLimit": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "creditAvailable": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dueDay": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 1,
+                      "maximum": 31
+                    },
+                    "nextDueOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
                     "lastReconciledOn": {
                       "type": [
                         "string",
@@ -3403,6 +4183,12 @@
                     "balance",
                     "archived",
                     "createdAt",
+                    "colour",
+                    "icon",
+                    "creditLimit",
+                    "creditAvailable",
+                    "dueDay",
+                    "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
                   ]
@@ -3821,6 +4607,133 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
+                    "creditLimit": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "creditAvailable": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dueDay": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 1,
+                      "maximum": 31
+                    },
+                    "nextDueOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
                     "lastReconciledOn": {
                       "type": [
                         "string",
@@ -3842,6 +4755,12 @@
                     "balance",
                     "archived",
                     "createdAt",
+                    "colour",
+                    "icon",
+                    "creditLimit",
+                    "creditAvailable",
+                    "dueDay",
+                    "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
                   ]
@@ -5485,6 +6404,80 @@
                           "archived": {
                             "type": "boolean"
                           },
+                          "colour": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8",
+                              null
+                            ]
+                          },
+                          "icon": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench",
+                              null
+                            ]
+                          },
                           "accountIds": {
                             "type": "array",
                             "items": {
@@ -5615,6 +6608,8 @@
                           "counts",
                           "defaultFor",
                           "archived",
+                          "colour",
+                          "icon",
                           "accountIds",
                           "balance",
                           "cycle",
@@ -5826,6 +6821,72 @@
                   },
                   "countsTowardDaily": {
                     "type": "boolean"
+                  },
+                  "colour": {
+                    "type": "string",
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8"
+                    ]
+                  },
+                  "icon": {
+                    "type": "string",
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench"
+                    ]
                   }
                 },
                 "required": [
@@ -5878,6 +6939,80 @@
                     },
                     "archived": {
                       "type": "boolean"
+                    },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
                     },
                     "accountIds": {
                       "type": "array",
@@ -6004,6 +7139,8 @@
                     "counts",
                     "defaultFor",
                     "archived",
+                    "colour",
+                    "icon",
                     "accountIds",
                     "balance",
                     "cycle"
@@ -6240,8 +7377,8 @@
         "tags": [
           "Pools"
         ],
-        "summary": "Rename, switch or archive a pool",
-        "description": "The Budget pool always counts and neither default pool can be archived (`pool_fixed`). Only an empty pool is archived (`pool_not_empty`).",
+        "summary": "Rename, restyle, switch or archive a pool",
+        "description": "The Budget pool always counts and neither default pool can be archived (`pool_fixed`). Only an empty pool is archived (`pool_not_empty`). `colour` and `icon` only change how the pool is drawn; null clears them.",
         "parameters": [
           {
             "schema": {
@@ -6267,6 +7404,80 @@
                   },
                   "countsTowardDaily": {
                     "type": "boolean"
+                  },
+                  "colour": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8",
+                      null
+                    ]
+                  },
+                  "icon": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench",
+                      null
+                    ]
                   },
                   "archived": {
                     "type": "boolean"
@@ -6318,6 +7529,80 @@
                     },
                     "archived": {
                       "type": "boolean"
+                    },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
                     },
                     "accountIds": {
                       "type": "array",
@@ -6444,6 +7729,8 @@
                     "counts",
                     "defaultFor",
                     "archived",
+                    "colour",
+                    "icon",
                     "accountIds",
                     "balance",
                     "cycle"
@@ -6836,6 +8123,133 @@
                       "type": "string",
                       "format": "date-time"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
+                    "creditLimit": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "creditAvailable": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dueDay": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 1,
+                      "maximum": 31
+                    },
+                    "nextDueOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
                     "lastReconciledOn": {
                       "type": [
                         "string",
@@ -6857,6 +8271,12 @@
                     "balance",
                     "archived",
                     "createdAt",
+                    "colour",
+                    "icon",
+                    "creditLimit",
+                    "creditAvailable",
+                    "dueDay",
+                    "nextDueOn",
                     "lastReconciledOn",
                     "reconcileDue"
                   ]
@@ -7257,6 +8677,11 @@
                           "reached": {
                             "type": "boolean"
                           },
+                          "progressBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
                           "monthlyNeeded": {
                             "type": [
                               "object",
@@ -7294,6 +8719,7 @@
                           "saved",
                           "remaining",
                           "reached",
+                          "progressBp",
                           "monthlyNeeded",
                           "missingRates"
                         ]
@@ -7623,6 +9049,11 @@
                     "reached": {
                       "type": "boolean"
                     },
+                    "progressBp": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
                     "monthlyNeeded": {
                       "type": [
                         "object",
@@ -7660,6 +9091,7 @@
                     "saved",
                     "remaining",
                     "reached",
+                    "progressBp",
                     "monthlyNeeded",
                     "missingRates"
                   ]
@@ -8086,6 +9518,11 @@
                     "reached": {
                       "type": "boolean"
                     },
+                    "progressBp": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
                     "monthlyNeeded": {
                       "type": [
                         "object",
@@ -8123,6 +9560,7 @@
                     "saved",
                     "remaining",
                     "reached",
+                    "progressBp",
                     "monthlyNeeded",
                     "missingRates"
                   ]
@@ -43124,6 +44562,93 @@
                           ],
                           "default": "on"
                         },
+                        "colour": {
+                          "type": "string",
+                          "enum": [
+                            "series-1",
+                            "series-2",
+                            "series-3",
+                            "series-4",
+                            "series-5",
+                            "series-6",
+                            "series-7",
+                            "series-8"
+                          ]
+                        },
+                        "icon": {
+                          "type": "string",
+                          "enum": [
+                            "banknote",
+                            "baby",
+                            "beer",
+                            "bike",
+                            "book-open",
+                            "briefcase",
+                            "bus",
+                            "car",
+                            "circle-dollar-sign",
+                            "coffee",
+                            "credit-card",
+                            "dumbbell",
+                            "film",
+                            "fuel",
+                            "gamepad-2",
+                            "gift",
+                            "graduation-cap",
+                            "hand-coins",
+                            "heart-pulse",
+                            "house",
+                            "landmark",
+                            "laptop",
+                            "lightbulb",
+                            "music",
+                            "paw-print",
+                            "percent",
+                            "piggy-bank",
+                            "pill",
+                            "plane",
+                            "receipt",
+                            "repeat",
+                            "scissors",
+                            "shirt",
+                            "shopping-bag",
+                            "shopping-basket",
+                            "smartphone",
+                            "sparkles",
+                            "tag",
+                            "ticket",
+                            "train-front",
+                            "tree-pine",
+                            "trending-up",
+                            "umbrella",
+                            "utensils",
+                            "utensils-crossed",
+                            "wallet",
+                            "wifi",
+                            "wrench"
+                          ]
+                        },
+                        "creditLimit": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "dueDay": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 31
+                        },
                         "openingBalance": {
                           "type": "object",
                           "properties": {
@@ -44124,6 +45649,72 @@
                             "on",
                             "off"
                           ]
+                        },
+                        "colour": {
+                          "type": "string",
+                          "enum": [
+                            "series-1",
+                            "series-2",
+                            "series-3",
+                            "series-4",
+                            "series-5",
+                            "series-6",
+                            "series-7",
+                            "series-8"
+                          ]
+                        },
+                        "icon": {
+                          "type": "string",
+                          "enum": [
+                            "banknote",
+                            "baby",
+                            "beer",
+                            "bike",
+                            "book-open",
+                            "briefcase",
+                            "bus",
+                            "car",
+                            "circle-dollar-sign",
+                            "coffee",
+                            "credit-card",
+                            "dumbbell",
+                            "film",
+                            "fuel",
+                            "gamepad-2",
+                            "gift",
+                            "graduation-cap",
+                            "hand-coins",
+                            "heart-pulse",
+                            "house",
+                            "landmark",
+                            "laptop",
+                            "lightbulb",
+                            "music",
+                            "paw-print",
+                            "percent",
+                            "piggy-bank",
+                            "pill",
+                            "plane",
+                            "receipt",
+                            "repeat",
+                            "scissors",
+                            "shirt",
+                            "shopping-bag",
+                            "shopping-basket",
+                            "smartphone",
+                            "sparkles",
+                            "tag",
+                            "ticket",
+                            "train-front",
+                            "tree-pine",
+                            "trending-up",
+                            "umbrella",
+                            "utensils",
+                            "utensils-crossed",
+                            "wallet",
+                            "wifi",
+                            "wrench"
+                          ]
                         }
                       },
                       "required": [
@@ -44970,6 +46561,93 @@
                               "off"
                             ],
                             "default": "on"
+                          },
+                          "colour": {
+                            "type": "string",
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8"
+                            ]
+                          },
+                          "icon": {
+                            "type": "string",
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench"
+                            ]
+                          },
+                          "creditLimit": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "dueDay": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 31
                           },
                           "openingBalance": {
                             "type": "object",
@@ -45970,6 +47648,72 @@
                             "enum": [
                               "on",
                               "off"
+                            ]
+                          },
+                          "colour": {
+                            "type": "string",
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8"
+                            ]
+                          },
+                          "icon": {
+                            "type": "string",
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench"
                             ]
                           }
                         },

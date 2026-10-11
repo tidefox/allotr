@@ -18,6 +18,7 @@ type Goal = {
   saved: Money;
   remaining: Money;
   reached: boolean;
+  progressBp: number;
   monthlyNeeded: Money | null;
 };
 type Account = { id: string; poolId: string };
@@ -93,6 +94,8 @@ describe('goals on savings', () => {
       saved: usd(40_000),
       remaining: usd(60_000),
       reached: false,
+      // 40 000 of 100 000.
+      progressBp: 4_000,
       // March to December is 9 months: 6,666.67 rounds up.
       monthlyNeeded: usd(6_667),
     });
@@ -110,6 +113,8 @@ describe('goals on savings', () => {
       saved: usd(25_000),
       remaining: usd(0),
       reached: true,
+      // Past the target is still a full bar.
+      progressBp: 10_000,
       targetOn: null,
     });
   });

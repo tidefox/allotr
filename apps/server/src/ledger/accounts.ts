@@ -5,6 +5,8 @@ import {
   balanceHistory,
   balanceOf,
   budgetSwitch,
+  creditAvailable,
+  creditNextDue,
   dailyFiguresOn,
   groupsOn,
   leftTodayChange,
@@ -141,7 +143,18 @@ async function views(
 ): Promise<AccountView[]> {
   let query = db
     .selectFrom('accounts')
-    .select(['id', 'name', 'kind', 'currency', 'archived', 'created_at'])
+    .select([
+      'id',
+      'name',
+      'kind',
+      'currency',
+      'archived',
+      'created_at',
+      'colour',
+      'icon',
+      'credit_limit_minor',
+      'due_day',
+    ])
     .where('user_id', '=', userId)
     .where('system_role', 'is', null)
     .orderBy('created_at')
@@ -160,6 +173,11 @@ async function views(
   const placed = poolsOn(pools, today);
   return rows.map((row) => {
     const id = accountId(row.id);
+    const balance = balances.get(id) ?? money(0, row.currency);
+    const limit =
+      row.credit_limit_minor === null
+        ? null
+        : money(row.credit_limit_minor, row.currency);
     return {
       id: row.id,
       name: row.name,
@@ -167,9 +185,16 @@ async function views(
       currency: row.currency as CurrencyCode,
       budgetGroup: groups.get(id) ?? 'on',
       poolId: placed.get(id) ?? '',
-      balance: balances.get(id) ?? money(0, row.currency),
+      balance,
       archived: row.archived === 1,
       createdAt: row.created_at,
+      colour: row.colour as AccountView['colour'],
+      icon: row.icon as AccountView['icon'],
+      creditLimit: limit,
+      creditAvailable: limit === null ? null : creditAvailable(limit, balance),
+      dueDay: row.due_day,
+      nextDueOn:
+        row.due_day === null ? null : creditNextDue(row.due_day, today),
       lastReconciledOn: reconciled.get(row.id) ?? null,
       reconcileDue: reconcileDue(
         {
@@ -218,6 +243,15 @@ export function listAccounts(
       settings.defaultCurrency,
       today,
     );
+    // Limit and available cover the same accounts (open credit accounts
+    // with a limit), so available over limit is a fair bar.
+    const limited = accounts.filter(
+      (a) => !a.archived && a.kind === 'liability' && a.creditLimit !== null,
+    );
+    const figureOf = (amounts: readonly Money[]): FigureView => {
+      const sum = totalOn(rates, amounts, settings.defaultCurrency, today);
+      return { amount: sum.amount, missingRates: [...sum.missingRates] };
+    };
     return {
       accounts,
       totals: {
@@ -227,6 +261,10 @@ export function listAccounts(
           amount: credit.amount,
           missingRates: [...credit.missingRates],
         },
+        creditLimit: figureOf(limited.flatMap((a) => a.creditLimit ?? [])),
+        creditAvailable: figureOf(
+          limited.flatMap((a) => a.creditAvailable ?? []),
+        ),
       },
     };
   });
@@ -250,7 +288,37 @@ export type CreateAccount = Readonly<{
   budgetGroup: BudgetGroup;
   openingBalance?: Money | undefined;
   openedOn?: LocalDate | undefined;
+  colour?: AccountView['colour'] | undefined;
+  icon?: AccountView['icon'] | undefined;
+  creditLimit?: Money | undefined;
+  dueDay?: number | undefined;
 }>;
+
+function creditOnly(): RequestProblem {
+  return new RequestProblem(
+    400,
+    'credit_only',
+    'A credit limit and a due day belong to credit accounts.',
+  );
+}
+
+/** A limit is in the account's currency; limit and due day are credit only. */
+function checkCredit(
+  kind: string,
+  currency: string,
+  limit: Money | null | undefined,
+  dueDay: number | null | undefined,
+): void {
+  if (limit == null && dueDay == null) return;
+  if (kind !== 'liability') throw creditOnly();
+  if (limit != null && limit.currency !== currency) {
+    throw new RequestProblem(
+      400,
+      'currency_mismatch',
+      `The credit limit must be in ${currency}.`,
+    );
+  }
+}
 
 /**
  * Inserts an account and its opening entry inside the caller's database
@@ -274,6 +342,7 @@ export async function insertAccount(
       `The opening balance must be in ${input.currency}.`,
     );
   }
+  checkCredit(input.kind, input.currency, input.creditLimit, input.dueDay);
   const id = randomUUID();
   const at = now.toISOString();
   await uniquely(
@@ -288,6 +357,10 @@ export async function insertAccount(
           system_role: null,
           budget_group: input.budgetGroup,
           currency: input.currency,
+          colour: input.colour ?? null,
+          icon: input.icon ?? null,
+          credit_limit_minor: input.creditLimit?.amountMinor ?? null,
+          due_day: input.dueDay ?? null,
           created_at: at,
           updated_at: at,
         })
@@ -329,7 +402,7 @@ export async function createAccount(
 export async function findOwned(db: Db, userId: string, id: string) {
   const row = await db
     .selectFrom('accounts')
-    .select(['id', 'archived', 'currency'])
+    .select(['id', 'archived', 'currency', 'kind'])
     .where('user_id', '=', userId)
     .where('id', '=', id)
     .where('system_role', 'is', null)
@@ -349,6 +422,12 @@ function archivedProblem(): RequestProblem {
 export type UpdateAccount = Readonly<{
   name?: string | undefined;
   budgetGroup?: BudgetGroup | undefined;
+  colour?: AccountView['colour'] | undefined;
+  icon?: AccountView['icon'] | undefined;
+  /** Null clears it. */
+  creditLimit?: Money | null | undefined;
+  /** Null clears it. */
+  dueDay?: number | null | undefined;
 }>;
 
 export async function updateAccount(
@@ -360,12 +439,22 @@ export async function updateAccount(
 ): Promise<AccountView> {
   await db.transaction().execute(async (trx) => {
     const row = await findOwned(trx, userId, id);
-    if (input.name !== undefined) {
+    checkCredit(row.kind, row.currency, input.creditLimit, input.dueDay);
+    const fields = {
+      ...(input.name === undefined ? {} : { name: input.name }),
+      ...(input.colour === undefined ? {} : { colour: input.colour }),
+      ...(input.icon === undefined ? {} : { icon: input.icon }),
+      ...(input.creditLimit === undefined
+        ? {}
+        : { credit_limit_minor: input.creditLimit?.amountMinor ?? null }),
+      ...(input.dueDay === undefined ? {} : { due_day: input.dueDay }),
+    };
+    if (Object.keys(fields).length > 0) {
       await uniquely(
         () =>
           trx
             .updateTable('accounts')
-            .set({ name: input.name, updated_at: now.toISOString() })
+            .set({ ...fields, updated_at: now.toISOString() })
             .where('user_id', '=', userId)
             .where('id', '=', id)
             .execute(),

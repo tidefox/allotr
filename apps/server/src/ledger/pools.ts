@@ -73,7 +73,7 @@ async function readPools(
   const [rows, loaded, today] = await Promise.all([
     trx
       .selectFrom('pools')
-      .select(columns)
+      .select([...columns, 'colour', 'icon'])
       .where('user_id', '=', userId)
       .orderBy('position')
       .orderBy('id')
@@ -124,6 +124,8 @@ async function readPools(
             ? row.default_for
             : null,
         archived: row.archived === 1,
+        colour: row.colour as PoolView['colour'],
+        icon: row.icon as PoolView['icon'],
         accountIds: members,
         balance: {
           amount: figure.amount,
@@ -207,6 +209,8 @@ export async function createPool(
             counts_toward_daily:
               (input.countsTowardDaily ?? input.kind === 'spending') ? 1 : 0,
             position: (last?.position ?? 0) + 1,
+            colour: input.colour ?? null,
+            icon: input.icon ?? null,
             created_at: at,
             updated_at: at,
           })
@@ -263,6 +267,8 @@ export async function updatePool(
             ...(input.archived === undefined
               ? {}
               : { archived: input.archived ? 1 : 0 }),
+            ...(input.colour === undefined ? {} : { colour: input.colour }),
+            ...(input.icon === undefined ? {} : { icon: input.icon }),
             updated_at: now.toISOString(),
           })
           .where('user_id', '=', userId)

@@ -137,7 +137,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - Pools (ADR 0021) are served under `/v1/pools`: list with balances,
   add, and rename, switch or archive. `PUT /v1/accounts/{id}/pool` moves an
   account into a pool from a date. `GET`/`PATCH /v1/settings/ledger` carry
-  `countSavingsInDaily`.
+  `countSavingsInDaily`. A pool and an account may carry a `colour`
+  (`series-1` to `series-8`) and an `icon` (the category icon set); both are
+  optional on create and update, `null` clears them, and `null` on a read
+  means the web app falls back to its default (the pool's place among the
+  open pools, and for an account its pool's colour).
 - Budgets (ADR 0021) are served under `/v1/budgets`: the status for the
   current period (every budget's planned, carried, spent, left and held, free
   money and the daily number), plan, change and end. Budgets are virtual and
@@ -253,7 +257,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   reconciled or not for more than 30 days before the user's today;
   `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit
   accounts' balances summed in the default currency (negative while money
-  is owed), with `missingRates` like the other totals.
+  is owed), with `missingRates` like the other totals. A credit (liability)
+  account may carry `creditLimit` and `dueDay`; the read adds
+  `creditAvailable` (limit plus balance) and `nextDueOn`, and the totals add
+  `creditLimit` and `creditAvailable` over the open credit accounts that have
+  a limit (domain.md "Credit limit and due day"). Both are display only.
 - `GET /v1/budgets` adds `parents`: for each parent category with a budget
   on at least one child, the planned, spent and left totals of the category
   budgets under it, in the default currency. It also adds `totals` (planned,
@@ -263,7 +271,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - `GET /v1/ious` totals add `net` (`owedToMe − owedByMe`, default currency).
   Goals add `monthlyNeeded` (`remaining` over the calendar months left,
   rounded up; null with no date, once reached or after the date; domain.md
-  "Goals").
+  "Goals") and `progressBp` (saved over the target in basis points, rounded
+  down, 0 to 10 000).
 - `GET /v1/insights/emergency-fund` adds `addedThisCycle` (the fund's gain
   since the cycle opened) and `cyclesToTarget` (cycles to the target at that
   rate; null when undefined). `GET /v1/insights/net-worth` adds `change`
@@ -423,7 +432,9 @@ off budget (its `budgetGroup` is the group it started in), and
 adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
-`packages/shared/src/category-style.ts`); a match keeps its own style. IOUs travel as their own entry
+`packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
+`creditLimit` and `dueDay` (credit accounts only) and pools `colour` and
+`icon`, which round-trip through export and import. IOUs travel as their own entry
 kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
 dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`
 (`account`, `settles: [{iou, amount}]`) and `iou_write_off` (`iou`,

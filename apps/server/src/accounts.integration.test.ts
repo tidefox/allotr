@@ -12,7 +12,13 @@ type Figure = {
 };
 type List = {
   accounts: { id: string; archived: boolean; reconcileDue: boolean }[];
-  totals: { on: Figure; off: Figure; creditOwed: Figure };
+  totals: {
+    on: Figure;
+    off: Figure;
+    creditOwed: Figure;
+    creditLimit: Figure;
+    creditAvailable: Figure;
+  };
 };
 
 let h: TwoUsers;
@@ -57,6 +63,8 @@ describe('account totals', () => {
       on: { amount: usd(0), missingRates: [] },
       off: { amount: usd(0), missingRates: [] },
       creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 
@@ -69,6 +77,8 @@ describe('account totals', () => {
       on: { amount: usd(100_000), missingRates: ['EUR'] },
       off: { amount: usd(500_000), missingRates: ['JPY'] },
       creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 
@@ -94,6 +104,8 @@ describe('account totals', () => {
       on: { amount: usd(100_000), missingRates: [] },
       off: { amount: usd(522_000), missingRates: ['JPY'] },
       creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 

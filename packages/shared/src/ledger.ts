@@ -36,6 +36,32 @@ export const accountSchema = z.object({
   archived: z.boolean(),
   createdAt: z.iso.datetime(),
   /**
+   * A chart series role of the active theme; null follows the pool's colour.
+   */
+  colour: categoryColourSchema.nullable(),
+  /** A key from the fixed icon set; null shows the kind's icon. */
+  icon: categoryIconSchema.nullable(),
+  /**
+   * A credit (liability) account's limit in its currency; null when not set
+   * and always null for other kinds. Shown, never acted on.
+   */
+  creditLimit: moneySchema.nullable(),
+  /**
+   * What is still free to spend on the card: `creditLimit` plus `balance`
+   * (a debt is a negative balance, so owing 400 on a 2 000 limit leaves
+   * 1 600). It is not clamped: past the limit it is negative, and a card in
+   * credit leaves more than the limit. Null without a limit.
+   */
+  creditAvailable: moneySchema.nullable(),
+  /** The day of the month the payment is due (1 to 31); credit only. */
+  dueDay: z.number().int().min(1).max(31).nullable(),
+  /**
+   * The next date on or after the user's today that falls on `dueDay`, in a
+   * month shorter than the day the last day of that month. Informational: a
+   * due day creates no bill. Null without a due day.
+   */
+  nextDueOn: localDateSchema.nullable(),
+  /**
    * The latest day the bank's balance matched, directly or after an
    * adjustment that was not undone since.
    */
@@ -71,6 +97,17 @@ export const accountListSchema = z.object({
      * are left out and listed in `missingRates`, as in every total.
      */
     creditOwed: figureSchema,
+    /**
+     * The limits of the open credit accounts that have one, in the default
+     * currency at today's rates.
+     */
+    creditLimit: figureSchema,
+    /**
+     * What is free on those same accounts (`creditLimit` plus their
+     * balances), in the default currency; accounts without a limit are in
+     * neither this nor `creditLimit`, so available ÷ limit is a fair bar.
+     */
+    creditAvailable: figureSchema,
   }),
 });
 export type AccountListView = z.infer<typeof accountListSchema>;
@@ -79,16 +116,38 @@ export const listAccountsQuerySchema = z.object({
   includeArchived: z.stringbool().optional(),
 });
 
-export const createAccountBodySchema = z.object({
-  name: nameSchema,
-  kind: accountKindSchema.default('asset'),
-  currency: currencyCodeSchema,
-  budgetGroup: budgetGroupSchema.default('on'),
-  /** Posted against Equity:Opening; negative for a debt. */
-  openingBalance: moneySchema.optional(),
-  /** The opening balance's date; today when omitted. */
-  openedOn: localDateSchema.optional(),
+/** A credit limit is more than zero and in the account's currency. */
+const creditLimitSchema = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'The limit must be more than zero',
 });
+const dueDaySchema = z.number().int().min(1).max(31);
+
+export const createAccountBodySchema = z
+  .object({
+    name: nameSchema,
+    kind: accountKindSchema.default('asset'),
+    currency: currencyCodeSchema,
+    budgetGroup: budgetGroupSchema.default('on'),
+    colour: categoryColourSchema.optional(),
+    icon: categoryIconSchema.optional(),
+    /** Credit (liability) accounts only; in the account's currency. */
+    creditLimit: creditLimitSchema.optional(),
+    /** Credit (liability) accounts only; informational, creates no bill. */
+    dueDay: dueDaySchema.optional(),
+    /** Posted against Equity:Opening; negative for a debt. */
+    openingBalance: moneySchema.optional(),
+    /** The opening balance's date; today when omitted. */
+    openedOn: localDateSchema.optional(),
+  })
+  .refine(
+    (body) =>
+      body.kind === 'liability' ||
+      (body.creditLimit === undefined && body.dueDay === undefined),
+    {
+      error: 'A credit limit and a due day belong to credit accounts',
+      path: ['kind'],
+    },
+  );
 export type CreateAccountBody = z.input<typeof createAccountBodySchema>;
 
 export const updateAccountBodySchema = z
@@ -96,6 +155,13 @@ export const updateAccountBodySchema = z
     name: nameSchema.optional(),
     /** Moves the account on or off budget from today. */
     budgetGroup: budgetGroupSchema.optional(),
+    /** Null clears it, so the account follows its pool's colour again. */
+    colour: categoryColourSchema.nullable().optional(),
+    icon: categoryIconSchema.nullable().optional(),
+    /** Credit accounts only; null clears it. In the account's currency. */
+    creditLimit: creditLimitSchema.nullable().optional(),
+    /** Credit accounts only; null clears it. */
+    dueDay: dueDaySchema.nullable().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',
