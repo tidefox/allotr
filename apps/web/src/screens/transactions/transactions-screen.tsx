@@ -27,7 +27,7 @@ import {
 } from './filter-model.ts';
 import { sections, summaryParts } from './list-model.ts';
 import { periodRange } from './period.ts';
-import { reorderableDays, stepsFor } from './reorder-model.ts';
+import { hidesDayEntries, reorderableDays, stepsFor } from './reorder-model.ts';
 import {
   searchOf,
   validateTransactionsSearch,
@@ -164,9 +164,16 @@ export function TransactionsScreen() {
     });
   }, [pages, allAccounts, allCategories, view.group]);
 
-  const movable = useMemo(
+  // A filter or search can hide entries of a day it shows, so the row
+  // listed below another is not its neighbour in time: no moves then.
+  const moveBlocked = hidesDayEntries(view);
+  const dayRows = useMemo(
     () => reorderableDays(model ?? [], view.group, list.hasNextPage),
     [model, view.group, list.hasNextPage],
+  );
+  const movable = useMemo(
+    () => (moveBlocked ? new Set<string>() : dayRows),
+    [moveBlocked, dayRows],
   );
   const dayMove = useDayMove(
     (id) =>
@@ -245,7 +252,7 @@ export function TransactionsScreen() {
     );
   }
 
-  const steps = stepsFor(model ?? [], movable, view.entry);
+  const steps = stepsFor(model ?? [], dayRows, view.entry);
   const detail =
     view.entry === undefined ? null : (
       <EntryDetail
@@ -253,7 +260,12 @@ export function TransactionsScreen() {
         order={
           steps === null
             ? undefined
-            : { ...steps, busy: dayMove.busy, onMove: dayMove.move }
+            : {
+                ...steps,
+                busy: dayMove.busy,
+                blocked: moveBlocked,
+                onMove: dayMove.move,
+              }
         }
         onOpen={select}
         onClose={() => {
