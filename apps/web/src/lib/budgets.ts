@@ -40,11 +40,6 @@ export const budgetsQuery = queryOptions({
   queryFn: () => call(endpoints.budgets),
 });
 
-export const coversQuery = queryOptions({
-  queryKey: ['today', 'budgets', 'covers'],
-  queryFn: () => call(endpoints.covers),
-});
-
 /** What a change to budgets or cover touches. */
 export const budgetQueryKeys = [
   ['today'],

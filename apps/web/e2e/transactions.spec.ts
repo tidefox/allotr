@@ -216,3 +216,111 @@ test('nothing overflows sideways and targets are at least 24 px', async ({
     );
   expect(small).toEqual([]);
 });
+
+test('the sort menu orders by amount as a flat list, by keyboard', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await page.goto('/transactions');
+  const entries = list(page);
+  await expect(entries.getByText('Cinema night')).toBeVisible();
+  // By date the list has day headers.
+  await expect(
+    entries.getByRole('heading', { level: 3 }).first(),
+  ).toBeVisible();
+
+  const trigger = page.getByRole('button', {
+    name: new RegExp(t('transactions.list.sort.label')),
+  });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await page
+    .getByRole('menuitemradio', {
+      name: t('transactions.list.sort.amount-asc'),
+    })
+    .focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/sort=amount-asc/);
+  // Flat: no day headers, and the smallest entry comes first.
+  await expect(entries.getByRole('heading', { level: 3 })).toHaveCount(0);
+  const payees = entries.locator('.truncate.font-sans');
+  await expect(payees.first()).toHaveText('Corner cafe');
+  // The opening balances are the largest entries.
+  await expect(payees.last()).toHaveText('Opening balance');
+  await expectAccessible(page);
+
+  await page.goto('/transactions?sort=amount-desc');
+  await expect(entries.locator('.truncate.font-sans').first()).not.toHaveText(
+    'Corner cafe',
+  );
+  // An unknown value falls back to the default order with its day headers.
+  await page.goto('/transactions?sort=size');
+  await expect(
+    entries.getByRole('heading', { level: 3 }).first(),
+  ).toBeVisible();
+});
+
+test('a bill payment carries a bill tag, and a split shows under each category', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await apiSignIn(page, origin);
+  const today = (await (await page.request.get('/v1/today')).json()) as {
+    today: string;
+    available: { currency: string };
+  };
+  const usd = (amountMinor: number) => ({
+    amountMinor,
+    currency: today.available.currency,
+  });
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string }[];
+  };
+  const everyday = accounts.accounts.find((a) => a.name === 'Everyday');
+  const cats = (await (await page.request.get('/v1/categories')).json()) as {
+    categories: { id: string; name: string }[];
+  };
+  const id = (name: string) =>
+    cats.categories.find((c) => c.name === name)?.id ?? '';
+  const bill = await post(page, origin, '/v1/bills', {
+    name: 'Water supply',
+    amount: usd(2_000),
+    accountId: everyday?.id,
+    categoryId: id('Pastimes'),
+    dueDay: Number(today.today.slice(8)),
+  });
+  await post(page, origin, `/v1/bills/${bill.id}/payments`, {
+    dueOn: today.today,
+    paid: usd(2_000),
+  });
+  await post(page, origin, '/v1/transactions', {
+    kind: 'expense',
+    accountId: everyday?.id,
+    amount: usd(900),
+    lines: [
+      { categoryId: id('Pastimes'), amount: usd(500) },
+      { categoryId: id('Dining'), amount: usd(400) },
+    ],
+    note: 'Mixed basket',
+  });
+
+  await page.goto('/transactions');
+  const entries = list(page);
+  const paid = entries.getByRole('row', { name: /Water supply/ });
+  await expect(paid.getByText(t('transactions.list.billTag'))).toBeVisible();
+  await expect(
+    entries
+      .getByRole('row', { name: /Corner cafe/ })
+      .getByText(t('transactions.list.billTag')),
+  ).toHaveCount(0);
+
+  await page.goto('/transactions?group=category');
+  for (const name of ['Pastimes', 'Dining']) {
+    await expect(
+      entries.getByRole('region', { name }).getByText('Mixed basket'),
+    ).toBeVisible();
+  }
+  await expectAccessible(page);
+});

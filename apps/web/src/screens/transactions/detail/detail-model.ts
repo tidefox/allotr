@@ -1,16 +1,14 @@
 import {
   type AccountView,
-  type BudgetView,
   type CategoryView,
-  type coverLineSchema,
+  type EntryBudgetLineView,
   type TransactionView,
 } from '@allotr/shared';
-import type { z } from 'zod';
 import { isEditable } from '@/features/ledger/edit-draft';
 import { ledgerRows, type LedgerRow } from '@/features/ledger/rows';
 import { categoryTitle } from '@/lib/entry-categories';
 
-export type CoverLine = z.infer<typeof coverLineSchema>;
+export type CoverLine = EntryBudgetLineView;
 
 // What the detail pane shows of one entry, and which actions it offers. Pure:
 // every figure is the server's, and nothing here adds or converts money.
@@ -80,34 +78,6 @@ export function entryDetail(
   };
 }
 
-/**
- * The budget that counts this entry: the one the cover line names, else the
- * budget on its category or the category's parent (a parent's budget covers
- * its children). Figures are the current period's, so an entry from another
- * period has none. Ids and dates are compared; no money is.
- */
-export function budgetFor(
-  entry: TransactionView,
-  line: CoverLine | undefined,
-  budgets: readonly BudgetView[],
-  categories: readonly CategoryView[],
-  period: { from: string; to: string },
-): BudgetView | undefined {
-  if (line?.budgetId != null)
-    return budgets.find((b) => b.id === line.budgetId);
-  if (entry.occurredOn < period.from || entry.occurredOn >= period.to)
-    return undefined;
-  const own = categories.find((c) => c.id === entry.categoryId);
-  const ids = [own?.id, own?.parentId].filter((id) => id != null);
-  return ids
-    .map((id) =>
-      budgets.find(
-        (b) => b.target.kind === 'category' && b.target.categoryId === id,
-      ),
-    )
-    .find((b) => b !== undefined);
-}
-
 /** The covers a line shows: sources that paid, in the cover order. */
 export function coverParts(line: CoverLine): CoverLine['covers'] {
   return line.covers.filter((c) => c.amount.amountMinor !== 0);
@@ -120,4 +90,11 @@ export function isCovered(line: CoverLine): boolean {
     line.uncovered.amountMinor !== 0 ||
     line.overridden
   );
+}
+
+/** The first line that has cover to look at or change; the sheet edits it. */
+export function coverLine(
+  lines: readonly CoverLine[] | undefined,
+): CoverLine | undefined {
+  return lines?.find(isCovered);
 }

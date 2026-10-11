@@ -93,6 +93,7 @@ import {
   tagSchema,
   anyThemeBodySchema,
   todaySchema,
+  transactionDetailSchema,
   transactionListSchema,
   transactionSchema,
   updateAccountBodySchema,
@@ -688,7 +689,7 @@ export const endpoints = {
   transaction: endpoint({
     method: 'GET',
     path: '/v1/transactions/{id}',
-    response: transactionSchema,
+    response: transactionDetailSchema,
   }),
   editTransaction: endpoint({
     method: 'POST',

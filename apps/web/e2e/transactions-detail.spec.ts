@@ -98,6 +98,9 @@ test('an entry shows its category, account, budget and same-payee entries', asyn
   await expect(
     page.getByRole('region', { name: t('transactionDetail.budget.title') }),
   ).toContainText('Cafe budget');
+  await expect(
+    page.getByRole('region', { name: t('transactionDetail.budget.title') }),
+  ).toContainText(t('transactionDetail.budget.leftAfter', { left: '' }).trim());
   const samePayee = page.getByRole('region', {
     name: t('transactionDetail.payee.title'),
   });
@@ -339,4 +342,50 @@ test('an entry is split with people and replaced by the split', async ({
     .map((i) => i.person)
     .sort();
   expect(people).toEqual(['Alex', 'Sam']);
+});
+
+// (An entry from an earlier budget period cannot be seeded here: budgets
+// start with the period they are created in and the server clock is real.
+// The server's integration test covers that case; this one reads the same
+// per-entry figures for an entry that went past its budget.)
+test('an entry past its budget shows what is left and who covered it', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await post(page, origin, '/v1/auth/sign-in/email', {
+    email: account.email,
+    password: account.password,
+  });
+  const id = (
+    await post(page, origin, '/v1/transactions', {
+      kind: 'expense',
+      accountId,
+      amount: { amountMinor: 90_000, currency },
+      categoryId,
+      note: 'Big bakery order',
+    })
+  ).id;
+
+  await page.goto(`/transactions?entry=${id}`);
+  const detail = page
+    .getByRole('region', { name: t('transactionDetail.title') })
+    .last();
+  const budget = detail.getByRole('region', {
+    name: t('transactionDetail.budget.title'),
+  });
+  await expect(budget).toContainText('Cafe budget');
+  await expect(budget).toContainText(
+    t('transactionDetail.budget.leftAfter', { left: '' }).trim(),
+  );
+  await expect(
+    detail.getByRole('region', { name: t('transactionDetail.cover.title') }),
+  ).toContainText(/Free money|not covered/);
+  await detail
+    .getByRole('button', { name: t('transactionDetail.actions.cover') })
+    .click();
+  await expect(
+    page.getByRole('dialog', { name: t('transactionDetail.coverSheet.title') }),
+  ).toBeVisible();
+  await expectAccessible(page);
 });

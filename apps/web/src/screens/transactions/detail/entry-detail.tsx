@@ -6,9 +6,15 @@ import {
 } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
-import type { CategoryView, Money, TransactionView } from '@allotr/shared';
+import type {
+  CategoryView,
+  EntryBudgetView,
+  Money,
+  TransactionDetailView,
+  TransactionView,
+} from '@allotr/shared';
 import { Amount } from '@/components/amount';
-import { Bar, SkeletonTile } from '@/components/bars';
+import { SkeletonTile } from '@/components/bars';
 import { BracketButton, Tag } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { Row } from '@/components/row';
@@ -29,8 +35,7 @@ import { formatLongDay, rateText } from '@/features/ledger/format';
 import { ledgerRows } from '@/features/ledger/rows';
 import { isEditable } from '@/features/ledger/edit-draft';
 import { call } from '@/lib/api';
-import { budgetsQuery, coversQuery } from '@/lib/budgets';
-import { spentShare } from '@/features/budget/share';
+import { budgetsQuery } from '@/lib/budgets';
 import { seriesNumber } from '@/lib/category-style';
 import { endpoints } from '@/lib/endpoints';
 import {
@@ -46,8 +51,9 @@ import { formatMoney } from '@/lib/format-money';
 import { t } from '@/messages/t';
 import { CoverSheet } from './cover-sheet.tsx';
 import {
-  budgetFor,
+  coverLine,
   coverParts,
+  type CoverLine,
   entryDetail,
   isCovered,
   type EntryDetailModel,
@@ -150,7 +156,7 @@ function DetailBody({
   order,
 }: {
   order: DayOrder | undefined;
-  entry: TransactionView;
+  entry: TransactionDetailView;
   model: EntryDetailModel;
   categories: readonly CategoryView[];
   closeButton: ReactNode;
@@ -169,10 +175,8 @@ function DetailBody({
     mutationFn: () => reverseTransaction(entry.id),
     onSuccess: refresh,
   });
-  const covers = useQuery(coversQuery);
-  // Only an entry that went past its budget has a cover to choose.
-  const covered =
-    covers.data?.covers.some((c) => c.entryId === entry.id) ?? false;
+  // Only an entry whose budget did not pay it all has a cover to choose.
+  const covered = coverLine(entry.budget?.lines) !== undefined;
   const restore = useMutation({
     mutationFn: () => restoreTransaction(entry.id),
     onSuccess: (copy) => {
@@ -254,9 +258,7 @@ function DetailBody({
         </Field>
       </dl>
 
-      {model.canCover ? (
-        <BudgetAndCover entry={entry} categories={categories} />
-      ) : null}
+      {entry.budget === null ? null : <BudgetAndCover budget={entry.budget} />}
 
       <History entry={entry} onOpen={onOpen} onChanged={refresh} />
 
@@ -393,6 +395,7 @@ function DetailBody({
       {sheet === 'cover' ? (
         <CoverSheetLoader
           entryId={entry.id}
+          line={coverLine(entry.budget?.lines)}
           onClose={() => {
             setSheet(null);
           }}
@@ -419,30 +422,11 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-/** The budget that counted the entry, as it stands now, and who covered it. */
-function BudgetAndCover({
-  entry,
-  categories,
-}: {
-  entry: TransactionView;
-  categories: readonly CategoryView[];
-}) {
-  const covers = useQuery(coversQuery);
-  const budgets = useQuery(budgetsQuery);
-  if (covers.data === undefined || budgets.data === undefined) return null;
-
-  // The cover list holds only entries that went past their budget, this
-  // period; for any other entry its own budget paid all of it.
-  const line = covers.data.covers.find((c) => c.entryId === entry.id);
-  const budget = budgetFor(
-    entry,
-    line,
-    budgets.data.budgets,
-    categories,
-    budgets.data.period,
-  );
-  if (budget === undefined && line === undefined) return null;
-
+/**
+ * The budget lines that counted the entry, in whatever period it falls in:
+ * what each budget had left right after it, and who covered the rest.
+ */
+function BudgetAndCover({ budget }: { budget: EntryBudgetView }) {
   return (
     <>
       <section
@@ -450,61 +434,53 @@ function BudgetAndCover({
         className="flex flex-col gap-1 border-b px-3 py-2"
       >
         <SectionTitle>{t('transactionDetail.budget.title')}</SectionTitle>
-        {budget === undefined ? (
-          <p className="text-small text-text-muted">
-            {t('transactionDetail.budget.none')}
-          </p>
-        ) : (
-          <>
-            <p className="font-sans text-small">
-              {budget.name}{' '}
+        {budget.lines.map((line, index) => (
+          <p key={index} className="font-sans text-small">
+            {line.budgetName ?? t('transactionDetail.budget.none')}{' '}
+            {line.leftAfter === null ? null : (
               <span className="font-num text-text-muted">
-                {t('transactionDetail.budget.left', {
-                  left: formatMoney(budget.left, 'symbol', locale),
-                  planned: formatMoney(budget.planned, 'symbol', locale),
+                {t('transactionDetail.budget.leftAfter', {
+                  left: formatMoney(line.leftAfter, 'symbol', locale),
                 })}
               </span>
-            </p>
-            <Bar
-              value={spentShare(budget.spent, budget.left) / 100}
-              over={line !== undefined && line.uncovered.amountMinor > 0}
-              label={t('transactionDetail.budget.bar', { name: budget.name })}
-            />
-            <p className="text-tiny text-text-muted">
-              {t('transactionDetail.budget.note')}
-            </p>
-          </>
-        )}
+            )}
+          </p>
+        ))}
       </section>
       <section
         aria-label={t('transactionDetail.cover.title')}
         className="flex flex-col gap-0.5 border-b px-3 py-2 text-small"
       >
         <SectionTitle>{t('transactionDetail.cover.title')}</SectionTitle>
-        {line !== undefined && isCovered(line) ? (
-          <>
-            <CoverText money={line.own} message="own" />
-            {coverParts(line).map((c) => (
-              <p key={c.source}>
-                {t('transactionDetail.cover.from', {
-                  name: c.name,
-                  amount: formatMoney(c.amount, 'symbol', locale),
-                })}
-              </p>
-            ))}
-            {line.uncovered.amountMinor === 0 ? null : (
-              <p className="text-negative">
-                {t('transactionDetail.cover.uncovered', {
-                  amount: formatMoney(line.uncovered, 'symbol', locale),
-                })}
-              </p>
-            )}
-            {line.overridden ? (
-              <p className="text-text-muted">
-                {t('transactionDetail.cover.chosen')}
-              </p>
-            ) : null}
-          </>
+        {budget.lines.some(isCovered) ? (
+          budget.lines.map((line, index) => (
+            <div key={index}>
+              {budget.lines.length > 1 && line.budgetName !== null ? (
+                <p className="text-text-muted">{line.budgetName}</p>
+              ) : null}
+              <CoverText money={line.own} message="own" />
+              {coverParts(line).map((c) => (
+                <p key={c.source}>
+                  {t('transactionDetail.cover.from', {
+                    name: c.name,
+                    amount: formatMoney(c.amount, 'symbol', locale),
+                  })}
+                </p>
+              ))}
+              {line.uncovered.amountMinor === 0 ? null : (
+                <p className="text-negative">
+                  {t('transactionDetail.cover.uncovered', {
+                    amount: formatMoney(line.uncovered, 'symbol', locale),
+                  })}
+                </p>
+              )}
+              {line.overridden ? (
+                <p className="text-text-muted">
+                  {t('transactionDetail.cover.chosen')}
+                </p>
+              ) : null}
+            </div>
+          ))
         ) : (
           <p className="text-text-muted">{t('transactionDetail.cover.none')}</p>
         )}
@@ -525,14 +501,14 @@ function CoverText({ money, message }: { money: Money; message: 'own' }) {
 
 function CoverSheetLoader({
   entryId,
+  line,
   onClose,
 }: {
   entryId: string;
+  line: CoverLine | undefined;
   onClose: () => void;
 }) {
-  const covers = useQuery(coversQuery);
   const budgets = useQuery(budgetsQuery);
-  const line = covers.data?.covers.find((c) => c.entryId === entryId);
   if (line === undefined || budgets.data === undefined) return null;
   return (
     <CoverSheet

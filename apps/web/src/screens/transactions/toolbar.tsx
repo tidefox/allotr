@@ -13,6 +13,7 @@ import {
   IconFilter3Line,
   IconListCheck,
   IconSearchLine,
+  IconSortDesc,
 } from '@/generated/icons';
 import { categoryTree } from '@/features/settings/categories-model';
 import { t } from '@/messages/t';
@@ -22,13 +23,14 @@ import { applyFilterKeys, filterKeys } from './filter-model.ts';
 import {
   GROUPS,
   PERIODS,
+  SORTS,
   TYPES,
   type Period,
   type TransactionsView,
 } from './search-params.ts';
 
 // The title strip's controls (docs/ui.md §6): search, period, filter and
-// group by. Below 600 px the menus show only their icons.
+// group by and sort. Below 600 px the menus show only their icons.
 
 const SEARCH_DELAY_MS = 300;
 
@@ -199,6 +201,27 @@ export function TransactionsToolbar({
             key={group}
             id={group}
             label={t(`transactions.list.group.${group}`)}
+          />
+        ))}
+      </MenuButton>
+      <MenuButton
+        label={t('transactions.list.sort.label')}
+        value={t(`transactions.list.sort.${view.sort}`)}
+        icon={IconSortDesc}
+        iconOnly={compact}
+        selectionMode="single"
+        selectedKeys={new Set([view.sort])}
+        onSelectionChange={(keys) => {
+          const next = onlyKey(keys);
+          const sort = SORTS.find((s) => s === next);
+          if (sort !== undefined) onChange({ sort });
+        }}
+      >
+        {SORTS.map((sort) => (
+          <MenuRadioItem
+            key={sort}
+            id={sort}
+            label={t(`transactions.list.sort.${sort}`)}
           />
         ))}
       </MenuButton>

@@ -25,9 +25,7 @@ export const transactionDetail = {
   budget: {
     title: 'Budget',
     none: 'No budget counts this entry.',
-    bar: '{name} spent',
-    left: '{left} left of {planned}',
-    note: 'The budget as it stands now.',
+    leftAfter: '{left} left after this entry',
   },
   cover: {
     title: 'Cover',

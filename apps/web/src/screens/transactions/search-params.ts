@@ -20,8 +20,20 @@ export type EntryType = (typeof TYPES)[number];
 export const GROUPS = ['day', 'category', 'none'] as const;
 export type Group = (typeof GROUPS)[number];
 
+export const SORTS = [
+  'date-desc',
+  'date-asc',
+  'amount-desc',
+  'amount-asc',
+] as const;
+export type Sort = (typeof SORTS)[number];
+
+/** Day headers and day totals only make sense when the list runs by date. */
+export const isDateSort = (sort: Sort) => sort.startsWith('date');
+
 export const DEFAULT_PERIOD: Period = 'cycle';
 export const DEFAULT_GROUP: Group = 'day';
+export const DEFAULT_SORT: Sort = 'date-desc';
 
 /** At most this many ids per filter, like the API. */
 const MAX_IDS = 50;
@@ -35,6 +47,7 @@ export interface TransactionsSearch {
   categories?: string[] | undefined;
   accounts?: string[] | undefined;
   group?: Group | undefined;
+  sort?: Sort | undefined;
   /** The entry shown in the detail pane or sheet. */
   entry?: string | undefined;
 }
@@ -86,6 +99,7 @@ export function validateTransactionsSearch(
 ): TransactionsSearch {
   const period = oneOf(PERIODS, search.period);
   const group = oneOf(GROUPS, search.group);
+  const sort = oneOf(SORTS, search.sort);
   return {
     q: text(search.q),
     payee: payee(search.payee),
@@ -94,6 +108,7 @@ export function validateTransactionsSearch(
     categories: ids(search.categories),
     accounts: ids(search.accounts),
     group: group === DEFAULT_GROUP ? undefined : group,
+    sort: sort === DEFAULT_SORT ? undefined : sort,
     entry: id(search.entry),
   };
 }
@@ -107,6 +122,7 @@ export interface TransactionsView {
   categories: readonly string[];
   accounts: readonly string[];
   group: Group;
+  sort: Sort;
   entry: string | undefined;
 }
 
@@ -119,6 +135,7 @@ export function viewOf(search: TransactionsSearch): TransactionsView {
     categories: search.categories ?? [],
     accounts: search.accounts ?? [],
     group: search.group ?? DEFAULT_GROUP,
+    sort: search.sort ?? DEFAULT_SORT,
     entry: search.entry,
   };
 }
@@ -135,6 +152,7 @@ export function searchOf(view: Partial<TransactionsView>): TransactionsSearch {
       merged.categories.length === 0 ? undefined : [...merged.categories],
     accounts: merged.accounts.length === 0 ? undefined : [...merged.accounts],
     group: merged.group === DEFAULT_GROUP ? undefined : merged.group,
+    sort: merged.sort === DEFAULT_SORT ? undefined : merged.sort,
     entry: merged.entry,
   };
 }

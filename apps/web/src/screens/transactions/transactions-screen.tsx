@@ -85,6 +85,7 @@ export function TransactionsScreen() {
     payee: view.payee,
     type: view.type,
     group: view.group,
+    sort: view.sort,
     accountId: view.accounts.length === 0 ? undefined : view.accounts.join(','),
     categoryId:
       view.categories.length === 0 ? undefined : view.categories.join(','),
@@ -158,15 +159,19 @@ export function TransactionsScreen() {
       accounts: allAccounts,
       categories: allCategories,
       group: view.group,
+      sort: view.sort,
       groups: pages[0]?.groups ?? [],
       dayTotals: pages.flatMap((page) => page.dayTotals),
       locale,
     });
-  }, [pages, allAccounts, allCategories, view.group]);
+  }, [pages, allAccounts, allCategories, view.group, view.sort]);
 
+  // A place in the day only reads as an order when the list runs newest
+  // first by day; any other sort leaves nothing to drag.
+  const reorderGroup = view.sort === 'date-desc' ? view.group : 'none';
   const movable = useMemo(
-    () => reorderableDays(model ?? [], view.group, list.hasNextPage),
-    [model, view.group, list.hasNextPage],
+    () => reorderableDays(model ?? [], reorderGroup, list.hasNextPage),
+    [model, reorderGroup, list.hasNextPage],
   );
   const dayMove = useDayMove(
     (id) =>

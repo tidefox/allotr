@@ -118,6 +118,7 @@ export interface LedgerFilter {
   type?: 'expense' | 'income' | 'transfer' | undefined;
   /** Also return per-day or per-category totals for every match. */
   group?: 'none' | 'day' | 'category' | undefined;
+  sort?: 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' | undefined;
   tagId?: string | undefined;
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;

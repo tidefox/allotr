@@ -27,7 +27,9 @@ const categories = [
   { id: 'c-fun', name: 'Fun', parentId: null, colour: null, icon: null },
 ] as CategoryView[];
 
-function entry(overrides: Record<string, unknown>): TransactionView {
+function entry(
+  overrides: Record<string, unknown>,
+): TransactionListView['transactions'][number] {
   return {
     id: 'e-1',
     kind: 'expense',
@@ -47,8 +49,11 @@ function entry(overrides: Record<string, unknown>): TransactionView {
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],
+    billId: null,
+    billName: null,
+    groupKeys: [],
     ...overrides,
-  } as unknown as TransactionView;
+  } as unknown as TransactionListView['transactions'][number];
 }
 
 const own = (amountMinor: number) => ({
@@ -75,12 +80,14 @@ const entries = [
     occurredTime: '08:30:00',
     categoryId: 'c-cafe',
     note: 'Corner cafe',
+    groupKeys: ['c-cafe'],
     postings: spend(450),
   }),
   entry({
     id: 'e-2',
     occurredOn: '2026-03-11',
     categoryId: 'c-fun',
+    groupKeys: ['c-fun'],
     postings: spend(1200),
   }),
   entry({
@@ -88,6 +95,9 @@ const entries = [
     occurredOn: '2026-03-11',
     categoryId: 'c-cafe',
     note: 'Beans',
+    groupKeys: ['c-cafe'],
+    billId: 'bill-1',
+    billName: 'Coffee club',
     postings: spend(900),
   }),
 ];
@@ -125,6 +135,13 @@ describe('txRows', () => {
   });
 });
 
+describe('bill tag', () => {
+  it('names the bill an entry settled', () => {
+    const rows = txRows(entries, accounts, categories);
+    expect(rows.map((r) => r.bill)).toEqual([null, null, 'Coffee club']);
+  });
+});
+
 describe('totals', () => {
   it('describes the server figures without adding anything', () => {
     expect(summaryParts(totals(2550, 0, 3))).toEqual([
@@ -148,6 +165,7 @@ describe('sections', () => {
     accounts,
     categories,
     locale: 'en',
+    sort: 'date-desc' as const,
     groups: [] as TransactionListView['groups'],
     dayTotals: [
       { date: '2026-03-12', net: usd(-450), missingRates: [] },
@@ -173,6 +191,45 @@ describe('sections', () => {
       ['Food › Cafés', '$13.50', 2],
       ['Fun', '$12.00', 1],
     ]);
+  });
+
+  it('lists a split under each of its categories, as the groups count it', () => {
+    const split = entry({
+      id: 'e-4',
+      groupKeys: ['c-fun', 'c-cafe'],
+      postings: [own(300), balancing(100, 'c-fun'), balancing(200, 'c-cafe')],
+    });
+    const byCategory = sections({
+      ...base,
+      transactions: [...entries, split],
+      group: 'category',
+    });
+    expect(byCategory.map((s) => [s.title, s.rows.map((r) => r.id)])).toEqual([
+      ['Food › Cafés', ['e-3', 'e-1', 'e-4']],
+      ['Fun', ['e-2', 'e-4']],
+    ]);
+  });
+
+  it('files an entry with no category under none, last', () => {
+    const plain = entry({ id: 'e-5', groupKeys: [null], postings: spend(5) });
+    const byCategory = sections({
+      ...base,
+      transactions: [plain, ...entries],
+      group: 'category',
+    });
+    expect(byCategory.at(-1)?.title).toBe('No category');
+  });
+
+  it('is one flat list when sorted by amount, whatever the day grouping', () => {
+    for (const sort of ['amount-desc', 'amount-asc'] as const) {
+      const [only, ...rest] = sections({ ...base, group: 'day', sort });
+      expect(rest).toEqual([]);
+      expect(only?.title).toBeNull();
+      expect(only?.rows.map((r) => r.id)).toEqual(['e-3', 'e-2', 'e-1']);
+    }
+    expect(sections({ ...base, group: 'day', sort: 'date-asc' })).toHaveLength(
+      2,
+    );
   });
 
   it('has one headerless section without grouping', () => {
