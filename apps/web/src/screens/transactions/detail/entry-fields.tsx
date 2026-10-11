@@ -35,6 +35,7 @@ export function EntryFields({
   categories,
   locale,
   autoFocus = true,
+  withPeople = false,
 }: {
   draft: QuickEntryDraft;
   setDraft: Dispatch<SetStateAction<QuickEntryDraft>>;
@@ -43,6 +44,11 @@ export function EntryFields({
   categories: readonly CategoryView[];
   locale: string;
   autoFocus?: boolean;
+  /**
+   * The form also takes people the bill is split with: one category for the
+   * whole expense, and no time (the split is dated by day).
+   */
+  withPeople?: boolean;
 }) {
   const context = useMemo(() => ({ accounts, locale }), [accounts, locale]);
   const patch = (next: Partial<QuickEntryDraft>) => {
@@ -222,7 +228,7 @@ export function EntryFields({
             }}
             error={errorText('categoryId')}
           />
-          {draft.kind === 'transfer' ? null : (
+          {draft.kind === 'transfer' || withPeople ? null : (
             <div>
               <BracketButton
                 onPress={() => {
@@ -253,15 +259,17 @@ export function EntryFields({
           placeholder={t('transactionDetail.edit.format')}
           error={errorText('occurredOn')}
         />
-        <TextField
-          label={t('quickEntry.time')}
-          value={draft.occurredTime}
-          onChange={(occurredTime) => {
-            patch({ occurredTime });
-          }}
-          placeholder={t('transactionDetail.edit.timeFormat')}
-          error={errorText('occurredTime')}
-        />
+        {withPeople ? null : (
+          <TextField
+            label={t('quickEntry.time')}
+            value={draft.occurredTime}
+            onChange={(occurredTime) => {
+              patch({ occurredTime });
+            }}
+            placeholder={t('transactionDetail.edit.timeFormat')}
+            error={errorText('occurredTime')}
+          />
+        )}
       </FormRow>
     </>
   );

@@ -80,6 +80,7 @@ export const transactionDetail = {
     up: 'move up',
     down: 'move down',
     failed: 'That entry could not be moved.',
+    blocked: 'Clear the search and filters to change the order of a day.',
   },
   deleted: 'Deleted. This entry no longer counts.',
   actionFailed: 'That did not work. Try again.',

@@ -47,7 +47,7 @@ export function Navigation() {
         aria-label={t('nav.label')}
         data-slot="nav"
         className={cn(
-          'col-start-1 row-start-5 grid grid-cols-5 border-t bg-chrome',
+          'col-start-1 row-start-6 grid grid-cols-5 border-t bg-chrome',
           'medium:row-span-2 medium:row-start-2 medium:flex medium:flex-col medium:border-t-0 medium:border-r',
         )}
       >

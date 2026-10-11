@@ -159,8 +159,97 @@ test('a transfer moves money between two accounts, and can be undone', async ({
   expect(kinds).toContain('reversal');
 });
 
-test('a split spreads one amount over categories', async ({ page }) => {
+test('a split with people records the bill and the shares', async ({
+  page,
+}) => {
   const dialog = await openForm(page, 'split');
+  await expectAccessible(page);
+  await dialog
+    .getByRole('textbox', {
+      name: t('quickEntry.amountIn', { currency }),
+      exact: true,
+    })
+    .fill('60');
+  await choose(dialog, page, t('quickEntry.category'), 'Groceries');
+  // Saving without a name says what is missing.
+  await dialog.getByRole('button', { name: t('quickEntry.save') }).click();
+  await expect(
+    dialog.getByText(t('transactionDetail.iou.errors.person')),
+  ).toBeVisible();
+  await dialog
+    .getByRole('textbox', { name: t('transactionDetail.iou.name', { n: 1 }) })
+    .fill('Sam');
+  await dialog
+    .getByRole('button', { name: t('transactionDetail.iou.add') })
+    .click();
+  await dialog
+    .getByRole('textbox', { name: t('transactionDetail.iou.name', { n: 2 }) })
+    .fill('Alex');
+  // Even shares of 60 between three: 20 each, so people owe 40.
+  await dialog.getByRole('button', { name: t('quickEntry.save') }).click();
+  await expect(dialog).toBeHidden();
+  const line = resultLine(page);
+  await expect(line).toContainText('20');
+  await expect(line).toContainText('Groceries');
+  const ious = await page.request.get('/v1/ious');
+  const body = (await ious.json()) as {
+    ious: { person: string; amount: { amountMinor: number } }[];
+  };
+  const owed = body.ious.filter((i) => ['Sam', 'Alex'].includes(i.person));
+  expect(owed.map((i) => i.amount.amountMinor)).toEqual([2000, 2000]);
+  await line.getByRole('button', { name: t('shell.command.undo') }).click();
+  await expect(line).toBeHidden();
+});
+
+test('a bill is created from + new and from the Bills tab', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: t('shell.command.new') }).click();
+  await page
+    .getByRole('menuitem', { name: t('shell.command.kinds.bill') })
+    .click();
+  const dialog = page.getByRole('dialog', { name: t('billForm.title') });
+  await expect(dialog).toBeVisible();
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: t('billForm.save') }).click();
+  await expect(dialog.getByText(t('billForm.errors.name'))).toBeVisible();
+  await dialog
+    .getByRole('textbox', { name: t('settings.bills.name') })
+    .fill('Streaming');
+  await dialog
+    .getByRole('textbox', {
+      name: t('settings.bills.amountIn', { currency }),
+    })
+    .fill('15');
+  await dialog
+    .getByRole('button', { name: t('settings.bills.dueDay') })
+    .click();
+  await page
+    .getByRole('menuitemradio', {
+      name: t('billForm.dueDayValue', { day: 12 }),
+    })
+    .click();
+  await dialog.getByRole('button', { name: t('billForm.save') }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.goto('/budget/bills');
+  await page.getByRole('button', { name: t('billForm.add') }).click();
+  await expect(
+    page.getByRole('dialog', { name: t('billForm.title') }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  const bills = await page.request.get('/v1/bills');
+  const list = (await bills.json()) as {
+    bills: { name: string; dueDay: number }[];
+  };
+  expect(list.bills.find((b) => b.name === 'Streaming')?.dueDay).toBe(12);
+});
+
+test('an expense spreads one amount over categories', async ({ page }) => {
+  const dialog = await openForm(page, 'expense');
+  await dialog
+    .getByRole('button', { name: t('quickEntry.split.start') })
+    .click();
   await dialog
     .getByRole('textbox', {
       name: t('quickEntry.amountIn', { currency }),
@@ -236,9 +325,7 @@ test('an IOU shows in the result line with an undo', async ({ page }) => {
   await expect(line).toBeHidden();
 });
 
-test('payday opens its sheet and bill leads to the Bills tab', async ({
-  page,
-}) => {
+test('payday opens its sheet', async ({ page }) => {
   await page.getByRole('button', { name: t('shell.command.new') }).click();
   await page
     .getByRole('menuitem', { name: t('shell.command.kinds.payday') })
@@ -247,9 +334,4 @@ test('payday opens its sheet and bill leads to the Bills tab', async ({
     page.getByRole('dialog', { name: t('budgetGoalsIous.payday.title') }),
   ).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: t('shell.command.new') }).click();
-  await page
-    .getByRole('menuitem', { name: t('shell.command.kinds.bill') })
-    .click();
-  await expect(page).toHaveURL(/\/budget\/bills$/);
 });

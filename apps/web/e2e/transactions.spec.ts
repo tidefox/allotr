@@ -174,16 +174,45 @@ test('search finds a note, and a selected row is kept in the URL', async ({
   await expect(entries.getByText('Cinema night')).toBeVisible();
   await expect(page).toHaveURL(/q=cinema/);
 
-  await entries.getByRole('button', { name: /Cinema night/ }).click();
+  await entries
+    .getByRole('button', { name: /^(?!Drag).*Cinema night/ })
+    .click();
   await expect(page).toHaveURL(/entry=/);
   await expect(
-    entries.getByRole('button', { name: /Cinema night/ }),
+    entries.getByRole('button', { name: /^(?!Drag).*Cinema night/ }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expectAccessible(page);
 
   // Back leaves the selection first, then the search.
   await page.goBack();
   await expect(page).not.toHaveURL(/entry=/);
+});
+
+test('moving within a day is off while a filter hides entries', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  const up = t('transactionDetail.order.up');
+  const down = t('transactionDetail.order.down');
+  const open = async (url: string) => {
+    await page.goto(url);
+    await list(page).getByText('Cinema night').click();
+  };
+
+  // Unfiltered: the day can be reordered, no hint.
+  await open('/transactions');
+  await expect(page.getByRole('button', { name: down }).first()).toBeVisible();
+  await expect(page.locator('[data-order-blocked]')).toBeHidden();
+
+  // A type filter leaves Monthly pay out of the day: both buttons are off.
+  await open('/transactions?type=expense');
+  await expect(page.getByRole('button', { name: up }).first()).toBeDisabled();
+  await expect(page.getByRole('button', { name: down }).first()).toBeDisabled();
+  await expect(
+    page.getByText(t('transactionDetail.order.blocked')),
+  ).toBeVisible();
+  await expectAccessible(page);
 });
 
 test('nothing overflows sideways and targets are at least 24 px', async ({

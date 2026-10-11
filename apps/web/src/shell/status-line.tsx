@@ -16,39 +16,67 @@ import { t } from '@/messages/t';
 // Offers the new version once its service worker has installed. Reloading
 // is the user's choice, so an entry being typed is never thrown away. The
 // polite live region stays mounted so the offer is announced when it appears.
-function UpdateNotice() {
-  const waiting = useSyncExternalStore(
-    updateStore.subscribe,
-    updateStore.getSnapshot,
+function useWaiting() {
+  return useSyncExternalStore(updateStore.subscribe, updateStore.getSnapshot);
+}
+
+function UpdateActions({
+  waiting,
+}: {
+  waiting: NonNullable<ReturnType<typeof updateStore.getSnapshot>>;
+}) {
+  return (
+    <>
+      <span>{t('shell.status.update')}</span>
+      <BracketButton
+        className="min-h-0 compact:min-h-hit"
+        onPress={() => {
+          applyUpdate(waiting, navigator.serviceWorker, () => {
+            window.location.reload();
+          });
+        }}
+      >
+        {t('shell.status.reload')}
+      </BracketButton>
+      <BracketButton
+        className="min-h-0 text-text-muted compact:min-h-hit"
+        onPress={updateStore.dismiss}
+      >
+        {t('shell.status.later')}
+      </BracketButton>
+    </>
   );
+}
+
+function UpdateNotice() {
+  const waiting = useWaiting();
   return (
     <span
       aria-live="polite"
       data-update
       className="flex items-center gap-1 text-primary"
     >
-      {waiting === null ? null : (
-        <>
-          <span>{t('shell.status.update')}</span>
-          <BracketButton
-            className="min-h-0"
-            onPress={() => {
-              applyUpdate(waiting, navigator.serviceWorker, () => {
-                window.location.reload();
-              });
-            }}
-          >
-            {t('shell.status.reload')}
-          </BracketButton>
-          <BracketButton
-            className="min-h-0 text-text-muted"
-            onPress={updateStore.dismiss}
-          >
-            {t('shell.status.later')}
-          </BracketButton>
-        </>
-      )}
+      {waiting === null ? null : <UpdateActions waiting={waiting} />}
     </span>
+  );
+}
+
+// On phones the status line is hidden, so the same offer is a one-line bar
+// above the tab bar (docs/ui.md §3). It takes no room until a version waits.
+export function UpdateBar() {
+  const waiting = useWaiting();
+  return (
+    <div
+      aria-live="polite"
+      data-update-bar
+      className={
+        waiting === null
+          ? 'medium:hidden'
+          : 'col-start-1 row-start-5 flex min-h-hit items-center gap-2 border-t bg-chrome px-3 text-small text-primary medium:hidden'
+      }
+    >
+      {waiting === null ? null : <UpdateActions waiting={waiting} />}
+    </div>
   );
 }
 

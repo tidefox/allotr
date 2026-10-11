@@ -1,8 +1,8 @@
-import { startSplit, type QuickEntryDraft } from './draft.ts';
+import type { QuickEntryDraft } from './draft.ts';
 import { newDraft, switchKind, type DraftDefaults } from './options.ts';
 
-// The draft a + new form opens with. A split is an expense that starts
-// split; the "into" account of the command line and a transfer's source
+// The draft a + new form opens with. A split (with people) starts as a plain
+// expense, and the people are collected next to it; the "into" account of the command line and a transfer's source
 // from "transfer from here" override what was used last.
 
 export const ENTRY_FORM_KINDS = [
@@ -41,6 +41,5 @@ export function draftForForm(
   let toAccountId = draft.toAccountId;
   if (entryKind === 'transfer' && toAccountId === accountId)
     toAccountId = open.find((id) => id !== accountId) ?? '';
-  const chosen = { ...draft, accountId, toAccountId };
-  return kind === 'split' ? startSplit(chosen) : chosen;
+  return { ...draft, accountId, toAccountId };
 }

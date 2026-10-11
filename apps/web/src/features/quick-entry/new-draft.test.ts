@@ -59,10 +59,9 @@ describe('draftForForm', () => {
     ).toBe('a');
   });
 
-  it('starts a split with two lines', () => {
+  it('starts a split with people as a plain expense', () => {
     const draft = draftForForm('split', defaults);
-    expect(isSplit(draft)).toBe(true);
-    expect(draft.lines).toHaveLength(2);
+    expect(isSplit(draft)).toBe(false);
     expect(draft.kind).toBe('expense');
   });
 });
