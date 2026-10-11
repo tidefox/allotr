@@ -434,7 +434,8 @@ adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
 `packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
-`creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype` and pools `colour` and
+`creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype`,
+and pools `colour` and
 `icon`, which round-trip through export and import. IOUs travel as their own entry
 kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
 dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`

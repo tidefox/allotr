@@ -326,7 +326,10 @@ settings, so no ledger read is made that the server would refuse.
   the credit stat's sub-line adds `limit $X` (the server's
   `totals.creditLimit`) and a "left of" bar of `totals.creditAvailable` ÷
   `totals.creditLimit` (the cards with a limit only). A minimum payment is
-  not in the API, so it is not shown.
+  stored per account (`minPayment`, shown in the account detail), but the
+  design's `min $X due oct 22` in this stat needs a server total over the
+  cards and their earliest due date, which the API does not send yet, so the
+  stat omits it.
 - A list tile (`accounts`, subtitle `N accounts in M pools` over the whole
   ledger) with 46 px tree rows: pools → accounts, each pool folding. Credit
   accounts are their own group below the pools and appear only under All
@@ -366,10 +369,11 @@ settings, so no ledger read is made that the server would refuse.
   archive). `[✎ edit]` (and `edit` in the row menu) opens one sheet: the name,
   the colour and icon pickers (Auto first) and, for a credit account, the
   limit, the payment due day and the minimum payment, and any account's
-  subtype. They are shown only; a due day or minimum payment creates no bill, and the sheet says so. The new-account sheet
-  offers a type, account or credit; a credit account also takes the limit and
+  subtype. They are shown only; a due day or minimum payment creates no
+  bill, and the sheet says so. The new-account sheet offers a type, account or credit; a credit account also takes the limit and
   due day and minimum payment there, and any account takes a free-text
-  subtype (it replaces the kind in the detail's type line). Receivable and payable accounts come only from IOUs.
+  subtype (it replaces the kind in the detail's type line). Receivable and
+  payable accounts come only from IOUs.
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,
   `/v1/transactions?account=`, `/v1/insights/net-worth`.
 
@@ -567,7 +571,9 @@ property tests:
    `totals.creditLimit` and `totals.creditAvailable` on `/v1/accounts`; and
    `progressBp` on goals, which replaces the percentage the goal tile worked
    out in the browser (ADR 0030). A due day is informational and creates no
-   bill. A minimum payment is not stored.
+   bill. A minimum payment is stored (`minPayment`, display only) with a
+   free-text account `subtype`, but the credit stat's `min $X due …` still
+   lacks a server total (sum of minimum payments and the earliest due date).
 10. **Household name.** The design's "name · household" line is dropped by
     decision: the sidebar shows the user's name only.
 

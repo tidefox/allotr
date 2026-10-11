@@ -526,7 +526,7 @@ export const en = {
       creditHint:
         'Optional. The limit, due day and minimum payment are shown only; they create no bill and change no figure.',
       creditBalanceHint:
-        'Optional. Enter what you owe as a negative amount, such as −250.00.',
+        'Optional. Enter what you owe as a negative amount, such as {example}.',
       balance: 'Opening balance in {currency}',
       balanceHint: 'Optional. Negative for money owed, such as a card.',
       save: 'Add account',

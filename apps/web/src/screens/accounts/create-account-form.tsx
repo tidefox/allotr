@@ -248,11 +248,11 @@ export function CreateAccountForm({
         />
       </div>
       <p className="-mt-2 font-ui text-small text-text-muted">
-        {t(
-          credit
-            ? 'accounts.create.creditBalanceHint'
-            : 'accounts.create.balanceHint',
-        )}
+        {credit
+          ? t('accounts.create.creditBalanceHint', {
+              example: `-${amountExample(draft.currency, settings.locale)}`,
+            })
+          : t('accounts.create.balanceHint')}
       </p>
       <FormMessage
         message={create.isError ? describeProblem(create.error).message : null}

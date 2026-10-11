@@ -178,12 +178,19 @@ describe('export and import', () => {
   it('refuse a minimum payment on an account that is not a card', async () => {
     const other = await startWithTwoUsers({ now: () => now });
     try {
-      const refused = await other.alice.post('/v1/import', {
+      const bundle = (account: Record<string, unknown>) => ({
         format: 'allotr.bundle',
         version: 1,
-        accounts: [{ name: 'Plain', currency: 'USD', minPayment: usd(100) }],
+        accounts: [{ name: 'Plain', currency: 'USD', ...account }],
       });
+      // The same bundle without it is fine, so the refusal is the field's.
+      const refused = await other.alice.post(
+        '/v1/import',
+        bundle({ minPayment: usd(100) }),
+      );
       expect(refused.status).toBe(400);
+      const control = await other.alice.post('/v1/import', bundle({}));
+      expect(control.status, JSON.stringify(control.body)).toBe(201);
     } finally {
       await other.close();
     }
