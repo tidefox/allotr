@@ -56,6 +56,7 @@ function goal(patch: Partial<GoalView> = {}): GoalView {
     saved: money(25000, 'USD'),
     remaining: money(75000, 'USD'),
     reached: false,
+    monthlyNeeded: money(15000, 'USD'),
     missingRates: [],
     ...patch,
   };

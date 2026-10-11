@@ -376,6 +376,25 @@ function Totals({ data }: { data: BudgetStatusView }) {
   ] as const;
   return (
     <div className="border-t border-outline text-text-muted">
+      <Row
+        columns={columns}
+        className="border-b-0"
+        cells={[
+          null,
+          null,
+          <span key="l" className="font-sans">
+            {t('budgetBudgets.tree.total')}
+          </span>,
+          null,
+          <span key="s" className="block text-right">
+            <Amount amount={data.totals.spent} />
+          </span>,
+          <span key="a" className="block text-right">
+            <Amount amount={data.totals.left} />
+          </span>,
+          null,
+        ]}
+      />
       {lines.map(([id, label, amount]) => (
         <Row
           key={id}

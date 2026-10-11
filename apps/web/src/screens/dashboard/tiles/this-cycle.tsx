@@ -10,12 +10,19 @@ import { Chart, ChartLegend } from '@/charts/chart';
 import { niceTicks } from '@/charts/math';
 import { formatDay, formatTerminalDate } from '@/features/today/format';
 import { formatMoney, formatMoneyShort } from '@/lib/format-money';
+import { budgetsQuery } from '@/lib/budgets';
 import { cycleDaysQuery, todayQuery } from '@/lib/ledger';
 import { IconFundsLine } from '@/generated/icons';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { TileFailed } from './tile-failed.tsx';
-import { cycleTicks, cycleView } from './this-cycle-model.ts';
+import {
+  coverUsedItems,
+  cycleTicks,
+  cycleView,
+  paceFigure,
+  type CoverUsedItem,
+} from './this-cycle-model.ts';
 
 const locale = 'en';
 const money = (amount: Money) => formatMoney(amount, 'symbol', locale);
@@ -25,6 +32,8 @@ const money = (amount: Money) => formatMoney(amount, 'symbol', locale);
 export function ThisCycleTile() {
   const today = useQuery(todayQuery);
   const days = useQuery(cycleDaysQuery(today.data?.cycle.openedOn));
+  // Only the formula line's cover note needs it: the tile works without.
+  const budgets = useQuery(budgetsQuery);
 
   if (today.isError || days.isError) {
     return (
@@ -49,6 +58,7 @@ export function ThisCycleTile() {
 
   const figures = today.data;
   const { daysLeft, paceSpent } = figures;
+  const pace = paceFigure(figures.paceDiff);
   const { budget } = days.data;
   const series = days.data.days;
   const view = cycleView(series);
@@ -109,13 +119,9 @@ export function ThisCycleTile() {
             tone: 'muted',
           },
           {
-            label: t('dashboardTiles.thisCycle.pace'),
-            figure: t(
-              view.status === 'ahead'
-                ? 'dashboardTiles.thisCycle.ahead'
-                : 'dashboardTiles.thisCycle.under',
-            ),
-            tone: view.status === 'ahead' ? 'negative' : 'positive',
+            label: t(`dashboardTiles.thisCycle.${pace.status}Pace`),
+            figure: money(pace.amount),
+            tone: pace.status === 'over' ? 'negative' : 'positive',
           },
           {
             label: t('dashboardTiles.thisCycle.daysOver'),
@@ -199,7 +205,11 @@ export function ThisCycleTile() {
           />
         </>
       )}
-      <Formula figures={figures} daysLeft={daysLeft} />
+      <Formula
+        figures={figures}
+        daysLeft={daysLeft}
+        coverUsed={coverUsedItems(budgets.data?.budgets ?? [])}
+      />
     </Tile>
   );
 }
@@ -212,10 +222,13 @@ export function ThisCycleTile() {
 export function Formula({
   figures,
   daysLeft,
+  coverUsed = [],
   className,
 }: {
   figures: TodayView;
   daysLeft: number;
+  /** What other sources covered this budget period; see `coverUsedItems`. */
+  coverUsed?: readonly CoverUsedItem[];
   className?: string;
 }) {
   const f = (key: FormulaKey) => t(`dashboardTiles.thisCycle.formula.${key}`);
@@ -263,9 +276,29 @@ export function Formula({
         </b>
         {f('perDay')}
       </span>
+      {coverUsed.slice(0, COVER_NOTES).map((item) => (
+        <span key={`${item.budget}\u0000${item.source}`}>
+          {t('dashboardTiles.thisCycle.formula.coverUsed')}{' '}
+          <b className="font-medium text-text">{money(item.amount)}</b>{' '}
+          {t('dashboardTiles.thisCycle.formula.coverFrom', {
+            budget: item.budget,
+            source: item.source,
+          })}
+        </span>
+      ))}
+      {coverUsed.length > COVER_NOTES ? (
+        <span>
+          {t('dashboardTiles.thisCycle.formula.coverMore', {
+            count: coverUsed.length - COVER_NOTES,
+          })}
+        </span>
+      ) : null}
     </p>
   );
 }
+
+/** Cover notes shown in the formula line; the rest fold into "+N more". */
+const COVER_NOTES = 2;
 
 type FormulaKey =
   | 'onBudget'

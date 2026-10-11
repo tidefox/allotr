@@ -16,6 +16,7 @@ export const budgetGoalsIous = {
     emptyHint:
       'A goal earmarks part of a savings pool or account. It never changes what you can spend today.',
     by: 'by {date}',
+    perMonth: '{amount}/mo',
     noDate: 'no date',
     savedOf: 'of {target} · {percent}%',
     reached: 'goal reached',
@@ -65,6 +66,7 @@ export const budgetGoalsIous = {
     emptyHint: 'Lend or borrow money and the people involved show up here.',
     owesYouTag: 'owes you',
     youOweTag: 'you owe',
+    net: 'net',
     settledTag: 'settled',
     overdueTag: '{count}d late',
     openMany: '{count} open',

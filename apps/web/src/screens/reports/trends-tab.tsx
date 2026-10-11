@@ -190,14 +190,12 @@ export function TrendsTab() {
               ),
               <span key="n" className="font-sans">
                 {row.name}
-                {row.previous === null ? null : (
-                  <span className="text-text-muted">
-                    {' '}
-                    {t('reportsSummary.trends.last', {
-                      amount: formatMoney(row.previous, 'symbol', locale),
-                    })}
-                  </span>
-                )}
+                <span className="text-text-muted">
+                  {' '}
+                  {t('reportsSummary.trends.average', {
+                    amount: formatMoney(row.average, 'symbol', locale),
+                  })}
+                </span>
               </span>,
               <Sparkline
                 key="s"

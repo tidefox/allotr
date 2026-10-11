@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Amount } from '@/components/amount';
+import { formatSigned } from '@/lib/format-money';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton, Tag } from '@/components/buttons';
 import { Split, Tile } from '@/components/layout';
@@ -163,6 +164,11 @@ export function IousTab() {
               label: t('budgetGoalsIous.ious.youOweTag'),
               value: <Amount amount={totals.owedByMe} locale={locale} />,
               tone: 'negative',
+            },
+            {
+              key: 'net',
+              label: t('budgetGoalsIous.ious.net'),
+              value: formatSigned(totals.net, 'symbol', locale),
             },
           ]}
         />
