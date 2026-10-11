@@ -68,9 +68,6 @@
       "reserved": {
         "slot": "yellow"
       },
-      "hero-ok": {
-        "slot": "green"
-      },
       "negative": {
         "slot": "red"
       },
@@ -147,9 +144,6 @@
       },
       "reserved": {
         "slot": "yellow"
-      },
-      "hero-ok": {
-        "slot": "green"
       },
       "negative": {
         "slot": "red"
@@ -228,9 +222,6 @@
       "reserved": {
         "slot": "yellow"
       },
-      "hero-ok": {
-        "slot": "green"
-      },
       "negative": {
         "slot": "red"
       },
@@ -307,9 +298,6 @@
       },
       "reserved": {
         "slot": "yellow"
-      },
-      "hero-ok": {
-        "slot": "green"
       },
       "negative": {
         "slot": "red"

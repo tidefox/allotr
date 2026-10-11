@@ -257,7 +257,7 @@ exports[`catppuccin-frappe > matches its snapshot 1`] = `
     "chrome": "#292c3c",
     "danger": "#e78284",
     "danger-container": "#695463",
-    "hero-ok": "#a6d189",
+    "hero-ok": "#ca9ee6",
     "hero-over": "#ea999c",
     "hero-tight": "#ef9f76",
     "info": "#8caaee",
@@ -298,11 +298,6 @@ exports[`catppuccin-frappe > matches its snapshot 1`] = `
 exports[`catppuccin-latte > matches its snapshot 1`] = `
 {
   "fitted": {
-    "hero-ok": {
-      "deltaL": 0.045,
-      "from": "#40a02b",
-      "to": "#309218",
-    },
     "hero-over": {
       "deltaL": 0.005,
       "from": "#e64553",
@@ -397,7 +392,7 @@ exports[`catppuccin-latte > matches its snapshot 1`] = `
     "chrome": "#e6e9ef",
     "danger": "#d20f39",
     "danger-container": "#dabac9",
-    "hero-ok": "#309218",
+    "hero-ok": "#8839ef",
     "hero-over": "#e44352",
     "hero-tight": "#db5400",
     "info": "#1e66f5",
@@ -462,7 +457,7 @@ exports[`catppuccin-macchiato > matches its snapshot 1`] = `
     "chrome": "#1e2030",
     "danger": "#ed8796",
     "danger-container": "#624c60",
-    "hero-ok": "#a6da95",
+    "hero-ok": "#c6a0f6",
     "hero-over": "#ee99a0",
     "hero-tight": "#f5a97f",
     "info": "#8aadf4",
@@ -522,7 +517,7 @@ exports[`catppuccin-mocha > matches its snapshot 1`] = `
     "chrome": "#181825",
     "danger": "#f38ba8",
     "danger-container": "#60475c",
-    "hero-ok": "#a6e3a1",
+    "hero-ok": "#cba6f7",
     "hero-over": "#eba0ac",
     "hero-tight": "#fab387",
     "info": "#89b4fa",

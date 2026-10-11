@@ -62,6 +62,11 @@ Text may use only roles fitted for text (4.5:1): `text`, `text-muted`,
 `warning`, `danger`, `outline` and the series roles are fitted for non-text
 contrast (3:1), so they colour borders, marks, bars and fills, never text.
 
+The default themes, Catppuccin Latte and Mocha, set their own roles in the
+family file: a blue `primary` and `ring`, `base` text on the accent, yellow
+`warning` and `reserved`, and red `negative`. Other families keep the
+default role map.
+
 Do not use translucency (`opacity` or alpha) for surfaces. Use opacity only
 on an item while it is being dragged.
 
@@ -72,7 +77,14 @@ on an item while it is being dragged.
 | Interface & numbers | Geist Mono | Everything by default: buttons, tags, titles, headers, tabs, labels, menus, amounts, times, axes, command line, status line |
 | Text | Geist | Content text only: names in rows (payees, accounts, bills, people, budgets), detail values, paragraphs, notes, the log result line |
 
-Numbers use `font-variant-numeric: tabular-nums`.
+Numbers use `font-variant-numeric: tabular-nums`. In code, `font-ui` (or
+its alias `font-sans`) marks content text; everything else inherits the
+interface face.
+
+Interface labels are lower case, as a terminal shows them: navigation,
+sub-tabs, tile titles and subtitles, summary and status labels ("left
+today", "this cycle", "cover order"). Menu items, sentences, names and
+codes keep their usual case.
 
 ### 2.3 Scale and sizes
 
@@ -84,14 +96,18 @@ equals the design size.
 |---|---|---|
 | Base text | 13 | 12 |
 | Small text (labels, sub-lines) | 11–12 | 10–11 |
-| Top bar figure: left today | 34 (≥ 1000) / 26 (≥ 600) | 18 |
-| Top bar figure: other | 23 / 19 | 15 |
-| Stat figure (primary / other) | 32 / 26 (≥ 1000) | 20 / 16 |
+| Top bar figure: left today | 34 (≥ 1000) / 26 (≥ 600) | 20 |
+| Top bar figure: other | 23 / 19 | 16 |
+| Top bar labels and sub-lines | 11 | 10 |
+| Top bar pool cell: name / figure | 11 / 15 (≥ 1000), 10 / 12 | 10 / 12 |
+| Stat figure (primary / other) | 32 / 26 (≥ 1000), 20 / 20 | 20 / 16 |
+| Key figure | 22 (≥ 1000) / 18 | 14 |
 | Big figure in tiles | 26 | 20 |
 | Title strip height | 36 | 34 |
-| Tile title bar height | 32 | 28 |
+| Tile title bar height / text | 32 / 12 | 28 / 11.5 |
 | Row min height | 30 (46 for tall lists) | 38 |
 | Command line height | 42 | 40 |
+| Status line height / text | 24 / 11 | — |
 | Tab bar button | — | 46 |
 | Rail button / sidebar row | 58 / 36 (= title strip) | — |
 | Top bar height | 82 (600–999) / 104 (≥ 1000) | auto (two rows) |
@@ -129,25 +145,36 @@ column setting, 4 from 1500.
 
 - **Summary bar.** Items in order: left today (fixed first) · on-budget total ·
   pools · payday (≥ 1000).
-  - **Left today:** `$36.80 / $55.20`, a sub-line with spent and days to
-    payday, and a "left" bar. It has a `positive` edge on its left and sits on
-    `canvas`.
+  - Every item has an icon and a lower-case label over its figure, a
+    muted sub-line and a "left of" bar. Items sit on 1 px seams.
+  - **Left today:** `$36.80 / $55.20` (the allowance a small muted suffix),
+    a sub-line with spent and days to payday (`14d to payday`), and a "left"
+    bar. Its figure and left edge are `positive`, and it sits on `canvas`.
   - **On-budget total:** "left of" the cycle's on-budget start, with bills
     set aside and free money in the sub-line.
-  - **Pools:** a grid of cells, each with icon, name, balance, a ● if it
-    counts toward the daily number, and a "left of" bar for on-budget pools.
-    From 600 px they form two rows when there are more than two pools. Below
-    600 px they form one row, four visible, and the rest scroll sideways.
+  - **Pools:** a grid of cells, each with an icon for its kind (spending or
+    savings) in its series colour, name, balance, a ● if it counts toward
+    the daily number, and a "left of" bar for on-budget pools. Pools that do
+    not count show a muted figure. From 600 px they form two rows when
+    there are more than two pools. Below 600 px they form one row, four
+    visible, and the rest scroll sideways.
+  - **Payday** (≥ 1000): days left (`14d`), the date and `day 15/28`, and a
+    bar of the days left. Days are counted from dates.
   - Each item links to its screen.
 - **Title strip.**
-  - The screen's icon and name, then either its sub-tabs (selected = filled
-    `primary`) or the screen's own controls: search, period, filter (with a
-    count badge), layout.
+  - Sits on `canvas`, parts split by 1 px seams. The screen's icon (in
+    `primary`) and name, then either its sub-tabs (full-height cells,
+    selected = filled `primary`), the screen's own controls (search, period,
+    filter with a count badge) or, on the dashboard, a context line:
+    `fri oct 09 · week 41 · payday fri oct 23`. The layout button comes
+    with the dashboard layout editor (ADR 0029, later).
   - On phones the label is hidden and a gear opens Settings.
 - **Command line.**
-  - `›` prompt and an input for the grammar ([grammar.md](grammar.md)).
-  - Key hints (≥ 600).
-  - An account menu ("into Daily card").
+  - Sits on `canvas`. `›` prompt and an input for the grammar
+    ([grammar.md](grammar.md)).
+  - Key hints (≥ 600): `/ focus · ⏎ log`.
+  - An account menu: a full-height strip button with a wallet icon, the
+    account's name (hidden on phones) and ▾, named "Account to log into".
   - A filled **+ new** menu: expense, income, transfer, split with people,
     payday, bill, IOU. Expense, income and transfer open a form in a bottom
     sheet over the quick entry draft; the "into" account and "transfer from
@@ -163,11 +190,16 @@ column setting, 4 from 1500.
     category, account, "left today" and **undo**.
 - **Navigation.** Phone: square bar fixed to the bottom, five equal buttons,
   icon and short label, selected = filled. Rail: icon and short label.
-  Short labels: Dash, Accts, Txns, Budget, Reports, Settings; each link is
-  still named in full for assistive technology. Sidebar: icon, full label
-  and key number, selected = filled full width.
-- **Status line** (≥ 600): mode block (filled), cycle day, payday, currency
-  code, key hints, sync state. When a new service worker is waiting, an
+  Short labels: dash, accts, txns, budget, reports, settings; each link is
+  still named in full for assistive technology. Labels and icons are muted
+  until selected. Sidebar: the `▍allotr` wordmark with the user's name
+  under it in the logo block, then rows with icon, full label and key
+  number, selected = filled full width; settings at the foot (icon only on
+  the rail).
+- **Status line** (≥ 600): mode block (filled, the current screen:
+  `DASH`, `BUDGET`…), `cycle 15/28`, `payday fri oct 23 · 14d`, currency
+  code, key hints, and on the right the sync state with the time of the
+  last refresh (`● synced 12:31`). Segments are split by 1 px seams. When a new service worker is waiting, an
   `update` item shows before the sync state: "new version ready" with
   `[reload]` and `[later]`. Reloading is the user's choice, so a typed entry is
   never thrown away. On phones, where the status line is hidden, the same
@@ -182,16 +214,16 @@ column setting, 4 from 1500.
 
 | Component | Spec |
 |---|---|
-| **Tile** (`pane`) | `canvas` background. A title bar on `chrome` with an icon, title, muted subtitle and actions on the right. Focused or primary tiles get a 3 px `primary` inset on the title bar. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. |
+| **Tile** (`pane`) | `canvas` background. A title bar on `chrome`: a muted icon, the title (semibold) and a muted subtitle on one truncated line, actions on the right. The body starts 8 px below it and is padded 0 12 10. Focused or primary tiles get a 3 px `primary` inset on the title bar and a `primary` title. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. |
 | **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000). |
 | **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
 | **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`. |
 | **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
-| **Bracket button** | `[pay]`. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
+| **Bracket button** | `[pay]`, with no space inside the brackets, in the surrounding text size. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
 | **Menu button** | Bordered, with label · value · ▾. Opens a menu. |
 | **Toggle group** | Bordered segments. The pressed segment is filled `primary`. |
-| **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative`, `positive` and muted colour the label; `warning` colours the border and keeps a `text` label. |
+| **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative` and `positive` colour the label and border; muted text has an `outline` border; `warning` colours the border and keeps a `text` label. |
 | **Chip** | A filter chip with a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
 | **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
@@ -199,8 +231,8 @@ column setting, 4 from 1500.
 | **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
 | **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
 | **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A bracket under the last two reads "on-budget left $X of $Y". A legend grid below (6 columns, 3 on phone) shows the amount and the share. |
-| **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge (`positive`, or `primary` when neutral). |
-| **Key figures** | One line of up to 4 label-over-figure pairs, each truncated with "…". |
+| **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge and a larger figure: `positive` (the figure in `positive` too) or `primary`. |
+| **Key figures** | One line of up to 4 label-over-figure pairs, each as wide as its content (gap 26 px) and truncated with "…". |
 | **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone. |
 | **Chart** | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace) and a vertical "today" line. Base heights grow ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px, and charts fill their tile. |
 | **Columns** | Bar columns with value labels above, x labels below, and a 1 px baseline. |

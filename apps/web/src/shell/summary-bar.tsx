@@ -78,7 +78,7 @@ function Pools() {
   const columns = Math.ceil(count / tall);
   const style = {
     '--pool-rows': tall,
-    '--pool-grow': (columns * 0.8).toFixed(2),
+    '--pool-grow': columns * 0.8,
     '--pool-shown': Math.min(count, 4),
   } as CSSProperties;
   return (

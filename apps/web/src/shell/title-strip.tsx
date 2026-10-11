@@ -61,7 +61,7 @@ export function TitleStrip() {
       data-slot="strip"
       className="col-start-1 row-start-2 flex h-strip min-w-0 items-stretch border-b bg-canvas medium:col-start-2"
     >
-      <div className="flex shrink-0 items-center gap-[7px] border-r px-3 font-semibold">
+      <div className="flex min-w-0 shrink items-center gap-[7px] border-r px-3 font-semibold">
         <Icon
           aria-hidden="true"
           className="size-[1.15em] shrink-0 text-primary"
@@ -100,7 +100,15 @@ export function TitleStrip() {
       ) : screen === 'dashboard' ? (
         <StripContext />
       ) : null}
-      <div id="strip-controls" className="ml-auto flex min-w-0 items-stretch" />
+      <div
+        id="strip-controls"
+        className={cn(
+          'ml-auto flex min-w-0 items-stretch',
+          // With no sub-tabs or context line, a screen's controls (search)
+          // take the room left after the name.
+          !hasSubTabs(screen) && screen !== 'dashboard' && 'flex-1 justify-end',
+        )}
+      />
       <Link
         to={settingsItem.to}
         aria-label={t('nav.settings')}

@@ -31,7 +31,7 @@ describe('checkDraft', () => {
       palette: { neutrals: { base: '#1e1e2e' } },
     });
     // The shipped roles (Catppuccin's blue accent) carry over unchanged.
-    expect(check.body?.roles).toEqual(mocha?.roles);
+    expect(check.body?.roles).toEqual(mocha.roles);
   });
 
   it('points at a role set with fitting off that fails its contrast', () => {
