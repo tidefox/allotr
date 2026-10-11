@@ -344,7 +344,8 @@ settings, so no ledger read is made that the server would refuse.
 ### Reports `/reports/…`
 
 A period menu (this cycle · last cycle · this month · last month · custom) in
-a toolbar.
+a toolbar on every sub-tab except cycles, which compares the recent cycles
+and has no period to pick.
 
 | Sub-tab | Content |
 |---|---|
