@@ -19,7 +19,7 @@ import {
   bracketClass,
   Tag,
 } from '@/components/buttons';
-import { Tile } from '@/components/layout';
+import { SectionTitle, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon } from '@/components/states';
@@ -494,15 +494,6 @@ function Field({
         {children}
       </dd>
     </>
-  );
-}
-
-/** A section label inside the detail (`sect`). */
-function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <h3 className="mt-3 mb-1 text-tiny tracking-[0.04em] text-text-muted uppercase">
-      {children}
-    </h3>
   );
 }
 

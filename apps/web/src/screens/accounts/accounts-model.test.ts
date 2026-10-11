@@ -1,8 +1,10 @@
 import { money, type AccountView, type PoolView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  accountColour,
   accountGroups,
   inFilter,
+  ledgerCounts,
   movePools,
   needsReconcile,
 } from './accounts-model.ts';
@@ -92,11 +94,65 @@ describe('accountGroups', () => {
     ]);
   });
 
+  it('gives the credit group the server credit total when there is one', () => {
+    const owed = money(-4500, 'USD');
+    const groups = accountGroups(all, pools, 'credit', owed);
+    expect(groups[0]?.balance).toEqual(owed);
+    expect(groups[0]?.color).toBe('negative');
+  });
+
+  it('colours pools by their place among open pools on every tab', () => {
+    const hidden = pool({ id: 'p-old', archived: true });
+    const list = [hidden, ...pools];
+    const off = accountGroups(all, list, 'off-budget');
+    expect(off[0]?.color).toBe('series-2');
+    expect(accountGroups(all, list, 'all')[0]?.color).toBe('series-1');
+  });
+
+  it('marks counting pools and sizes their cycle bar from server figures', () => {
+    const cycled = pool({
+      id: 'p-budget',
+      cycle: {
+        start: { amount: money(40000, 'USD'), missingRates: [] },
+        left: { amount: money(10000, 'USD'), missingRates: [] },
+      },
+    });
+    const [budget, savings] = accountGroups(
+      all,
+      [cycled, ...pools.slice(1)],
+      'all',
+    );
+    expect(budget?.counts).toBe(true);
+    expect(budget?.cycleFraction).toBe(0.25);
+    expect(savings?.counts).toBe(false);
+    expect(savings?.cycleFraction).toBeNull();
+  });
+
   it('keeps an account whose pool is unknown in its own group', () => {
     const stray = account({ id: 'stray', poolId: '' });
     const groups = accountGroups([stray], pools, 'all');
     expect(groups).toHaveLength(1);
     expect(groups[0]?.kind).toBe('none');
+  });
+});
+
+describe('accountColour', () => {
+  it('uses the pool colour, or negative for credit', () => {
+    expect(accountColour(nest, pools)).toBe('series-2');
+    expect(accountColour(card, pools)).toBe('negative');
+    expect(accountColour(account({ id: 'x', poolId: 'nope' }), pools)).toBe(
+      null,
+    );
+  });
+});
+
+describe('ledgerCounts', () => {
+  it('counts open accounts and open pools', () => {
+    const hidden = pool({ id: 'p-old', archived: true });
+    expect(ledgerCounts([cash, nest, old], [...pools, hidden])).toEqual({
+      accounts: 2,
+      pools: 2,
+    });
   });
 });
 

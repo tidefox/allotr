@@ -229,3 +229,12 @@ export function TitleBar({
     </header>
   );
 }
+
+/** A section label inside a detail pane (`sect`): small, muted, upper case. */
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mt-3 mb-1 text-tiny tracking-[0.04em] text-text-muted uppercase">
+      {children}
+    </h3>
+  );
+}

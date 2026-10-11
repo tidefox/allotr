@@ -502,7 +502,7 @@ export const en = {
     },
   },
   accounts: {
-    neverReconciled: 'Not reconciled yet',
+    neverReconciled: 'not reconciled yet',
     announce: {
       reconciled: '{name} matches the bank.',
       adjusted: '{name} now matches the bank.',

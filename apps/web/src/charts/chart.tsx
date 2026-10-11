@@ -14,7 +14,10 @@ import type { Point } from './math.ts';
 // so nothing distorts. Fills are opaque colour mixes, and series colours
 // never colour text.
 
-export const seriesStroke: Record<SeriesColor, string> = {
+/** A mark's colour: a series, or `negative` for a debt's line. */
+export type ChartColor = SeriesColor | 'negative';
+
+export const seriesStroke: Record<ChartColor, string> = {
   'series-1': 'stroke-series-1',
   'series-2': 'stroke-series-2',
   'series-3': 'stroke-series-3',
@@ -23,9 +26,10 @@ export const seriesStroke: Record<SeriesColor, string> = {
   'series-6': 'stroke-series-6',
   'series-7': 'stroke-series-7',
   'series-8': 'stroke-series-8',
+  negative: 'stroke-negative',
 };
 
-const markerBg: Record<SeriesColor, string> = {
+const markerBg: Record<ChartColor, string> = {
   'series-1': 'bg-series-1',
   'series-2': 'bg-series-2',
   'series-3': 'bg-series-3',
@@ -34,23 +38,26 @@ const markerBg: Record<SeriesColor, string> = {
   'series-6': 'bg-series-6',
   'series-7': 'bg-series-7',
   'series-8': 'bg-series-8',
+  negative: 'bg-negative',
 };
 
 /** An opaque mix of the series colour into `canvas`, at 16 %. */
-export function areaFill(color: SeriesColor): string {
+export function areaFill(color: ChartColor): string {
   return `color-mix(in srgb, var(--${color}) 16%, var(--canvas))`;
 }
 
 export type ChartSeries = Readonly<{
   id: string;
   label: string;
-  color: SeriesColor;
+  color: ChartColor;
   /** x and y in the caller's units (y in minor units). */
   points: readonly Point[];
   /** Fill under the line. */
   area?: boolean;
   /** Pre-formatted value shown at the end marker. */
   endLabel?: string;
+  /** False leaves out the end marker (a plain history line). */
+  marker?: boolean;
 }>;
 
 export type ChartTick = Readonly<{ value: number; label: string }>;
@@ -240,7 +247,7 @@ export function Chart({
           />
         )}
         {geometry.map(({ s, g }) =>
-          g.end ? (
+          g.end && s.marker !== false ? (
             <EndMark
               key={s.id}
               x={g.end.x}

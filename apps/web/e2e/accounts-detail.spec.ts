@@ -28,8 +28,13 @@ let currency = 'USD';
 let everydayId = '';
 let spareId = '';
 
-function detail(page: Page, name: string) {
-  return page.getByRole('region', { name, exact: true });
+// The detail is the `account` tile beside the list, or the same region
+// inside a sheet named after the account below 1000 px.
+function detail(page: Page) {
+  return page.getByRole('region', {
+    name: t('accountDetail.title'),
+    exact: true,
+  });
 }
 
 async function noSmallTargets(scope: ReturnType<Page['locator']>) {
@@ -88,13 +93,14 @@ test('an account shows its balance, history, pool and recent entries', async ({
   }
 
   await page.goto(`/accounts?account=${everydayId}`);
-  const pane = detail(page, 'Everyday');
+  const pane = detail(page);
   await expect(pane).toBeVisible();
+  await expect(pane).toContainText('Everyday');
   await expect(pane).toContainText('2,491.70');
   await expect(
     pane.getByRole('img', { name: /Balance of Everyday/ }),
   ).toBeVisible();
-  await expect(pane.getByText(t('accountDetail.groups.on'))).toBeVisible();
+  await expect(pane.getByText(/counts toward daily/)).toBeVisible();
   await expect(pane.getByText(t('accounts.neverReconciled'))).toBeVisible();
   const recent = pane.getByRole('region', {
     name: t('accountDetail.recent.title'),
@@ -122,7 +128,7 @@ test('reconciling a different balance shows the difference and adjusts', async (
 }) => {
   await signIn(page, baseURL ?? '');
   await page.goto(`/accounts?account=${everydayId}`);
-  const pane = detail(page, 'Everyday');
+  const pane = detail(page);
   await pane
     .getByRole('button', { name: t('accountDetail.actions.reconcile') })
     .click();
@@ -159,7 +165,7 @@ test('the reconcile sheet rejects an empty balance', async ({
 }) => {
   await signIn(page, baseURL ?? '');
   await page.goto(`/accounts?account=${everydayId}`);
-  await detail(page, 'Everyday')
+  await detail(page)
     .getByRole('button', { name: t('accountDetail.actions.reconcile') })
     .click();
   const sheet = page.getByRole('dialog');
@@ -183,9 +189,14 @@ test('archiving moves the balance to another account first', async ({
 }) => {
   await signIn(page, baseURL ?? '');
   await page.goto(`/accounts?account=${everydayId}`);
-  const pane = detail(page, 'Everyday');
+  const pane = detail(page);
   await pane
-    .getByRole('button', { name: t('accountDetail.actions.archive') })
+    .getByRole('button', {
+      name: t('accountDetail.actions.more', { name: 'Everyday' }),
+    })
+    .click();
+  await page
+    .getByRole('menuitem', { name: t('accountDetail.actions.archive') })
     .click();
   const sheet = page.getByRole('dialog', {
     name: t('accounts.archiveFlow.title', { name: 'Everyday' }),
@@ -210,7 +221,9 @@ test('archiving moves the balance to another account first', async ({
   await expect(sheet).toBeHidden();
   await expect(pane.getByText(t('accountDetail.tags.archived'))).toBeVisible();
   await expect(
-    pane.getByRole('button', { name: t('accountDetail.actions.archive') }),
+    pane.getByRole('button', {
+      name: t('accountDetail.actions.more', { name: 'Everyday' }),
+    }),
   ).toHaveCount(0);
 
   const spare = await page.request.get('/v1/accounts');
