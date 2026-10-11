@@ -128,7 +128,8 @@ export function PoolsTile() {
             segments={rows.map((r) => ({
               id: r.id,
               label: r.name,
-              fraction: r.share,
+              fraction: r.shareBp / 10_000,
+              shareBp: r.shareBp,
               color: r.color,
             }))}
             className="my-2"

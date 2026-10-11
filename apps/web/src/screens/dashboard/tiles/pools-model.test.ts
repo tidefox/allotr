@@ -1,4 +1,4 @@
-import { money, type PoolView } from '@allotr/shared';
+import { money, type PoolListItemView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import { poolRows } from './pools-model.ts';
 
@@ -7,7 +7,9 @@ const fig = (minor: number) => ({
   missingRates: [],
 });
 
-function pool(over: Partial<PoolView> & { id: string }): PoolView {
+function pool(
+  over: Partial<PoolListItemView> & { id: string },
+): PoolListItemView {
   return {
     name: over.id,
     kind: 'spending',
@@ -18,19 +20,20 @@ function pool(over: Partial<PoolView> & { id: string }): PoolView {
     accountIds: [],
     balance: fig(0),
     cycle: null,
+    shareBp: 0,
     ...over,
   };
 }
 
 describe('poolRows', () => {
-  it('shares bars over positive balances and skips archived pools', () => {
+  it('takes the server shares and skips archived pools', () => {
     const rows = poolRows([
-      pool({ id: 'a', balance: fig(7500) }),
-      pool({ id: 'b', balance: fig(2500), kind: 'savings' }),
+      pool({ id: 'a', balance: fig(7500), shareBp: 7500 }),
+      pool({ id: 'b', balance: fig(2500), kind: 'savings', shareBp: 2500 }),
       pool({ id: 'c', balance: fig(9900), archived: true }),
     ]);
     expect(rows.map((r) => r.id)).toEqual(['a', 'b']);
-    expect(rows.map((r) => r.share)).toEqual([0.75, 0.25]);
+    expect(rows.map((r) => r.shareBp)).toEqual([7500, 2500]);
   });
 
   it('fills the left bar when money came in past the start', () => {

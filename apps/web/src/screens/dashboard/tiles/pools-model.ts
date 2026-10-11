@@ -1,4 +1,4 @@
-import type { Money, PoolView } from '@allotr/shared';
+import type { Money, PoolListItemView } from '@allotr/shared';
 import type { SeriesColor } from '@/components/bars';
 import { barFraction } from '@/shell/summary-math';
 
@@ -25,18 +25,14 @@ export type PoolRow = Readonly<{
   /** The Budget pool always counts; the server refuses to switch it off. */
   fixed: boolean;
   color: SeriesColor;
-  /** Its balance's share of the pools' positive balances, 0..1. */
-  share: number;
+  /** Its balance's share of the pools' positive balances, from the server. */
+  shareBp: number;
   /** On-budget pools only; the bar is full when `left` passes `start`. */
   cycle: Readonly<{ start: Money; left: Money; fraction: number }> | null;
 }>;
 
-export function poolRows(pools: readonly PoolView[]): PoolRow[] {
+export function poolRows(pools: readonly PoolListItemView[]): PoolRow[] {
   const open = pools.filter((p) => !p.archived);
-  const whole = open.reduce(
-    (sum, p) => sum + Math.max(0, p.balance.amount.amountMinor),
-    0,
-  );
   return open.map((p, index) => ({
     id: p.id,
     name: p.name,
@@ -44,7 +40,7 @@ export function poolRows(pools: readonly PoolView[]): PoolRow[] {
     checked: p.countsTowardDaily,
     fixed: p.defaultFor === 'on',
     color: COLORS[index % COLORS.length] ?? 'series-1',
-    share: barFraction(p.balance.amount.amountMinor, whole),
+    shareBp: p.shareBp,
     cycle:
       p.cycle === null
         ? null

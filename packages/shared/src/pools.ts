@@ -44,8 +44,18 @@ export const poolSchema = z.object({
 });
 export type PoolView = z.infer<typeof poolSchema>;
 
+/**
+ * A listed pool also carries its balance's share of the open pools' positive
+ * balances, in basis points (10 000 is all of it), for the pools share bar.
+ * Archived pools and pools that hold nothing or less get 0.
+ */
+export const poolListItemSchema = poolSchema.extend({
+  shareBp: z.number().int().min(0).max(10_000),
+});
+export type PoolListItemView = z.infer<typeof poolListItemSchema>;
+
 export const poolListSchema = z.object({
-  pools: z.array(poolSchema),
+  pools: z.array(poolListItemSchema),
   /** The setting that lets a savings pool count; off unless the user turns it on. */
   countSavingsInDaily: z.boolean(),
 });
