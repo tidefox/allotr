@@ -217,9 +217,9 @@ export function TrendsTab() {
                   )}
                 >
                   {row.movement === 'up'
-                    ? `↑ ${t('reportsSummary.trends.up')}`
+                    ? `↑ ${row.percent === null ? t('reportsSummary.trends.up') : `${String(row.percent)}%`}`
                     : row.movement === 'down'
-                      ? `↓ ${t('reportsSummary.trends.down')}`
+                      ? `↓ ${row.percent === null ? t('reportsSummary.trends.down') : `${String(row.percent)}%`}`
                       : `↔ ${t('reportsSummary.trends.same')}`}
                 </span>
               ),

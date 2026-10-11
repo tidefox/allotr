@@ -26,7 +26,12 @@ type Summary = {
   missingRates: string[];
   series?: {
     periods: { from: string; to: string }[];
-    groups: { categoryId: string | null; points: Money[]; average: Money }[];
+    groups: {
+      categoryId: string | null;
+      points: Money[];
+      average: Money;
+      changeBp: number | null;
+    }[];
     totals: Money[];
     totalAverage: Money;
     missingRates: string[];
@@ -215,11 +220,14 @@ describe('GET /v1/reports/categories', () => {
         points: [usd(0), usd(900), usd(4700)],
         // 5,600 over all three months, the empty one included, rounded down.
         average: usd(1866),
+        // (4,700 - 1,866) / 1,866, truncated.
+        changeBp: 15187,
       },
       {
         categoryId: fun,
         points: [usd(0), usd(0), usd(2000)],
         average: usd(666),
+        changeBp: 20030,
       },
     ]);
     expect(body.series?.totals).toEqual([usd(0), usd(900), usd(6700)]);

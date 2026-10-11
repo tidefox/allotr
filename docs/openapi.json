@@ -36037,12 +36037,19 @@
                                   "amountMinor",
                                   "currency"
                                 ]
+                              },
+                              "changeBp": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "categoryId",
                               "points",
-                              "average"
+                              "average",
+                              "changeBp"
                             ]
                           }
                         },

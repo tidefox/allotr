@@ -37,21 +37,25 @@ const series = {
       categoryId: 'rent',
       points: [money(900), money(900), money(900)],
       average: money(900),
+      changeBp: 0,
     },
     {
       categoryId: 'food',
       points: [money(300), money(500), money(400)],
       average: money(400),
+      changeBp: 0,
     },
     {
       categoryId: 'fun',
       points: [money(0), money(0), money(0)],
       average: money(0),
+      changeBp: null,
     },
     {
       categoryId: null,
       points: [money(0), money(20), money(50)],
       average: money(23),
+      changeBp: 11739,
     },
   ],
   totals: [money(1200), money(1420), money(1350)],
@@ -117,6 +121,8 @@ describe('versusRows', () => {
     expect(rows[1]?.current).toEqual(money(400));
     expect(rows[1]?.average).toEqual(money(400));
     expect(rows[2]?.average).toEqual(money(23));
+    // The server's 11 739 bp, rounded for display.
+    expect(rows.map((r) => r.percent)).toEqual([0, 0, 117]);
   });
 
   it('moves down when the period came in under the average', () => {
@@ -127,10 +133,14 @@ describe('versusRows', () => {
           categoryId: 'food',
           points: [money(300), money(500), money(250)],
           average: money(350),
+          changeBp: -2857,
         },
       ],
     } as unknown as CategorySeriesView;
-    expect(versusRows(under, categories)[0]?.movement).toBe('down');
+    expect(versusRows(under, categories)[0]).toMatchObject({
+      movement: 'down',
+      percent: 29,
+    });
   });
 
   it('has no movement with a single period', () => {
@@ -138,13 +148,19 @@ describe('versusRows', () => {
       ...series,
       periods: [{ from: '2026-10-01', to: '2026-10-31' }],
       groups: [
-        { categoryId: 'food', points: [money(400)], average: money(400) },
+        {
+          categoryId: 'food',
+          points: [money(400)],
+          average: money(400),
+          changeBp: null,
+        },
       ],
       totals: [money(400)],
     } as unknown as CategorySeriesView;
     expect(versusRows(one, categories)[0]).toMatchObject({
       average: money(400),
       movement: null,
+      percent: null,
     });
   });
 });
