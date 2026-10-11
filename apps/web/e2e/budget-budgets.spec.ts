@@ -113,9 +113,10 @@ test('the budgets tab shows the tree, totals and cover', async ({
   await expect(tree.getByText('Takeaway', { exact: true })).toBeVisible();
   // The Household header carries the server's totals for both children.
   await expect(tree.getByText('$42.00', { exact: true })).toHaveCount(2);
+  // Phones drop the left column, so the figure is only in the page there.
   await expect(
     tree.getByText('$508.00', { exact: true }).first(),
-  ).toBeVisible();
+  ).toBeAttached();
   await expect(
     tree.getByText(t('budgetBudgets.tree.totalDaily')),
   ).toBeVisible();
@@ -143,7 +144,12 @@ test('the budgets tab shows the tree, totals and cover', async ({
 test('a budget is added from the sheet', async ({ page, baseURL }) => {
   await apiSignIn(page, baseURL ?? '');
   await page.goto('/budget/budgets');
-  await page.getByRole('button', { name: t('budgetBudgets.tree.add') }).click();
+  await page
+    .getByRole('button', {
+      name: t('budgetBudgets.tree.addLabel'),
+      exact: true,
+    })
+    .click();
   const sheet = page.getByRole('dialog', {
     name: t('budgetBudgets.sheet.newTitle'),
   });

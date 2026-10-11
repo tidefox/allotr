@@ -1,39 +1,69 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import type { BudgetStatusView, BudgetView } from '@allotr/shared';
+import { useMemo, useState, type ReactNode } from 'react';
+import {
+  addDays,
+  money,
+  type BudgetStatusView,
+  type BudgetView,
+  type CategoryView,
+} from '@allotr/shared';
 import { Amount } from '@/components/amount';
-import { Bar, SkeletonTile } from '@/components/bars';
-import { BracketButton } from '@/components/buttons';
-import { Grid, Stack, Tile } from '@/components/layout';
+import { SkeletonTile } from '@/components/bars';
+import { BracketButton, Brackets, bracketClass } from '@/components/buttons';
+import { Grid, SectionTitle, Stack, Tile } from '@/components/layout';
 import { MenuButton, MenuItem } from '@/components/menu';
-import { Row, TreeRow } from '@/components/row';
+import { Row } from '@/components/row';
+import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
-import { IconMore2Line } from '@/generated/icons';
+import { ChartLegend } from '@/charts/chart';
+import {
+  IconAddLine,
+  IconArrowUpDownLine,
+  IconCoinsLine,
+  IconMore2Line,
+  IconPieChart2Line,
+  IconWallet3Line,
+} from '@/generated/icons';
 import { canDelete } from '@/features/budget/budget-draft';
-import { budgetsQuery } from '@/lib/budgets';
+import { formatTerminalDate } from '@/features/today/format';
+import { budgetsQuery, coversQuery } from '@/lib/budgets';
 import { categoriesQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
 import { CycleAllocationTile } from '../dashboard/tiles/cycle-allocation.tsx';
+import {
+  budgetRows,
+  periodPace,
+  type BudgetRow,
+} from '../dashboard/tiles/budgets.ts';
 import { TileFailed } from '../dashboard/tiles/tile-failed.tsx';
 import { BudgetConfirmSheet } from './budget-confirm-sheet.tsx';
+import { BudgetLine } from './budget-line.tsx';
 import { BudgetSheet, type BudgetSheetMode } from './budget-sheet.tsx';
-import {
-  budgetTree,
-  freeCategories,
-  subCandidates,
-  visibleEntries,
-  type TreeEntry,
-} from './budgets-model.ts';
+import { freeCategories, subCandidates } from './budgets-model.ts';
+import { openBudgetSheet } from './sheets/store.ts';
 
-const columns = [
-  { width: 'minmax(0,1fr)' },
-  { width: '6rem', from: 'medium' },
-  { width: '5rem', from: 'medium' },
-  { width: '5.5rem' },
-  { width: '3.5rem', from: 'wide' },
-  { width: '2rem' },
-] as const;
+const locale = 'en';
+
+// Lead, icon, name, bar, spent, left, action. Phones drop the left column
+// and narrow the bar, as the locked design's budget rows do.
+const columns: readonly RowColumn[] = [
+  { width: '1.5rem' },
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: 'minmax(3.75rem, 2.4fr)', at: { compact: 'minmax(2.25rem, 1fr)' } },
+  { width: '9ch' },
+  { width: '9ch', from: 'medium' },
+  { width: '8ch' },
+];
+
+// The server's totals under the tree: a label, then the figure under the
+// last money column (left on wider frames, spent on phones).
+const totalColumns: readonly RowColumn[] = [
+  { width: 'minmax(0, 1fr)' },
+  { width: '9ch' },
+  { width: '8ch' },
+];
 
 type Open =
   | Readonly<{ sheet: BudgetSheetMode }>
@@ -49,8 +79,8 @@ export function BudgetsTab() {
 
   if (status.isError) {
     return (
-      <Stack className="h-full">
-        <Tile title={t('budgetBudgets.tree.title')}>
+      <Stack className="min-h-full">
+        <Tile title={t('budgetBudgets.tree.title')} icon={IconPieChart2Line}>
           <TileFailed
             retry={() => {
               void status.refetch();
@@ -62,7 +92,7 @@ export function BudgetsTab() {
   }
   if (status.data === undefined) {
     return (
-      <Grid>
+      <Grid className="min-h-full">
         <SkeletonTile span="full" />
         <SkeletonTile span={2} rows={5} />
         <SkeletonTile rows={4} />
@@ -73,10 +103,10 @@ export function BudgetsTab() {
   const cats = categories.data?.categories ?? [];
   return (
     <>
-      <Grid>
+      <Grid className="min-h-full">
         <CycleAllocationTile />
         <TreeTile data={data} categories={cats} onOpen={setOpen} />
-        <CoverTile data={data} />
+        <CoverTile data={data} categories={cats} />
       </Grid>
       {open === null ? null : 'sheet' in open ? (
         <BudgetSheet
@@ -99,21 +129,31 @@ export function BudgetsTab() {
   );
 }
 
+/** "sep 25 – oct 22": the period's first and last day (`to` is exclusive). */
+function periodText(period: BudgetStatusView['period']): string {
+  return t('budgetBudgets.tree.period', {
+    from: formatTerminalDate(period.from, locale),
+    to: formatTerminalDate(addDays(period.to, -1), locale),
+  });
+}
+
 function TreeTile({
   data,
   categories,
   onOpen,
 }: {
   data: BudgetStatusView;
-  categories: Parameters<typeof budgetTree>[1];
+  categories: readonly CategoryView[];
   onOpen: (open: Open) => void;
 }) {
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
-  const entries = useMemo(
-    () => budgetTree(data.budgets, categories, data.parents),
-    [data.budgets, categories, data.parents],
+  const rows = useMemo(() => budgetRows(data, categories), [data, categories]);
+  const shown = rows.filter(
+    (row) =>
+      (row.role !== 'child' && row.role !== 'last-child') ||
+      !folded.has(row.group),
   );
-  const shown = visibleEntries(entries, folded);
+  const pace = periodPace(data);
   const toggle = (group: string) => {
     setFolded((current) => {
       const next = new Set(current);
@@ -124,171 +164,170 @@ function TreeTile({
   return (
     <Tile
       title={t('budgetBudgets.tree.title')}
-      subtitle={t('budgetBudgets.tree.subtitle')}
+      icon={IconPieChart2Line}
+      subtitle={t('budgetBudgets.tree.subtitle', {
+        period: periodText(data.period),
+      })}
       span={2}
-      bodyClassName="px-0 pb-0"
+      bodyClassName="px-0"
       actions={
-        <BracketButton
-          onPress={() => {
-            onOpen({
-              sheet: {
-                kind: 'create',
-                categories: freeCategories(data.budgets, categories),
-              },
-            });
-          }}
-        >
-          {t('budgetBudgets.tree.add')}
-        </BracketButton>
+        <>
+          <BracketButton
+            icon={IconAddLine}
+            aria-label={t('budgetBudgets.tree.addLabel')}
+            onPress={() => {
+              onOpen({
+                sheet: {
+                  kind: 'create',
+                  categories: freeCategories(data.budgets, categories),
+                },
+              });
+            }}
+          >
+            {t('budgetBudgets.tree.add')}
+          </BracketButton>
+          <BracketButton
+            onPress={() => {
+              openBudgetSheet('payday');
+            }}
+          >
+            {t('budgetBudgets.tree.plan')}
+          </BracketButton>
+        </>
       }
     >
-      {entries.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           title={t('budgetBudgets.tree.emptyTitle')}
           hint={t('budgetBudgets.tree.emptyHint')}
         />
       ) : (
         <>
-          {shown.map((entry) => (
-            <BudgetRow
-              key={entry.key}
-              entry={entry}
-              folded={folded.has(entry.group)}
+          {shown.map((row) => (
+            <BudgetLine
+              key={row.id}
+              row={row}
+              pace={pace?.fraction}
+              expanded={!folded.has(row.group)}
               onToggle={() => {
-                toggle(entry.group);
+                toggle(row.group);
               }}
-              subs={
-                entry.budget === null
-                  ? []
-                  : subCandidates(entry.budget, data.budgets, categories)
+              foldLabel={t('budgetBudgets.tree.fold', { name: row.name })}
+              setAsideLabel={t('budgetBudgets.tree.setAside')}
+              barLabel={t('budgetBudgets.tree.barLabel', { name: row.name })}
+              columns={columns}
+              action={
+                <RowAction
+                  row={row}
+                  data={data}
+                  categories={categories}
+                  onOpen={onOpen}
+                />
               }
-              onOpen={onOpen}
             />
           ))}
           <Totals data={data} />
+          {pace === null ? null : (
+            <ChartLegend
+              className="px-3"
+              items={[
+                {
+                  label: t('budgetBudgets.tree.pace', {
+                    day: pace.day,
+                    length: pace.length,
+                  }),
+                  mark: 'tick',
+                  color: 'bg-text',
+                },
+              ]}
+            />
+          )}
         </>
       )}
     </Tile>
   );
 }
 
-function BudgetRow({
-  entry,
-  folded,
-  onToggle,
-  subs,
+/**
+ * A parent header gets `[+ sub]`; a budget gets `[⋮]` (edit, add a
+ * sub-budget, end, delete).
+ */
+function RowAction({
+  row,
+  data,
+  categories,
   onOpen,
 }: {
-  entry: TreeEntry;
-  folded: boolean;
-  onToggle: () => void;
-  subs: Parameters<typeof budgetTree>[1];
+  row: BudgetRow;
+  data: BudgetStatusView;
+  categories: readonly CategoryView[];
   onOpen: (open: Open) => void;
-}) {
-  const { budget } = entry;
-  const name = (
-    <span className="flex min-w-0 items-center gap-2">
-      {entry.icon === null ? (
-        <span aria-hidden="true" className="size-4 shrink-0" />
-      ) : (
-        <CategoryIcon name={entry.icon} color={entry.colour} />
-      )}
-      <span className="truncate font-sans">{entry.name}</span>
-    </span>
-  );
-  const addSub =
-    budget !== null && subs.length > 0
-      ? () => {
-          onOpen({
-            sheet: { kind: 'sub', parent: budget, categories: subs },
-          });
-        }
-      : undefined;
-  const { total } = entry;
-  const cells =
-    budget === null
-      ? total === null
-        ? [name, null, null, null, null, null]
-        : [
-            name,
-            <Bar
-              key="bar"
-              value={entry.fraction}
-              over={entry.over}
-              label={t('budgetBudgets.tree.barLabel', { name: entry.name })}
-            />,
-            <Amount key="spent" amount={total.spent} />,
-            <Amount key="left" amount={total.left} />,
-            null,
-            null,
-          ]
-      : [
-          name,
-          <Bar
-            key="bar"
-            value={entry.fraction}
-            over={entry.over}
-            label={t('budgetBudgets.tree.barLabel', { name: entry.name })}
-          />,
-          <Amount key="spent" amount={budget.spent} />,
-          <Amount key="left" amount={budget.left} />,
-          addSub === undefined ? null : (
-            <BracketButton
-              key="sub"
-              aria-label={t('budgetBudgets.tree.addSubOf', {
-                name: entry.name,
-              })}
-              onPress={addSub}
-            >
-              {t('budgetBudgets.tree.addSub')}
-            </BracketButton>
-          ),
-          <RowMenu
-            key="menu"
-            budget={budget}
-            onOpen={onOpen}
-            {...(addSub === undefined ? {} : { addSub })}
-          />,
-        ];
-  if (entry.role === 'flat') {
+}): ReactNode {
+  const { budget } = row;
+  if (budget === null) {
+    // A header with no budget of its own: a new budget on one of its free
+    // subcategories.
+    const parentId = row.categoryId;
+    const free =
+      parentId === null
+        ? []
+        : freeCategories(data.budgets, categories).filter(
+            (c) => c.parentId === parentId,
+          );
+    if (free.length === 0) return null;
     return (
-      <Row
-        columns={[{ width: '1.5rem' }, ...columns]}
-        cells={[null, ...cells]}
-      />
+      <span className="flex justify-end">
+        <BracketButton
+          icon={IconAddLine}
+          aria-label={t('budgetBudgets.tree.addSubOf', { name: row.name })}
+          onPress={() => {
+            onOpen({ sheet: { kind: 'create', categories: free } });
+          }}
+        >
+          {t('budgetBudgets.tree.addSub')}
+        </BracketButton>
+      </span>
     );
   }
+  const subs = subCandidates(budget, data.budgets, categories);
   return (
-    <TreeRow
-      role={entry.role}
-      expanded={!folded}
-      onToggle={onToggle}
-      label={t('budgetBudgets.tree.fold', { name: entry.name })}
-      columns={columns}
-      cells={cells}
-    />
+    <span className="flex justify-end">
+      <RowMenu
+        budget={budget}
+        periodFrom={data.period.from}
+        onOpen={onOpen}
+        {...(subs.length === 0
+          ? {}
+          : {
+              addSub: () => {
+                onOpen({
+                  sheet: { kind: 'sub', parent: budget, categories: subs },
+                });
+              },
+            })}
+      />
+    </span>
   );
 }
 
 function RowMenu({
   budget,
+  periodFrom,
   addSub,
   onOpen,
 }: {
   budget: BudgetView;
+  periodFrom: string;
   addSub?: () => void;
   onOpen: (open: Open) => void;
 }) {
-  const { data } = useQuery(budgetsQuery);
-  const periodFrom = data?.period.from ?? '';
   const buffer = budget.target.kind === 'buffer';
   return (
     <MenuButton
-      iconOnly
+      variant="bracket"
       icon={IconMore2Line}
       label={t('budgetBudgets.tree.actionsOf', { name: budget.name })}
       title={budget.name}
-      className="size-8 justify-center"
     >
       <MenuItem
         id="edit"
@@ -327,8 +366,6 @@ function RowMenu({
   );
 }
 
-const totalColumns = [{ width: 'minmax(0,1fr)' }, { width: '7rem' }] as const;
-
 /** The server's own totals; the browser adds nothing up. */
 function Totals({ data }: { data: BudgetStatusView }) {
   const lines = [
@@ -338,16 +375,20 @@ function Totals({ data }: { data: BudgetStatusView }) {
     ['free', t('budgetBudgets.tree.totalFree'), data.free],
   ] as const;
   return (
-    <div className="bg-chrome">
+    <div className="border-t border-outline text-text-muted">
       {lines.map(([id, label, amount]) => (
         <Row
           key={id}
           columns={totalColumns}
+          className="border-b-0"
           cells={[
-            <strong key="l" className="font-semibold">
+            <span key="l" className="font-sans">
               {label}
-            </strong>,
-            <Amount key="a" amount={amount} />,
+            </span>,
+            <span key="a" className="block text-right">
+              <Amount amount={amount} />
+            </span>,
+            null,
           ]}
         />
       ))}
@@ -355,57 +396,166 @@ function Totals({ data }: { data: BudgetStatusView }) {
   );
 }
 
-const coverColumns = [{ width: 'minmax(0,1fr)' }, { width: '7rem' }] as const;
+const coverColumns: readonly RowColumn[] = [
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: 'auto' },
+];
 
-function CoverTile({ data }: { data: BudgetStatusView }) {
-  const { covered, coverOrder } = data;
-  const next = coverOrder[0];
-  const lines = [
-    ['shortfall', t('budgetBudgets.cover.shortfall'), covered.shortfall],
-    ['free', t('budgetBudgets.cover.fromFree'), covered.fromFree],
-    ['buffer', t('budgetBudgets.cover.fromBuffer'), covered.fromBuffer],
-    ['budgets', t('budgetBudgets.cover.fromBudgets'), covered.fromBudgets],
-    ['uncovered', t('budgetBudgets.cover.uncovered'), covered.uncovered],
-  ] as const;
+const nextColumns: readonly RowColumn[] = [
+  { width: '3ch' },
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: 'auto' },
+];
+
+type CoverLine = Readonly<{
+  key: string;
+  row: BudgetRow | undefined;
+  name: string;
+  source: string | null;
+  amount: ReturnType<typeof money>;
+}>;
+
+function CoverTile({
+  data,
+  categories,
+}: {
+  data: BudgetStatusView;
+  categories: readonly CategoryView[];
+}) {
+  const covers = useQuery(coversQuery);
+  const rows = useMemo(() => budgetRows(data, categories), [data, categories]);
+  const byBudget = new Map(
+    rows.flatMap((row) => (row.budget === null ? [] : [[row.budget.id, row]])),
+  );
+  const budgetById = new Map(data.budgets.map((b) => [b.id, b]));
+  // One line per source that covered an entry, and one for what nothing
+  // covered; amounts are the server's, shown as money going out.
+  const lines: CoverLine[] = (covers.data?.covers ?? []).flatMap((line) => {
+    const budget =
+      line.budgetId === null ? undefined : budgetById.get(line.budgetId);
+    const name =
+      budget?.name ??
+      (line.loan
+        ? t('budgetBudgets.cover.loan')
+        : t('budgetBudgets.cover.unbudgeted'));
+    const row =
+      line.budgetId === null ? undefined : byBudget.get(line.budgetId);
+    const taken = line.covers
+      .filter((c) => c.amount.amountMinor > 0)
+      .map((c, index): CoverLine => ({
+        key: `${line.entryId}-${String(index)}`,
+        row,
+        name,
+        source: c.name,
+        amount: money(-c.amount.amountMinor, c.amount.currency),
+      }));
+    return line.uncovered.amountMinor > 0
+      ? [
+          ...taken,
+          {
+            key: `${line.entryId}-uncovered`,
+            row,
+            name,
+            source: null,
+            amount: money(-line.uncovered.amountMinor, line.uncovered.currency),
+          },
+        ]
+      : taken;
+  });
+  const next = data.coverOrder.slice(0, 3);
   return (
     <Tile
       title={t('budgetBudgets.cover.title')}
-      subtitle={t('budgetBudgets.cover.subtitle')}
-      bodyClassName="px-0 pb-0"
+      icon={IconArrowUpDownLine}
+      bodyClassName="px-0"
       actions={
         <Link
           to="/budget/$sub"
           params={{ sub: 'cover-order' }}
-          className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
+          className={bracketClass}
         >
-          {t('budgetBudgets.cover.order')}
+          <Brackets>{t('budgetBudgets.cover.order')}</Brackets>
         </Link>
       }
     >
-      {covered.shortfall.amountMinor <= 0 ? (
-        <p className="px-3 py-2 font-sans text-small text-text-muted">
+      {covers.isError ? (
+        <div className="px-3">
+          <TileFailed
+            retry={() => {
+              void covers.refetch();
+            }}
+          />
+        </div>
+      ) : lines.length === 0 ? (
+        <p className="px-3 py-1.5 font-sans text-text-muted">
           {t('budgetBudgets.cover.none')}
         </p>
       ) : (
-        lines.map(([id, label, amount]) => (
+        lines.map((line) => (
           <Row
-            key={id}
+            key={line.key}
             columns={coverColumns}
-            cells={[label, <Amount key="a" amount={amount} />]}
+            cells={[
+              line.row?.icon == null ? null : (
+                <CategoryIcon
+                  key="i"
+                  name={line.row.icon}
+                  color={line.row.colour}
+                />
+              ),
+              <span key="n" className="font-sans">
+                {line.source === null ? (
+                  t('budgetBudgets.cover.notCovered', { name: line.name })
+                ) : (
+                  <>
+                    {t('budgetBudgets.cover.over', { name: line.name })}
+                    <strong className="font-semibold">{line.source}</strong>
+                  </>
+                )}
+              </span>,
+              <Amount key="a" amount={line.amount} kind="expense" />,
+            ]}
           />
         ))
       )}
-      {next === undefined ? null : (
-        <Row
-          columns={coverColumns}
-          cells={[
-            t('budgetBudgets.cover.nextTitle'),
-            <span key="n" className="font-sans">
-              {next.name}
-            </span>,
-          ]}
-        />
+      {next.length === 0 ? null : (
+        <div className="px-3">
+          <SectionTitle>{t('budgetBudgets.cover.nextTitle')}</SectionTitle>
+        </div>
       )}
+      {next.map((item, index) => {
+        const budget = budgetById.get(item.id);
+        const row = byBudget.get(item.id);
+        const left = item.kind === 'free' ? data.free : budget?.left;
+        const Icon = item.kind === 'free' ? IconWallet3Line : IconCoinsLine;
+        return (
+          <Row
+            key={item.id}
+            columns={nextColumns}
+            className="border-b-0"
+            cells={[
+              <span key="n" className="text-text-muted">
+                {t('budgetBudgets.cover.place', { n: index + 1 })}
+              </span>,
+              row?.icon == null ? (
+                <Icon key="i" className="size-4 text-text-muted" />
+              ) : (
+                <CategoryIcon key="i" name={row.icon} />
+              ),
+              <span key="m" className="font-sans">
+                {item.kind === 'free'
+                  ? t('budgetBudgets.order.free')
+                  : item.name}
+              </span>,
+              left === undefined ? null : (
+                <Amount key="a" amount={left} className="text-text-muted" />
+              ),
+            ]}
+          />
+        );
+      })}
     </Tile>
   );
 }

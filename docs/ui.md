@@ -419,7 +419,7 @@ settings, so no ledger read is made that the server would refuse.
 
 | Sub-tab | Content |
 |---|---|
-| budgets | Allocation (full width) · budget tree with spent, left (parent rows show `parents` totals), `[+ sub]` and ⋮, and a total row (2 wide) · cover this period with what's next in line |
+| budgets | Allocation (full width) · budgets (2 wide): the dashboard's budget rows with separators and an action column (`[+ sub]` on a parent header, `[⋮]` on a budget), the server's totals below in muted rows (daily budgets left, held, spent outside any budget, free), and the pace legend; `[+ budget]` and `[plan next period]` (the payday plan) in the title bar · cover this period: one row per source that covered an entry (`/v1/budgets/covers`), then the first three in the cover order with what each has left |
 | pools | One tile per pool (daily checkbox, balance, "left of" bar for on-budget pools, accounts with sparklines), plus "how the daily number works" |
 | bills | Timeline tile with set aside, paid and next · upcoming (with a "set aside of" bar) · paid this cycle |
 | goals | One tile per goal: figure, bar, plan line, progress chart |

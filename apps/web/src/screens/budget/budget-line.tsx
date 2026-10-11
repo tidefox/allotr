@@ -1,0 +1,118 @@
+import type { ReactNode } from 'react';
+import { Amount } from '@/components/amount';
+import { Bar, seriesBg, type SeriesColor } from '@/components/bars';
+import { Row } from '@/components/row';
+import type { RowColumn } from '@/components/row-columns';
+import { CategoryIcon } from '@/components/states';
+import { IconArrowDownSLine, IconArrowRightSLine } from '@/generated/icons';
+import { cn } from '@/lib/utils';
+import type { BudgetRow } from '@/screens/dashboard/tiles/budgets';
+
+// One budget in the tree (the locked design's budget row), shared by the
+// dashboard's budgets tile and the budgets sub-tab: fold handle or tree
+// line, icon, name, bar with the even-pace tick, spent, left and, on the
+// sub-tab, an action. Every figure is the server's.
+
+/** Lead, icon, name, bar, spent, left; phones drop the left column. */
+export const budgetLineColumns: readonly RowColumn[] = [
+  { width: '1.5rem' },
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: 'minmax(2.25rem, 2.4fr)' },
+  { width: '9ch' },
+  { width: '9ch', from: 'medium' },
+];
+
+export function BudgetLine({
+  row,
+  pace,
+  expanded,
+  onToggle,
+  foldLabel,
+  setAsideLabel,
+  barLabel,
+  columns = budgetLineColumns,
+  action,
+  className,
+}: {
+  row: BudgetRow;
+  pace: number | undefined;
+  expanded: boolean;
+  onToggle: () => void;
+  foldLabel: string;
+  setAsideLabel: string;
+  barLabel: string;
+  columns?: readonly RowColumn[];
+  /** A trailing cell, when the columns have room for one. */
+  action?: ReactNode;
+  className?: string | undefined;
+}) {
+  const parent = row.role === 'parent';
+  const lead = parent ? (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      aria-label={foldLabel}
+      onClick={onToggle}
+      className="press flex size-hit items-center justify-center text-text-muted"
+    >
+      {expanded ? (
+        <IconArrowDownSLine className="size-4" />
+      ) : (
+        <IconArrowRightSLine className="size-4" />
+      )}
+    </button>
+  ) : (
+    <span aria-hidden="true" className="block w-6 text-center text-outline">
+      {row.role === 'child' ? '├' : row.role === 'last-child' ? '└' : ''}
+    </span>
+  );
+  const overLeft = row.left.amountMinor < 0;
+  const cells: ReactNode[] = [
+    lead,
+    row.icon === null ? null : (
+      <CategoryIcon key="i" name={row.icon} color={row.colour} />
+    ),
+    <span key="n" className="font-sans">
+      {row.name}
+      {row.setAside ? (
+        <span className="font-normal text-text-muted"> {setAsideLabel}</span>
+      ) : null}
+    </span>,
+    // Room for the pace tick, which reaches past the track; a row cell
+    // clips what overflows it.
+    <div key="b" className="py-[3px]">
+      <Bar
+        value={row.fraction}
+        over={row.over}
+        pace={row.setAside ? undefined : pace}
+        fillClassName={seriesBg[`series-${String(row.colour)}` as SeriesColor]}
+        label={barLabel}
+      />
+    </div>,
+    <span
+      key="s"
+      className={cn(
+        'block text-right',
+        row.over ? 'text-negative' : 'text-text-muted',
+      )}
+    >
+      <Amount amount={row.spent} />
+    </span>,
+    <span
+      key="l"
+      className={cn('block text-right', overLeft && 'text-negative')}
+    >
+      <Amount amount={row.left} />
+    </span>,
+  ];
+  if (action !== undefined) cells.push(action);
+  return (
+    <Row
+      columns={columns}
+      cells={cells}
+      // A parent row is bold throughout, as the locked design's `.r.parent`.
+      className={cn(parent && 'font-semibold', className)}
+    />
+  );
+}

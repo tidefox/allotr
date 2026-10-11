@@ -115,4 +115,6 @@ export const INTERFACE_ICONS = [
   'checkbox-blank-line',
   'swap-line',
   'pencil-line',
+  'arrow-up-down-line',
+  'coins-line',
 ] as const;

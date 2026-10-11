@@ -15,7 +15,6 @@ import { t } from '@/messages/t';
 import { barFraction } from '@/shell/summary-math';
 import { GoalSheet } from './goal-sheet.tsx';
 import { goalChart } from './goals-model.ts';
-import { BudgetSheets } from './sheets/budget-sheets.tsx';
 import { openBudgetSheet } from './sheets/store.ts';
 import { TabFailed } from './tab-failed.tsx';
 
@@ -104,7 +103,6 @@ export function GoalsTab() {
           setAdding(false);
         }}
       />
-      <BudgetSheets />
     </>
   );
 }

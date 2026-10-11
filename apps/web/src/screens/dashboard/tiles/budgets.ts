@@ -2,6 +2,7 @@ import {
   daysBetween,
   money,
   type BudgetStatusView,
+  type BudgetView,
   type CategoryIcon,
   type CategoryView,
   type Money,
@@ -30,6 +31,10 @@ export type BudgetRow = Readonly<{
   icon: CategoryIcon | null;
   /** The series number, 1..8. */
   colour: SeriesNumber;
+  /** The budget itself; null on a parent header with no budget of its own. */
+  budget: BudgetView | null;
+  /** The category the row stands for, when it has one. */
+  categoryId: string | null;
 }>;
 
 /**
@@ -61,6 +66,8 @@ export function budgetRows(
           setAside: e.budget?.mode === 'set-aside',
           icon: e.icon,
           colour: e.colour,
+          budget: e.budget,
+          categoryId: e.categoryId,
         },
       ];
     },
