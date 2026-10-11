@@ -1,9 +1,11 @@
+import type { CSSProperties } from 'react';
 import { type SeriesColor } from '@/components/bars.tsx';
 import { cn } from '@/lib/utils';
-import { columnLayout } from './math.ts';
 
-const bg: Record<SeriesColor | 'negative', string> = {
+const bg: Record<SeriesColor | 'negative' | 'positive' | 'primary', string> = {
   negative: 'bg-negative',
+  positive: 'bg-positive',
+  primary: 'bg-primary',
   'series-1': 'bg-series-1',
   'series-2': 'bg-series-2',
   'series-3': 'bg-series-3',
@@ -14,6 +16,8 @@ const bg: Record<SeriesColor | 'negative', string> = {
   'series-8': 'bg-series-8',
 };
 
+export type ColumnColor = keyof typeof bg;
+
 export type ColumnDatum = Readonly<{
   id: string;
   /** Height as a fraction of the tallest column the server sent, 0..1. */
@@ -22,72 +26,70 @@ export type ColumnDatum = Readonly<{
   valueLabel: string;
   /** Pre-formatted label below the column. */
   xLabel: string;
-  /** `negative` marks a column that passed its limit. */
-  color?: SeriesColor | 'negative';
+  /** `negative` marks a column that passed its limit. Default `primary`. */
+  color?: ColumnColor;
 }>;
 
-/** Bar columns with value labels above, x labels below and a 1 px baseline. */
+/** The tallest column leaves this much of the plot free for its value. */
+const HEADROOM = 0.9;
+
+/**
+ * Bar columns (`cols`): value labels on the columns, a 1 px baseline and
+ * muted x labels. The plot is `height` design px tall and grows to fill a
+ * flex column when the tile has room.
+ */
 export function Columns({
   data,
   label,
+  height = 110,
   className,
 }: {
   data: readonly ColumnDatum[];
   /** The summary read by assistive tech. */
   label: string;
+  /** The plot's design height in px. */
+  height?: number;
   className?: string;
 }) {
-  // Slots are percentages of the width, so labels and bars line up.
-  const slots = columnLayout(data.length, 100, 1);
+  const track = {
+    gridTemplateColumns: `repeat(${String(Math.max(1, data.length))}, minmax(0, 1fr))`,
+  };
   return (
     <div
       role="img"
       aria-label={`${label}: ${data.map((d) => `${d.xLabel} ${d.valueLabel}`).join(', ')}`}
-      className={cn('grid min-w-0 px-3 py-2', className)}
+      className={cn('flex min-h-0 min-w-0 flex-1 flex-col', className)}
+      style={{ '--h': `${String(height / 16)}rem` } as CSSProperties}
     >
-      <div className="relative h-24 border-b wide:h-40">
-        {data.map((d, i) => {
-          const slot = slots[i];
-          if (slot === undefined) return null;
-          const fraction = Math.min(1, Math.max(0, d.fraction));
-          return (
-            <div
-              key={d.id}
-              aria-hidden="true"
-              className="absolute bottom-0 flex h-full flex-col justify-end"
-              style={{
-                left: `${String(slot.x)}%`,
-                width: `${String(slot.width)}%`,
-              }}
-            >
-              <span className="truncate text-center font-num text-tiny text-text">
-                {d.valueLabel}
-              </span>
-              <div
-                className={bg[d.color ?? 'series-1']}
-                style={{ height: `${String(fraction * 80)}%`, minHeight: 1 }}
-              />
-            </div>
-          );
-        })}
-      </div>
-      <div aria-hidden="true" className="relative h-4">
-        {data.map((d, i) => {
-          const slot = slots[i];
-          if (slot === undefined) return null;
-          return (
-            <span
-              key={d.id}
-              className="absolute truncate text-center font-num text-tiny text-text-muted"
-              style={{
-                left: `${String(slot.x)}%`,
-                width: `${String(slot.width)}%`,
-              }}
-            >
-              {d.xLabel}
+      <div
+        aria-hidden="true"
+        style={track}
+        className="grid min-h-(--h) flex-1 grid-flow-col items-end gap-x-2 border-b border-outline pt-4 font-num text-[0.6563rem]"
+      >
+        {data.map((d) => (
+          <div
+            key={d.id}
+            className={cn('relative min-h-px', bg[d.color ?? 'primary'])}
+            style={{
+              height: `${String(Math.min(1, Math.max(0, d.fraction)) * HEADROOM * 100)}%`,
+            }}
+          >
+            <span className="absolute inset-x-0 bottom-full truncate text-center whitespace-nowrap text-text">
+              {d.valueLabel}
             </span>
-          );
-        })}
+          </div>
+        ))}
+      </div>
+      <div
+        aria-hidden="true"
+        style={track}
+        className="mt-[3px] grid gap-x-2 text-center font-num text-[0.6563rem] text-text-muted"
+      >
+        {data.map((d) => (
+          <span key={d.id} className="truncate">
+            {d.xLabel}
+          </span>
+        ))}
       </div>
     </div>
   );

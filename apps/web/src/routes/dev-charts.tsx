@@ -112,8 +112,6 @@ export function ChartsGallery() {
             showHeat
             showDue
             weekdays={['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']}
-            gridLabel="Grid"
-            tableLabel="Table"
             headers={{ date: 'Date', spent: 'Spent', due: 'Due' }}
             dateLabel={(date) => date}
             markNames={{ b: 'bill', i: 'IOU', $: 'payday' }}

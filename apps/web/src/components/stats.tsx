@@ -8,17 +8,33 @@ export type Stat = Readonly<{
   icon?: ComponentType<IconProps>;
   figure: ReactNode;
   sub?: ReactNode;
-  bar?: Readonly<{ fraction: number; label: string }>;
+  bar?: Readonly<{
+    fraction: number;
+    label: string;
+    /** The fill: `positive` by default. */
+    fillClassName?: string;
+  }>;
   /** Edge colour of the primary (first) stat. */
   tone?: 'positive' | 'primary' | 'neutral';
-  /** The figure in `negative`, for an amount owed. */
-  figureTone?: 'negative';
+  /** The figure in `negative` (an amount owed) or `positive` (income). */
+  figureTone?: 'negative' | 'positive';
 }>;
 
 /** Four stat tiles: 2 × 2 on compact, in a row from medium. */
-export function Stats({ stats }: { stats: readonly Stat[] }) {
+export function Stats({
+  stats,
+  className,
+}: {
+  stats: readonly Stat[];
+  className?: string;
+}) {
   return (
-    <div className="grid grid-cols-2 border-t border-l medium:grid-cols-4">
+    <div
+      className={cn(
+        'grid grid-cols-2 border-t border-l medium:grid-cols-4',
+        className,
+      )}
+    >
       {stats.map(
         ({ label, icon: Icon, figure, sub, bar, tone, figureTone }, index) => {
           const highlight = index === 0 && tone !== 'neutral';
@@ -48,6 +64,7 @@ export function Stats({ stats }: { stats: readonly Stat[] }) {
                   'my-0.5 truncate leading-[1.45] font-semibold',
                   highlight && tone === 'positive' && 'text-positive',
                   figureTone === 'negative' && 'text-negative',
+                  figureTone === 'positive' && 'text-positive',
                 )}
               >
                 {figure}
@@ -61,6 +78,9 @@ export function Stats({ stats }: { stats: readonly Stat[] }) {
                 <LeftBar
                   fraction={bar.fraction}
                   label={bar.label}
+                  {...(bar.fillClassName === undefined
+                    ? {}
+                    : { fillClassName: bar.fillClassName })}
                   className="mt-1"
                 />
               )}

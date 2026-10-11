@@ -131,7 +131,14 @@ test('the summary tab shows figures, categories, payees and days', async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByText(t('reportsSummary.stats.spent'), { exact: true }).first(),
+    page
+      .getByText(
+        t('reportsSummary.stats.spent', {
+          period: t('reportsShell.period.cycle'),
+        }),
+        { exact: true },
+      )
+      .first(),
   ).toBeVisible();
 
   // The daily average is the server's figure, not a dash.
@@ -207,7 +214,7 @@ test('the trends tab shows lines, comparison and totals', async ({
 }) => {
   await apiSignIn(page, baseURL ?? '');
   await page.goto('/reports/trends');
-  for (const key of ['linesTitle', 'vsTitle', 'totalsTitle'] as const) {
+  for (const key of ['linesTitle', 'vsTitle'] as const) {
     await expect(
       page.getByRole('region', { name: t(`reportsSummary.trends.${key}`) }),
     ).toBeVisible();
@@ -222,7 +229,11 @@ test('the trends tab shows lines, comparison and totals', async ({
   const versus = page.getByRole('region', {
     name: t('reportsSummary.trends.vsTitle'),
   });
-  await expect(versus.getByText('Household')).toBeVisible();
+  await expect(versus.getByText('Leisure')).toBeVisible();
+  // Household dwarfs the rest, so it is named under the chart instead.
+  await expect(
+    page.getByText(/Household \(.*\) left out of scale/),
+  ).toBeVisible();
 
   await noSidewaysScroll(page);
   expect(await tooSmall(page)).toEqual([]);

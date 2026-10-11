@@ -84,7 +84,6 @@ test('the plan tab shows budgets, savings rate and net worth', async ({
   await expect(region(page, t('reportsPlan.rate.title'))).toBeVisible();
   const worth = region(page, t('reportsPlan.netWorth.title'));
   await expect(worth.getByRole('img').first()).toBeVisible();
-  await expect(worth.getByText(/over \d+ days/)).toBeVisible();
   await expectAccessible(page);
   expect(await tooSmall(page)).toEqual([]);
 });

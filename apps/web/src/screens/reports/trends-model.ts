@@ -1,5 +1,6 @@
 import {
   money,
+  type CategoryIcon,
   type CategorySeriesView,
   type CategoryView,
   type Money,
@@ -7,8 +8,9 @@ import {
 import type { SeriesColor } from '@/components/bars';
 import type { ChartSeries, ChartTable, ChartTick } from '@/charts/chart';
 import type { ColumnDatum } from '@/charts/columns';
+import type { Point } from '@/charts/math';
 import { niceTicks } from '@/charts/math';
-import { formatDay } from '@/features/today/format';
+import { formatTerminalDate } from '@/features/today/format';
 import { categoryStyles } from '@/lib/category-style';
 import { formatMoney, formatMoneyShort } from '@/lib/format-money';
 import { t } from '@/messages/t';
@@ -23,7 +25,7 @@ import { fractionOf } from './summary-model.ts';
 export const TREND_PERIODS = 6;
 
 /** The categories drawn as lines; the rest stay in the table. */
-export const TREND_LINES = 5;
+export const TREND_LINES = 3;
 
 const NO_CATEGORY_COLOUR: SeriesColor = 'series-8';
 
@@ -43,7 +45,7 @@ export function periodLabels(
   series: CategorySeriesView,
   locale: string,
 ): string[] {
-  return series.periods.map((p) => formatDay(p.from, locale));
+  return series.periods.map((p) => formatTerminalDate(p.from, locale));
 }
 
 /** At most `max` tick positions across `count` points, first and last kept. */
@@ -58,6 +60,13 @@ export function tickIndexes(count: number, max = 6): number[] {
 
 export interface TrendLines {
   series: ChartSeries[];
+  /**
+   * The largest category when it dwarfs the rest (more than twice the
+   * next one's highest): it would flatten every other line, so it stays out
+   * of the scale and is named under the chart. Its latest figure is the
+   * server's.
+   */
+  leftOut: { name: string; amount: Money } | null;
   yTicks: ChartTick[];
   xTicks: ChartTick[];
   table: ChartTable;
@@ -73,9 +82,20 @@ export function trendLines(
   const names = new Map(categories.map((c) => [c.id, c.name]));
   const styles = categoryStyles(categories);
   const labels = periodLabels(series, locale);
-  const shown = series.groups.slice(0, limit);
+  const peakOf = (g: CategorySeriesView['groups'][number]) =>
+    g.points.reduce((a, p) => Math.max(a, p.amountMinor), 0);
+  const [first, second] = series.groups;
+  const dwarfs =
+    first !== undefined &&
+    second !== undefined &&
+    peakOf(first) > 2 * peakOf(second);
+  const leftOutGroup = dwarfs ? first : undefined;
+  const shown = series.groups.slice(dwarfs ? 1 : 0, (dwarfs ? 1 : 0) + limit);
+  const lastPoint = (g: CategorySeriesView['groups'][number]) =>
+    g.points[g.points.length - 1];
   const lines = shown.map((group): ChartSeries => {
     const id = group.categoryId ?? 'none';
+    const end = lastPoint(group);
     return {
       id,
       label: nameOf(group.categoryId, names),
@@ -84,19 +104,31 @@ export function trendLines(
           ? undefined
           : styles.get(group.categoryId)?.colour) ?? NO_CATEGORY_COLOUR,
       points: group.points.map((p, x) => ({ x, y: p.amountMinor })),
+      ...(end === undefined
+        ? {}
+        : { endLabel: formatMoney(end, 'symbol', locale) }),
     };
   });
   const high = lines
     .flatMap((l) => l.points.map((p) => p.y))
     .reduce((a, b) => Math.max(a, b), 0);
   const currency = currencyOf(series);
+  const leftOutLast =
+    leftOutGroup === undefined ? undefined : lastPoint(leftOutGroup);
   return {
     series: lines,
+    leftOut:
+      leftOutGroup === undefined || leftOutLast === undefined
+        ? null
+        : {
+            name: nameOf(leftOutGroup.categoryId, names),
+            amount: leftOutLast,
+          },
     // Axis positions, rounded; not amounts anyone is told they have.
     yTicks:
       currency === undefined
         ? []
-        : niceTicks(0, high, 3).map((value) => ({
+        : niceTicks(0, high, 5).map((value) => ({
             value,
             label: formatMoneyShort(money(value, currency), locale),
           })),
@@ -129,11 +161,14 @@ export interface VersusRow {
   key: string;
   name: string;
   colour: SeriesColor;
+  icon: CategoryIcon | null;
   /** The selected period's spending. */
   current: Money;
   /** The period before; null when there is none. */
   previous: Money | null;
   movement: Movement | null;
+  /** The category's spending in every period, oldest first, for a sparkline. */
+  points: readonly Point[];
 }
 
 /**
@@ -161,8 +196,13 @@ export function versusRows(
           (group.categoryId === null
             ? undefined
             : styles.get(group.categoryId)?.colour) ?? NO_CATEGORY_COLOUR,
+        icon:
+          (group.categoryId === null
+            ? undefined
+            : styles.get(group.categoryId)?.icon) ?? null,
         current,
         previous,
+        points: group.points.map((p, x) => ({ x, y: p.amountMinor })),
         movement:
           previous === null
             ? null
@@ -198,7 +238,7 @@ export function totalsColumns(
       fraction: fractionOf(total.amountMinor, peak),
       valueLabel: formatMoneyShort(total, locale),
       xLabel: labels[i] ?? '',
-      color: i === last ? ('series-1' as const) : ('series-3' as const),
+      color: i === last ? ('series-4' as const) : ('primary' as const),
     })),
     rows: series.totals.map((total, i) => [
       labels[i] ?? '',

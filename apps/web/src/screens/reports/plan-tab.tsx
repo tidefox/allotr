@@ -1,32 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
-import { Amount } from '@/components/amount';
-import { Bar, SkeletonTile } from '@/components/bars';
+import { useMemo, useState } from 'react';
+import { SkeletonTile } from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
-import { Grid, Tile } from '@/components/layout';
-import { Row } from '@/components/row';
+import { Grid, Stack, Tile } from '@/components/layout';
+import type { RowColumn } from '@/components/row-columns';
 import { EmptyState } from '@/components/states';
-import { Chart } from '@/charts/chart';
+import { Chart, ChartLegend } from '@/charts/chart';
 import { Columns } from '@/charts/columns';
-import { formatDay } from '@/features/today/format';
+import { formatDay, formatTerminalDate } from '@/features/today/format';
+import {
+  IconLineChartLine,
+  IconPieChart2Line,
+  IconSafe2Line,
+} from '@/generated/icons';
 import { formatMoney } from '@/lib/format-money';
 import { budgetsQuery } from '@/lib/budgets';
-import { cyclesQuery } from '@/lib/ledger';
+import { categoriesQuery, cyclesQuery } from '@/lib/ledger';
 import { netWorthQuery } from '@/lib/plan';
 import { t } from '@/messages/t';
-import { netWorthChart, worthDays } from '@/features/net-worth/model';
+import { worthDays } from '@/features/net-worth/model';
+import { BudgetLine } from '../budget/budget-line.tsx';
+import { budgetRows, periodPace } from '../dashboard/tiles/budgets.ts';
 import { recentCycles } from './cycles-model.ts';
-import { PeriodMenu } from './period-menu.tsx';
-import { budgetRows, rateColumns } from './plan-model.ts';
+import { PeriodToolbar } from './period-menu.tsx';
+import { rateColumns, worthChart } from './plan-model.ts';
+import { tabGridClass } from './summary-tab.tsx';
 import { useReportRange } from './use-report-range.ts';
 
 const locale = 'en';
-
-const columns = [
-  { width: 'minmax(0,1fr)' },
-  { width: '4.5rem' },
-  { width: '5.5rem' },
-  { width: '5.5rem', from: 'medium' },
-] as const;
 
 function Failed({ retry }: { retry: () => void }) {
   return (
@@ -43,24 +44,49 @@ function Failed({ retry }: { retry: () => void }) {
 // the rates cover the newest cycles.
 export function PlanTab() {
   return (
-    <>
-      <PeriodMenu />
-      <Grid>
+    <Stack className="min-h-full">
+      <PeriodToolbar />
+      <Grid className={tabGridClass}>
         <BudgetTile />
         <RateTile />
         <NetWorthTile />
       </Grid>
-    </>
+    </Stack>
   );
 }
 
+// Lead, icon, name, bar, spent, left; phones drop the left column and
+// narrow the bar (the budget rows of the locked design, without actions).
+const budgetColumns: readonly RowColumn[] = [
+  { width: '1.5rem' },
+  { width: '1.125rem' },
+  { width: 'minmax(0, 1fr)' },
+  { width: 'minmax(3.75rem, 2.4fr)', at: { compact: 'minmax(2.25rem, 1fr)' } },
+  { width: '9ch' },
+  { width: '9ch', from: 'medium' },
+];
+
 function BudgetTile() {
   const status = useQuery(budgetsQuery);
-  const rows = status.data === undefined ? [] : budgetRows(status.data.budgets);
+  const categories = useQuery(categoriesQuery);
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+  const rows = useMemo(
+    () =>
+      status.data === undefined
+        ? []
+        : budgetRows(status.data, categories.data?.categories ?? []),
+    [status.data, categories.data],
+  );
+  const shown = rows.filter(
+    (row) =>
+      (row.role !== 'child' && row.role !== 'last-child') ||
+      !folded.has(row.group),
+  );
+  const pace = status.data === undefined ? null : periodPace(status.data);
   return (
     <Tile
       title={t('reportsPlan.budget.title')}
-      subtitle={t('reportsPlan.budget.subtitle')}
+      icon={IconPieChart2Line}
       span={2}
       bodyClassName="px-0 pb-0"
     >
@@ -82,25 +108,43 @@ function BudgetTile() {
           hint={t('reportsPlan.budget.emptyHint')}
         />
       ) : (
-        rows.map((row) => (
-          <Row
-            key={row.key}
-            columns={columns}
-            cells={[
-              <span key="n" className="font-sans">
-                {row.name}
-              </span>,
-              <Bar
-                key="b"
-                value={row.fraction}
-                over={row.over}
-                label={t('reportsPlan.budget.barLabel', { name: row.name })}
-              />,
-              <Amount key="s" amount={row.budget.spent} />,
-              <Amount key="p" amount={row.budget.planned} />,
-            ]}
-          />
-        ))
+        <>
+          {shown.map((row) => (
+            <BudgetLine
+              key={row.id}
+              row={row}
+              pace={pace?.fraction}
+              expanded={!folded.has(row.group)}
+              onToggle={() => {
+                setFolded((current) => {
+                  const next = new Set(current);
+                  if (!next.delete(row.group)) next.add(row.group);
+                  return next;
+                });
+              }}
+              foldLabel={t('budgetBudgets.tree.fold', { name: row.name })}
+              setAsideLabel={t('budgetBudgets.tree.setAside')}
+              barLabel={t('reportsPlan.budget.barLabel', { name: row.name })}
+              columns={budgetColumns}
+              className="border-b-0"
+            />
+          ))}
+          {pace === null ? null : (
+            <ChartLegend
+              className="px-3"
+              items={[
+                {
+                  label: t('budgetBudgets.tree.pace', {
+                    day: pace.day,
+                    length: pace.length,
+                  }),
+                  mark: 'tick',
+                  color: 'bg-text',
+                },
+              ]}
+            />
+          )}
+        </>
       )}
     </Tile>
   );
@@ -109,34 +153,47 @@ function BudgetTile() {
 function RateTile() {
   const cycles = useQuery(cyclesQuery);
   const list = cycles.data?.cycles;
+  const open = list?.[0];
   return (
     <Tile
       title={t('reportsPlan.rate.title')}
+      icon={IconSafe2Line}
       subtitle={t('reportsPlan.rate.subtitle')}
-      bodyClassName="px-0"
+      bodyClassName="flex flex-col"
     >
       {cycles.isError ? (
-        <div className="px-3">
-          <Failed
-            retry={() => {
-              void cycles.refetch();
-            }}
-          />
-        </div>
+        <Failed
+          retry={() => {
+            void cycles.refetch();
+          }}
+        />
       ) : list === undefined ? (
-        <div className="px-3">
-          <SkeletonTile />
-        </div>
+        <SkeletonTile />
       ) : list.length === 0 ? (
         <EmptyState
           title={t('reportsPlan.rate.emptyTitle')}
           hint={t('reportsPlan.rate.emptyHint')}
         />
       ) : (
-        <Columns
-          label={t('reportsPlan.rate.summary')}
-          data={rateColumns(recentCycles(list), locale)}
-        />
+        <>
+          <Columns
+            height={130}
+            label={t('reportsPlan.rate.summary')}
+            data={rateColumns(recentCycles(list), locale)}
+          />
+          {open === undefined || open.closedOn !== null ? null : (
+            <ChartLegend
+              items={[
+                {
+                  label: t('reportsPlan.rate.inProgress', {
+                    cycle: formatTerminalDate(open.openedOn, locale),
+                  }),
+                  mark: 'none',
+                },
+              ]}
+            />
+          )}
+        </>
       )}
     </Tile>
   );
@@ -156,13 +213,13 @@ function NetWorthTile() {
   const first = data?.series[0];
   const last = data?.series[data.series.length - 1];
   const chart =
-    data === undefined ? undefined : netWorthChart(data.series, locale);
+    data === undefined ? undefined : worthChart(data.series, locale);
   return (
     <Tile
       title={t('reportsPlan.netWorth.title')}
-      subtitle={t('reportsPlan.netWorth.subtitle')}
+      icon={IconLineChartLine}
       span="full"
-      bodyClassName="px-0"
+      bodyClassName="flex flex-col"
     >
       {ready && range === null ? (
         <EmptyState
@@ -170,64 +227,52 @@ function NetWorthTile() {
           hint={t('reportsShell.noCycle')}
         />
       ) : worth.isError ? (
-        <div className="px-3">
-          <Failed
-            retry={() => {
-              void worth.refetch();
-            }}
-          />
-        </div>
+        <Failed
+          retry={() => {
+            void worth.refetch();
+          }}
+        />
       ) : data === undefined || chart === undefined ? (
-        <div className="px-3">
-          <SkeletonTile />
-        </div>
+        <SkeletonTile />
       ) : first === undefined || last === undefined ? (
         <EmptyState
           title={t('reportsPlan.netWorth.emptyTitle')}
           hint={t('reportsPlan.netWorth.emptyHint')}
         />
       ) : (
-        <>
-          <div className="px-3 pt-2">
-            <div className="text-stat font-semibold">
-              <Amount amount={data.amount} locale={locale} />
-            </div>
-            <p className="num truncate text-small text-text-muted">
-              <Amount amount={data.change} kind="change" locale={locale} />{' '}
-              {t('reportsPlan.netWorth.change', { days: data.series.length })}
-            </p>
-          </div>
-          <Chart
-            label={t('reportsPlan.netWorth.summary', {
-              days: data.series.length,
-              end: formatMoney(data.amount, 'symbol', locale),
-              change: formatMoney(data.change, 'symbol', locale),
-            })}
-            series={[
-              {
-                id: 'net-worth',
-                label: t('reportsPlan.netWorth.total'),
-                color: 'series-1',
-                points: chart.points,
-                area: true,
-                endLabel: formatMoney(last.amount, 'symbol', locale),
-              },
-            ]}
-            yTicks={chart.yTicks}
-            xTicks={chart.xTicks}
-            table={{
-              caption: t('reportsPlan.netWorth.caption'),
-              headers: [
-                t('reportsPlan.netWorth.day'),
-                t('reportsPlan.netWorth.total'),
-              ],
-              rows: data.series.map((p) => [
-                formatDay(p.date, locale),
-                formatMoney(p.amount, 'symbol', locale),
-              ]),
-            }}
-          />
-        </>
+        <Chart
+          label={t('reportsPlan.netWorth.summary', {
+            days: data.series.length,
+            end: formatMoney(data.amount, 'symbol', locale),
+            change: formatMoney(data.change, 'symbol', locale),
+          })}
+          series={[
+            {
+              id: 'net-worth',
+              label: t('reportsPlan.netWorth.total'),
+              color: 'series-1',
+              points: chart.points,
+              area: true,
+              endLabel: formatMoney(last.amount, 'symbol', locale),
+            },
+          ]}
+          yTicks={chart.yTicks}
+          xTicks={chart.xTicks}
+          height={170}
+          grow
+          className="px-0"
+          table={{
+            caption: t('reportsPlan.netWorth.caption'),
+            headers: [
+              t('reportsPlan.netWorth.day'),
+              t('reportsPlan.netWorth.total'),
+            ],
+            rows: data.series.map((p) => [
+              formatDay(p.date, locale),
+              formatMoney(p.amount, 'symbol', locale),
+            ]),
+          }}
+        />
       )}
     </Tile>
   );

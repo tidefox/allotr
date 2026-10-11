@@ -1,49 +1,57 @@
 import { describe, expect, it } from 'vitest';
-import type { BudgetView, CycleSummaryView } from '@allotr/shared';
-import { budgetRows, rateColumns } from './plan-model.ts';
+import type { CycleSummaryView, NetWorthView } from '@allotr/shared';
+import { rateColumns, worthChart } from './plan-model.ts';
 
-const usd = (amountMinor: number) =>
-  ({ amountMinor, currency: 'USD' }) as BudgetView['left'];
+const day = (date: string, amountMinor: number) => ({
+  date,
+  amount: { amountMinor, currency: 'USD' },
+});
 
-function budget(
-  id: string,
-  spent: number,
-  left: number,
-  overflow = 0,
-): BudgetView {
-  return {
-    id,
-    name: id,
-    planned: usd(spent + left),
-    spent: usd(spent),
-    left: usd(left),
-    overflow: usd(overflow),
-  } as BudgetView;
-}
-
-describe('budgetRows', () => {
-  it('sizes each bar from spent against what it had', () => {
-    const rows = budgetRows([
-      budget('food', 25_000, 75_000),
-      budget('fun', 12_000, -2_000, 2_000),
-      budget('idle', 0, 5_000),
+describe('worthChart', () => {
+  it('puts a gridline on round steps that cover the line', () => {
+    const series = [
+      day('2026-10-01', 7_800_00),
+      day('2026-10-04', 9_120_00),
+      day('2026-10-07', 9_900_00),
+      day('2026-10-10', 10_509_60),
+    ] as NetWorthView['series'];
+    const chart = worthChart(series, 'en');
+    const values = chart.yTicks.map((t) => t.value);
+    expect(Math.min(...values)).toBeLessThanOrEqual(7_800_00);
+    expect(Math.max(...values)).toBeGreaterThanOrEqual(10_509_60);
+    expect(chart.xTicks.map((t) => t.label)).toEqual([
+      'oct 01',
+      'oct 04',
+      'oct 07',
+      'oct 10',
     ]);
-    expect(rows.map((r) => r.fraction)).toEqual([0.25, 1, 0]);
-    expect(rows.map((r) => r.over)).toEqual([false, true, false]);
-    expect(rows[0]?.budget.spent).toEqual(usd(25_000));
+  });
+
+  it('has no ticks without days', () => {
+    expect(worthChart([], 'en')).toEqual({
+      points: [],
+      yTicks: [],
+      xTicks: [],
+    });
   });
 });
 
 describe('rateColumns', () => {
   it('shows the server rate and no bar without income', () => {
     const cycles = [
-      { openedOn: '2026-08-01', savingsRate: 2000 },
-      { openedOn: '2026-09-01', savingsRate: 500 },
-      { openedOn: '2026-10-01', savingsRate: null },
-      { openedOn: '2026-11-01', savingsRate: -300 },
+      { openedOn: '2026-08-01', closedOn: '2026-09-01', savingsRate: 2000 },
+      { openedOn: '2026-09-01', closedOn: '2026-10-01', savingsRate: 500 },
+      { openedOn: '2026-10-01', closedOn: '2026-11-01', savingsRate: null },
+      { openedOn: '2026-11-01', closedOn: null, savingsRate: -300 },
     ] as CycleSummaryView[];
     const cols = rateColumns(cycles, 'en');
     expect(cols.map((c) => c.valueLabel)).toEqual(['20%', '5%', '–', '-3%']);
     expect(cols.map((c) => c.fraction)).toEqual([1, 0.25, 0, 0]);
+    expect(cols.map((c) => c.color)).toEqual([
+      'positive',
+      'positive',
+      'positive',
+      'primary',
+    ]);
   });
 });
