@@ -32,6 +32,8 @@ const accounts: AccountView[] = [...currencies, 'USD2'].map((name) => ({
   creditLimit: null,
   creditAvailable: null,
   dueDay: null,
+  minPayment: null,
+  subtype: null,
   nextDueOn: null,
 }));
 

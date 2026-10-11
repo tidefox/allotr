@@ -258,10 +258,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit
   accounts' balances summed in the default currency (negative while money
   is owed), with `missingRates` like the other totals. A credit (liability)
-  account may carry `creditLimit` and `dueDay`; the read adds
+  account may carry `creditLimit`, `dueDay` and `minPayment`; the read adds
   `creditAvailable` (limit plus balance) and `nextDueOn`, and the totals add
   `creditLimit` and `creditAvailable` over the open credit accounts that have
-  a limit (domain.md "Credit limit and due day"). Both are display only.
+  a limit (domain.md "Credit limit and due day"). All are display only. Any
+  account may also carry a free-text `subtype`.
 - `GET /v1/budgets` adds `parents`: for each parent category with a budget
   on at least one child, the planned, spent and left totals of the category
   budgets under it, in the default currency. It also adds `totals` (planned,
@@ -433,7 +434,7 @@ adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
 `packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
-`creditLimit` and `dueDay` (credit accounts only) and pools `colour` and
+`creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype` and pools `colour` and
 `icon`, which round-trip through export and import. IOUs travel as their own entry
 kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
 dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`

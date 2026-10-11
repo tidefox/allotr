@@ -154,6 +154,8 @@ async function views(
       'icon',
       'credit_limit_minor',
       'due_day',
+      'min_payment_minor',
+      'subtype',
     ])
     .where('user_id', '=', userId)
     .where('system_role', 'is', null)
@@ -193,6 +195,11 @@ async function views(
       creditLimit: limit,
       creditAvailable: limit === null ? null : creditAvailable(limit, balance),
       dueDay: row.due_day,
+      minPayment:
+        row.min_payment_minor === null
+          ? null
+          : money(row.min_payment_minor, row.currency),
+      subtype: row.subtype,
       nextDueOn:
         row.due_day === null ? null : creditNextDue(row.due_day, today),
       lastReconciledOn: reconciled.get(row.id) ?? null,
@@ -292,30 +299,46 @@ export type CreateAccount = Readonly<{
   icon?: AccountView['icon'] | undefined;
   creditLimit?: Money | undefined;
   dueDay?: number | undefined;
+  minPayment?: Money | undefined;
+  subtype?: string | undefined;
 }>;
 
 function creditOnly(): RequestProblem {
   return new RequestProblem(
     400,
     'credit_only',
-    'A credit limit and a due day belong to credit accounts.',
+    'A credit limit, a due day and a minimum payment belong to credit accounts.',
   );
 }
 
-/** A limit is in the account's currency; limit and due day are credit only. */
+/**
+ * A limit and a minimum payment are in the account's currency; limit, due day
+ * and minimum payment are credit only.
+ */
 function checkCredit(
   kind: string,
   currency: string,
-  limit: Money | null | undefined,
-  dueDay: number | null | undefined,
+  credit: Readonly<{
+    limit: Money | null | undefined;
+    dueDay: number | null | undefined;
+    minPayment: Money | null | undefined;
+  }>,
 ): void {
-  if (limit == null && dueDay == null) return;
+  const { limit, dueDay, minPayment } = credit;
+  if (limit == null && dueDay == null && minPayment == null) return;
   if (kind !== 'liability') throw creditOnly();
   if (limit != null && limit.currency !== currency) {
     throw new RequestProblem(
       400,
       'currency_mismatch',
       `The credit limit must be in ${currency}.`,
+    );
+  }
+  if (minPayment != null && minPayment.currency !== currency) {
+    throw new RequestProblem(
+      400,
+      'currency_mismatch',
+      `The minimum payment must be in ${currency}.`,
     );
   }
 }
@@ -342,7 +365,11 @@ export async function insertAccount(
       `The opening balance must be in ${input.currency}.`,
     );
   }
-  checkCredit(input.kind, input.currency, input.creditLimit, input.dueDay);
+  checkCredit(input.kind, input.currency, {
+    limit: input.creditLimit,
+    dueDay: input.dueDay,
+    minPayment: input.minPayment,
+  });
   const id = randomUUID();
   const at = now.toISOString();
   await uniquely(
@@ -361,6 +388,8 @@ export async function insertAccount(
           icon: input.icon ?? null,
           credit_limit_minor: input.creditLimit?.amountMinor ?? null,
           due_day: input.dueDay ?? null,
+          min_payment_minor: input.minPayment?.amountMinor ?? null,
+          subtype: input.subtype ?? null,
           created_at: at,
           updated_at: at,
         })
@@ -428,6 +457,10 @@ export type UpdateAccount = Readonly<{
   creditLimit?: Money | null | undefined;
   /** Null clears it. */
   dueDay?: number | null | undefined;
+  /** Null clears it. */
+  minPayment?: Money | null | undefined;
+  /** Null clears it. */
+  subtype?: string | null | undefined;
 }>;
 
 export async function updateAccount(
@@ -439,7 +472,11 @@ export async function updateAccount(
 ): Promise<AccountView> {
   await db.transaction().execute(async (trx) => {
     const row = await findOwned(trx, userId, id);
-    checkCredit(row.kind, row.currency, input.creditLimit, input.dueDay);
+    checkCredit(row.kind, row.currency, {
+      limit: input.creditLimit,
+      dueDay: input.dueDay,
+      minPayment: input.minPayment,
+    });
     const fields = {
       ...(input.name === undefined ? {} : { name: input.name }),
       ...(input.colour === undefined ? {} : { colour: input.colour }),
@@ -448,6 +485,10 @@ export async function updateAccount(
         ? {}
         : { credit_limit_minor: input.creditLimit?.amountMinor ?? null }),
       ...(input.dueDay === undefined ? {} : { due_day: input.dueDay }),
+      ...(input.minPayment === undefined
+        ? {}
+        : { min_payment_minor: input.minPayment?.amountMinor ?? null }),
+      ...(input.subtype === undefined ? {} : { subtype: input.subtype }),
     };
     if (Object.keys(fields).length > 0) {
       await uniquely(

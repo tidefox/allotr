@@ -56,6 +56,13 @@ export const accountSchema = z.object({
   /** The day of the month the payment is due (1 to 31); credit only. */
   dueDay: z.number().int().min(1).max(31).nullable(),
   /**
+   * The least the card asks for each month, in its currency; credit only.
+   * Shown, never acted on: it creates no bill.
+   */
+  minPayment: moneySchema.nullable(),
+  /** What sort of account it is in the owner's words; null when not set. */
+  subtype: z.string().nullable(),
+  /**
    * The next date on or after the user's today that falls on `dueDay`, in a
    * month shorter than the day the last day of that month. Informational: a
    * due day creates no bill. Null without a due day.
@@ -121,6 +128,11 @@ const creditLimitSchema = moneySchema.refine((m) => m.amountMinor > 0, {
   error: 'The limit must be more than zero',
 });
 const dueDaySchema = z.number().int().min(1).max(31);
+/** A minimum payment is more than zero and in the account's currency. */
+const minPaymentSchema = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'The minimum payment must be more than zero',
+});
+const subtypeSchema = z.string().trim().min(1).max(100);
 
 export const createAccountBodySchema = z
   .object({
@@ -134,6 +146,9 @@ export const createAccountBodySchema = z
     creditLimit: creditLimitSchema.optional(),
     /** Credit (liability) accounts only; informational, creates no bill. */
     dueDay: dueDaySchema.optional(),
+    /** Credit (liability) accounts only; in the account's currency. */
+    minPayment: minPaymentSchema.optional(),
+    subtype: subtypeSchema.optional(),
     /** Posted against Equity:Opening; negative for a debt. */
     openingBalance: moneySchema.optional(),
     /** The opening balance's date; today when omitted. */
@@ -142,9 +157,12 @@ export const createAccountBodySchema = z
   .refine(
     (body) =>
       body.kind === 'liability' ||
-      (body.creditLimit === undefined && body.dueDay === undefined),
+      (body.creditLimit === undefined &&
+        body.dueDay === undefined &&
+        body.minPayment === undefined),
     {
-      error: 'A credit limit and a due day belong to credit accounts',
+      error:
+        'A credit limit, a due day and a minimum payment belong to credit accounts',
       path: ['kind'],
     },
   );
@@ -162,6 +180,10 @@ export const updateAccountBodySchema = z
     creditLimit: creditLimitSchema.nullable().optional(),
     /** Credit accounts only; null clears it. */
     dueDay: dueDaySchema.nullable().optional(),
+    /** Credit accounts only; null clears it. In the account's currency. */
+    minPayment: minPaymentSchema.nullable().optional(),
+    /** Null clears it. */
+    subtype: subtypeSchema.nullable().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

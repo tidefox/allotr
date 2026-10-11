@@ -20,7 +20,9 @@ export interface Accounts {
   icon: string | null;
   id: string;
   kind: string;
+  min_payment_minor: number | null;
   name: string;
+  subtype: string | null;
   system_role: string | null;
   updated_at: string;
   user_id: string;

@@ -223,6 +223,15 @@ export function toBundle(snapshot: Snapshot): Bundle {
               ),
             }),
         ...(a.dueDay === null ? {} : { dueDay: a.dueDay }),
+        ...(a.minPaymentMinor === null
+          ? {}
+          : {
+              minPayment: money(
+                a.minPaymentMinor,
+                a.currency as BundleAccount['currency'],
+              ),
+            }),
+        ...(a.subtype === null ? {} : { subtype: a.subtype }),
       },
     ]),
   );

@@ -19,6 +19,8 @@ function account(over: Partial<AccountView> = {}): AccountView {
     creditLimit: null,
     creditAvailable: null,
     dueDay: null,
+    minPayment: null,
+    subtype: null,
     nextDueOn: null,
     lastReconciledOn: null,
     reconcileDue: false,
