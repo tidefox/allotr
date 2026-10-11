@@ -21,7 +21,7 @@ export type RowProps = {
   columns: readonly RowColumn[];
   cells: readonly ReactNode[];
   selected?: boolean;
-  /** Tall lists (transactions) use the 46 px row. */
+  /** Tall lists (the mockup's `rows tall`) use the 46 px row. */
   tall?: boolean;
   onPress?: () => void;
   className?: string;
