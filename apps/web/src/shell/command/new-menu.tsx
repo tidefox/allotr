@@ -130,8 +130,12 @@ export function NewMenu() {
  */
 function NewFormHost() {
   const { newForm, newFormPreset, intoAccountId } = useCommandState();
-  const accounts = useQuery(accountsQuery).data?.accounts;
-  const categories = useQuery(categoriesQuery).data?.categories;
+  // Only while a form is open, so a user held to 2FA enrolment (and every
+  // page load) sends no ledger calls from here.
+  const open = newForm !== null;
+  const accounts = useQuery({ ...accountsQuery, enabled: open }).data?.accounts;
+  const categories = useQuery({ ...categoriesQuery, enabled: open }).data
+    ?.categories;
 
   if (newForm === null) return null;
   if (newForm === 'bill') return <BillSheet onClose={closeNewForm} />;
