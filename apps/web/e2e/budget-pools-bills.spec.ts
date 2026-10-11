@@ -197,3 +197,48 @@ test('the bills sub-tab shows the timeline and the unpaid bill', async ({
   await expectAccessible(page);
   expect(await smallTargets(page)).toEqual([]);
 });
+
+test('a pool is created and renamed, and a taken name is refused', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await page.goto('/budget/pools');
+  await page
+    .getByRole('button', { name: t('budgetPools.newPool.action') })
+    .click();
+  const sheet = page.getByRole('dialog');
+  const name = sheet.getByRole('textbox', { name: t('budgetPools.edit.name') });
+  const save = sheet.getByRole('button', { name: t('budgetPools.style.save') });
+
+  // A duplicate of an existing pool is refused in place.
+  await name.fill('Travel');
+  await save.click();
+  await expect(sheet.getByText(t('budgetPools.edit.nameTaken'))).toBeVisible();
+  await expectAccessible(page);
+
+  await name.fill('Holiday');
+  await save.click();
+  await expect(sheet).toBeHidden();
+  await expect(
+    page.getByRole('region', { name: 'Holiday', exact: true }),
+  ).toBeVisible();
+
+  await page
+    .getByRole('button', {
+      name: t('budgetPools.renameOf', { name: 'Holiday' }),
+    })
+    .click();
+  await sheet
+    .getByRole('textbox', { name: t('budgetPools.edit.name') })
+    .fill('Trips');
+  await sheet
+    .getByRole('button', { name: t('budgetPools.style.save') })
+    .click();
+  await expect(sheet).toBeHidden();
+  await expect(
+    page.getByRole('region', { name: 'Trips', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Holiday' })).toHaveCount(0);
+  expect(await smallTargets(page)).toEqual([]);
+});
