@@ -1,9 +1,14 @@
 // Messages for the Settings categories tab (WP10). Spread into `en` as `settingsCategories`.
 export const settingsCategories = {
+  title: 'categories',
+  count: '{total} · {parents} parents',
+  budget: 'budget {amount}',
+  rollsUp: 'rolls up',
+  subCount: '{count} sub',
   kinds: {
-    expense: 'Expense',
-    income: 'Income',
-    transfer: 'Transfer',
+    expense: 'expense',
+    income: 'income',
+    transfer: 'transfer',
   },
   tiles: {
     expense: {
@@ -21,14 +26,14 @@ export const settingsCategories = {
     income: 'Income categories, drag to reorder',
     transfer: 'Transfer categories, drag to reorder',
   },
-  add: '+ category',
-  addSub: '+ sub',
+  add: 'category',
+  addSub: 'sub',
   addSubOf: 'Add a subcategory to {name}',
   foldOf: 'Subcategories of {name}',
   paycheckTag: 'paycheck',
   none: 'No categories yet',
-  noneHint: 'Add one with + category above.',
-  hint: 'Drag a row to reorder it, or press and hold on a touch screen. The arrows, or Move up and Move down in the row menu, do the same.',
+  noneHint: 'Add one with [+ category].',
+  hint: 'Drag a row to reorder it among its siblings (long-press on touch). Parents fold with ▾; Move up, Move down and Move under… are in the row menu.',
   saveFailed: 'Could not save the order. It was put back.',
   up: 'Move {name} up',
   down: 'Move {name} down',
