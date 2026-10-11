@@ -62,6 +62,11 @@ Text may use only roles fitted for text (4.5:1): `text`, `text-muted`,
 `warning`, `danger`, `outline` and the series roles are fitted for non-text
 contrast (3:1), so they colour borders, marks, bars and fills, never text.
 
+`text-muted` is fitted on the page surfaces only (`canvas`, `chrome`,
+`card`, `card-raised`), so it keeps the palette's dim tone instead of being
+pushed towards `text` by the tinted roles. Text on a container tint or an
+accent fill uses `text` or the matching `on-*` role, never `text-muted`.
+
 The default themes, Catppuccin Latte and Mocha, set their own roles in the
 family file: a blue `primary` and `ring`, `base` text on the accent, yellow
 `warning` and `reserved`, and red `negative`. Other families keep the
