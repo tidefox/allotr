@@ -35,3 +35,21 @@ export function goalMonthlyNeeded(
     goal.remaining.currency,
   );
 }
+
+/** A full bar, in basis points. */
+const FULL_BP = 10_000n;
+
+/**
+ * How far along a goal is, in basis points: `saved` over `target`, rounded
+ * down so a goal never reads as reached before it is, and clamped to
+ * 0..10 000 (nothing saved or a debt is 0, a surplus is still 10 000).
+ * Both amounts are in the goal's currency. A target that is not positive
+ * has no progress to speak of, so 0.
+ */
+export function goalProgressBp(saved: Money, target: Money): number {
+  const goal = BigInt(target.amountMinor);
+  const held = BigInt(saved.amountMinor);
+  if (goal <= 0n || held <= 0n) return 0;
+  const bp = (held * FULL_BP) / goal;
+  return Number(bp > FULL_BP ? FULL_BP : bp);
+}

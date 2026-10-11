@@ -300,7 +300,8 @@ export {
   type DueReminder,
   type ReminderKind,
 } from './projections/reminders.ts';
-export { goalMonthlyNeeded } from './projections/goals.ts';
+export { goalMonthlyNeeded, goalProgressBp } from './projections/goals.ts';
+export { creditAvailable, creditNextDue } from './projections/credit.ts';
 export { savingsRate } from './projections/savings-rate.ts';
 export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';

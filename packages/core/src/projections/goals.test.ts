@@ -1,7 +1,7 @@
 import { monthsBetween, money } from '@allotr/shared';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { goalMonthlyNeeded } from './goals.ts';
+import { goalMonthlyNeeded, goalProgressBp } from './goals.ts';
 import { day } from './testing.ts';
 
 const today = day('2026-10-11');
@@ -86,6 +86,53 @@ describe('goalMonthlyNeeded', () => {
           expect(each * months).toBeGreaterThanOrEqual(remaining);
           expect((each - 1) * months).toBeLessThan(remaining);
           expect(needed?.currency).toBe('USD');
+        },
+      ),
+    );
+  });
+});
+
+describe('goalProgressBp', () => {
+  it('is the saved share of the target in basis points, rounded down', () => {
+    expect(goalProgressBp(money(25_000, 'USD'), money(100_000, 'USD'))).toBe(
+      2_500,
+    );
+    expect(goalProgressBp(money(1, 'USD'), money(3, 'USD'))).toBe(3_333);
+    // 99.99 % is not 100 %.
+    expect(goalProgressBp(money(99_999, 'USD'), money(100_000, 'USD'))).toBe(
+      9_999,
+    );
+    expect(
+      goalProgressBp(money(9_999_999, 'KWD'), money(10_000_000, 'KWD')),
+    ).toBe(9_999);
+    expect(goalProgressBp(money(5_000, 'JPY'), money(10_000, 'JPY'))).toBe(
+      5_000,
+    );
+  });
+
+  it('is 0 with nothing or a debt saved and 10 000 once reached or past', () => {
+    expect(goalProgressBp(money(0, 'USD'), money(100, 'USD'))).toBe(0);
+    expect(goalProgressBp(money(-500, 'USD'), money(100, 'USD'))).toBe(0);
+    expect(goalProgressBp(money(100, 'USD'), money(100, 'USD'))).toBe(10_000);
+    expect(goalProgressBp(money(250, 'USD'), money(100, 'USD'))).toBe(10_000);
+  });
+
+  it('stays within 0..10 000, rises with savings and is exact at the ends (property)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: -1_000_000, max: 4_000_000_000 }),
+        fc.integer({ min: 1, max: 2_000_000_000 }),
+        fc.integer({ min: 0, max: 1_000_000 }),
+        (saved, target, more) => {
+          const bp = goalProgressBp(money(saved, 'USD'), money(target, 'USD'));
+          expect(Number.isInteger(bp)).toBe(true);
+          expect(bp).toBeGreaterThanOrEqual(0);
+          expect(bp).toBeLessThanOrEqual(10_000);
+          expect(
+            goalProgressBp(money(saved + more, 'USD'), money(target, 'USD')),
+          ).toBeGreaterThanOrEqual(bp);
+          // 10 000 only once the target is held.
+          expect(bp === 10_000).toBe(saved >= target);
         },
       ),
     );
