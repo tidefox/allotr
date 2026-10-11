@@ -1,6 +1,11 @@
 import { localDate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { formatDay, formatTerminalDay } from './format.ts';
+import {
+  formatDay,
+  formatTerminalDate,
+  formatTerminalDay,
+  formatTerminalWeekday,
+} from './format.ts';
 
 describe('formatTerminalDay', () => {
   it('reads weekday, month and a two-digit day in lower case', () => {
@@ -15,5 +20,12 @@ describe('formatTerminalDay', () => {
 describe('formatDay', () => {
   it('reads month and day', () => {
     expect(formatDay(localDate('2026-04-01'), 'en')).toBe('Apr 1');
+  });
+});
+
+describe('formatTerminalDate and formatTerminalWeekday', () => {
+  it('read a lower-case month or weekday and a two-digit day', () => {
+    expect(formatTerminalDate(localDate('2026-10-02'), 'en')).toBe('oct 02');
+    expect(formatTerminalWeekday(localDate('2026-10-10'), 'en')).toBe('sat 10');
   });
 });

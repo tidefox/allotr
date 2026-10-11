@@ -16,7 +16,12 @@ import {
   type IconProps,
 } from '@/generated/icons';
 import { cn } from '@/lib/utils';
-import { menuButtonClass, stripButtonClass } from './buttons.tsx';
+import {
+  Brackets,
+  bracketClass,
+  menuButtonClass,
+  stripButtonClass,
+} from './buttons.tsx';
 import { menuPresentation } from './menu-placement.ts';
 import { Sheet } from './sheet.tsx';
 import { useFrameWidth } from './use-frame-width.ts';
@@ -127,9 +132,10 @@ export type MenuButtonProps = {
   /**
    * `bordered` (default): `label · value ▾` in a box. `strip`: a
    * full-height strip button showing icon, value and ▾, with the label as
-   * its accessible name; the value hides on phones.
+   * its accessible name; the value hides on phones. `bracket`: `[⋮]`, the
+   * icon in brackets with the label as its accessible name.
    */
-  variant?: 'bordered' | 'strip';
+  variant?: 'bordered' | 'strip' | 'bracket';
   /** Where the popover opens; the command line opens upwards. */
   placement?: 'bottom start' | 'top end';
   children: ReactNode;
@@ -161,11 +167,23 @@ export function MenuButton({
   };
 
   const strip = variant === 'strip';
+  const bracket = variant === 'bracket';
   // The strip face shows only the value, so the name carries both (the
   // visible text stays part of the name, WCAG 2.5.3).
   const stripName = value === undefined ? label : `${label}: ${value}`;
-  const faceClass = strip ? stripButtonClass : menuButtonClass;
-  const face = strip ? (
+  const faceClass = strip
+    ? stripButtonClass
+    : bracket
+      ? bracketClass
+      : menuButtonClass;
+  const named = strip
+    ? { 'aria-label': stripName }
+    : bracket
+      ? { 'aria-label': label }
+      : {};
+  const face = bracket ? (
+    <Brackets icon={Icon} />
+  ) : strip ? (
     <>
       {Icon === undefined ? null : <Icon className="size-[1.15em] shrink-0" />}
       {value === undefined ? null : (
@@ -230,7 +248,7 @@ export function MenuButton({
           }}
           aria-haspopup="menu"
           aria-expanded={open}
-          {...(strip ? { 'aria-label': stripName } : {})}
+          {...named}
           className={cn(faceClass, className)}
         >
           {face}
@@ -243,10 +261,7 @@ export function MenuButton({
   }
   return (
     <MenuTrigger isOpen={open} onOpenChange={setOpen}>
-      <Button
-        {...(strip ? { 'aria-label': stripName } : {})}
-        className={cn(faceClass, className)}
-      >
+      <Button {...named} className={cn(faceClass, className)}>
         {face}
       </Button>
       <Popover

@@ -14,9 +14,42 @@ import { cn } from '@/lib/utils';
 
 type Tone = 'default' | 'destructive';
 
+/** The `[label]` face: classes shared by bracket buttons, links and menus. */
+export const bracketClass =
+  'press inline-flex min-h-hit min-w-hit shrink-0 items-center justify-center px-[3px] whitespace-nowrap text-primary compact:text-[0.7188rem]';
+
+/** `[` icon label `]`: the brackets in `outline`, decorative. */
+export function Brackets({
+  icon: Icon,
+  children,
+}: {
+  icon?: ComponentType<IconProps> | undefined;
+  children?: ReactNode;
+}) {
+  return (
+    <>
+      <span aria-hidden="true" className="text-outline">
+        [
+      </span>
+      {Icon === undefined ? null : (
+        <Icon
+          className={cn(
+            'size-3.5 shrink-0',
+            children === undefined ? null : 'mr-[3px]',
+          )}
+        />
+      )}
+      {children === undefined ? null : <span>{children}</span>}
+      <span aria-hidden="true" className="text-outline">
+        ]
+      </span>
+    </>
+  );
+}
+
 /** `[pay]`: brackets in `outline`, label in `primary` (`negative` if destructive). */
 export function BracketButton({
-  icon: Icon,
+  icon,
   tone = 'default',
   className,
   children,
@@ -31,22 +64,13 @@ export function BracketButton({
     <Button
       {...props}
       className={cn(
-        'press inline-flex min-h-hit min-w-hit shrink-0 items-center justify-center px-[3px] whitespace-nowrap compact:text-[0.7188rem]',
-        tone === 'destructive' ? 'text-negative' : 'text-primary',
+        bracketClass,
+        tone === 'destructive' && 'text-negative',
         'disabled:cursor-not-allowed disabled:text-text-muted',
         className,
       )}
     >
-      <span aria-hidden="true" className="text-outline">
-        [
-      </span>
-      {Icon === undefined ? null : (
-        <Icon className="mr-[3px] size-3.5 shrink-0" />
-      )}
-      <span>{children}</span>
-      <span aria-hidden="true" className="text-outline">
-        ]
-      </span>
+      <Brackets icon={icon}>{children}</Brackets>
     </Button>
   );
 }
@@ -138,7 +162,7 @@ export function ToggleGroup<Id extends string>({
   );
 }
 
-type TagTone = 'muted' | 'warning' | 'negative' | 'positive';
+export type TagTone = 'muted' | 'warning' | 'negative' | 'positive';
 
 // The border takes the label's colour, except muted (an `outline` border)
 // and warning, whose colour is not fitted for text: it keeps a `text` label.
