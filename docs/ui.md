@@ -420,7 +420,7 @@ settings, so no ledger read is made that the server would refuse.
 | Sub-tab | Content |
 |---|---|
 | budgets | Allocation (full width) · budgets (2 wide): the dashboard's budget rows with separators and an action column (`[+ sub]` on a parent header, `[⋮]` on a budget), the server's totals below in muted rows (daily budgets left, held, spent outside any budget, free), and the pace legend; `[+ budget]` and `[plan next period]` (the payday plan) in the title bar · cover this period: one row per source that covered an entry (`/v1/budgets/covers`), then the first three in the cover order with what each has left |
-| pools | One tile per pool (daily checkbox, balance, "left of" bar for on-budget pools, accounts with sparklines), plus "how the daily number works" |
+| pools | Two columns from 720. One tile per pool (kind icon, `on-budget` / `off-budget`, the primary edge when it counts; `[+ account]`): a `counts toward daily` checkbox and the balance, a "left of" bar in the pool's series colour with "X left of Y this cycle" for on-budget pools, and its accounts as tree rows (kind icon, name, sparkline, balance; a row opens the account) · "how the daily number works" (full width): a short paragraph and the dashboard's formula line |
 | bills | Timeline tile with set aside, paid and next · upcoming (with a "set aside of" bar) · paid this cycle |
 | goals | One tile per goal: figure, bar, plan line, progress chart |
 | ious | People list (owes you, you owe, settled, with tags) + person detail (history; repay, due date, write off) |

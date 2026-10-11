@@ -83,10 +83,9 @@ test('the pools sub-tab shows a tile per pool and the formula', async ({
     page.getByRole('region', { name: 'Travel', exact: true }),
   ).toBeVisible();
   await expect(budget.getByText('Everyday')).toBeVisible();
-  await expect(
-    page.getByRole('region', { name: t('budgetPools.how.title') }),
-  ).toBeVisible();
-  await expect(page.getByText(/on-budget .* − bills .* = free/)).toBeVisible();
+  const how = page.getByRole('region', { name: t('budgetPools.how.title') });
+  await expect(how).toBeVisible();
+  await expect(how).toContainText(/on-budget.*bills.*free/);
   await expectAccessible(page);
   expect(await smallTargets(page)).toEqual([]);
 });

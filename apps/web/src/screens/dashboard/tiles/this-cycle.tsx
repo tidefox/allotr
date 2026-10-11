@@ -12,6 +12,7 @@ import { formatDay, formatTerminalDate } from '@/features/today/format';
 import { formatMoney, formatMoneyShort } from '@/lib/format-money';
 import { cycleDaysQuery, todayQuery } from '@/lib/ledger';
 import { IconFundsLine } from '@/generated/icons';
+import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { TileFailed } from './tile-failed.tsx';
 import { cycleTicks, cycleView } from './this-cycle-model.ts';
@@ -208,12 +209,14 @@ export function ThisCycleTile() {
  * bills (and what is owed to people) is free money; less set-aside holds,
  * over the days left, is the daily number.
  */
-function Formula({
+export function Formula({
   figures,
   daysLeft,
+  className,
 }: {
   figures: TodayView;
   daysLeft: number;
+  className?: string;
 }) {
   const f = (key: FormulaKey) => t(`dashboardTiles.thisCycle.formula.${key}`);
   const term = (key: string, label: string, value: Money | null) => (
@@ -242,7 +245,12 @@ function Formula({
             : []),
         ];
   return (
-    <p className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 border-t pt-2 text-[0.75rem] text-text-muted compact:block compact:truncate compact:text-[0.6875rem] compact:[&>span]:mr-2.5">
+    <p
+      className={cn(
+        'mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 border-t pt-2 text-[0.75rem] text-text-muted compact:block compact:truncate compact:text-[0.6875rem] compact:[&>span]:mr-2.5',
+        className,
+      )}
+    >
       {terms}
       <span>
         {f('divide')} <b className="font-medium text-text">{daysLeft}</b>{' '}
