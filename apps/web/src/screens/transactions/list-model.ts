@@ -11,9 +11,10 @@ import { entryCategoryIds } from '@/lib/entry-categories';
 import { type CategoryStyle } from '@/lib/category-style';
 import { formatMoney, formatSigned } from '@/lib/format-money';
 import { t } from '@/messages/t';
-import type { Group } from './search-params.ts';
+import { isDateSort, type Group, type Sort } from './search-params.ts';
 
 type EntryTotals = TransactionListView['totals'];
+type ListEntry = TransactionListView['transactions'][number];
 
 // The Transactions list as sections of rows. Every figure comes from the
 // server (`totals`, `groups`, `dayTotals`); this file only orders, labels
@@ -31,6 +32,8 @@ export interface TxRow {
   account: string;
   /** Signed from the user's side; unsigned for a transfer. */
   amount: Money | null;
+  /** The bill this payment settled, by name. */
+  bill: string | null;
   moves: boolean;
   /** Deleted and shown anyway, or an undo. */
   undo: boolean;
@@ -68,7 +71,7 @@ export function entryCategoryLabel(
 }
 
 export function txRows(
-  transactions: readonly TransactionView[],
+  transactions: readonly ListEntry[],
   accounts: readonly AccountView[],
   categories: readonly CategoryView[],
 ): TxRow[] {
@@ -91,6 +94,7 @@ export function txRows(
         source === undefined ? null : entryCategoryLabel(source, categories),
       account: row.accounts.join(' → '),
       amount: row.amount,
+      bill: entry?.billId == null ? null : (entry.billName ?? null),
       moves: row.moves,
       undo: row.kind === 'reversal',
       style: row.style,
@@ -131,12 +135,6 @@ export function summaryParts(totals: EntryTotals): string[] {
 
 const UNCATEGORISED = '__none__';
 
-function categoryKey(entry: TransactionView | undefined): string {
-  return entry === undefined
-    ? UNCATEGORISED
-    : (entryCategoryIds(entry)[0] ?? UNCATEGORISED);
-}
-
 /** A category group's own figure: what was spent, else what came in. */
 export function groupTotal(totals: EntryTotals): string | null {
   const spent = totals.byCurrency
@@ -150,19 +148,21 @@ export function groupTotal(totals: EntryTotals): string | null {
 }
 
 export function sections(input: {
-  transactions: readonly TransactionView[];
+  transactions: readonly ListEntry[];
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
   group: Group;
+  sort: Sort;
   /** The first page's figures; they cover every matching entry. */
   groups: TransactionListView['groups'];
   /** Every loaded page's day nets. */
   dayTotals: TransactionListView['dayTotals'];
   locale: string;
 }): TxSection[] {
-  const { transactions, accounts, categories, group, locale } = input;
+  const { transactions, accounts, categories, group, sort, locale } = input;
   const rows = txRows(transactions, accounts, categories);
-  if (group === 'none') {
+  // Days mean nothing when the list runs by amount: one flat list.
+  if (group === 'none' || (group === 'day' && !isDateSort(sort))) {
     return [{ key: 'all', title: null, total: null, rows }];
   }
   if (group === 'day') {
@@ -189,27 +189,32 @@ export function sections(input: {
   const totals = new Map(input.groups.map((g) => [g.key ?? UNCATEGORISED, g]));
   const found = new Map<string, TxSection>();
   rows.forEach((row, index) => {
-    const key = categoryKey(transactions[index]);
-    let section = found.get(key);
-    if (section === undefined) {
-      const category = byId.get(key);
-      const parent =
-        category?.parentId == null ? undefined : byId.get(category.parentId);
-      const server = totals.get(key);
-      section = {
-        key,
-        title:
-          category === undefined
-            ? t('transactions.list.uncategorised')
-            : parent === undefined
-              ? category.name
-              : `${parent.name} › ${category.name}`,
-        total: server === undefined ? null : groupTotal(server),
-        rows: [],
-      };
-      found.set(key, section);
+    // The server says which groups an entry is counted in: a split is in
+    // each of its categories, like the group totals.
+    const keys = transactions[index]?.groupKeys ?? [];
+    for (const groupKey of keys.length === 0 ? [null] : keys) {
+      const key = groupKey ?? UNCATEGORISED;
+      let section = found.get(key);
+      if (section === undefined) {
+        const category = byId.get(key);
+        const parent =
+          category?.parentId == null ? undefined : byId.get(category.parentId);
+        const server = totals.get(key);
+        section = {
+          key,
+          title:
+            category === undefined
+              ? t('transactions.list.uncategorised')
+              : parent === undefined
+                ? category.name
+                : `${parent.name} › ${category.name}`,
+          total: server === undefined ? null : groupTotal(server),
+          rows: [],
+        };
+        found.set(key, section);
+      }
+      section.rows.push(row);
     }
-    section.rows.push(row);
   });
   return [...found.values()].sort((a, b) => {
     if (a.key === UNCATEGORISED) return 1;

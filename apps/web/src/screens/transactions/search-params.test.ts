@@ -100,3 +100,21 @@ describe('payee', () => {
     expect(searchOf(viewOf(search)).payee).toBe('Corner Cafe');
   });
 });
+
+describe('sort', () => {
+  it('keeps the four orders, leaving the default out of the address', () => {
+    for (const sort of ['date-asc', 'amount-desc', 'amount-asc'] as const) {
+      expect(validateTransactionsSearch({ sort }).sort).toBe(sort);
+    }
+    expect(validateTransactionsSearch({ sort: 'date-desc' }).sort).toBe(
+      undefined,
+    );
+    expect(validateTransactionsSearch({ sort: 'size' }).sort).toBeUndefined();
+    expect(validateTransactionsSearch({ sort: 3 }).sort).toBeUndefined();
+  });
+  it('round-trips through the view', () => {
+    expect(viewOf({}).sort).toBe('date-desc');
+    expect(searchOf(viewOf({ sort: 'amount-asc' })).sort).toBe('amount-asc');
+    expect(searchOf({ sort: 'date-desc' }).sort).toBeUndefined();
+  });
+});

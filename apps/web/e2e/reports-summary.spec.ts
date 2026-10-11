@@ -35,6 +35,14 @@ async function tooSmall(page: Page) {
     );
 }
 
+/** A stat tile: its label's cell, holding the label and the figure. */
+function statTile(page: Page, key: 'income' | 'saved' | 'average') {
+  return page
+    .getByText(t(`reportsSummary.stats.${key}`), { exact: true })
+    .first()
+    .locator('xpath=../..');
+}
+
 async function noSidewaysScroll(page: Page) {
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
@@ -122,6 +130,11 @@ test('the summary tab shows figures, categories, payees and days', async ({
     page.getByText(t('reportsSummary.stats.spent'), { exact: true }).first(),
   ).toBeVisible();
 
+  // The daily average is the server's figure, not a dash.
+  const average = statTile(page, 'average');
+  await expect(average).toContainText(/\d/);
+  await expect(average).not.toContainText('—');
+
   await noSidewaysScroll(page);
   expect(await tooSmall(page)).toEqual([]);
   await expectAccessible(page);
@@ -169,6 +182,12 @@ test('the period menu is kept in the address', async ({ page, baseURL }) => {
   await expectAccessible(page);
 
   await page.goto('/reports?period=month');
+  // A month shows income and saved from the report, not a placeholder.
+  for (const key of ['income', 'saved', 'average'] as const) {
+    const tile = statTile(page, key);
+    await expect(tile).toContainText(/\d/);
+    await expect(tile).not.toContainText('—');
+  }
   await expect(
     page.getByRole('region', { name: t('reportsSummary.categories.title') }),
   ).toBeVisible();

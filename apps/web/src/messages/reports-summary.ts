@@ -10,7 +10,7 @@ export const reportsSummary = {
     income: 'Income',
     saved: 'Saved',
     average: 'Daily average',
-    needsServer: 'Not sent for this period',
+    missingRates: 'No rate for {currencies}',
   },
   categories: {
     title: 'By category',

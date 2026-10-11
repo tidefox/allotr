@@ -118,3 +118,17 @@ export function hidesDayEntries(
     view.accounts.length > 0
   );
 }
+
+/**
+ * Moves are off when the list hides entries of a day, and for any order but
+ * newest first: the row listed below another is then not the entry that
+ * follows it in time (or there are no days at all, sorted by amount).
+ */
+export function reorderBlocked(
+  view: Pick<
+    TransactionsView,
+    'q' | 'payee' | 'type' | 'categories' | 'accounts' | 'sort'
+  >,
+): boolean {
+  return hidesDayEntries(view) || view.sort !== 'date-desc';
+}

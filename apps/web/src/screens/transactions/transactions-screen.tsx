@@ -27,7 +27,7 @@ import {
 } from './filter-model.ts';
 import { sections, summaryParts } from './list-model.ts';
 import { periodRange } from './period.ts';
-import { hidesDayEntries, reorderableDays, stepsFor } from './reorder-model.ts';
+import { reorderBlocked, reorderableDays, stepsFor } from './reorder-model.ts';
 import {
   searchOf,
   validateTransactionsSearch,
@@ -85,6 +85,7 @@ export function TransactionsScreen() {
     payee: view.payee,
     type: view.type,
     group: view.group,
+    sort: view.sort,
     accountId: view.accounts.length === 0 ? undefined : view.accounts.join(','),
     categoryId:
       view.categories.length === 0 ? undefined : view.categories.join(','),
@@ -158,15 +159,16 @@ export function TransactionsScreen() {
       accounts: allAccounts,
       categories: allCategories,
       group: view.group,
+      sort: view.sort,
       groups: pages[0]?.groups ?? [],
       dayTotals: pages.flatMap((page) => page.dayTotals),
       locale,
     });
-  }, [pages, allAccounts, allCategories, view.group]);
+  }, [pages, allAccounts, allCategories, view.group, view.sort]);
 
-  // A filter or search can hide entries of a day it shows, so the row
-  // listed below another is not its neighbour in time: no moves then.
-  const moveBlocked = hidesDayEntries(view);
+  // A filter or search can hide entries of a day it shows, and only the
+  // newest-first order lists a day the way moves read it: no moves then.
+  const moveBlocked = reorderBlocked(view);
   const dayRows = useMemo(
     () => reorderableDays(model ?? [], view.group, list.hasNextPage),
     [model, view.group, list.hasNextPage],

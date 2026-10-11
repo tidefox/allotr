@@ -1,15 +1,14 @@
 import {
   money,
   type AccountView,
-  type BudgetView,
   type CategoryView,
   type LocalDate,
   type TransactionView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
-  budgetFor,
   categoryPath,
+  coverLine,
   coverParts,
   entryDetail,
   isCovered,
@@ -220,77 +219,19 @@ describe('entryDetail', () => {
 });
 
 const line = (overrides: Partial<CoverLine>): CoverLine => ({
-  entryId: 'e-1',
-  date: '2026-03-11' as LocalDate,
   budgetId: 'b-food',
+  budgetName: 'Food',
   loan: false,
   amount: usd(450),
   own: usd(450),
   covers: [],
   uncovered: usd(0),
   overridden: false,
+  leftAfter: usd(5000),
   ...overrides,
 });
 
 describe('cover helpers', () => {
-  const budgets = [{ id: 'b-food', name: 'Food' }] as BudgetView[];
-
-  const period = { from: '2026-03-01', to: '2026-04-01' };
-  const withBudgets = [
-    {
-      id: 'b-food',
-      name: 'Food',
-      target: { kind: 'category', categoryId: 'c-food' },
-    },
-    {
-      id: 'b-fun',
-      name: 'Fun',
-      target: { kind: 'category', categoryId: 'c-fun' },
-    },
-  ] as BudgetView[];
-
-  it('finds the budget a cover line names', () => {
-    expect(
-      budgetFor(entry({}), line({}), budgets, categories, period)?.name,
-    ).toBe('Food');
-  });
-
-  it('falls back to the category, then its parent', () => {
-    expect(
-      budgetFor(
-        entry({ categoryId: 'c-fun' }),
-        undefined,
-        withBudgets,
-        categories,
-        period,
-      )?.name,
-    ).toBe('Fun');
-    expect(
-      budgetFor(entry({}), undefined, withBudgets, categories, period)?.name,
-    ).toBe('Food');
-  });
-
-  it('has no budget outside the period or without a category', () => {
-    expect(
-      budgetFor(
-        entry({ occurredOn: '2026-02-27' as LocalDate }),
-        undefined,
-        withBudgets,
-        categories,
-        period,
-      ),
-    ).toBeUndefined();
-    expect(
-      budgetFor(
-        entry({ categoryId: null }),
-        undefined,
-        withBudgets,
-        categories,
-        period,
-      ),
-    ).toBeUndefined();
-  });
-
   it('is not covered when the own budget paid everything', () => {
     expect(isCovered(line({}))).toBe(false);
   });
@@ -304,5 +245,19 @@ describe('cover helpers', () => {
     expect(coverParts(paid)).toHaveLength(1);
     expect(isCovered(line({ uncovered: usd(50) }))).toBe(true);
     expect(isCovered(line({ overridden: true }))).toBe(true);
+  });
+
+  it('keeps only sources that paid something', () => {
+    const idle = line({
+      covers: [{ source: 'buffer', name: 'Buffer', amount: usd(0) }],
+    });
+    expect(coverParts(idle)).toEqual([]);
+  });
+
+  it('picks the first line with cover for the cover sheet', () => {
+    const short = line({ uncovered: usd(50) });
+    expect(coverLine([line({}), short])).toBe(short);
+    expect(coverLine([line({})])).toBeUndefined();
+    expect(coverLine(undefined)).toBeUndefined();
   });
 });

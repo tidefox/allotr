@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   dropMove,
   hidesDayEntries,
+  reorderBlocked,
   reorderableDays,
   stepMove,
   stepsFor,
@@ -135,5 +136,22 @@ describe('hidesDayEntries', () => {
     expect(hidesDayEntries({ ...none, type: 'expense' })).toBe(true);
     expect(hidesDayEntries({ ...none, categories: ['c'] })).toBe(true);
     expect(hidesDayEntries({ ...none, accounts: ['a'] })).toBe(true);
+  });
+});
+
+describe('reorderBlocked', () => {
+  const view = {
+    q: undefined,
+    payee: undefined,
+    type: undefined,
+    categories: [],
+    accounts: [],
+    sort: 'date-desc' as const,
+  };
+  it('allows moves only newest first and unfiltered', () => {
+    expect(reorderBlocked(view)).toBe(false);
+    expect(reorderBlocked({ ...view, sort: 'date-asc' })).toBe(true);
+    expect(reorderBlocked({ ...view, sort: 'amount-desc' })).toBe(true);
+    expect(reorderBlocked({ ...view, q: 'a' })).toBe(true);
   });
 });

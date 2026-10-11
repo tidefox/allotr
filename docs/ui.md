@@ -305,12 +305,14 @@ settings, so no ledger read is made that the server would refuse.
   so a split shows under each of its categories), or none.
 - Rows: time, icon, payee (with a `bill` tag from `billId` / `billName`),
   `parent › category`, account, amount.
-- The sort menu sends `sort=date-desc|date-asc|amount-desc|amount-asc`. The
-  filter menu takes several accounts and categories (comma-separated
+- The sort menu sends `sort=date-desc|date-asc|amount-desc|amount-asc`; it is in
+  the URL (`?sort=`, default left out). By amount the list is flat (no day
+  headers or totals) and same-day reordering is off, as it is for `date-asc`.
+  The filter menu takes several accounts and categories (comma-separated
   `accountId` and `categoryId`).
 - Detail (`GET /v1/transactions/{id}`): icon and payee, amount, date,
-  category path, account, budget after this entry (bar, from `budget.lines[].leftAfter`
-  against the budget's amount), cover (`budget.lines[].covers`, in any
+  category path, account, budget left after this entry (text, from `budget.lines[].leftAfter`; no
+  bar, since a past period's budget amount is not sent), cover (`budget.lines[].covers`, in any
   period), source, history, other entries from the same payee, then edit ·
   split · cover · delete.
 - Lists over 200 rows are virtualised.

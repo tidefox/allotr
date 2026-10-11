@@ -6,7 +6,7 @@ import {
   useDragAndDrop,
 } from 'react-aria-components';
 import { Amount, type AmountKind } from '@/components/amount';
-import { BracketButton, Chip } from '@/components/buttons';
+import { BracketButton, Chip, Tag } from '@/components/buttons';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { SummaryLine } from '@/components/stats';
@@ -52,6 +52,9 @@ function rowCells(row: TxRow) {
         />
       )}
       <span className="truncate font-sans">{row.payee}</span>
+      {row.bill === null ? null : (
+        <Tag className="shrink-0">{t('transactions.list.billTag')}</Tag>
+      )}
     </span>,
     <span key="category" className="font-sans text-text-muted">
       {row.category ?? ''}
