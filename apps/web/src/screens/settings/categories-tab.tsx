@@ -111,7 +111,7 @@ export function CategoriesTab() {
   if (categories.isError) {
     return (
       <Stack className="h-full">
-        <Tile title={t('settingsCategories.tiles.expense.title')}>
+        <Tile title={t('settingsCategories.title')}>
           <TileFailed
             retry={() => {
               void categories.refetch();

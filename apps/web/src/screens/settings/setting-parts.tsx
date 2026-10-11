@@ -13,6 +13,7 @@ import {
   BracketButton,
   PrimaryButton,
   SettingRowFace,
+  Tag,
   settingRowClass,
 } from '@/components/buttons';
 import { MenuButton, MenuRadioItem, MenuSection } from '@/components/menu';
@@ -352,9 +353,9 @@ export function PlannedRow({ label, value }: { label: string; value: string }) {
 /** The mockup's `planned` tag (`tagp`): a small warning-toned outline. */
 export function PlannedTag() {
   return (
-    <span className="ml-1.5 border border-current px-1 align-[1px] text-[0.625rem] leading-none text-warning">
+    <Tag tone="warning" className="ml-1.5 align-[1px]">
       {t('settingsShell.planned')}
-    </span>
+    </Tag>
   );
 }
 

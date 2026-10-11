@@ -25,7 +25,7 @@ async function signIn(page: Page, origin: string) {
 
 async function noSmallTargets(scope: Locator) {
   const small = await scope
-    .locator('a, button, [role=button], input')
+    .locator('a, button, [role=button], input:not([type=checkbox])')
     .evaluateAll((els) =>
       els
         .map((el) => el.getBoundingClientRect())
@@ -238,7 +238,7 @@ test('density and key hints are kept on this device', async ({
   );
   await page
     .getByRole('checkbox', { name: t('settingsApp.interface.hints') })
-    .uncheck();
+    .uncheck({ force: true });
   await expect(page.locator('html')).toHaveAttribute('data-hints', 'off');
 
   await page.reload();

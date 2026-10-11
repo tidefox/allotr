@@ -10,17 +10,6 @@ export const settingsCategories = {
     income: 'income',
     transfer: 'transfer',
   },
-  tiles: {
-    expense: {
-      title: 'expense categories',
-      subtitle: 'What entries are spent on',
-    },
-    income: { title: 'Income categories', subtitle: 'Where money comes from' },
-    transfer: {
-      title: 'Transfer categories',
-      subtitle: 'Moves between your own accounts',
-    },
-  },
   lists: {
     expense: 'Expense categories, drag to reorder',
     income: 'Income categories, drag to reorder',
@@ -35,8 +24,6 @@ export const settingsCategories = {
   noneHint: 'Add one with [+ category].',
   hint: 'Drag a row to reorder it among its siblings (long-press on touch). Parents fold with ▾; Move up, Move down and Move under… are in the row menu.',
   saveFailed: 'Could not save the order. It was put back.',
-  up: 'Move {name} up',
-  down: 'Move {name} down',
   actionsOf: 'Actions for {name}',
   menu: {
     rename: 'Rename',
