@@ -63,7 +63,11 @@ export function Amount({
         className,
       )}
     >
-      {arrow === '' ? null : <span aria-hidden="true">{arrow} </span>}
+      {arrow === '' ? null : (
+        <span aria-hidden="true" className="mr-[2px] text-[0.85em]">
+          {arrow}
+        </span>
+      )}
       {text}
     </span>
   );

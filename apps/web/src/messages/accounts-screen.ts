@@ -23,7 +23,7 @@ export const accountsScreen = {
     },
   },
   list: {
-    title: 'Accounts',
+    title: 'accounts',
     subtitle: 'by pool',
     credit: 'Credit',
     noPool: 'No pool',
@@ -43,7 +43,7 @@ export const accountsScreen = {
     archive: 'Archive',
   },
   detail: {
-    title: 'Account',
+    title: 'account',
     close: 'Close account',
     pick: 'Pick an account',
     pickHint: 'Its balance, history and actions show here.',

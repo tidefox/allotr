@@ -2,7 +2,7 @@
 // `settingsPolicies`. Shared buttons live in `settingsMoney.common`.
 export const settingsPolicies = {
   payday: {
-    title: 'Payday plan',
+    title: 'payday plan',
     subtitle: 'what is set aside and how long it lasts',
     payFirst: 'Pay yourself first',
     payFirstHint: 'The savings line comes first on the payday sheet.',
@@ -41,7 +41,7 @@ export const settingsPolicies = {
     writeOffInvalid: 'Enter a whole number of days from 1 to 3650.',
   },
   entries: {
-    title: 'Entries',
+    title: 'entries',
     subtitle: 'what a new entry asks for',
     times: 'Time of day',
     timesHint: 'Times already recorded stay either way.',
@@ -52,7 +52,7 @@ export const settingsPolicies = {
     },
   },
   reports: {
-    title: 'Reports',
+    title: 'reports',
     subtitle: 'kept per user, on every device',
     period: 'Summary period',
     periodHint: 'What category summaries cover.',
@@ -62,7 +62,7 @@ export const settingsPolicies = {
     cardsOptions: { top: 'Top two', all: 'Every subcategory' },
   },
   tags: {
-    title: 'Tags',
+    title: 'tags',
     subtitle: 'free-form labels for entries',
     add: 'tag',
     addTitle: 'New tag',

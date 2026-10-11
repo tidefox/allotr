@@ -115,7 +115,9 @@ describe('styles.css', () => {
   it('uses the terminal fonts: Geist for text, Geist Mono for the interface', () => {
     expect(css).toContain("--font-ui: 'Geist Variable'");
     expect(css).toContain("--font-num: 'Geist Mono Variable'");
-    expect(css).toContain('--font-sans: var(--font-num);');
+    // The page defaults to the interface face; font-sans is content text.
+    expect(css).toContain('--default-font-family: var(--font-num);');
+    expect(css).toContain('--font-sans: var(--font-ui);');
   });
 });
 

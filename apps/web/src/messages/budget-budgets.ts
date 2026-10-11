@@ -3,7 +3,7 @@
 export const budgetBudgets = {
   cancel: 'Cancel',
   tree: {
-    title: 'Budgets',
+    title: 'budgets',
     subtitle: 'spent and left this period',
     add: '+ budget',
     addSub: '+ sub',
@@ -59,7 +59,7 @@ export const budgetBudgets = {
     failed: 'That did not work. Nothing was changed.',
   },
   cover: {
-    title: 'Cover this period',
+    title: 'cover this period',
     subtitle: 'who paid for overspending',
     shortfall: 'Overspent',
     fromFree: 'From free money',
@@ -71,7 +71,7 @@ export const budgetBudgets = {
     none: 'Nothing was overspent this period.',
   },
   order: {
-    title: 'Cover order',
+    title: 'cover order',
     subtitle: 'first to last',
     listLabel: 'Cover order',
     free: 'Free money',
@@ -84,7 +84,7 @@ export const budgetBudgets = {
     emptyHint: 'Free money and budgets appear here once they exist.',
   },
   next: {
-    title: 'What happens next',
+    title: 'what happens next',
     subtitle: 'try an overspend',
     intro: 'Pick a budget and an amount to see who would cover it.',
     budget: 'Budget',

@@ -39,7 +39,7 @@ export function TextField({
       <Input
         {...(placeholder === undefined ? {} : { placeholder })}
         {...(inputMode === undefined ? {} : { inputMode })}
-        className="h-8 w-full min-w-0 border border-outline bg-canvas px-2 font-sans text-small text-text aria-[invalid=true]:border-negative"
+        className="h-8 w-full min-w-0 border border-outline bg-canvas px-2 text-small text-text aria-[invalid=true]:border-negative"
       />
       {error === undefined ? null : (
         <Text slot="errorMessage" className="text-small text-negative">

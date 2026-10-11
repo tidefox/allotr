@@ -158,12 +158,18 @@ export function Tile({
         actions={actions}
         primary={primary}
       />
-      <div className={cn('flex-1 px-3 pb-2.5', bodyClassName)}>{children}</div>
+      <div className={cn('flex-1 px-3 pt-2 pb-2.5', bodyClassName)}>
+        {children}
+      </div>
     </section>
   );
 }
 
-/** The tile title bar: icon, title, muted subtitle, actions on the right. */
+/**
+ * The tile title bar (`ttl`): icon, title and a muted subtitle on one
+ * truncated line, actions on the right. A primary tile gets a 3 px
+ * `primary` edge and a `primary` title.
+ */
 export function TitleBar({
   id,
   title,
@@ -177,25 +183,31 @@ export function TitleBar({
   return (
     <header
       className={cn(
-        'flex h-bar min-w-0 items-center gap-2 overflow-hidden border-b bg-chrome px-3',
+        'flex h-bar min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b bg-chrome pr-1.5 pl-3 text-title',
         primary && 'border-l-[3px] border-l-primary pl-[calc(0.75rem-3px)]',
       )}
     >
-      {Icon === undefined ? null : (
-        <Icon className="size-4 shrink-0 text-text-muted" />
-      )}
-      <h2 id={id} className="min-w-0 truncate text-base font-semibold">
-        {title}
-      </h2>
-      {subtitle === undefined ? null : (
-        <span className="min-w-0 flex-1 truncate text-small text-text-muted">
-          {subtitle}
-        </span>
-      )}
+      <div className="min-w-0 truncate whitespace-nowrap">
+        {Icon === undefined ? null : (
+          <Icon
+            className={cn(
+              'mr-[7px] inline size-[1.15em] align-[-0.22em]',
+              primary ? 'text-primary' : 'text-text-muted',
+            )}
+          />
+        )}
+        <h2
+          id={id}
+          className={cn('inline font-semibold', primary && 'text-primary')}
+        >
+          {title}
+        </h2>
+        {subtitle === undefined ? null : (
+          <span className="text-text-muted"> {subtitle}</span>
+        )}
+      </div>
       {actions === undefined ? null : (
-        <div className="ml-auto flex min-w-0 shrink-[2] items-center gap-1">
-          {actions}
-        </div>
+        <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
       )}
     </header>
   );

@@ -8,6 +8,7 @@ import {
   IconArrowDownLine,
   IconArrowLeftRightLine,
   IconArrowUpLine,
+  IconWallet3Line,
 } from '@/generated/icons';
 import { iouQueryKeys } from '@/lib/ious';
 import {
@@ -72,7 +73,7 @@ export function CommandLine() {
     <section
       aria-label={t('shell.slots.command')}
       data-slot="command"
-      className="relative col-start-1 row-start-4 flex h-cmd items-stretch border-t bg-chrome medium:col-start-2"
+      className="relative col-start-1 row-start-4 flex h-cmd items-stretch border-t bg-canvas medium:col-start-2"
     >
       {logged === null ? null : (
         <div className="absolute inset-x-0 bottom-full">
@@ -109,7 +110,7 @@ export function CommandLine() {
         </div>
       )}
       <form
-        className="flex min-w-0 flex-1 items-center gap-2 px-3"
+        className="flex min-w-0 flex-1 items-stretch"
         onSubmit={(event) => {
           event.preventDefault();
           const outcome = submitLine(line);
@@ -120,7 +121,10 @@ export function CommandLine() {
           );
         }}
       >
-        <span aria-hidden="true" className="font-semibold text-primary">
+        <span
+          aria-hidden="true"
+          className="flex items-center pr-2 pl-3 font-bold text-primary"
+        >
           ›
         </span>
         <TextField
@@ -130,7 +134,7 @@ export function CommandLine() {
             setLine(value);
             setNote(null);
           }}
-          className="min-w-0 flex-1"
+          className="flex min-w-0 flex-1"
         >
           <Input
             ref={input}
@@ -138,25 +142,30 @@ export function CommandLine() {
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
-            className="h-hit w-full min-w-0 truncate bg-transparent text-base outline-none placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-ring"
+            className="h-full w-full min-w-0 truncate bg-canvas text-base outline-none placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-ring compact:text-[0.8125rem]"
           />
         </TextField>
         {note === null ? (
-          <span className="hidden shrink-0 gap-3 text-tiny text-text-muted medium:flex">
-            <span>{t('shell.command.hintLog')}</span>
-            <span>{t('shell.command.hintFocus')}</span>
+          <span
+            data-key-hints
+            className="hidden shrink-0 items-center pr-3 text-tiny whitespace-nowrap text-text-muted medium:flex"
+          >
+            {t('shell.command.hint')}
           </span>
         ) : (
           <span
             role="status"
-            className="min-w-0 shrink truncate text-small text-text-muted"
+            className="flex min-w-0 shrink items-center truncate pr-3 text-small text-text-muted"
           >
             {note}
           </span>
         )}
       </form>
-      <div className="flex shrink-0 items-center gap-2 pr-3">
+      <div className="flex shrink-0 items-stretch">
         <MenuButton
+          variant="strip"
+          placement="top end"
+          icon={IconWallet3Line}
           label={t('shell.command.into')}
           value={into?.name ?? t('shell.command.intoDefault')}
           title={t('shell.command.intoTitle')}
@@ -168,7 +177,7 @@ export function CommandLine() {
               typeof first === 'string' && first !== 'default' ? first : null,
             );
           }}
-          className="max-w-32 compact:max-w-24"
+          className="max-w-48"
         >
           <MenuRadioItem id="default" label={t('shell.command.intoDefault')} />
           {open.map((account) => (

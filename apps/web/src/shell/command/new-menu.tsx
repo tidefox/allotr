@@ -49,7 +49,7 @@ const kindIcons: Record<NewFormKind, ComponentType<IconProps>> = {
 };
 
 const triggerClass =
-  'inline-flex min-h-hit min-w-hit items-center justify-center gap-1 bg-primary px-3 text-small font-semibold text-on-primary hover:brightness-110 pressed:brightness-90';
+  'flex h-full min-w-10 items-center justify-center gap-1.5 bg-primary px-3 font-semibold whitespace-nowrap text-on-primary hover:brightness-110 pressed:brightness-90';
 
 /** The filled **+ new** menu (docs/ui.md §3): a popover, or a sheet on phones. */
 export function NewMenu() {
@@ -57,8 +57,8 @@ export function NewMenu() {
   const [open, setOpen] = useState(false);
   const face = (
     <>
-      <IconAddLine className="size-3.5" />
-      {t('shell.command.new')}
+      <IconAddLine className="size-[1.15em] shrink-0" />
+      <span className="compact:hidden">{t('shell.command.new')}</span>
     </>
   );
   const items = NEW_FORM_KINDS.map((kind) => (
@@ -89,6 +89,7 @@ export function NewMenu() {
       {sheet ? (
         <>
           <AriaButton
+            aria-label={t('shell.command.newTitle')}
             aria-haspopup="menu"
             aria-expanded={open}
             onPress={() => {
@@ -109,7 +110,12 @@ export function NewMenu() {
         </>
       ) : (
         <MenuTrigger isOpen={open} onOpenChange={setOpen}>
-          <AriaButton className={triggerClass}>{face}</AriaButton>
+          <AriaButton
+            aria-label={t('shell.command.newTitle')}
+            className={triggerClass}
+          >
+            {face}
+          </AriaButton>
           <Popover
             placement="top end"
             className="enter-pop min-w-[var(--trigger-width)] border border-outline bg-chrome text-text"

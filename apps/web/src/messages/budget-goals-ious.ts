@@ -8,7 +8,7 @@ export const budgetGoalsIous = {
   loadFailed: 'This could not be loaded.',
   saving: 'Saving…',
   goals: {
-    title: 'Goals',
+    title: 'goals',
     subtitle: {
       one: '{count} goal',
       other: '{count} goals',
@@ -58,7 +58,7 @@ export const budgetGoalsIous = {
     },
   },
   ious: {
-    title: 'People',
+    title: 'people',
     add: '+ IOU',
     showSettled: 'settled',
     hideSettled: 'hide settled',
@@ -81,7 +81,7 @@ export const budgetGoalsIous = {
     overdueTag: '{count}d late',
     writeOffTag: 'write-off',
     openMany: '{count} open',
-    detailTitle: 'Person',
+    detailTitle: 'person',
     pickOne: 'Pick a person to see their history.',
     closeDetail: 'Close',
     lent: 'Lent {amount} on {date}',

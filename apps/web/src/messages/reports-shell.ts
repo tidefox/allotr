@@ -4,7 +4,7 @@ export const reportsShell = {
   period: {
     label: 'Period',
     cycle: 'This cycle',
-    'last-cycle': 'Last cycle',
+    'last-cycle': 'last cycle',
     month: 'This month',
     'last-month': 'Last month',
   },

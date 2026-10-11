@@ -159,7 +159,15 @@ test('the shell lines up (docs/ui.md §10)', async ({ page, baseURL }, info) => 
     .evaluateAll((els) =>
       els.map((el) => Math.round(el.getBoundingClientRect().height)),
     );
-  for (const height of rows) expect(height).toBe(Math.round(strip.height));
+  // Sidebar rows match the title strip; rail buttons are 58 px.
+  const rem0 = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  const rowHeight =
+    viewport.width >= 1000
+      ? Math.round(strip.height)
+      : Math.round(3.625 * rem0);
+  for (const height of rows) expect(height).toBe(rowHeight);
 
   const settings = await box(page, '[data-slot=settings]');
   const command = await box(page, '[data-slot=command]');
@@ -270,7 +278,7 @@ test('payday and full nav names appear only from 1000 px', async ({
 
   const payday = page
     .locator('[data-slot=summary]')
-    .getByRole('link', { name: t('shell.summary.payday') });
+    .getByRole('link', { name: new RegExp(`^${t('shell.summary.payday')}`) });
   await expect(payday).toBeVisible({ visible: wide });
 
   // Below 1000 px the tab bar and rail show short labels, but each link is

@@ -48,12 +48,15 @@ html::-webkit-scrollbar {
   --fs-tiny: 0.6875rem;
   --lh-tiny: 1.15;
   --fs-big: 1.625rem;
-  --fs-stat: 1.375rem;
-  --fs-stat-sub: 1.125rem;
+  --fs-stat: 1.25rem;
+  --fs-stat-sub: 1.25rem;
   --fs-hero: 1.625rem;
   --fs-hero-sub: 1.1875rem;
+  --fs-pulse: 1.1875rem;
+  --fs-title: 0.75rem;
   --h-strip: 2.25rem;
   --h-bar: 2rem;
+  --h-status: 1.5rem;
   --h-row: 1.875rem;
   --h-cmd: 2.625rem;
   --h-tab: 2.875rem;
@@ -82,8 +85,10 @@ html::-webkit-scrollbar {
 
   --font-ui: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-num: 'Geist Mono Variable', ui-monospace, monospace;
-  /* Interface text is monospace; only content text opts into font-ui. */
-  --font-sans: var(--font-num);
+  /* Interface text is monospace (the page default); content text opts
+     into the proportional face with font-ui or its alias font-sans. */
+  --default-font-family: var(--font-num);
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-num);
 }
 
@@ -105,10 +110,15 @@ html::-webkit-scrollbar {
   --text-hero--line-height: 1;
   --text-hero-sub: var(--fs-hero-sub);
   --text-hero-sub--line-height: 1.05;
+  --text-pulse: var(--fs-pulse);
+  --text-pulse--line-height: 1.2;
+  --text-title: var(--fs-title);
+  --text-title--line-height: 1.45;
 
   /* Heights (docs/ui.md §2.3). */
   --spacing-strip: var(--h-strip);
   --spacing-bar: var(--h-bar);
+  --spacing-status: var(--h-status);
   --spacing-row: var(--h-row);
   --spacing-cmd: var(--h-cmd);
   --spacing-tab: var(--h-tab);
@@ -216,6 +226,7 @@ html::-webkit-scrollbar {
     --fs-stat-sub: 1.625rem;
     --fs-hero: 2.125rem;
     --fs-hero-sub: 1.4375rem;
+    --fs-pulse: 1.4375rem;
     --h-topbar: 6.5rem;
   }
 }
@@ -227,8 +238,10 @@ html::-webkit-scrollbar {
     --fs-big: 1.25rem;
     --fs-stat: 1.25rem;
     --fs-stat-sub: 1rem;
-    --fs-hero: 1.125rem;
+    --fs-hero: 1.25rem;
     --fs-hero-sub: 0.9375rem;
+    --fs-pulse: 1rem;
+    --fs-title: 0.7188rem;
     --h-strip: 2.125rem;
     --h-bar: 1.75rem;
     --h-row: 2.375rem;

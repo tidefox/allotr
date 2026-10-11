@@ -32,3 +32,28 @@ export function formatLongDay(date: LocalDate, locale: string): string {
   }
   return formatter.format(new Date(`${date}T00:00:00Z`));
 }
+
+const terminalFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * A calendar day as the shell's lower-case "fri oct 09": weekday, month and
+ * a two-digit day, in the user's locale; never shifted by zone.
+ */
+export function formatTerminalDay(date: LocalDate, locale: string): string {
+  let formatter = terminalFormatters.get(locale);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
+      month: 'short',
+      day: '2-digit',
+      timeZone: 'UTC',
+    });
+    terminalFormatters.set(locale, formatter);
+  }
+  return formatter
+    .formatToParts(new Date(`${date}T00:00:00Z`))
+    .filter((part) => part.type !== 'literal')
+    .map((part) => part.value)
+    .join(' ')
+    .toLocaleLowerCase(locale);
+}

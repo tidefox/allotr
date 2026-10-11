@@ -6,7 +6,7 @@ export const settingsData = {
   held: 'Turn on two-factor authentication under Account first. Until then, your ledger data cannot be exported or imported.',
   heldAction: 'go to account',
   export: {
-    title: 'Export',
+    title: 'export',
     download: 'download',
     formats: {
       json: 'JSON backup',
@@ -15,7 +15,7 @@ export const settingsData = {
     },
   },
   import: {
-    title: 'Import',
+    title: 'import',
     subtitle: 'into an empty ledger',
     row: 'Backup file',
     rowHint:

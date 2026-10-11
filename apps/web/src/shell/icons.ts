@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react';
 import {
-  IconArrowLeftRightLine,
   IconBankLine,
-  IconDashboard3Line,
-  IconLineChartLine,
+  IconBarChartBoxLine,
+  IconDashboardLine,
+  IconExchangeLine,
   IconPieChart2Line,
   IconSettings3Line,
   type IconProps,
@@ -12,10 +12,10 @@ import type { ScreenKey } from '../nav-items.ts';
 
 /** Each destination's icon, shared by the navigation and the title strip. */
 export const screenIcons: Record<ScreenKey, ComponentType<IconProps>> = {
-  dashboard: IconDashboard3Line,
+  dashboard: IconDashboardLine,
   accounts: IconBankLine,
-  transactions: IconArrowLeftRightLine,
+  transactions: IconExchangeLine,
   budget: IconPieChart2Line,
-  reports: IconLineChartLine,
+  reports: IconBarChartBoxLine,
   settings: IconSettings3Line,
 };

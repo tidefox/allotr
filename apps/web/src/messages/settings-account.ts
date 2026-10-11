@@ -9,7 +9,7 @@ export const settingsAccount = {
   on: 'On',
   off: 'Off',
   signIn: {
-    title: 'Sign-in',
+    title: 'sign-in',
     email: 'Email',
     emailHint: 'The address you sign in with.',
     role: 'Role',
@@ -20,7 +20,7 @@ export const settingsAccount = {
     signOutAction: 'sign out',
   },
   twoFactor: {
-    title: 'Two-factor authentication',
+    title: 'two-factor authentication',
     status: 'Authenticator app',
     required:
       'This instance requires two-factor authentication. Turn it on to use the rest of the app.',
@@ -35,7 +35,7 @@ export const settingsAccount = {
     passwordIntroOn: 'Enter your password to get a key and backup codes.',
   },
   sessions: {
-    title: 'Sessions',
+    title: 'sessions',
     signOut: 'sign out',
     signOutAll: 'sign out others',
     confirmTitle: 'Sign out {name}?',
@@ -47,7 +47,7 @@ export const settingsAccount = {
     working: 'Signing out…',
   },
   instance: {
-    title: 'Instance',
+    title: 'instance',
     subtitle: 'administrators',
     registration: 'Registration',
     twoFactor: 'Require two-factor',
@@ -56,7 +56,7 @@ export const settingsAccount = {
     themeUrlHint: 'The server fetches public https theme files for people.',
   },
   invites: {
-    title: 'Invites',
+    title: 'invites',
     subtitle: 'single use',
     create: 'create link',
     createTitle: 'Create an invite link',

@@ -39,7 +39,7 @@ export function Row({
   const body = (
     <div
       className={cn(
-        'row-grid grid items-center gap-x-2 px-3',
+        'row-grid grid items-center gap-x-2.5 px-3',
         tall ? 'min-h-[2.875rem]' : 'min-h-row',
       )}
       style={templates(columns)}

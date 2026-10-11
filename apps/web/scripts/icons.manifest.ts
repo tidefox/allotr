@@ -58,11 +58,9 @@ export const CATEGORY_ICON_MAP = {
 
 /** Interface icons: destinations, tile titles, actions, states. */
 export const INTERFACE_ICONS = [
-  'dashboard-3-line',
   'bank-line',
   'arrow-left-right-line',
   'pie-chart-2-line',
-  'line-chart-line',
   'settings-3-line',
   'add-line',
   'close-line',
@@ -103,4 +101,9 @@ export const INTERFACE_ICONS = [
   'keyboard-line',
   'user-line',
   'logout-box-line',
+  'dashboard-line',
+  'exchange-line',
+  'bar-chart-box-line',
+  'sun-line',
+  'calendar-check-line',
 ] as const;
