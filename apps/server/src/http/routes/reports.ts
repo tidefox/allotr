@@ -3,10 +3,13 @@ import {
   calendarSchema,
   categorySummaryQuerySchema,
   categorySummarySchema,
+  payeeReportQuerySchema,
+  payeeReportSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import { calendarView } from '../../ledger/calendar.ts';
 import { categorySummary } from '../../ledger/category-report.ts';
+import { payeeReport } from '../../ledger/payee-report.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {
@@ -26,7 +29,7 @@ const categoriesRoute = createRoute({
   tags: ['Reports'],
   summary: 'Spending and income per category for a period',
   description:
-    'Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into.',
+    "Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into. Every group and child has `shareBp`, its share of the period's total (`spendingTotal` for spending, `incomeTotal` for income) in basis points, 0 when not positive; groups use largest-remainder rounding and a group's children split the group's share. With `series=N` the response also has `series`: spending per top-level category (subcategories counted in their parent, as above) for the N consecutive cycles or months ending with the selected one, oldest first, each in the default currency at the rate on that period's last day. `points` and `totals` line up with `periods`; fewer periods come back when history is shorter.",
   request: { query: categorySummaryQuerySchema },
   responses: {
     200: json(categorySummarySchema, 'The summary.'),
@@ -52,6 +55,21 @@ const calendarRoute = createRoute({
   },
 });
 
+const payeesRoute = createRoute({
+  method: 'get',
+  path: '/v1/reports/payees',
+  tags: ['Reports'],
+  summary: 'Top payees for a period',
+  description:
+    "The payees with the most spending for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). A payee is an entry's note, compared ignoring case and extra spaces. Each currency is ranked on its own, largest total first, and nothing is converted or added across currencies. Counts are entries; a split is one entry. Transfers, income, undone entries and reconcile adjustments are left out; entries without a note are reported as `unnamed`. `limit` caps the payees listed per currency and `more` says how many were cut. Computed from the ledger on each read.",
+  request: { query: payeeReportQuerySchema },
+  responses: {
+    200: json(payeeReportSchema, 'The ranking per currency.'),
+    404: problemResponse('No cycle opened on that day (`cycle_not_found`).'),
+    ...signedIn,
+  },
+});
+
 export function registerReportRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
@@ -70,6 +88,12 @@ export function registerReportRoutes(
   app.openapi(categoriesRoute, async (c) =>
     c.json(
       await categorySummary(db, c.get('user').id, c.req.valid('query'), now()),
+      200,
+    ),
+  );
+  app.openapi(payeesRoute, async (c) =>
+    c.json(
+      await payeeReport(db, c.get('user').id, c.req.valid('query'), now()),
       200,
     ),
   );

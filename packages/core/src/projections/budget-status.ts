@@ -4,7 +4,11 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { Transaction, TransactionId } from '../ledger/types.ts';
+import type {
+  CategoryId,
+  Transaction,
+  TransactionId,
+} from '../ledger/types.ts';
 import {
   budgetPeriodOn,
   heldBy,
@@ -41,6 +45,38 @@ export type BudgetLineStatus = Readonly<{
   restored: Money;
   /** What a set-aside budget still holds out of free money; zero otherwise. */
   held: Money;
+  /**
+   * What other sources paid of this budget's shortfall this period, per
+   * source, in cover order. Only sources that paid something are listed.
+   */
+  coverUsed: readonly CoverUsed[];
+}>;
+
+/** What one source covered for one budget in the period. */
+export type CoverUsed = Readonly<{ source: CoverSource; amount: Money }>;
+
+/**
+ * Every budget's figures added up, each budget once (parent headers are not
+ * counted twice), in the default currency. The Buffer is a budget: it adds
+ * what it holds to `left` and nothing to `spent`.
+ */
+export type BudgetTotals = Readonly<{
+  planned: Money;
+  spent: Money;
+  left: Money;
+}>;
+
+/**
+ * A parent category's budgets added up: the budgets on its children and on
+ * the parent itself, in the default currency.
+ */
+export type ParentBudgetTotals = Readonly<{
+  categoryId: CategoryId;
+  /** The budgets counted, in the order of `lines`. */
+  budgetIds: readonly BudgetId[];
+  planned: Money;
+  spent: Money;
+  left: Money;
 }>;
 
 /** How much of the period's shortfall was covered, and by whom. */
@@ -60,6 +96,13 @@ export type BudgetStatus = Readonly<{
   /** Days left in the cycle, as for the daily number. */
   daysLeft: number;
   lines: readonly BudgetLineStatus[];
+  /**
+   * Totals for each parent category that has a budget on at least one of its
+   * children, summing every category budget under it.
+   */
+  parents: readonly ParentBudgetTotals[];
+  /** Every budget added up once; see `BudgetTotals`. */
+  totals: BudgetTotals;
   /** Counted accounts less unpaid reserved bills. */
   available: Money;
   /** Set-aside budgets' holds, Buffer included. */
@@ -80,12 +123,105 @@ export type BudgetStatus = Readonly<{
   missingRates: readonly CurrencyCode[];
 }>;
 
+/** Sums the category budgets under each parent that has a child budget. */
+export function parentBudgetTotals(
+  view: LedgerView,
+  lines: readonly BudgetLineStatus[],
+): ParentBudgetTotals[] {
+  const categories = view.budgets?.categories;
+  if (categories === undefined) return [];
+  const currency = view.settings.defaultCurrency;
+  const groups = new Map<
+    CategoryId,
+    { hasChild: boolean; lines: BudgetLineStatus[] }
+  >();
+  for (const line of lines) {
+    const target = line.budget.target;
+    if (target.kind !== 'category') continue;
+    const parent = categories.get(target.categoryId)?.parent ?? null;
+    const key = parent ?? target.categoryId;
+    const group = groups.get(key) ?? { hasChild: false, lines: [] };
+    group.hasChild ||= parent !== null;
+    group.lines.push(line);
+    groups.set(key, group);
+  }
+  const total = (
+    group: readonly BudgetLineStatus[],
+    pick: (l: BudgetLineStatus) => Money,
+  ) =>
+    money(
+      group.reduce((sum, l) => sum + pick(l).amountMinor, 0),
+      currency,
+    );
+  return [...groups]
+    .filter(([, group]) => group.hasChild)
+    .map(([categoryId, group]) => ({
+      categoryId,
+      budgetIds: group.lines.map((l) => l.budget.id),
+      planned: total(group.lines, (l) => l.planned),
+      spent: total(group.lines, (l) => l.spent),
+      left: total(group.lines, (l) => l.left),
+    }));
+}
+
+/** Adds every budget's planned, spent and left once. */
+export function budgetTotals(
+  view: Pick<LedgerView, 'settings'>,
+  lines: readonly Pick<BudgetLineStatus, 'planned' | 'spent' | 'left'>[],
+): BudgetTotals {
+  const currency = view.settings.defaultCurrency;
+  const total = (pick: (l: (typeof lines)[number]) => Money) =>
+    money(
+      lines.reduce((sum, l) => sum + pick(l).amountMinor, 0),
+      currency,
+    );
+  return {
+    planned: total((l) => l.planned),
+    spent: total((l) => l.spent),
+    left: total((l) => l.left),
+  };
+}
+
+/**
+ * What each source covered of the shortfalls of `lines` (one budget's spend
+ * in the period), summed per source and listed in cover order, then any
+ * source the order no longer names. Sources that covered nothing are left
+ * out.
+ */
+function coverUsedBy(
+  lines: readonly SpendLine[],
+  order: readonly CoverSource[],
+  currency: CurrencyCode,
+): CoverUsed[] {
+  const taken = new Map<CoverSource, bigint>();
+  for (const line of lines) {
+    for (const c of line.covers) {
+      taken.set(c.source, (taken.get(c.source) ?? 0n) + c.amount);
+    }
+  }
+  const rank = (source: CoverSource) => {
+    const at = order.indexOf(source);
+    return at < 0 ? order.length : at;
+  };
+  return [...taken]
+    .filter(([, amount]) => amount !== 0n)
+    .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+    .map(([source, amount]) => ({
+      source,
+      amount: money(Number(amount), currency),
+    }));
+}
+
 /** Budget figures as of `today`, from the same ledger the daily number reads. */
 export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
   const currency = view.settings.defaultCurrency;
   const fold = budgetFold(view, today);
   const daily = dailyFiguresOn(view, today);
   const m = (amount: bigint) => money(Number(amount), currency);
+  const inPeriod = (fold?.spend ?? []).filter(
+    (l) =>
+      fold !== null && l.date >= fold.period.from && l.date < fold.period.to,
+  );
   const lines = (fold?.lines ?? []).map((line): BudgetLineStatus => ({
     budget: line.budget,
     planned: m(line.amount),
@@ -96,13 +232,14 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
     coveredOut: m(line.coveredOut),
     restored: m(line.restored),
     held: m(heldBy(line)),
+    coverUsed: coverUsedBy(
+      inPeriod.filter((l) => l.budgetId === line.budget.id),
+      fold?.order ?? [],
+      currency,
+    ),
   }));
   const buffer = (fold?.lines ?? []).find(
     (l) => l.budget.target.kind === 'buffer',
-  );
-  const inPeriod = (fold?.spend ?? []).filter(
-    (l) =>
-      fold !== null && l.date >= fold.period.from && l.date < fold.period.to,
   );
   const sum = (pick: (l: SpendLine) => bigint) =>
     inPeriod.reduce((total, l) => total + pick(l), 0n);
@@ -118,6 +255,8 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
     period: fold?.period ?? budgetPeriodOn(view, today, today),
     daysLeft: daily.daysLeft,
     lines,
+    parents: parentBudgetTotals(view, lines),
+    totals: budgetTotals(view, lines),
     available: daily.available,
     held: daily.held,
     free: daily.free,
@@ -187,6 +326,54 @@ export function budgetCovers(
       overridden: l.overridden,
     }))
     .reverse();
+}
+
+/** One expense line of an entry and how its budget stood after it. */
+export type EntryBudgetLine = Readonly<{
+  /** The budget that counted the line; null when none did. */
+  budgetId: BudgetId | null;
+  /** The budget period the entry's date falls in. */
+  period: BudgetPeriod;
+  loan: boolean;
+  amount: Money;
+  /** What its own budget paid. */
+  own: Money;
+  covers: readonly Readonly<{ source: CoverSource; amount: Money }>[];
+  uncovered: Money;
+  overridden: boolean;
+  /** What its budget had left right after this line; null with no budget. */
+  leftAfter: Money | null;
+}>;
+
+/**
+ * The budget figures of one entry, in any period: for each expense line
+ * that was counted, what its budget had left just after it, and who
+ * covered the part past that. Empty when the entry is not counted (an
+ * income, a transfer, spending from a savings account, or an undone entry),
+ * or there are no budgets.
+ */
+export function entryBudgetLines(
+  view: LedgerView,
+  today: LocalDate,
+  entryId: TransactionId,
+): EntryBudgetLine[] {
+  const fold = budgetFold(view, today);
+  if (fold === null) return [];
+  const m = (amount: bigint) =>
+    money(Number(amount), view.settings.defaultCurrency);
+  return fold.spend
+    .filter((l) => l.entryId === entryId)
+    .map((l) => ({
+      budgetId: l.budgetId,
+      period: budgetPeriodOn(view, l.date, today),
+      loan: l.loan,
+      amount: m(l.amount),
+      own: m(l.own),
+      covers: l.covers.map((c) => ({ source: c.source, amount: m(c.amount) })),
+      uncovered: m(l.uncovered),
+      overridden: l.overridden,
+      leftAfter: l.leftAfter === null ? null : m(l.leftAfter),
+    }));
 }
 
 /** What recording an expense would take, before it is saved. */

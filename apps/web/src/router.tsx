@@ -7,91 +7,75 @@ import {
   Link,
   Outlet,
   redirect,
+  useRouter,
+  type ErrorComponentProps,
+  type RouterHistory,
 } from '@tanstack/react-router';
-import { useCallback } from 'react';
-import { AppShell } from '@/components/app-shell';
-import { AuthLayout } from '@/components/auth-layout';
-import { LoadError } from '@/components/load-error';
-import { RouteSkeleton } from '@/components/route-skeleton';
-import { UpdatePrompt } from '@/components/update-prompt';
-import { validateCycleSearch } from '@/features/cycles/search';
-import {
-  validateLedgerSearch,
-  type LedgerSearch,
-} from '@/features/ledger/search';
+import { validateAccountsSearch } from './screens/accounts/search-params.ts';
+import { validateReportsSearch } from './screens/reports/reports-search.ts';
+import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
+import { AuthPlaceholder } from './screens/auth-placeholder.tsx';
+import { AppShell } from './shell/app-shell.tsx';
+import { isSubTab, subTabs } from './nav-items.ts';
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
-import { saveSetup, setupQuery } from '@/lib/setup';
-import { SignInPage } from './routes/sign-in.tsx';
-import { TodayPage } from './routes/today.tsx';
-import { viewTransitions } from './motion/view-transitions.ts';
+import { setupQuery } from '@/lib/setup';
+import { BracketButton } from '@/components/buttons';
+import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 
-// Every page but Today and sign-in loads when first visited; the router
-// preloads it before rendering, so a visit never flashes empty.
-const AccountsPage = lazyRouteComponent(
-  () => import('./routes/accounts.tsx'),
-  'AccountsPage',
+// The route tree (docs/ui.md §6). Screens are placeholders until their work
+// packages land; the guards, sub-tab addresses and old-address redirects are
+// final.
+
+// Screens load on demand so the first page carries only the shell.
+const Dashboard = lazyRouteComponent(
+  () => import('./screens/dashboard/dashboard.tsx'),
+  'Dashboard',
 );
-const BudgetPage = lazyRouteComponent(
-  () => import('./routes/budget.tsx'),
-  'BudgetPage',
+const AccountsScreen = lazyRouteComponent(
+  () => import('./screens/accounts/accounts-screen.tsx'),
+  'AccountsScreen',
 );
-const CyclePage = lazyRouteComponent(
-  () => import('./routes/cycle.tsx'),
-  'CyclePage',
+const BudgetScreen = lazyRouteComponent(
+  () => import('./screens/budget/budget-screen.tsx'),
+  'BudgetScreen',
 );
-const HistoryPage = lazyRouteComponent(
-  () => import('./routes/history.tsx'),
-  'HistoryPage',
+const ReportsScreen = lazyRouteComponent(
+  () => import('./screens/reports/reports-screen.tsx'),
+  'ReportsScreen',
 );
-const InvitePage = lazyRouteComponent(
-  () => import('./routes/invite.tsx'),
-  'InvitePage',
+const SettingsScreen = lazyRouteComponent(
+  () => import('./screens/settings/settings-screen.tsx'),
+  'SettingsScreen',
 );
-const LedgerPage = lazyRouteComponent(
-  () => import('./routes/ledger.tsx'),
-  'LedgerPage',
+const ThemeEditorScreen = lazyRouteComponent(
+  () => import('./screens/settings/theme-editor-screen.tsx'),
+  'ThemeEditorScreen',
 );
-const OnboardingPage = lazyRouteComponent(
-  () => import('./routes/onboarding.tsx'),
-  'OnboardingPage',
+const InviteScreen = lazyRouteComponent(
+  () => import('./screens/auth/invite-screen.tsx'),
+  'InviteScreen',
 );
-const SavingsPage = lazyRouteComponent(
-  () => import('./routes/savings.tsx'),
-  'SavingsPage',
+const OnboardingScreen = lazyRouteComponent(
+  () => import('./screens/auth/onboarding-screen.tsx'),
+  'OnboardingScreen',
 );
-const SettingsPage = lazyRouteComponent(
-  () => import('./routes/settings.tsx'),
-  'SettingsPage',
+const SetupScreen = lazyRouteComponent(
+  () => import('./screens/auth/setup-screen.tsx'),
+  'SetupScreen',
 );
-const SetupPage = lazyRouteComponent(
-  () => import('./routes/setup.tsx'),
-  'SetupPage',
+const SignInScreen = lazyRouteComponent(
+  () => import('./screens/auth/sign-in-screen.tsx'),
+  'SignInScreen',
 );
-const NewThemePage = lazyRouteComponent(
-  () => import('./routes/theme-editor.tsx'),
-  'NewThemePage',
-);
-const EditThemePage = lazyRouteComponent(
-  () => import('./routes/theme-editor.tsx'),
-  'EditThemePage',
+const TransactionsScreen = lazyRouteComponent(
+  () => import('./screens/transactions/transactions-screen.tsx'),
+  'TransactionsScreen',
 );
 
-/** A route component that renders a lazy page, preloaded like the page. */
-function preloading<C extends object>(
-  component: C,
-  page: { preload?: () => Promise<void> | undefined },
-): C {
-  if (page.preload !== undefined)
-    Object.assign(component, { preload: page.preload });
-  return component;
-}
-
-interface RouterContext {
-  queryClient: QueryClient;
-}
+export type RouterContext = { queryClient: QueryClient };
 
 // Where a visitor belongs: onboarding until the first account exists, then
 // sign-in, then the Dashboard.
@@ -102,50 +86,60 @@ async function destination(queryClient: QueryClient) {
   return session === null ? ('/sign-in' as const) : ('/' as const);
 }
 
+// A failed guard (the server is down, a session check errors) offers a
+// retry instead of a dead end. Invalidating runs the guards again.
+function RouteError({ error }: ErrorComponentProps) {
+  const router = useRouter();
+  return (
+    <AuthPlaceholder title={t('errors.pageTitle')}>
+      <p className="mt-2 text-small text-text-muted">{errorMessage(error)}</p>
+      <BracketButton
+        className="mt-3"
+        onPress={() => {
+          void router.invalidate();
+        }}
+      >
+        {t('errors.retry')}
+      </BracketButton>
+    </AuthPlaceholder>
+  );
+}
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({
-  component: () => (
-    <>
-      <Outlet />
-      <UpdatePrompt />
-    </>
-  ),
-  errorComponent: LoadError,
+  component: Outlet,
+  // A failed guard (the server is down, a session check errors) offers a
+  // retry instead of a dead end.
+  errorComponent: RouteError,
   notFoundComponent: () => (
-    <AuthLayout title={t('notFound.title')} intro={t('notFound.intro')}>
-      <Link to="/" className="font-medium underline underline-offset-4">
+    <AuthPlaceholder title={t('notFound.title')}>
+      <Link to="/" className="underline underline-offset-4">
         {t('notFound.home')}
       </Link>
-    </AuthLayout>
+    </AuthPlaceholder>
   ),
 });
 
-// Routes the v2 navigation renamed. Old links, bookmarks and installed
-// shortcuts keep working: each redirects, carrying its search, before any
-// session check.
-function renamed(
-  from: string,
-  to:
-    | '/'
-    | '/transactions'
-    | '/reports'
-    | '/reports/history'
-    | '/accounts/savings',
-) {
-  return createRoute({
+// Addresses earlier versions used. Each redirects, carrying nothing but the
+// destination, before any session check, so old links and installed
+// shortcuts keep working. `RENAMED` is the list the redirect tests read.
+export const RENAMED = {
+  '/today': '/',
+  '/ledger': '/transactions',
+  '/cycle': '/reports',
+  '/history': '/reports/trends',
+  '/savings': '/accounts/off-budget',
+  '/accounts/savings': '/accounts/off-budget',
+} as const;
+
+const renamedRoutes = Object.entries(RENAMED).map(([from, to]) =>
+  createRoute({
     getParentRoute: () => rootRoute,
     path: from,
-    beforeLoad: ({ location }) => {
-      if (to === '/transactions')
-        throw redirect({
-          to,
-          search: validateLedgerSearch(location.search),
-        });
-      if (to === '/reports')
-        throw redirect({ to, search: validateCycleSearch(location.search) });
-      throw redirect({ to });
+    beforeLoad: () => {
+      throw redirect({ href: to });
     },
-  });
-}
+  }),
+);
 
 function only(path: '/onboarding' | '/sign-in') {
   return async ({ context }: { context: RouterContext }) => {
@@ -158,7 +152,7 @@ const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/onboarding',
   beforeLoad: only('/onboarding'),
-  component: OnboardingPage,
+  component: OnboardingScreen,
 });
 
 const signInRoute = createRoute({
@@ -170,18 +164,14 @@ const signInRoute = createRoute({
     search: Record<string, unknown>,
   ): { redirect?: ShellPath | undefined; deleted?: true | undefined } => ({
     redirect: safeRedirect(search.redirect),
-    // Set after account deletion, to confirm it on arrival.
     deleted: search.deleted === true ? true : undefined,
   }),
   beforeLoad: only('/sign-in'),
-  component: function SignIn() {
-    const { redirect: target, deleted } = signInRoute.useSearch();
-    return <SignInPage next={target ?? '/'} deleted={deleted === true} />;
-  },
+  component: SignInScreen,
 });
 
-// An invite link is for someone without an account: a signed-in visitor
-// goes to Today, and before onboarding there is no one to invite them.
+// An invite link is for someone without an account: a signed-in visitor goes
+// to the Dashboard, and before onboarding there is no one to invite them.
 const inviteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/invite/$token',
@@ -189,10 +179,7 @@ const inviteRoute = createRoute({
     const target = await destination(context.queryClient);
     if (target !== '/sign-in') throw redirect({ to: target });
   },
-  component: preloading(function Invite() {
-    const { token } = inviteRoute.useParams();
-    return <InvitePage token={token} />;
-  }, InvitePage),
+  component: InviteScreen,
 });
 
 // Every signed-in route lives under this pathless layout, so the session is
@@ -214,10 +201,7 @@ const appRoute = createRoute({
     }
     return { session };
   },
-  component: function Shell() {
-    const { session } = appRoute.useRouteContext();
-    return <AppShell twoFactorRequired={session.twoFactorRequired} />;
-  },
+  component: AppShell,
 });
 
 // Sign-in, invites and the first account all land on the Dashboard, so this
@@ -231,64 +215,101 @@ const dashboardRoute = createRoute({
     const { finished } = await queryOrCached(context.queryClient, setupQuery);
     if (!finished) throw redirect({ to: '/setup' });
   },
-  component: function Today() {
-    const { session } = dashboardRoute.useRouteContext();
-    return <TodayPage user={session.user} />;
+  component: Dashboard,
+});
+
+const budgetIndex = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/budget',
+  beforeLoad: () => {
+    throw redirect({ to: '/budget/$sub', params: { sub: subTabs.budget[0] } });
+  },
+});
+const budgetRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/budget/$sub',
+  beforeLoad: ({ params }) => {
+    if (!isSubTab('budget', params.sub)) throw redirect({ to: '/budget' });
+  },
+  component: BudgetScreen,
+});
+
+const reportsIndex = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reports',
+  beforeLoad: () => {
+    throw redirect({
+      to: '/reports/$sub',
+      params: { sub: subTabs.reports[0] },
+    });
+  },
+});
+const reportsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reports/$sub',
+  validateSearch: validateReportsSearch,
+  beforeLoad: ({ params }) => {
+    if (!isSubTab('reports', params.sub)) throw redirect({ to: '/reports' });
+  },
+  component: ReportsScreen,
+});
+
+const settingsIndex = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings',
+  beforeLoad: () => {
+    throw redirect({
+      to: '/settings/$sub',
+      params: { sub: subTabs.settings[0] },
+    });
+  },
+});
+const settingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/$sub',
+  beforeLoad: ({ params }) => {
+    if (!isSubTab('settings', params.sub)) throw redirect({ to: '/settings' });
+  },
+  component: SettingsScreen,
+});
+const themeNewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/new',
+  component: () => <ThemeEditorScreen />,
+});
+const themeEditRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/$id',
+  component: function ThemeEdit() {
+    const { id } = themeEditRoute.useParams();
+    return <ThemeEditorScreen id={id} />;
   },
 });
 
-const ledgerRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/transactions',
-  validateSearch: validateLedgerSearch,
-  component: preloading(function Ledger() {
-    const search = ledgerRoute.useSearch();
-    const navigate = ledgerRoute.useNavigate();
-    const go = useCallback(
-      (next: LedgerSearch, options?: { replace?: boolean }) => {
-        void navigate({ search: next, replace: options?.replace === true });
-      },
-      [navigate],
-    );
-    return <LedgerPage search={search} navigate={go} />;
-  }, LedgerPage),
-});
-
+// Accounts keeps its first sub-tab ("all") at the bare path.
 const accountsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/accounts',
-  component: AccountsPage,
+  validateSearch: validateAccountsSearch,
+  component: AccountsScreen,
+});
+const accountsSubRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/accounts/$sub',
+  validateSearch: validateAccountsSearch,
+  beforeLoad: ({ params }) => {
+    if (params.sub === 'all' || !isSubTab('accounts', params.sub))
+      throw redirect({ to: '/accounts' });
+  },
+  component: AccountsScreen,
 });
 
-const budgetRoute = createRoute({
+const transactionsRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/budget',
-  component: preloading(function Budget() {
-    return <BudgetPage />;
-  }, BudgetPage),
-});
-
-// Reports is the cycle view; history hangs off it, and Savings off Accounts.
-const cycleRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/reports',
-  validateSearch: validateCycleSearch,
-  component: preloading(function Cycle() {
-    const { start, tab } = cycleRoute.useSearch();
-    return <CyclePage start={start} tab={tab} />;
-  }, CyclePage),
-});
-
-const historyRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/reports/history',
-  component: HistoryPage,
-});
-
-const savingsRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/accounts/savings',
-  component: SavingsPage,
+  path: '/transactions',
+  // The filter, period, group and selection live in the URL (docs/ui.md §5).
+  validateSearch: validateTransactionsSearch,
+  component: TransactionsScreen,
 });
 
 const setupRoute = createRoute({
@@ -296,54 +317,12 @@ const setupRoute = createRoute({
   path: '/setup',
   beforeLoad: async ({ context }) => {
     if (context.session.twoFactorRequired) throw redirect({ to: '/' });
-    const { queryClient } = context;
-    const setup = await queryOrCached(queryClient, setupQuery);
+    const setup = await queryOrCached(context.queryClient, setupQuery);
     if (setup.finished) throw redirect({ to: '/' });
-    // Until something is saved, an account added from another view would
-    // read as setup done, so save the start.
-    if (setup.handled.length === 0)
-      queryClient.setQueryData(setupQuery.queryKey, await saveSetup(setup));
   },
-  component: SetupPage,
+  component: SetupScreen,
 });
 
-const settingsRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/settings',
-  // Bills moved to Budget (ADR 0023).
-  beforeLoad: ({ location }) => {
-    if (location.hash === 'bills') throw redirect({ to: '/budget' });
-  },
-  component: preloading(function Settings() {
-    const { session } = settingsRoute.useRouteContext();
-    return <SettingsPage session={session} />;
-  }, SettingsPage),
-});
-
-const newThemeRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/settings/themes/new',
-  validateSearch: (search: Record<string, unknown>): { from?: string } =>
-    typeof search.from === 'string' ? { from: search.from } : {},
-  component: preloading(function NewTheme() {
-    const { session } = newThemeRoute.useRouteContext();
-    const { from } = newThemeRoute.useSearch();
-    return <NewThemePage session={session} from={from} />;
-  }, NewThemePage),
-});
-
-const editThemeRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/settings/themes/$id',
-  component: preloading(function EditTheme() {
-    const { session } = editThemeRoute.useRouteContext();
-    const { id } = editThemeRoute.useParams();
-    return <EditThemePage session={session} id={id} />;
-  }, EditThemePage),
-});
-
-// The component gallery, in development only; the dynamic import keeps it
-// out of production builds.
 const devRoutes = import.meta.env.DEV
   ? [
       createRoute({
@@ -359,40 +338,36 @@ const devRoutes = import.meta.env.DEV
 
 const routeTree = rootRoute.addChildren([
   ...devRoutes,
-  renamed('/today', '/'),
-  renamed('/ledger', '/transactions'),
-  renamed('/cycle', '/reports'),
-  renamed('/history', '/reports/history'),
-  renamed('/savings', '/accounts/savings'),
+  ...renamedRoutes,
   onboardingRoute,
   signInRoute,
   inviteRoute,
   appRoute.addChildren([
     dashboardRoute,
     accountsRoute,
-    ledgerRoute,
+    accountsSubRoute,
+    transactionsRoute,
+    budgetIndex,
     budgetRoute,
-    cycleRoute,
-    historyRoute,
-    savingsRoute,
-    setupRoute,
+    reportsIndex,
+    reportsRoute,
+    settingsIndex,
     settingsRoute,
-    newThemeRoute,
-    editThemeRoute,
+    themeNewRoute,
+    themeEditRoute,
+    setupRoute,
   ]),
 ]);
 
-export function createAppRouter(queryClient: QueryClient) {
+export function createAppRouter(
+  queryClient: QueryClient,
+  history?: RouterHistory,
+) {
   return createRouter({
     routeTree,
+    ...(history === undefined ? {} : { history }),
     context: { queryClient },
-    defaultPreload: false,
-    // A route still loading shows its skeleton after a short wait, never a
-    // spinner and never a blank page.
-    defaultPendingComponent: RouteSkeleton,
-    defaultPendingMs: 120,
-    defaultPendingMinMs: 0,
-    defaultViewTransition: viewTransitions,
+    defaultPreload: 'intent',
   });
 }
 

@@ -12,11 +12,17 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 export interface Accounts {
   archived: Generated<number>;
   budget_group: string | null;
+  colour: string | null;
   created_at: string;
+  credit_limit_minor: number | null;
   currency: string;
+  due_day: number | null;
+  icon: string | null;
   id: string;
   kind: string;
+  min_payment_minor: number | null;
   name: string;
+  subtype: string | null;
   system_role: string | null;
   updated_at: string;
   user_id: string;
@@ -199,9 +205,11 @@ export interface PoolMoves {
 
 export interface Pools {
   archived: Generated<number>;
+  colour: string | null;
   counts_toward_daily: number;
   created_at: string;
   default_for: string | null;
+  icon: string | null;
   id: string;
   kind: string;
   name: string;

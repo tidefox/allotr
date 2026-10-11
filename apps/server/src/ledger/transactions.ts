@@ -3,8 +3,10 @@ import {
   categoryId,
   dayNetTotals,
   edit,
+  entryGroupKeys,
   expense,
   income,
+  payeeKey,
   reinstate,
   reverse,
   transactionId,
@@ -19,6 +21,7 @@ import type {
   LocalDate,
   MoveTransactionBody,
   TransactionListView,
+  TransactionSort,
   TransactionView,
 } from '@allotr/shared';
 import { isRank } from '@allotr/shared';
@@ -32,6 +35,7 @@ import {
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
+import { aggregateGroups, aggregateTotals } from './transaction-totals.ts';
 import { loadRates, recordImpliedRate, releaseImpliedRate } from './rates.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
 import {
@@ -120,8 +124,8 @@ async function views(
 ): Promise<TransactionView[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
-  const [postings, tags, reversals, restores, replacements] = await Promise.all(
-    [
+  const [postings, tags, reversals, restores, replacements, payments] =
+    await Promise.all([
       db
         .selectFrom('postings')
         .innerJoin('accounts', 'accounts.id', 'postings.account_id')
@@ -168,8 +172,18 @@ async function views(
           ]),
         )
         .execute(),
-    ],
-  );
+      db
+        .selectFrom('bill_payments')
+        .innerJoin('bills', 'bills.id', 'bill_payments.bill_id')
+        .select([
+          'bill_payments.transaction_id',
+          'bill_payments.bill_id',
+          'bills.name',
+        ])
+        .where('bill_payments.user_id', '=', userId)
+        .where('bill_payments.transaction_id', 'in', ids)
+        .execute(),
+    ]);
   const group = <T extends { transaction_id: string }>(items: T[]) => {
     const map = new Map<string, T[]>();
     for (const item of items) {
@@ -190,6 +204,7 @@ async function views(
   const replacedBy = new Map(
     replacements.map((r) => [r.original_id, r.replacement_id]),
   );
+  const paid = new Map(payments.map((p) => [p.transaction_id, p]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -222,6 +237,8 @@ async function views(
             budgetGroup: row.switch_budget_group as 'on' | 'off',
           },
     tagIds: (tagsOf.get(row.id) ?? []).map((t) => t.tag_id),
+    billId: paid.get(row.id)?.bill_id ?? null,
+    billName: paid.get(row.id)?.name ?? null,
   }));
 }
 
@@ -250,35 +267,48 @@ export async function getTransaction(
 export type ListFilter = Readonly<{
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
-  accountId?: string | undefined;
-  categoryId?: string | undefined;
+  accountId?: readonly string[] | undefined;
+  categoryId?: readonly string[] | undefined;
   tagId?: string | undefined;
   q?: string | undefined;
+  payee?: string | undefined;
+  type?: 'expense' | 'income' | 'transfer' | undefined;
   undone?: 'show' | 'hide' | undefined;
+  group?: 'none' | 'day' | 'category' | undefined;
+  sort?: TransactionSort | undefined;
   limit: number;
   cursor?: string | undefined;
 }>;
 
-type Cursor = [occurredOn: string, sortRank: string, id: string];
+// Date orders page on (date, place in the day, id); amount orders add the
+// entry's size in front, as text.
+type Cursor = readonly string[];
 
-function encodeCursor(view: TransactionView): string {
-  const cursor: Cursor = [view.occurredOn, view.sortRank, view.id];
+const amountOrders = new Set<TransactionSort>(['amount-desc', 'amount-asc']);
+
+function encodeCursor(row: SortedRow, sort: TransactionSort): string {
+  const tail = [row.occurred_on, row.sort_rank, row.id];
+  const cursor: Cursor = amountOrders.has(sort)
+    ? [String(row.sort_amount), ...tail]
+    : tail;
   return Buffer.from(JSON.stringify(cursor)).toString('base64url');
 }
 
-function decodeCursor(text: string): Cursor {
+function decodeCursor(text: string, sort: TransactionSort): Cursor {
   try {
     const value: unknown = JSON.parse(
       Buffer.from(text, 'base64url').toString(),
     );
+    const parts = amountOrders.has(sort) ? 4 : 3;
     if (
       Array.isArray(value) &&
-      value.length === 3 &&
+      value.length === parts &&
       value.every((part) => typeof part === 'string') &&
       // Cursors from before entries had ranks held a timestamp here.
-      isRank(value[1] ?? '')
+      isRank(value[parts - 2] ?? '') &&
+      (parts === 3 || /^\d+$/.test(value[0] ?? ''))
     ) {
-      return value as Cursor;
+      return value;
     }
   } catch {
     // Reported below.
@@ -294,22 +324,28 @@ function decodeCursor(text: string): Cursor {
 async function categoryFamily(
   db: Db,
   userId: string,
-  id: string,
+  ids: readonly string[],
 ): Promise<string[]> {
   const rows = await db
     .selectFrom('categories')
     .select(['id', 'parent_id', 'merged_into_id'])
     .where('user_id', '=', userId)
     .execute();
-  if (!rows.some((row) => row.id === id)) {
-    throw new RequestProblem(
-      404,
-      'category_not_found',
-      'There is no such category.',
-    );
+  for (const id of ids) {
+    if (!rows.some((row) => row.id === id)) {
+      throw new RequestProblem(
+        404,
+        'category_not_found',
+        'There is no such category.',
+      );
+    }
   }
-  const family = new Set([id]);
-  for (const row of rows) if (row.parent_id === id) family.add(row.id);
+  const family = new Set(ids);
+  for (const row of rows) {
+    if (row.parent_id !== null && ids.includes(row.parent_id)) {
+      family.add(row.id);
+    }
+  }
   for (const row of rows) {
     if (row.merged_into_id !== null && family.has(row.merged_into_id)) {
       family.add(row.id);
@@ -344,17 +380,17 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
   if (filter.to !== undefined)
     query = query.where('transactions.occurred_on', '<=', filter.to);
   if (filter.accountId !== undefined) {
-    const account = filter.accountId;
+    const accounts = filter.accountId;
     query = query.where((eb) =>
       eb.or([
-        eb('switch_account_id', '=', account),
+        eb('switch_account_id', 'in', accounts),
         eb.exists(
           eb
             .selectFrom('postings')
             .select('postings.id')
             .whereRef('postings.transaction_id', '=', 'transactions.id')
             .where('postings.user_id', '=', userId)
-            .where('postings.account_id', '=', account),
+            .where('postings.account_id', 'in', accounts),
         ),
       ]),
     );
@@ -460,36 +496,146 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
       ]),
     );
   }
+  // The same key the payee report ranks by, so "same payee" lists exactly
+  // the entries counted under it.
+  const key = filter.payee === undefined ? null : payeeKey(filter.payee);
+  if (key !== null) {
+    query = query.where((eb) =>
+      eb.or([
+        sql<boolean>`payee_key(transactions.note) = ${key}`,
+        eb.exists(
+          eb
+            .selectFrom('transactions as original')
+            .select('original.id')
+            .whereRef('original.id', '=', 'transactions.reverses_id')
+            .where('original.user_id', '=', userId)
+            .where(sql<boolean>`payee_key(original.note) = ${key}`),
+        ),
+      ]),
+    );
+  }
+  // Spending and income are read from the postings, as `totals` reads
+  // them, so the types' spent figures add up to the unfiltered one. An
+  // undo posts the same legs negated, so it matches with its entry.
+  if (filter.type === 'transfer') {
+    query = query.where((eb) =>
+      eb.or([
+        eb('kind', '=', 'transfer'),
+        eb.exists(
+          eb
+            .selectFrom('transactions as original')
+            .select('original.id')
+            .whereRef('original.id', '=', 'transactions.reverses_id')
+            .where('original.user_id', '=', userId)
+            .where('original.kind', '=', 'transfer'),
+        ),
+      ]),
+    );
+  } else if (filter.type !== undefined) {
+    const role = filter.type === 'expense' ? 'expenses' : 'income';
+    query = query.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('postings')
+          .innerJoin('accounts', 'accounts.id', 'postings.account_id')
+          .select('postings.id')
+          .whereRef('postings.transaction_id', '=', 'transactions.id')
+          .where('postings.user_id', '=', userId)
+          .where('accounts.user_id', '=', userId)
+          .where('accounts.system_role', '=', role),
+      ),
+    );
+  }
   return query;
 }
+
+type SortedRow = TransactionRow & { sort_amount: number };
+
+// The entry's size: its largest posting magnitude, in minor units.
+const sizeOf = sql<number>`coalesce((select max(abs(p.amount_minor)) from postings p where p.transaction_id = transactions.id), 0)`;
 
 export async function listTransactions(
   db: Db,
   userId: string,
   filter: ListFilter,
 ): Promise<TransactionListView> {
-  let query = await matching(db, userId, filter);
+  const sort = filter.sort ?? 'date-desc';
+  const matched = await matching(db, userId, filter);
+  let query = matched.select(sizeOf.as('sort_amount'));
+  const ascending = sort === 'date-asc';
   if (filter.cursor !== undefined) {
-    const [occurredOn, sortRank, id] = decodeCursor(filter.cursor);
-    query = query.where(
-      sql<boolean>`(transactions.occurred_on, transaction_ranks.sort_rank, transactions.id) < (${occurredOn}, ${sortRank}, ${id})`,
-    );
+    const cursor = decodeCursor(filter.cursor, sort);
+    const [amount, occurredOn, sortRank, id] =
+      cursor.length === 4 ? cursor : [undefined, ...cursor];
+    const after = ascending
+      ? sql<boolean>`(transactions.occurred_on, transaction_ranks.sort_rank, transactions.id) > (${occurredOn}, ${sortRank}, ${id})`
+      : sql<boolean>`(transactions.occurred_on, transaction_ranks.sort_rank, transactions.id) < (${occurredOn}, ${sortRank}, ${id})`;
+    if (amount === undefined) {
+      query = query.where(after);
+    } else {
+      const amountAfter =
+        sort === 'amount-desc'
+          ? sql<boolean>`${sizeOf} < ${Number(amount)}`
+          : sql<boolean>`${sizeOf} > ${Number(amount)}`;
+      query = query.where(
+        sql<boolean>`(${amountAfter} or (${sizeOf} = ${Number(amount)} and ${after}))`,
+      );
+    }
   }
-  const rows = await query
-    .orderBy('transactions.occurred_on', 'desc')
-    .orderBy('transaction_ranks.sort_rank', 'desc')
-    .orderBy('transactions.id', 'desc')
+  if (amountOrders.has(sort)) {
+    query = query.orderBy(sizeOf, sort === 'amount-asc' ? 'asc' : 'desc');
+  }
+  const direction = ascending ? 'asc' : 'desc';
+  const rows = (await query
+    .orderBy('transactions.occurred_on', direction)
+    .orderBy('transaction_ranks.sort_rank', direction)
+    .orderBy('transactions.id', direction)
     .limit(filter.limit + 1)
-    .execute();
-  const page = await views(db, userId, rows.slice(0, filter.limit));
-  const last = page.at(-1);
+    .execute()) as SortedRow[];
+  const pageRows = rows.slice(0, filter.limit);
+  const page = await views(db, userId, pageRows);
+  const lastRow = pageRows.at(-1);
+  const grouping = filter.group ?? 'none';
+  const ids = matched.clearSelect().select('transactions.id');
+  const [dayTotals, totals, groups, chart] = await Promise.all([
+    dayTotalsFor(db, userId, filter, page),
+    aggregateTotals(db, userId, ids),
+    grouping === 'none'
+      ? Promise.resolve([])
+      : aggregateGroups(db, userId, ids, grouping),
+    grouping === 'none' ? Promise.resolve(undefined) : loadChart(db, userId),
+  ]);
   return {
-    transactions: page,
+    transactions: page.map((view) => ({
+      ...view,
+      groupKeys:
+        chart === undefined || grouping === 'none'
+          ? []
+          : entryGroupKeys(
+              chart,
+              {
+                occurredOn: view.occurredOn,
+                categoryId:
+                  view.categoryId === null ? null : categoryId(view.categoryId),
+                postings: view.postings.map((posting) => ({
+                  accountId: accountId(posting.accountId),
+                  amount: posting.amount,
+                  categoryId:
+                    posting.categoryId === null
+                      ? null
+                      : categoryId(posting.categoryId),
+                })),
+              },
+              grouping,
+            ),
+    })),
     nextCursor:
-      rows.length > filter.limit && last !== undefined
-        ? encodeCursor(last)
+      rows.length > filter.limit && lastRow !== undefined
+        ? encodeCursor(lastRow, sort)
         : null,
-    dayTotals: await dayTotalsFor(db, userId, filter, page),
+    dayTotals,
+    totals,
+    groups,
   };
 }
 
@@ -526,7 +672,8 @@ async function dayTotalsFor(
     entries,
     rates,
     settings.defaultCurrency,
-    filter.accountId === undefined ? undefined : accountId(filter.accountId),
+    // Only the filtered accounts' own postings count; none, the whole ledger.
+    filter.accountId?.map(accountId),
   ).map((total) => ({
     date: total.date,
     net: total.net,

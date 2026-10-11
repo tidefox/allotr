@@ -2,17 +2,12 @@
 
 exports[`convertV1 > fits only what v1 never checked 1`] = `
 {
-  "dark": [
-    "text-muted",
-  ],
-  "harbour": [
-    "text-muted",
-  ],
+  "dark": [],
+  "harbour": [],
   "high-contrast-dark": [],
   "high-contrast-light": [],
   "light": [
     "warning",
-    "text-muted",
     "outline",
     "hero-ok",
     "hero-tight",

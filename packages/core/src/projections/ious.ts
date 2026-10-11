@@ -162,11 +162,60 @@ export function iouStatuses(
     .filter((s) => s.active);
 }
 
+export type PersonOpen = Readonly<{
+  /** Open IOUs with the same person, in the same direction and currency. */
+  count: number;
+  /** What those still add up to, in that currency. */
+  outstanding: Money;
+}>;
+
+const personKey = (iou: Iou) =>
+  `${iou.person.toLowerCase()}|${iou.direction}|${iou.amount.currency}`;
+
+/**
+ * What each person's open IOUs add up to, per direction and currency, so a
+ * payment to the person (settled oldest first) can say what it may cover.
+ * Names match case-insensitively. Look a status up with `personOpenOf`.
+ */
+export function personOpenTotals(
+  statuses: readonly IouStatus[],
+): ReadonlyMap<string, PersonOpen> {
+  const totals = new Map<string, PersonOpen>();
+  for (const s of statuses) {
+    if (s.settled) continue;
+    const key = personKey(s.iou);
+    const soFar = totals.get(key);
+    totals.set(key, {
+      count: (soFar?.count ?? 0) + 1,
+      outstanding: money(
+        (soFar?.outstanding.amountMinor ?? 0) + s.outstanding.amountMinor,
+        s.iou.amount.currency,
+      ),
+    });
+  }
+  return totals;
+}
+
+/** The person's open IOUs the status belongs to; none when it is settled. */
+export function personOpenOf(
+  totals: ReadonlyMap<string, PersonOpen>,
+  status: IouStatus,
+): PersonOpen {
+  return (
+    totals.get(personKey(status.iou)) ?? {
+      count: 0,
+      outstanding: money(0, status.iou.amount.currency),
+    }
+  );
+}
+
 export type IouTotals = Readonly<{
   /** What people still owe the user, in the default currency. */
   owedToMe: Money;
   /** What the user still owes, in the default currency. */
   owedByMe: Money;
+  /** `owedToMe − owedByMe`: positive when people owe the user more. */
+  net: Money;
   missingRates: readonly CurrencyCode[];
 }>;
 
@@ -186,6 +235,7 @@ export function iouTotals(
   return {
     owedToMe: toMe.amount,
     owedByMe: byMe.amount,
+    net: money(toMe.amount.amountMinor - byMe.amount.amountMinor, target),
     missingRates: [
       ...new Set([...toMe.missingRates, ...byMe.missingRates]),
     ].sort(),

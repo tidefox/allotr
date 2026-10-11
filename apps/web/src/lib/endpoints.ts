@@ -33,6 +33,7 @@ import {
   createBudgetBodySchema,
   createGoalBodySchema,
   createPoolBodySchema,
+  moveAccountBodySchema,
   goalListSchema,
   goalSchema,
   poolListSchema,
@@ -54,6 +55,7 @@ import {
   categorySchema,
   createCategoryBodySchema,
   categorySummarySchema,
+  payeeReportSchema,
   cycleDayListSchema,
   accountHistorySchema,
   cycleDetailSchema,
@@ -70,6 +72,7 @@ import {
   editedTransactionSchema,
   instanceSettingsPatchSchema,
   instanceSettingsSchema,
+  importResultSchema,
   inviteSchema,
   inviteStatusSchema,
   exchangeRateListSchema,
@@ -90,6 +93,7 @@ import {
   tagSchema,
   anyThemeBodySchema,
   todaySchema,
+  transactionDetailSchema,
   transactionListSchema,
   transactionSchema,
   updateAccountBodySchema,
@@ -442,6 +446,12 @@ export const endpoints = {
     body: updatePoolBodySchema,
     response: poolSchema,
   }),
+  moveAccountPool: endpoint({
+    method: 'PUT',
+    path: '/v1/accounts/{id}/pool',
+    body: moveAccountBodySchema,
+    response: accountSchema,
+  }),
   goals: endpoint({
     method: 'GET',
     path: '/v1/goals',
@@ -613,6 +623,13 @@ export const endpoints = {
     path: '/v1/push/subscriptions',
     response: z.unknown(),
   }),
+  importBundle: endpoint({
+    method: 'POST',
+    path: '/v1/import',
+    // The server checks the bundle; the browser only forwards the file.
+    body: z.unknown(),
+    response: importResultSchema,
+  }),
   pushTest: endpoint({
     method: 'POST',
     path: '/v1/push/test',
@@ -648,6 +665,11 @@ export const endpoints = {
     path: '/v1/reports/categories',
     response: categorySummarySchema,
   }),
+  payeeReport: endpoint({
+    method: 'GET',
+    path: '/v1/reports/payees',
+    response: payeeReportSchema,
+  }),
   cycleDays: endpoint({
     method: 'GET',
     path: '/v1/cycles/{openedOn}/days',
@@ -667,7 +689,7 @@ export const endpoints = {
   transaction: endpoint({
     method: 'GET',
     path: '/v1/transactions/{id}',
-    response: transactionSchema,
+    response: transactionDetailSchema,
   }),
   editTransaction: endpoint({
     method: 'POST',

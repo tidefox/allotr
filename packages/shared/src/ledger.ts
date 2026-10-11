@@ -36,10 +36,48 @@ export const accountSchema = z.object({
   archived: z.boolean(),
   createdAt: z.iso.datetime(),
   /**
+   * A chart series role of the active theme; null follows the pool's colour.
+   */
+  colour: categoryColourSchema.nullable(),
+  /** A key from the fixed icon set; null shows the kind's icon. */
+  icon: categoryIconSchema.nullable(),
+  /**
+   * A credit (liability) account's limit in its currency; null when not set
+   * and always null for other kinds. Shown, never acted on.
+   */
+  creditLimit: moneySchema.nullable(),
+  /**
+   * What is still free to spend on the card: `creditLimit` plus `balance`
+   * (a debt is a negative balance, so owing 400 on a 2 000 limit leaves
+   * 1 600). It is not clamped: past the limit it is negative, and a card in
+   * credit leaves more than the limit. Null without a limit.
+   */
+  creditAvailable: moneySchema.nullable(),
+  /** The day of the month the payment is due (1 to 31); credit only. */
+  dueDay: z.number().int().min(1).max(31).nullable(),
+  /**
+   * The least the card asks for each month, in its currency; credit only.
+   * Shown, never acted on: it creates no bill.
+   */
+  minPayment: moneySchema.nullable(),
+  /** What sort of account it is in the owner's words; null when not set. */
+  subtype: z.string().nullable(),
+  /**
+   * The next date on or after the user's today that falls on `dueDay`, in a
+   * month shorter than the day the last day of that month. Informational: a
+   * due day creates no bill. Null without a due day.
+   */
+  nextDueOn: localDateSchema.nullable(),
+  /**
    * The latest day the bank's balance matched, directly or after an
    * adjustment that was not undone since.
    */
   lastReconciledOn: localDateSchema.nullable(),
+  /**
+   * An open account never reconciled, or not for more than 30 days before
+   * the user's today.
+   */
+  reconcileDue: z.boolean(),
 });
 export type AccountView = z.infer<typeof accountSchema>;
 
@@ -57,7 +95,27 @@ export const accountListSchema = z.object({
    * Open accounts' balances per budget group, in the default currency at
    * today's rates. Savings are never added to the on-budget total.
    */
-  totals: z.object({ on: figureSchema, off: figureSchema }),
+  totals: z.object({
+    on: figureSchema,
+    off: figureSchema,
+    /**
+     * Open credit (liability) accounts' balances summed in the default
+     * currency, so negative while money is owed. Currencies without a rate
+     * are left out and listed in `missingRates`, as in every total.
+     */
+    creditOwed: figureSchema,
+    /**
+     * The limits of the open credit accounts that have one, in the default
+     * currency at today's rates.
+     */
+    creditLimit: figureSchema,
+    /**
+     * What is free on those same accounts (`creditLimit` plus their
+     * balances), in the default currency; accounts without a limit are in
+     * neither this nor `creditLimit`, so available ÷ limit is a fair bar.
+     */
+    creditAvailable: figureSchema,
+  }),
 });
 export type AccountListView = z.infer<typeof accountListSchema>;
 
@@ -65,16 +123,49 @@ export const listAccountsQuerySchema = z.object({
   includeArchived: z.stringbool().optional(),
 });
 
-export const createAccountBodySchema = z.object({
-  name: nameSchema,
-  kind: accountKindSchema.default('asset'),
-  currency: currencyCodeSchema,
-  budgetGroup: budgetGroupSchema.default('on'),
-  /** Posted against Equity:Opening; negative for a debt. */
-  openingBalance: moneySchema.optional(),
-  /** The opening balance's date; today when omitted. */
-  openedOn: localDateSchema.optional(),
+/** A credit limit is more than zero and in the account's currency. */
+const creditLimitSchema = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'The limit must be more than zero',
 });
+const dueDaySchema = z.number().int().min(1).max(31);
+/** A minimum payment is more than zero and in the account's currency. */
+const minPaymentSchema = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'The minimum payment must be more than zero',
+});
+const subtypeSchema = z.string().trim().min(1).max(100);
+
+export const createAccountBodySchema = z
+  .object({
+    name: nameSchema,
+    kind: accountKindSchema.default('asset'),
+    currency: currencyCodeSchema,
+    budgetGroup: budgetGroupSchema.default('on'),
+    colour: categoryColourSchema.optional(),
+    icon: categoryIconSchema.optional(),
+    /** Credit (liability) accounts only; in the account's currency. */
+    creditLimit: creditLimitSchema.optional(),
+    /** Credit (liability) accounts only; informational, creates no bill. */
+    dueDay: dueDaySchema.optional(),
+    /** Credit (liability) accounts only; in the account's currency. */
+    minPayment: minPaymentSchema.optional(),
+    subtype: subtypeSchema.optional(),
+    /** Posted against Equity:Opening; negative for a debt. */
+    openingBalance: moneySchema.optional(),
+    /** The opening balance's date; today when omitted. */
+    openedOn: localDateSchema.optional(),
+  })
+  .refine(
+    (body) =>
+      body.kind === 'liability' ||
+      (body.creditLimit === undefined &&
+        body.dueDay === undefined &&
+        body.minPayment === undefined),
+    {
+      error:
+        'A credit limit, a due day and a minimum payment belong to credit accounts',
+      path: ['kind'],
+    },
+  );
 export type CreateAccountBody = z.input<typeof createAccountBodySchema>;
 
 export const updateAccountBodySchema = z
@@ -82,6 +173,17 @@ export const updateAccountBodySchema = z
     name: nameSchema.optional(),
     /** Moves the account on or off budget from today. */
     budgetGroup: budgetGroupSchema.optional(),
+    /** Null clears it, so the account follows its pool's colour again. */
+    colour: categoryColourSchema.nullable().optional(),
+    icon: categoryIconSchema.nullable().optional(),
+    /** Credit accounts only; null clears it. In the account's currency. */
+    creditLimit: creditLimitSchema.nullable().optional(),
+    /** Credit accounts only; null clears it. */
+    dueDay: dueDaySchema.nullable().optional(),
+    /** Credit accounts only; null clears it. In the account's currency. */
+    minPayment: minPaymentSchema.nullable().optional(),
+    /** Null clears it. */
+    subtype: subtypeSchema.nullable().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',
@@ -275,6 +377,14 @@ export const transactionSchema = z.object({
     .object({ accountId: idSchema, budgetGroup: budgetGroupSchema })
     .nullable(),
   tagIds: z.array(idSchema),
+  /**
+   * The bill this entry paid, when it was marked as paying one (a payment
+   * recorded with the mark, or an entry linked to it); else null. An entry
+   * pays at most one bill due date, and unmarking the payment clears this.
+   */
+  billId: idSchema.nullable(),
+  /** The name of that bill; null with `billId`. */
+  billName: z.string().nullable(),
 });
 export type TransactionView = z.infer<typeof transactionSchema>;
 
@@ -372,12 +482,39 @@ export const editedTransactionSchema = z.object({
   replacement: transactionSchema,
 });
 
+/** One ID, or up to 50 comma-separated IDs, as a list. */
+const idListSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(idSchema).min(1).max(50));
+
+/**
+ * The order of a list. `date-desc` (default) is newest first, then the
+ * latest place in the day first; `date-asc` the reverse. `amount-desc` and
+ * `amount-asc` order by the entry's size, the largest posting magnitude in
+ * minor units of its own currency (amounts in different currencies are
+ * compared as written, never converted); ties go newest first. Every order
+ * is total, so cursors page through it without gaps or repeats.
+ */
+export const transactionSortSchema = z.enum([
+  'date-desc',
+  'date-asc',
+  'amount-desc',
+  'amount-asc',
+]);
+export type TransactionSort = z.infer<typeof transactionSortSchema>;
+
 export const listTransactionsQuerySchema = z.object({
+  sort: transactionSortSchema.default('date-desc'),
   from: localDateSchema.optional(),
   to: localDateSchema.optional(),
-  accountId: idSchema.optional(),
-  /** Includes subcategories and categories merged into it. */
-  categoryId: idSchema.optional(),
+  /** Entries touching any of these accounts (comma-separated). */
+  accountId: idListSchema.optional(),
+  /**
+   * Entries in any of these categories (comma-separated). Each includes
+   * its subcategories and categories merged into it.
+   */
+  categoryId: idListSchema.optional(),
   tagId: idSchema.optional(),
   /**
    * Finds entries whose note contains this text; case is ignored for
@@ -385,25 +522,86 @@ export const listTransactionsQuerySchema = z.object({
    */
   q: z.string().trim().min(1).max(100).optional(),
   /**
+   * Finds entries whose payee is this one: the note, compared as
+   * `/v1/reports/payees` compares it (case ignored, spaces collapsed), so
+   * with `type=expense` and `undone=hide` the period's entries are the ones
+   * the report counted for that payee. Undos match through the entry they
+   * undo.
+   */
+  payee: z.string().trim().min(1).max(500).optional(),
+  /**
+   * `expense`: entries that post spending; `income`: entries that post
+   * income (both read from the postings, as `totals` is, and an undo
+   * matches with its entry); `transfer`: transfers and their undos.
+   * Omitted, every kind is listed.
+   */
+  type: z.enum(['expense', 'income', 'transfer']).optional(),
+  /**
    * `hide` leaves out undone entries and their undos, as if deleted; the
    * pair nets to zero, so day totals are the same either way. Earlier
    * versions of edited entries, and their undos, are left out either way:
    * they are reached from the entry (`replacesId`).
    */
   undone: z.enum(['show', 'hide']).default('show'),
+  /**
+   * Also return `groups`: totals per day (newest first) or per category,
+   * for every matching entry, not only this page's. `none` returns no
+   * groups.
+   */
+  group: z.enum(['none', 'day', 'category']).default('none'),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   cursor: z.string().max(500).optional(),
 });
 
+/** One currency's figures; spent and income are positive. */
+export const currencyTotalsSchema = z.object({
+  spent: moneySchema,
+  income: moneySchema,
+  /** `income` minus `spent`. */
+  net: moneySchema,
+});
+
+/**
+ * Totals of a set of entries, never summed across currencies. Spent and
+ * income are the expense and income legs (a transfer, loan or repayment is
+ * neither; a split counts only the user's own share; an undo cancels its
+ * entry), in each amount's own currency with no rate applied.
+ */
+export const entryTotalsSchema = z.object({
+  /** Entries in the set, undos included. */
+  count: z.number().int().nonnegative(),
+  /** One per currency with spent or income, ordered by currency code. */
+  byCurrency: z.array(currencyTotalsSchema),
+});
+
+export const entryGroupTotalsSchema = entryTotalsSchema.extend({
+  /**
+   * The day (`YYYY-MM-DD`) or the category ID; null for entries with no
+   * category. Days run newest first; categories by ID, none last. By
+   * category, a split entry counts in each of its categories.
+   */
+  key: z.string().nullable(),
+});
+
+export const transactionListItemSchema = transactionSchema.extend({
+  /**
+   * With `group=day|category`, the keys of the `groups` this entry is
+   * counted in (a split is in each of its categories; none for an entry
+   * with no category is `[null]`), so a list sectioned like `groups`
+   * agrees with their totals. Empty for `group=none`.
+   */
+  groupKeys: z.array(z.string().nullable()),
+});
+
 export const transactionListSchema = z.object({
-  transactions: z.array(transactionSchema),
+  transactions: z.array(transactionListItemSchema),
   /** Pass as `cursor` for the next, older page; null on the last one. */
   nextCursor: z.string().nullable(),
   /**
    * For each day on this page, newest first: the net change the day's
    * matching entries (all of them, not only this page's) made to the
-   * user's own accounts, or to the filtered account, in the default
-   * currency at that day's rate.
+   * user's own accounts, or to the filtered accounts (only their own
+   * postings), in the default currency at that day's rate.
    */
   dayTotals: z.array(
     z.object({
@@ -413,6 +611,10 @@ export const transactionListSchema = z.object({
       missingRates: z.array(currencyCodeSchema),
     }),
   ),
+  /** Every entry the filters match, ignoring `limit` and `cursor`. */
+  totals: entryTotalsSchema,
+  /** Per `group` of the same entries; empty for `none`. */
+  groups: z.array(entryGroupTotalsSchema),
 });
 export type TransactionListView = z.infer<typeof transactionListSchema>;
 
@@ -567,6 +769,61 @@ export const cycleSchema = z.object({
   payday: localDateSchema,
 });
 
+/**
+ * How the open cycle's on-budget money divides (docs/domain.md "Cycle
+ * allocation"), in the default currency. The six parts always add up to
+ * `start` exactly; `savings` is negative when more came back from savings
+ * than went.
+ */
+export const cycleAllocationSchema = z.object({
+  /** On-budget money when the cycle opened plus income since. */
+  start: moneySchema,
+  /**
+   * The income recorded since the cycle opened, whichever category and
+   * account it landed in. `paycheck + carried` is `start` exactly.
+   */
+  paycheck: moneySchema,
+  /**
+   * What the cycle opened with, as `start − paycheck`. May be negative when
+   * the accounts were overdrawn, or when conversion rounding outweighs a
+   * zero balance.
+   */
+  carried: moneySchema,
+  /** Linked bill payments this cycle. */
+  paidBills: moneySchema,
+  /**
+   * Money moved to savings: transfers into off-budget accounts and accounts
+   * moved into a savings pool. Negative when more came back than went.
+   */
+  savings: moneySchema,
+  /** Spending other than linked bill payments. */
+  spent: moneySchema,
+  /** Unpaid bills reserved, and what is owed to people, now. */
+  reserved: moneySchema,
+  /** On-budget money less `reserved`: the `available` figure. */
+  free: moneySchema,
+  /**
+   * What the other parts do not explain: money lent, conversions and the
+   * like. Often zero; may be negative.
+   */
+  other: moneySchema,
+  /**
+   * Each part's share of `start` in basis points (10 000 is all of it).
+   * 0 for a part that is not positive, and for every part when `start` is
+   * not positive; largest-remainder rounding, so the six add up to 10 000
+   * whenever no part is negative.
+   */
+  shareBp: z.object({
+    paidBills: z.int().min(0).max(10000),
+    savings: z.int().min(0).max(10000),
+    spent: z.int().min(0).max(10000),
+    reserved: z.int().min(0).max(10000),
+    free: z.int().min(0).max(10000),
+    other: z.int().min(0).max(10000),
+  }),
+});
+export type CycleAllocationView = z.infer<typeof cycleAllocationSchema>;
+
 export const todaySchema = z.object({
   /** The user's calendar day. */
   today: localDateSchema,
@@ -582,14 +839,28 @@ export const todaySchema = z.object({
   onBudget: moneySchema,
   /** Unpaid reserved bills now; always exactly `onBudget − available`. */
   reserved: moneySchema,
+  /** The part of `reserved` that is unpaid bills. */
+  reservedBills: moneySchema,
+  /** The part of `reserved` that is owed to people (IOUs); `reservedBills + reservedIous = reserved`. */
+  reservedIous: moneySchema,
   /** Available before today's spending. */
   startOfDay: moneySchema,
   spentToday: moneySchema,
   /** The start of the day split over the days left, rounded down. */
   todayAllowance: moneySchema,
   leftToday: moneySchema,
-  /** Available now split over the days left, rounded down. */
+  /** `dailyBase` split over the days left, rounded down. */
   liveDaily: moneySchema,
+  /** What the daily number divides (docs/domain.md "Daily usable"). */
+  dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']),
+  /** Set-aside budgets' holds, kept out of the daily number. */
+  held: moneySchema,
+  /**
+   * The figure `liveDaily` splits: `available − held` in the free-money
+   * mode, `available` in pool-minus-bills, the daily budgets' left in
+   * daily-budgets.
+   */
+  dailyBase: moneySchema,
   /** Spending since the cycle opened, today included. */
   cycleSpent: moneySchema,
   /**
@@ -597,6 +868,13 @@ export const todaySchema = z.object({
    * adjustments, which still lower `available`: what the pace reads.
    */
   paceSpent: moneySchema,
+  /** The open cycle's on-budget start split into six parts. */
+  allocation: cycleAllocationSchema,
+  /**
+   * Even pace by the end of today less `paceSpent`: positive is under pace,
+   * negative is over. The same pace as today's row of `/v1/cycles/.../days`.
+   */
+  paceDiff: moneySchema,
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(
     z.object({
@@ -636,6 +914,11 @@ export const categorySummaryQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
     .optional(),
+  /**
+   * Also return `series`: spending per category for this many consecutive
+   * periods (cycles or months, as `period`), ending with the selected one.
+   */
+  series: z.coerce.number().int().min(1).max(24).optional(),
 });
 
 const categoryAmountSchema = z.object({
@@ -644,9 +927,57 @@ const categoryAmountSchema = z.object({
 });
 
 const categoryGroupSchema = categoryAmountSchema.extend({
+  /**
+   * The group's share of the period's total in basis points (10 000 is all
+   * of it); 0 when the amount or the total is not positive. Largest-remainder
+   * rounding, so the groups add up to 10 000 when none is negative.
+   */
+  shareBp: z.int().min(0).max(10000),
   /** Subcategories with figures, largest first; what was booked on the parent itself is listed under the parent's own id. */
-  children: z.array(categoryAmountSchema),
+  children: z.array(
+    categoryAmountSchema.extend({
+      /** The child's share of the period's total in basis points; the children add up to the group's `shareBp` when none is negative. */
+      shareBp: z.int().min(0).max(10000),
+    }),
+  ),
 });
+
+const periodSchema = z.object({ from: localDateSchema, to: localDateSchema });
+
+/**
+ * Spending per top-level category across consecutive periods, oldest first.
+ * Each point is what the single-period summary gives for that period: a
+ * subcategory counts in its parent, amounts are in the default currency at
+ * the rate on the period's `to`. `points` and `totals` line up with `periods`.
+ */
+export const categorySeriesSchema = z.object({
+  periods: z.array(periodSchema),
+  /** Largest total across the periods first; zero where nothing was booked. */
+  groups: z.array(
+    z.object({
+      categoryId: idSchema.nullable(),
+      points: z.array(moneySchema),
+      /**
+       * The mean of `points` over every period, the running one and zero
+       * periods included, rounded down.
+       */
+      average: moneySchema,
+      /**
+       * The last period against `average` in basis points (1200 is 12%
+       * above), signed and truncated toward zero; null with one period or an
+       * average that is not positive.
+       */
+      changeBp: z.int().nullable(),
+    }),
+  ),
+  /** Everything spent per period. */
+  totals: z.array(moneySchema),
+  /** The mean of `totals` over every period, rounded down. */
+  totalAverage: moneySchema,
+  /** Currencies without a rate in at least one period, left out. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CategorySeriesView = z.infer<typeof categorySeriesSchema>;
 
 /**
  * Spending and income per top-level category for a period, subcategories
@@ -659,8 +990,27 @@ export const categorySummarySchema = z.object({
   to: localDateSchema,
   spending: z.array(categoryGroupSchema),
   income: z.array(categoryGroupSchema),
+  /** All spending in the period: the sum of the `spending` groups. */
+  spendingTotal: moneySchema,
+  /** All income in the period: the sum of the `income` groups. */
+  incomeTotal: moneySchema,
+  /**
+   * Days the average runs over: from `from` to the earlier of `to` and
+   * today, both counted (at least 1), so a running period is not diluted
+   * by days that have not happened.
+   */
+  days: z.int().min(1),
+  /** `spendingTotal` per day over `days`, rounded down. */
+  dailyAverage: moneySchema,
+  /**
+   * What the period added to the off-budget accounts (net of withdrawals;
+   * an account opened in the period adds nothing), at the rate on `to`.
+   */
+  saved: moneySchema,
   /** Currencies without a rate on `to`, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
+  /** Only when `series` was requested. */
+  series: categorySeriesSchema.optional(),
 });
 export type CategorySummaryView = z.infer<typeof categorySummarySchema>;
 

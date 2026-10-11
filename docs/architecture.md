@@ -58,8 +58,8 @@ packages/shared`. Nothing depends on an app.
 | Query layer | Kysely, forward-only `.sql` migrations, generated types | [0004](adr/0004-sqlite-kysely.md) |
 | API | Hono, Zod schemas → OpenAPI 3.1, SSE | [0008](adr/0008-api-contract.md) |
 | Auth | Better Auth: local accounts, TOTP, OIDC, API tokens | [0006](adr/0006-auth.md) |
-| Web | React + Vite, TanStack Router/Query, shadcn/ui on Radix, Tailwind with generated role tokens, cmdk command palette, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0018](adr/0018-visual-language.md) (superseded by 0022, flat and compact, see #161), [0020](adr/0020-ui-foundation.md); navigation and motion per 0023 (see #161) |
-| Charts / motion | Recharts (lazy, charts only) plus custom SVG; CSS spring easings, View Transitions, and Motion (lazy, for gestures) | [0019](adr/0019-motion-system.md), [0020](adr/0020-ui-foundation.md) |
+| Web | React + Vite, TanStack Router/Query, React Aria Components, Tailwind with generated role tokens and container queries, Remix Icon 4.5.0 (compiled SVG), Geist and Geist Mono, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0026](adr/0026-visual-language-v3.md), [0027](adr/0027-navigation-v3.md), [0028](adr/0028-ui-foundation-v2.md); spec in [ui.md](ui.md) |
+| Charts / motion | In-house SVG chart kit (monotone curves, HTML labels); CSS transitions and View Transitions with generated easing tokens | [0028](adr/0028-ui-foundation-v2.md) |
 | AI | Vercel AI SDK (OpenAI-compatible default), MCP TypeScript SDK | [0008](adr/0008-api-contract.md) |
 | Chat | discord.js, grammY | [0007](adr/0007-deployment-and-gateways.md) |
 | Monorepo | pnpm workspaces + Turborepo | [0003](adr/0003-typescript-node-stack.md) |
@@ -137,7 +137,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - Pools (ADR 0021) are served under `/v1/pools`: list with balances,
   add, and rename, switch or archive. `PUT /v1/accounts/{id}/pool` moves an
   account into a pool from a date. `GET`/`PATCH /v1/settings/ledger` carry
-  `countSavingsInDaily`.
+  `countSavingsInDaily`. A pool and an account may carry a `colour`
+  (`series-1` to `series-8`) and an `icon` (the category icon set); both are
+  optional on create and update, `null` clears them, and `null` on a read
+  means the web app falls back to its default (the pool's place among the
+  open pools, and for an account its pool's colour).
 - Budgets (ADR 0021) are served under `/v1/budgets`: the status for the
   current period (every budget's planned, carried, spent, left and held, free
   money and the daily number), plan, change and end. Budgets are virtual and
@@ -154,7 +158,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   person), `POST /v1/ious/repayments` records a payment that names the IOUs it
   settles, `POST /v1/ious/{id}/write-off` writes off what is left (any time the
   user asks; `iouWriteOffAfterDays` sets when it is offered), `PATCH /v1/ious/{id}` corrects a name
-  or due date, `GET /v1/ious/people` suggests earlier names and
+  or due date (each IOU carries `personOpen`, the open count and total for its
+  person, direction and currency, which is the most a payment to the person
+  may take), `GET /v1/ious/people` suggests earlier names and
   `POST /v1/ious/cover-preview` tells the entry sheet what lending would take.
   Undo goes through `POST /v1/transactions/{id}/reverse`. Figures are
   computed on read; the money is in the ledger.
@@ -174,7 +180,27 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   of `GET /v1/transactions` carries `dayTotals`: for every day on the
   page, the net change all of that day's matching entries made to the
   user's own accounts (or the filtered account), in the default currency
-  at the day's rate. An expense
+  at the day's rate. It also carries `totals` (`count`, and per currency
+  `spent`, `income` and `net` = income − spent) for every entry the filters
+  match, ignoring paging, and with `group=day|category` a `groups` array of
+  the same figures per day (newest first) or category. Totals are never
+  summed across currencies or converted; transfers, loans and repayments are
+  neither spent nor income, an undo cancels its entry, and a split counts
+  each line in its own category. The totals are added up by SQL aggregate
+  queries over the matching entry IDs (`transaction-totals.ts`), never by
+  loading the filtered set, to the rules of `entryTotals` and
+  `entryGroupTotals` in `packages/core` (the integration tests hold the two
+  to the same figures). `dayTotals` nets only the postings of the filtered
+  accounts when `accountId` lists any. With `group=`, each listed entry has
+  `groupKeys`, the group keys it is counted in (`entryGroupKeys` in core),
+  so a list sectioned like `groups` agrees with them. Every entry carries
+  `billId` and `billName` when it paid a bill (`bill_payments.transaction_id`;
+  unmarking the payment clears them). `GET /v1/transactions/{id}` also
+  returns `budget`: for each counted expense line, what its budget had left
+  right after it (`leftAfter`), what its own budget paid and who covered the
+  rest, for the period the entry's date falls in (`entryBudgetLines` in core,
+  from the same fold as `/v1/budgets`; null for an income, a transfer,
+  savings spending or an undone entry). An expense
   or income takes either `categoryId` or a split, `lines: [{categoryId,
   amount}]` (2–20 distinct categories adding up to the amount, or to
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split
@@ -192,10 +218,19 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   transaction, refused as `reconcile_stale` when `expectedDifference` no
   longer holds, or recorded as a match when the difference is now zero.
   Accounts report `lastReconciledOn`.
-  `GET /v1/transactions` pages newest first (by date, then the user's
-  order within the day, `sortRank`) and filters by date range,
+  `GET /v1/transactions` pages newest first by default (by date, then the
+  user's order within the day, `sortRank`); `sort=date-asc` reverses it and
+  `sort=amount-desc|amount-asc` order by the entry's largest posting
+  magnitude in minor units (not converted across currencies), ties newest
+  first. Every order is total, and a cursor only fits the sort it came
+  from (`invalid_cursor` otherwise). It filters by date range,
   account, category (with its subcategories, matching any line of a
-  split), tag and note text; an undo
+  split), tag, note text, payee (`payee`: the whole note compared as
+  `/v1/reports/payees` compares it, through a `payee_key` SQLite function
+  registered on the connection, so "same payee" lists exactly what the
+  report counted) and type (`type=expense|income`: entries posting to the
+  expenses or income account, as `totals` reads them; `type=transfer`:
+  transfers); an undo
   matches whatever the entry it undoes matches. Every query is scoped to the signed-in user, and another
   user's rows answer 404. Domain errors from `core` and `shared` become
   problem details whose `code` is the error code without its namespace
@@ -206,7 +241,43 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   its payment day, and currencies left out for lack of a rate), computed
   from the ledger on every request. `onBudget` and `reserved` split
   `available` for charts; `reserved` is always exactly
-  `onBudget − available`.
+  `onBudget − available`. `reservedBills` and `reservedIous` split
+  `reserved` into unpaid bills and what is owed to people. `allocation`
+  splits the cycle's on-budget start into `paidBills`, `savings` (money
+  actually moved to savings), `spent`, `reserved`, `free` and `other` (what
+  none of those explain, such as money lent), which add up to `start`
+  exactly (domain.md "Cycle allocation"). `allocation.shareBp` gives each
+  part's share of `start` in basis points (largest-remainder rounding; 0
+  for a part that is not positive). `allocation.paycheck` and
+  `allocation.carried` split `start` (income since the cycle opened, and the
+  rest), adding up to `start` exactly. `paceDiff` is the even pace by the end
+  of today less `paceSpent` (positive is under pace). `/v1/reports/categories`
+  groups and children carry `shareBp` of the period's total the same way.
+- `GET /v1/accounts` marks each account `reconcileDue` (open, and never
+  reconciled or not for more than 30 days before the user's today;
+  `reconcileDue` in `core`) and sends `totals.creditOwed`, the open credit
+  accounts' balances summed in the default currency (negative while money
+  is owed), with `missingRates` like the other totals. A credit (liability)
+  account may carry `creditLimit`, `dueDay` and `minPayment`; the read adds
+  `creditAvailable` (limit plus balance) and `nextDueOn`, and the totals add
+  `creditLimit` and `creditAvailable` over the open credit accounts that have
+  a limit (domain.md "Credit limit and due day"). All are display only. Any
+  account may also carry a free-text `subtype`.
+- `GET /v1/budgets` adds `parents`: for each parent category with a budget
+  on at least one child, the planned, spent and left totals of the category
+  budgets under it, in the default currency. It also adds `totals` (planned,
+  spent and left over every budget, each counted once) and, on each budget,
+  `coverUsed` (what each source covered of its shortfall this period, with
+  the source's name).
+- `GET /v1/ious` totals add `net` (`owedToMe − owedByMe`, default currency).
+  Goals add `monthlyNeeded` (`remaining` over the calendar months left,
+  rounded up; null with no date, once reached or after the date; domain.md
+  "Goals") and `progressBp` (saved over the target in basis points, rounded
+  down, 0 to 10 000).
+- `GET /v1/insights/emergency-fund` adds `addedThisCycle` (the fund's gain
+  since the cycle opened) and `cyclesToTarget` (cycles to the target at that
+  rate; null when undefined). `GET /v1/insights/net-worth` adds `change`
+  over the requested `days`.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
@@ -283,6 +354,34 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   merged into. The web app shows the top two children per card, expands to
   the rest, and takes the period and "always expand" from the user's ledger settings
   (`reportPeriod`, `categoryCards`), so every device shows the same views.
+  Adding `series=N` (1 to 24) also returns `series`, spending per top-level
+  category (subcategories counted in their parent, like the groups) for the N
+  consecutive cycles or months ending with the selected one, oldest first
+  (`categorySeries` in `packages/core`). Each point equals the single-period
+  figure for that period; `totals` is the spent per period. Each group's
+  `average` and `totalAverage` are the mean over every period in the series
+  (the running one and empty ones included), rounded down. Each group's
+  `changeBp` is the last period against that average in basis points, signed
+  and truncated toward zero; null with one period or a non-positive average.
+  The summary also
+  carries `spendingTotal`, `incomeTotal`, `days` (the period's days so far,
+  today included, at least 1), `dailyAverage` (spending over `days`, rounded
+  down) and `saved` (what the period added to the off-budget accounts, from
+  `savedBetween` in core, as a cycle's `savingsNetChange`). Both reports
+  resolve their period with one helper (`report-period.ts`).
+- `GET /v1/reports/payees?period=&cycle=&month=&limit=` gives the top payees
+  for the same periods (`limit` 1 to 100, default 10) as the `topPayees`
+  projection in `packages/core`. The ledger has no payee field: a payee is an
+  entry's note, compared ignoring case and extra spaces. Each currency is
+  ranked on its own (`currencies[]`, in code order), by total spent, then
+  entry count, then name; nothing is converted or added across currencies.
+  A split is one entry. Transfers, income, undone entries (with their
+  reversals) and reconcile adjustments are left out, a written-off loan
+  counts as in the category report, and a cover moves no money so it has no
+  effect. Entries without a note are not listed but are reported as
+  `unnamed`, and `total` is the currency's whole net spending so the client
+  can show "other" without adding anything up; `more` counts payees cut by
+  `limit`.
 - `GET /v1/reports/calendar?from=&to=` gives one row per day (at most 62;
   the current month when both are left out): pace spending (linked bill
   payments left out), a heat level from 0 to 4 against the busiest day, bills
@@ -337,7 +436,10 @@ off budget (its `budgetGroup` is the group it started in), and
 adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
-`packages/shared/src/category-style.ts`); a match keeps its own style. IOUs travel as their own entry
+`packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
+`creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype`,
+and pools `colour` and
+`icon`, which round-trip through export and import. IOUs travel as their own entry
 kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
 dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`
 (`account`, `settles: [{iou, amount}]`) and `iou_write_off` (`iou`,
@@ -532,7 +634,7 @@ allotr/
 ├─ migrations/                 forward-only SQL
 ├─ testdata/  golden/  eval/  synthetic/   (private/ is git-ignored)
 ├─ deploy/    docker-compose.yml  .env.example  s6/
-├─ docs/      PRD.md  architecture.md  domain.md  grammar.md  adr/
+├─ docs/      PRD.md  architecture.md  domain.md  grammar.md  ui.md  adr/
 └─ .github/   workflows/  ISSUE_TEMPLATE/
 ```
 
@@ -545,5 +647,5 @@ allotr/
 | Golden | Grammar input → expected JSON | Vitest file snapshots |
 | Integration | API + SQLite + migrations | Vitest |
 | End-to-end replay | Synthetic ledgers imported, then timed undo, edit and back-dated steps → expected balances and today's figures | Vitest + `testdata/synthetic/` |
-| UI | Every signed-in route at phone and desktop sizes with axe (WCAG 2.2 AA); keyboard navigation of the shell; tablet and kiosk sizes later | Playwright |
+| UI | Every signed-in route at 390, 820 and 1440 px with axe (WCAG 2.2 AA), screenshot comparisons and shell alignment checks ([ui.md §10](ui.md#10-testing)); keyboard navigation of the shell; kiosk sizes later | Playwright |
 | LLM eval | Field-level accuracy per model (nightly) | Custom harness |

@@ -90,6 +90,14 @@ export const emergencyFundSchema = z.object({
   progressBasisPoints: z.int(),
   /** Months of expenses the savings cover; null without history. */
   monthsCovered: z.number().nullable(),
+  /** What the fund gained since the day before the open cycle opened; may be negative. */
+  addedThisCycle: moneySchema,
+  /**
+   * Whole cycles until `saved` reaches `target` if every cycle adds what
+   * this one has so far, rounded up; 0 once reached; null when there is no
+   * target or nothing was added this cycle.
+   */
+  cyclesToTarget: z.int().min(0).nullable(),
   missingRates: missing,
 });
 
@@ -103,6 +111,11 @@ export const netWorthSchema = z.object({
   today: localDateSchema,
   /** Every account, savings included; debts count with their sign. */
   amount: moneySchema,
+  /**
+   * `amount` less net worth at the end of the day before the first day of
+   * the series (`days` days back from today); negative when it fell.
+   */
+  change: moneySchema,
   /** One point a day, oldest first, ending today. */
   series: z.array(z.object({ date: localDateSchema, amount: moneySchema })),
   missingRates: missing,

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { localDateSchema } from './dates.ts';
+import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { figureSchema, idSchema } from './ledger.ts';
 
 // Request and response shapes for pools (ADR 0021, docs/domain.md "Pools").
@@ -23,15 +24,43 @@ export const poolSchema = z.object({
    */
   defaultFor: z.enum(['on', 'off']).nullable(),
   archived: z.boolean(),
+  /** A chart series role of the active theme; null follows its place. */
+  colour: categoryColourSchema.nullable(),
+  /** A key from the fixed icon set; null shows the kind's icon. */
+  icon: categoryIconSchema.nullable(),
   /** Open accounts in the pool today. */
   accountIds: z.array(idSchema),
   /** What the open accounts hold, in the default currency at today's rates. */
   balance: figureSchema,
+  /**
+   * For a pool that counts toward the daily number: what its open accounts
+   * had to work with this cycle (their balance at the end of the day before
+   * it opened, plus the income they received since) and hold now, in the
+   * default currency at today's rates. `left` exceeds `start` only when
+   * money came in other than as income, such as a transfer from savings.
+   * Null for pools that do not count, so savings carry no cycle figures.
+   */
+  cycle: z
+    .object({
+      start: figureSchema,
+      left: figureSchema,
+    })
+    .nullable(),
 });
 export type PoolView = z.infer<typeof poolSchema>;
 
+/**
+ * A listed pool also carries its balance's share of the open pools' positive
+ * balances, in basis points (10 000 is all of it), for the pools share bar.
+ * Archived pools and pools that hold nothing or less get 0.
+ */
+export const poolListItemSchema = poolSchema.extend({
+  shareBp: z.number().int().min(0).max(10_000),
+});
+export type PoolListItemView = z.infer<typeof poolListItemSchema>;
+
 export const poolListSchema = z.object({
-  pools: z.array(poolSchema),
+  pools: z.array(poolListItemSchema),
   /** The setting that lets a savings pool count; off unless the user turns it on. */
   countSavingsInDaily: z.boolean(),
 });
@@ -46,6 +75,8 @@ export const createPoolBodySchema = z.object({
   kind: poolKindSchema,
   /** Defaults to on for a spending pool and off for a savings pool. */
   countsTowardDaily: z.boolean().optional(),
+  colour: categoryColourSchema.optional(),
+  icon: categoryIconSchema.optional(),
 });
 export type CreatePoolBody = z.input<typeof createPoolBodySchema>;
 
@@ -53,6 +84,9 @@ export const updatePoolBodySchema = z
   .object({
     name: nameSchema.optional(),
     countsTowardDaily: z.boolean().optional(),
+    /** Null clears it, so the pool takes its place's colour again. */
+    colour: categoryColourSchema.nullable().optional(),
+    icon: categoryIconSchema.nullable().optional(),
     /** Only an empty pool that is not a default one can be archived. */
     archived: z.boolean().optional(),
   })

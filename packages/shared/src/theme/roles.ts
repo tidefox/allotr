@@ -78,13 +78,15 @@ export const ROLE_SPECS: Readonly<Record<Role, RoleSpec>> = {
   ...(Object.fromEntries(
     [...SURFACE_ROLES, ...CONTAINER_ROLES].map((role) => [role, surface]),
   ) as Record<SurfaceRole | (typeof CONTAINER_ROLES)[number], RoleSpec>),
-  primary: { kind: 'non-text', on: ['canvas', 'card', 'chrome'] },
+  primary: { kind: 'text', on: ['canvas', 'card', 'chrome'] },
   info: onCard('non-text'),
   success: onCard('non-text'),
   warning: onCard('non-text'),
   danger: onCard('non-text'),
   text: { kind: 'text', on: [...PAGE, ...CONTAINER_ROLES] },
-  'text-muted': { kind: 'text', on: [...PAGE, ...CONTAINER_ROLES] },
+  // Muted text sits on page surfaces only; text on a tint uses `text` or
+  // an `on-*` role, so muted keeps the palette's dim tone.
+  'text-muted': { kind: 'text', on: PAGE },
   'on-inverse': { kind: 'text', on: ['inverse'] },
   'on-primary': { kind: 'text', on: ['primary'] },
   'on-primary-container': { kind: 'text', on: ['primary-container'] },

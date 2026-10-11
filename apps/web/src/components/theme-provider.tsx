@@ -17,8 +17,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { appearanceQuery, saveAppearance, themesQuery } from '@/lib/appearance';
-import { sessionQuery } from '@/lib/session';
+import {
+  appearanceQuery,
+  saveAppearance,
+  themesQuery,
+} from '@/lib/appearance.ts';
+import { sessionQuery } from '@/lib/session.ts';
 import {
   applyScheme,
   cacheMode,
@@ -28,7 +32,7 @@ import {
   readCachedRoles,
   resolveScheme,
   slotRoles,
-} from '@/lib/theme-mode';
+} from '@/lib/theme-mode.ts';
 
 // Owns the theme for the whole app. Signed out, it is the mode and role
 // colours cached on this device (the ones theme-init.js already applied);

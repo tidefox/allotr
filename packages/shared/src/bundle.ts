@@ -95,6 +95,8 @@ const poolSchema = z
     countsTowardDaily: z.boolean().optional(),
     archived: z.boolean().optional(),
     defaultFor: budgetGroupSchema.optional(),
+    colour: categoryColourSchema.optional(),
+    icon: categoryIconSchema.optional(),
   })
   .refine(
     (pool) =>

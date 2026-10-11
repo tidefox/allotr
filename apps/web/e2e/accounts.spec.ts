@@ -1,532 +1,410 @@
-import {
-  formatMoney,
-  money,
-  type AccountListView,
-  type ArchiveImpactView,
-  type Money,
-  type TodayView,
-} from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
+import { t } from '../src/messages/t.ts';
 import { expectAccessible } from './a11y.ts';
-import { account } from './account.ts';
+import { account, setupSkipped } from './account.ts';
 
-// The accounts view (FR-W2, FR-L2, FR-L8). One instance per size; the
-// tests build on each other. The server runs on the real clock, so figures
-// are compared with the API, never hardcoded.
+// The Accounts screen with made-up data: stats, the pool tree, sub-tabs,
+// selection in the URL, and the rename and move actions.
 test.describe.configure({ mode: 'serial' });
 
-test.beforeAll(async ({ playwright }, testInfo) => {
-  const baseURL = testInfo.project.use.baseURL ?? '';
-  const api = await playwright.request.newContext({
-    baseURL,
-    extraHTTPHeaders: { origin: baseURL },
+async function post(page: Page, origin: string, path: string, data: object) {
+  const response = await page.request.post(path, {
+    data,
+    headers: { origin },
   });
-  expect((await api.post('/v1/onboarding', { data: account })).ok()).toBe(true);
-  await api.dispose();
-});
+  expect(response.ok(), `${path}: ${await response.text()}`).toBe(true);
+  return (await response.json()) as { id: string };
+}
 
-test.beforeEach(async ({ page, baseURL }) => {
-  const response = await page.request.post('/v1/auth/sign-in/email', {
-    data: { email: account.email, password: account.password },
-    headers: { origin: baseURL ?? '' },
+async function signIn(page: Page, origin: string) {
+  await post(page, origin, '/v1/auth/sign-in/email', {
+    email: account.email,
+    password: account.password,
   });
-  expect(response.ok()).toBe(true);
-});
-
-function post(
-  page: Page,
-  baseURL: string | undefined,
-  path: string,
-  data: object,
-) {
-  return page.request.post(path, { data, headers: { origin: baseURL ?? '' } });
 }
 
-async function accounts(page: Page): Promise<AccountListView> {
-  return (await (
-    await page.request.get('/v1/accounts?includeArchived=true')
-  ).json()) as AccountListView;
+function actionsOf(page: Page, name: string) {
+  return page.getByRole('button', {
+    name: t('accountsScreen.list.actionsOf', { name }),
+  });
 }
 
-// The hero reads "Over by …" rather than a negative amount once spent.
-function heroText(left: Money): string {
-  return left.amountMinor < 0
-    ? `Over by ${formatMoney(money(-left.amountMinor, left.currency), 'en-US')}`
-    : formatMoney(left, 'en-US');
+function rowOf(page: Page, name: string) {
+  return page.getByRole('button', { name, exact: true });
 }
 
-async function today(page: Page): Promise<TodayView> {
-  return (await (await page.request.get('/v1/today')).json()) as TodayView;
-}
-
-async function archiveImpact(
-  page: Page,
-  name: string,
-): Promise<ArchiveImpactView> {
-  const id = (await accounts(page)).accounts.find((a) => a.name === name)?.id;
-  return (await (
-    await page.request.get(`/v1/accounts/${id ?? ''}/archive-impact`)
-  ).json()) as ArchiveImpactView;
-}
-
-const section = (page: Page, name: 'On budget' | 'Off budget') =>
-  page.getByRole('region', { name, exact: true });
-const row = (page: Page, name: string) =>
-  page.getByRole('listitem', { name, exact: true });
-
-// Rename, move off budget and archive sit in the row's overflow menu.
-async function rowAction(page: Page, name: string, action: string) {
-  await row(page, name)
-    .getByRole('button', { name: `More actions for ${name}` })
-    .click();
-  await page.getByRole('menuitem', { name: action }).click();
-}
-
-async function createAccount(
-  page: Page,
-  fields: { name: string; currency: string; balance: string; off?: boolean },
-) {
-  await page.getByRole('button', { name: 'New account' }).click();
-  const dialog = page.getByRole('dialog', { name: 'New account' });
-  await dialog.getByLabel('Name').fill(fields.name);
-  await dialog.getByLabel('Currency').selectOption(fields.currency);
-  if (fields.off === true) await dialog.getByLabel(/^Off budget/).check();
-  await dialog
-    .getByLabel(`Opening balance in ${fields.currency}`)
-    .fill(fields.balance);
-  await dialog.getByRole('button', { name: 'Add account' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText(`${fields.name} added.`)).toBeAttached();
-}
-
-test('accounts in two currencies total with the manual rate, and a missing rate is flagged', async ({
+test('the tree groups accounts by pool and credit, with stats', async ({
   page,
   baseURL,
 }) => {
-  await page.goto('/accounts');
-  await expect(
-    page.getByText('No accounts yet', { exact: false }),
-  ).toBeVisible();
-  await expectAccessible(page);
+  const origin = baseURL ?? '';
+  await post(page, origin, '/v1/onboarding', account);
+  const skip = await page.request.put('/v1/settings/setup', {
+    data: setupSkipped,
+    headers: { origin },
+  });
+  expect(skip.ok()).toBe(true);
+  const today = await page.request.get('/v1/today');
+  const currency = ((await today.json()) as { available: { currency: string } })
+    .available.currency;
+  const usd = (amountMinor: number) => ({ amountMinor, currency });
 
-  await page.getByRole('button', { name: 'New account' }).click();
-  const dialog = page.getByRole('dialog', { name: 'New account' });
-  await expect(dialog.getByLabel('Currency')).toHaveValue('USD');
-  await dialog.getByRole('button', { name: 'Add account' }).click();
-  await expect(dialog.getByLabel('Name')).toBeFocused();
-  await expect(dialog.getByText('Enter a name.')).toBeVisible();
-  await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Close' }).click();
-
-  await createAccount(page, {
+  await post(page, origin, '/v1/accounts', {
     name: 'Everyday',
-    currency: 'USD',
-    balance: '1,250.00',
+    currency,
+    openingBalance: usd(250_000),
   });
-  await createAccount(page, {
-    name: 'Travel',
-    currency: 'EUR',
-    balance: '200',
+  await post(page, origin, '/v1/accounts', {
+    name: 'Nest egg',
+    currency,
+    budgetGroup: 'off',
+    openingBalance: usd(900_000),
   });
-  await expect(row(page, 'Travel')).toContainText('€200.00');
+  await post(page, origin, '/v1/accounts', {
+    name: 'Visa',
+    kind: 'liability',
+    currency,
+    openingBalance: usd(-45_000),
+    // 2,000.00 limit with 450.00 owed leaves 1,550.00 free.
+    creditLimit: usd(200_000),
+    dueDay: 15,
+  });
+  await post(page, origin, '/v1/pools', { name: 'Trip', kind: 'spending' });
 
-  // Without a EUR rate, the euros are left out and flagged.
-  const on = section(page, 'On budget');
-  let list = await accounts(page);
-  expect(list.totals.on).toEqual({
-    amount: money(125_000, 'USD'),
-    missingRates: ['EUR'],
-  });
-  await expect(on.getByTestId('total-on')).toHaveText('$1,250.00');
-  await expect(on).toContainText(
-    'Leaves out EUR: there is no exchange rate to USD.',
-  );
-  await expect(on.getByRole('link', { name: 'Add a EUR rate' })).toBeVisible();
-  await expectAccessible(page);
-
-  // A duplicate name is a field error, not a new account.
-  await page.getByRole('button', { name: 'New account' }).click();
-  const again = page.getByRole('dialog', { name: 'New account' });
-  await again.getByLabel('Name').fill('Travel');
-  await again.getByRole('button', { name: 'Add account' }).click();
-  await expect(
-    again.getByText('Another open account has this name.'),
-  ).toBeVisible();
-  await expect(again.getByLabel('Name')).toBeFocused();
-  await again.getByRole('button', { name: 'Close' }).click();
-
-  const rate = await post(page, baseURL, '/v1/rates', {
-    base: 'EUR',
-    quote: 'USD',
-    rate: '1.1',
-  });
-  expect(rate.ok()).toBe(true);
-  await page.reload();
-  list = await accounts(page);
-  expect(list.totals.on).toEqual({
-    amount: money(147_000, 'USD'),
-    missingRates: [],
-  });
-  await expect(on.getByTestId('total-on')).toHaveText(
-    formatMoney(list.totals.on.amount, 'en-US'),
-  );
-  await expect(on).not.toContainText('Leaves out');
-});
-
-test('moving an account off budget lowers Today’s figure from that day', async ({
-  page,
-}) => {
   await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Holiday fund',
-    currency: 'USD',
-    balance: '300',
-  });
-  const before = await today(page);
-
-  await rowAction(page, 'Holiday fund', 'Move off budget');
-  const dialog = page.getByRole('dialog', {
-    name: 'Move Holiday fund off budget?',
-  });
-  await expect(dialog).toContainText(
-    'From today, its $300.00 counts as savings',
-  );
-  await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Move off budget' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(rowOf(page, 'Everyday')).toBeVisible();
+  await expect(rowOf(page, 'Nest egg')).toBeVisible();
+  await expect(rowOf(page, 'Visa')).toBeVisible();
+  // Credit is its own group, not part of a pool.
   await expect(
-    section(page, 'Off budget').getByRole('listitem', { name: 'Holiday fund' }),
-  ).toBeVisible();
-  await expect(
-    section(page, 'Off budget').getByRole('button', {
-      name: 'More actions for Holiday fund',
+    page.getByRole('button', {
+      name: t('accountsScreen.list.fold', {
+        name: t('accountsScreen.list.credit'),
+      }),
     }),
-  ).toBeFocused();
-
-  const after = await today(page);
-  expect(after.available).toEqual(
-    money(before.available.amountMinor - 30_000, 'USD'),
-  );
-  await page.getByRole('link', { name: 'Dashboard' }).first().click();
-  await expect(page.getByTestId('left-today')).toHaveText(
-    heroText(after.leftToday),
-  );
-
-  // The switch is an entry dated today in the account's ledger.
-  const holiday = (await accounts(page)).accounts.find(
-    (a) => a.name === 'Holiday fund',
-  );
-  await page.goto(`/transactions?account=${holiday?.id ?? ''}`);
-  await expect(page.getByText('Moved off budget')).toBeVisible();
-});
-
-test('archiving an account with a balance goes through a transfer, then archives', async ({
-  page,
-}) => {
-  await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Euro savings',
-    currency: 'EUR',
-    balance: '50',
-    off: true,
-  });
-
-  await rowAction(page, 'Travel', 'Archive');
-  const dialog = page.getByRole('dialog', { name: 'Archive Travel?' });
-  await expect(dialog).toContainText('It still holds €200.00.');
-  await expect(
-    dialog.getByLabel('Transferring it to another account'),
-  ).toBeChecked();
-  const euroSavings =
-    (await accounts(page)).accounts.find((a) => a.name === 'Euro savings')
-      ?.id ?? '';
-  await expect(dialog.getByLabel('Transfer to')).toHaveValue(euroSavings);
-
-  // Moving on-budget euros to savings lowers today's figure, and says so
-  // with the amount from the server's projection.
-  const drop = (await archiveImpact(page, 'Travel')).transfers.find(
-    (t) => t.toAccountId === euroSavings,
-  )?.leftTodayDrop;
-  if (drop === undefined) throw new Error('no impact for Euro savings');
-  expect(drop.amountMinor).toBeGreaterThan(0);
-  const confirm = dialog.getByRole('button', { name: 'Transfer and archive' });
-  await expect(confirm).toHaveAccessibleDescription(
-    `From today, the €200.00 counts as savings in Euro savings and no longer adds to what you can spend. Today’s figure drops by ${formatMoney(drop, 'en-US')}.`,
-  );
-  await expectAccessible(page);
-  const before = await today(page);
-  await confirm.click();
-  await expect(dialog).toBeHidden();
-  expect((await today(page)).leftToday).toEqual(
-    money(before.leftToday.amountMinor - drop.amountMinor, 'USD'),
-  );
-
-  await expect(row(page, 'Travel')).toHaveCount(0);
-  await expect(page.getByText('Travel archived.')).toBeAttached();
-  await expect(page.locator('main')).toBeFocused();
-  await expect(row(page, 'Euro savings')).toContainText('€250.00');
-  const archived = page.getByText('Archived (1 account)');
-  await archived.click();
-  await expect(
-    page.getByRole('link', { name: 'Entries of Travel' }),
   ).toBeVisible();
-  await expectAccessible(page);
-
-  const list = await accounts(page);
-  expect(list.accounts.find((a) => a.name === 'Travel')).toMatchObject({
-    archived: true,
-    balance: money(0, 'EUR'),
-  });
-  expect(list.accounts.find((a) => a.name === 'Euro savings')?.balance).toEqual(
-    money(25_000, 'EUR'),
-  );
-});
-
-test('an account at zero balance archives after a plain confirm', async ({
-  page,
-}) => {
-  await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Old wallet',
-    currency: 'USD',
-    balance: '',
-  });
-  await rowAction(page, 'Old wallet', 'Archive');
-  const dialog = page.getByRole('dialog', { name: 'Archive Old wallet?' });
-  await expect(dialog).toContainText('It leaves the list');
-  await expect(dialog.getByRole('radio')).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Archive', exact: true }).click();
-  await expect(dialog).toBeHidden();
-  await expect(row(page, 'Old wallet')).toHaveCount(0);
-  await expect(page.getByText('Archived (2 accounts)')).toBeVisible();
-});
-
-test('writing off an on-budget balance counts as spending and says how much today’s figure drops', async ({
-  page,
-}) => {
-  await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Pocket cash',
-    currency: 'USD',
-    balance: '40',
-  });
-  await rowAction(page, 'Pocket cash', 'Archive');
-  const dialog = page.getByRole('dialog', { name: 'Archive Pocket cash?' });
-  await dialog.getByLabel('Writing it off').check();
-
-  const impact = await archiveImpact(page, 'Pocket cash');
-  const { writeOff } = impact;
-  expect(writeOff.leftTodayDrop).toEqual(money(4_000, 'USD'));
-  // Before and after, both from the server.
-  await expect(dialog).toContainText(formatMoney(impact.leftToday, 'en-US'));
   await expect(
-    dialog.locator('.sr-only', {
-      hasText: formatMoney(writeOff.leftTodayAfter, 'en-US'),
+    page.getByText(t('accountsScreen.stats.netWorth')),
+  ).toBeVisible();
+  // Each new account is flagged due for a reconcile by the server.
+  await expect(
+    page.getByText(t('accountsScreen.stats.reconcileLooks', { count: 3 })),
+  ).toBeVisible();
+  // Credit owed is the server's total, signed as the debt it is.
+  await expect(
+    page.getByText('−$450.00', { exact: true }).first(),
+  ).toBeVisible();
+  // The credit stat names the server's limit total and draws a left-of bar.
+  await expect(
+    page.getByText(
+      t('accountsScreen.stats.creditSubLimit', {
+        count: 1,
+        limit: '$2,000.00',
+      }),
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('progressbar', {
+      name: t('accountsScreen.stats.creditBar', {
+        free: '$1,550.00',
+        limit: '$2,000.00',
+      }),
     }),
-  ).toHaveCount(1);
-  const confirm = dialog.getByRole('button', { name: 'Write off and archive' });
-  await expect(confirm).toHaveAccessibleDescription(
-    'It counts as spending today, so today’s figure drops by $40.00.',
-  );
+  ).toBeVisible();
   await expectAccessible(page);
 
-  const before = await today(page);
-  await confirm.click();
-  await expect(dialog).toBeHidden();
-  const after = await today(page);
-  expect(after.leftToday).toEqual(
-    money(before.leftToday.amountMinor - 4_000, 'USD'),
-  );
-  expect(after.spentToday).toEqual(
-    money(before.spentToday.amountMinor + 4_000, 'USD'),
-  );
-  await page.getByRole('link', { name: 'Dashboard' }).first().click();
-  await expect(page.getByTestId('left-today')).toHaveText(
-    heroText(after.leftToday),
-  );
+  const small = await page
+    .locator('main a, main button, main [role=button]')
+    .evaluateAll((els) =>
+      els
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && (r.width < 24 || r.height < 24))
+        .map((r) => `${String(r.width)}x${String(r.height)}`),
+    );
+  expect(small).toEqual([]);
 });
 
-test('reconciling an on-budget account records a match, then adjusts a difference and changes Today', async ({
+test('a sub-tab narrows the tree', async ({ page, baseURL }) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts/credit');
+  await expect(rowOf(page, 'Visa')).toBeVisible();
+  await expect(rowOf(page, 'Everyday')).toHaveCount(0);
+
+  await page.goto('/accounts/off-budget');
+  await expect(rowOf(page, 'Nest egg')).toBeVisible();
+  await expect(rowOf(page, 'Visa')).toHaveCount(0);
+});
+
+test('choosing an account puts it in the address', async ({
   page,
+  baseURL,
 }) => {
+  await signIn(page, baseURL ?? '');
   await page.goto('/accounts');
-  const everyday = row(page, 'Everyday');
-  await expect(everyday).toContainText('Not reconciled yet');
-  const balance = (await accounts(page)).accounts.find(
-    (a) => a.name === 'Everyday',
-  )?.balance;
-  if (balance === undefined) throw new Error('no Everyday account');
+  await rowOf(page, 'Everyday').click();
+  await expect(page).toHaveURL(/\/accounts\?account=/);
+});
 
-  // The bank agrees: recorded, nothing posted.
-  await everyday.getByRole('button', { name: 'Reconcile Everyday' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Reconcile Everyday' });
-  await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  await expect(dialog.getByText('Enter the bank balance.')).toBeVisible();
-  await expect(dialog.getByLabel('Bank balance in USD')).toBeFocused();
-  await dialog
-    .getByLabel('Bank balance in USD')
-    .fill(formatMoney(balance, 'en-US').replace('$', ''));
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText('Everyday matches the bank.')).toBeAttached();
-  await expect(everyday).toContainText('Reconciled ');
+test('rename changes the name in the tree', async ({ page, baseURL }) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await actionsOf(page, 'Everyday').click();
+  await page
+    .getByRole('menuitem', { name: t('accountsScreen.menu.rename') })
+    .click();
+  const field = page.getByRole('textbox', {
+    name: t('accountsScreen.rename.name'),
+  });
+  await field.fill('Daily spending');
+  await page
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
+  await expect(rowOf(page, 'Daily spending')).toBeVisible();
+  await expect(rowOf(page, 'Everyday')).toHaveCount(0);
+});
 
-  // The bank shows $12.50 less: the difference is offered as one adjustment.
-  const before = await today(page);
-  await everyday.getByRole('button', { name: 'Reconcile Everyday' }).click();
-  const stated = money(balance.amountMinor - 1_250, 'USD');
-  await dialog
-    .getByLabel('Bank balance in USD')
-    .fill(formatMoney(stated, 'en-US').replace('$', ''));
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  const difference = dialog.getByTestId('reconcile-difference');
-  await expect(difference).toBeFocused();
-  await expect(difference).toContainText(
-    'The bank shows $12.50 less than the ledger',
-  );
-  await expect(difference).toContainText('This changes what you can spend.');
-  await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Adjust to match' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText('Everyday now matches the bank.')).toBeAttached();
-  await expect(everyday.getByTestId('account-row-balance')).toHaveText(
-    formatMoney(stated, 'en-US'),
-  );
-
-  const after = await today(page);
-  expect(after.available).toEqual(
-    money(before.available.amountMinor - 1_250, 'USD'),
-  );
-  await page.getByRole('link', { name: 'Dashboard' }).first().click();
-  await expect(page.getByTestId('left-today')).toHaveText(
-    heroText(after.leftToday),
-  );
-
-  // The adjustment is an ordinary entry in the ledger.
-  const id = (await accounts(page)).accounts.find(
-    (a) => a.name === 'Everyday',
-  )?.id;
-  await page.goto(`/transactions?account=${id ?? ''}`);
+test('an empty name is refused', async ({ page, baseURL }) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await actionsOf(page, 'Daily spending').click();
+  await page
+    .getByRole('menuitem', { name: t('accountsScreen.menu.rename') })
+    .click();
+  await page
+    .getByRole('textbox', { name: t('accountsScreen.rename.name') })
+    .fill('  ');
+  await page
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
   await expect(
-    page.getByRole('link', { name: /^Unrecorded Everyday -\$12\.50/ }),
+    page.getByText(t('accountsScreen.rename.nameRequired')),
   ).toBeVisible();
 });
 
-test('reconciling a debt takes the amount owed the statement shows', async ({
+test('moving an account to another pool regroups it, by keyboard', async ({
   page,
+  baseURL,
 }) => {
+  await signIn(page, baseURL ?? '');
   await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Travel card',
-    currency: 'USD',
-    balance: '-150.00',
-    off: true,
-  });
-  const card = row(page, 'Travel card');
+  const trigger = actionsOf(page, 'Daily spending');
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await page
+    .getByRole('menuitem', { name: t('accountsScreen.menu.move') })
+    .focus();
+  await page.keyboard.press('Enter');
 
-  // The statement shows $162.50 owed: $12.50 more than the ledger.
-  await card.getByRole('button', { name: 'Reconcile Travel card' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Reconcile Travel card' });
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  await expect(dialog.getByText('Enter the amount owed.')).toBeVisible();
-  await dialog.getByLabel('Amount owed in USD').fill('162.50');
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  const difference = dialog.getByTestId('reconcile-difference');
-  await expect(difference).toBeFocused();
-  await expect(difference).toContainText(
-    'The statement shows $12.50 more owed than the ledger',
-  );
-  await expect(difference).toContainText('Owed in the ledger$150.00');
-  await expect(difference).toContainText('Owed on the statement$162.50');
-  await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Adjust to match' }).click();
-  await expect(dialog).toBeHidden();
+  await page.getByRole('button', { name: /Pool/ }).click();
+  await page.getByRole('menuitemradio', { name: 'Trip' }).click();
+  await page
+    .getByRole('button', { name: t('accountsScreen.move.save') })
+    .click();
   await expect(
-    page.getByText('Travel card now matches the bank.'),
-  ).toBeAttached();
-  await expect(card.getByTestId('account-row-balance')).toHaveText(
-    formatMoney(money(-16_250, 'USD'), 'en-US'),
-  );
-
-  // The same amount owed now matches.
-  await card.getByRole('button', { name: 'Reconcile Travel card' }).click();
-  await dialog.getByLabel('Amount owed in USD').fill('162.50');
-  await dialog.getByRole('button', { name: 'Compare' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText('Travel card matches the bank.')).toBeAttached();
-  await expect(card).toContainText('Reconciled ');
+    page.getByRole('button', {
+      name: t('accountsScreen.list.fold', { name: 'Trip' }),
+    }),
+  ).toBeVisible();
 });
 
-test('the summary splits on-budget money as today does, and the filter shows one group', async ({
+test('+ account opens a sheet, adds an account and refuses a taken name', async ({
   page,
+  baseURL,
 }) => {
-  const histories: string[] = [];
-  page.on('request', (request) => {
-    if (/\/v1\/accounts\/[^/]+\/history/.test(request.url()))
-      histories.push(request.url());
-  });
+  await signIn(page, baseURL ?? '');
   await page.goto('/accounts');
-  const figures = await today(page);
-  const split = page.getByRole('definition');
-  await expect(page.getByTestId('summary-on-budget')).toHaveText(
-    formatMoney(figures.onBudget, 'en-US'),
-  );
-  await expect(split.first()).toHaveText(
-    formatMoney(figures.reserved, 'en-US'),
-  );
-  await expect(split.nth(1)).toHaveText(
-    formatMoney(figures.available, 'en-US'),
-  );
-  // Sparklines load as their cards come into view.
-  await expect.poll(() => histories.length).toBeGreaterThan(0);
+  const add = page.getByRole('button', {
+    name: t('accountsScreen.add.name'),
+    exact: true,
+  });
+  await expect(add).toBeVisible();
+  await add.click();
+
+  const sheet = page.getByRole('dialog', {
+    name: t('accountsScreen.add.title'),
+  });
+  await expect(sheet).toBeVisible();
+  const name = sheet.getByRole('textbox', { name: t('accounts.create.name') });
+  await expect(name).toBeFocused();
   await expectAccessible(page);
 
-  const show = page.getByRole('radiogroup', { name: 'Show accounts' });
-  await show.getByRole('radio', { name: 'Off budget' }).click();
+  // An empty name is refused before anything is sent.
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
   await expect(
-    page.getByRole('heading', { name: 'On budget', level: 2 }),
+    sheet.getByText(t('accounts.create.errors.nameRequired')),
+  ).toBeVisible();
+
+  // A name another open account has is refused by the server.
+  await name.fill('Nest egg');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(
+    sheet.getByText(t('accounts.create.errors.nameTaken')),
+  ).toBeVisible();
+
+  await name.fill('Holiday jar');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(sheet).toBeHidden();
+  await expect(rowOf(page, 'Holiday jar')).toBeVisible();
+  await expect(page).toHaveURL(/account=/);
+});
+
+test('a credit account shows its limit, what is free and when it is due', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts/credit');
+  // The group header says what the limit total is.
+  await expect(
+    page.getByText(t('accountsScreen.list.owedLimit', { limit: '$2,000.00' })),
+  ).toBeVisible();
+  await rowOf(page, 'Visa').click();
+  await expect(
+    page.getByText(
+      t('accountDetail.credit.free', {
+        free: '$1,550.00',
+        limit: '$2,000.00',
+      }),
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(t('accountDetail.fields.limit'), { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(t('accountDetail.fields.due'), { exact: true }),
+  ).toBeVisible();
+  await expectAccessible(page);
+});
+
+test('editing an account sets its icon and colour, and a card its limit and due day', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await actionsOf(page, 'Visa').click();
+  await page
+    .getByRole('menuitem', { name: t('accountsScreen.menu.rename') })
+    .click();
+  const sheet = page.getByRole('dialog');
+  // The input is hidden inside its swatch; people press the swatch.
+  const swatch = (name: string) =>
+    sheet.getByRole('radio', { name }).locator('xpath=ancestor::label');
+  await swatch(
+    t('settingsCategories.style.colourOption', { number: 4 }),
+  ).click();
+  await swatch('Piggy bank').click();
+  await expect(sheet.getByRole('radio', { name: 'Piggy bank' })).toBeChecked();
+  await sheet
+    .getByRole('textbox', {
+      name: t('accountsScreen.edit.limit', { currency: 'USD' }),
+    })
+    .fill('3000');
+  await sheet
+    .getByRole('textbox', { name: t('accountsScreen.edit.dueDay') })
+    .fill('40');
+  await sheet
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
+  await expect(
+    sheet.getByText(t('accountsScreen.edit.errors.dayInvalid')),
+  ).toBeVisible();
+  await sheet
+    .getByRole('textbox', { name: t('accountsScreen.edit.dueDay') })
+    .fill('31');
+  await expectAccessible(page);
+  await sheet
+    .getByRole('button', { name: t('accountsScreen.rename.save') })
+    .click();
+  await expect(sheet).toBeHidden();
+
+  // The stored colour paints the row's icon; the server holds the rest.
+  await expect(rowOf(page, 'Visa').locator('svg.text-series-4')).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const list = (await (await page.request.get('/v1/accounts')).json()) as {
+        accounts: {
+          name: string;
+          colour: string | null;
+          icon: string | null;
+          creditLimit: { amountMinor: number } | null;
+          dueDay: number | null;
+        }[];
+      };
+      const visa = list.accounts.find((a) => a.name === 'Visa');
+      return [
+        visa?.colour,
+        visa?.icon,
+        visa?.creditLimit?.amountMinor,
+        visa?.dueDay,
+      ];
+    })
+    .toEqual(['series-4', 'piggy-bank', 300_000, 31]);
+});
+
+// Last: it adds to the limit total the credit tests above assert on.
+test('+ account can add a credit account with a limit and a due day', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  await page.goto('/accounts');
+  await page
+    .getByRole('button', { name: t('accountsScreen.add.name'), exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: t('accountsScreen.add.title'),
+  });
+  // The limit and due day appear only for a credit account.
+  await expect(
+    sheet.getByRole('textbox', { name: t('accounts.create.dueDay') }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole('heading', { name: 'Off budget', level: 2 }),
-  ).toBeVisible();
-  await show.getByRole('radio', { name: 'All' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'On budget', level: 2 }),
-  ).toBeVisible();
-});
+  await sheet
+    .getByRole('button', { name: new RegExp(t('accounts.create.kind')) })
+    .click();
+  await page
+    .getByRole('menuitemradio', { name: t('accounts.create.kinds.liability') })
+    .click();
 
-test('an account can be renamed, and a name in use is refused', async ({
-  page,
-}) => {
-  await page.goto('/accounts');
-  await createAccount(page, {
-    name: 'Temporary',
-    currency: 'USD',
-    balance: '',
-  });
-  const before = await accounts(page);
-  const original = before.accounts.find((a) => a.name === 'Temporary');
-
-  await rowAction(page, 'Temporary', 'Rename');
-  const dialog = page.getByRole('dialog', { name: 'Rename Temporary' });
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.name') })
+    .fill('Travel card');
+  await sheet
+    .getByRole('textbox', {
+      name: t('accounts.create.limit', { currency: 'USD' }),
+    })
+    .fill('3000');
+  await sheet
+    .getByRole('textbox', {
+      name: t('accounts.create.minPayment', { currency: 'USD' }),
+    })
+    .fill('45');
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.subtype') })
+    .fill('travel rewards');
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.dueDay') })
+    .fill('40');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(
+    sheet.getByText(t('accounts.create.errors.dayInvalid')),
+  ).toBeVisible();
   await expectAccessible(page);
-  await dialog.getByLabel('Name').fill('Everyday');
-  await dialog.getByRole('button', { name: 'Save name' }).click();
+
+  await sheet
+    .getByRole('textbox', { name: t('accounts.create.dueDay') })
+    .fill('12');
+  await sheet.getByRole('button', { name: t('accounts.create.save') }).click();
+  await expect(sheet).toBeHidden();
+  await expect(rowOf(page, 'Travel card')).toBeVisible();
+  await page.goto('/accounts/credit');
+  await rowOf(page, 'Travel card').click();
   await expect(
-    dialog.getByText('Another open account has this name.'),
+    page.getByText(t('accountDetail.fields.due'), { exact: true }),
   ).toBeVisible();
-
-  await dialog.getByLabel('Name').fill('Petty cash');
-  await dialog.getByRole('button', { name: 'Save name' }).click();
-  await expect(dialog).toBeHidden();
-  await expect(row(page, 'Petty cash')).toBeVisible();
-  await expect(page.getByText('Renamed to Petty cash.')).toBeAttached();
-
-  // Only the name changed: same account, same balance.
-  const renamed = (await accounts(page)).accounts.find(
-    (a) => a.name === 'Petty cash',
-  );
-  expect(renamed?.id).toBe(original?.id);
-  expect(renamed?.balance).toEqual(original?.balance);
+  await expect(
+    page.getByText(t('accountDetail.fields.minPayment'), { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('$45.00')).toBeVisible();
+  await expect(page.getByText(/travel rewards/)).toBeVisible();
 });

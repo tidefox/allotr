@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 import {
   accountId,
   accountBalances,
+  basisPointShares,
   poolCounts,
+  poolCycleFigures,
   poolId,
   poolsOn,
   totalOn,
@@ -11,6 +13,7 @@ import {
   type AccountView,
   type CreatePoolBody,
   type MoveAccountBody,
+  type Money,
   type PoolListView,
   type PoolView,
   type UpdatePoolBody,
@@ -19,8 +22,7 @@ import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
 import { getAccount } from './accounts.ts';
-import { readLedgerSettings } from './ledger-settings.ts';
-import { loadRates } from './rates.ts';
+import { loadView } from './today.ts';
 import { uniquely } from './sqlite-errors.ts';
 import {
   loadChart,
@@ -66,29 +68,25 @@ async function readPools(
   now: Date,
   includeArchived: boolean,
 ): Promise<PoolListView> {
-  const [rows, setup, chart, settings, rates, today] = await Promise.all([
+  // One load of the ledger view serves the pool placement, the balances and
+  // the cycle figures.
+  const [rows, loaded, today] = await Promise.all([
     trx
       .selectFrom('pools')
-      .select(columns)
+      .select([...columns, 'colour', 'icon'])
       .where('user_id', '=', userId)
       .orderBy('position')
       .orderBy('id')
       .execute(),
-    loadPoolSetup(trx, userId),
-    loadChart(trx, userId),
-    readLedgerSettings(trx, userId),
-    loadRates(trx, userId),
+    loadView(trx, userId),
     userToday(trx, userId, now),
   ]);
-  const ledger = await loadLedger(trx, userId, chart);
-  const view = {
-    chart,
-    ledger,
-    pools: setup,
-    settings: { countSavingsInDaily: settings.countSavingsInDaily },
-  };
+  const { view } = loaded;
+  const { chart, ledger, rates, settings } = view;
+  const countSavingsInDaily = settings.countSavingsInDaily === true;
   const placed = poolsOn(view, today);
   const balances = accountBalances(ledger);
+  const cycleFigures = poolCycleFigures(view, today);
   const open = new Set(
     [...chart.values()].filter((a) => !a.archived).map((a) => a.id),
   );
@@ -107,25 +105,59 @@ async function readPools(
         settings.defaultCurrency,
         today,
       );
+      const inCycle = cycleFigures.get(poolId(row.id));
+      const inDefault = (amounts: readonly Money[]) => {
+        const total = totalOn(rates, amounts, settings.defaultCurrency, today);
+        return {
+          amount: total.amount,
+          missingRates: [...total.missingRates],
+        };
+      };
       return {
         id: row.id,
         name: row.name,
         kind: toPool(row).kind,
         countsTowardDaily: row.counts_toward_daily === 1,
-        counts: poolCounts(toPool(row), settings.countSavingsInDaily),
+        counts: poolCounts(toPool(row), countSavingsInDaily),
         defaultFor:
           row.default_for === 'on' || row.default_for === 'off'
             ? row.default_for
             : null,
         archived: row.archived === 1,
+        colour: row.colour as PoolView['colour'],
+        icon: row.icon as PoolView['icon'],
         accountIds: members,
         balance: {
           amount: figure.amount,
           missingRates: [...figure.missingRates],
         },
+        cycle:
+          inCycle === undefined
+            ? null
+            : {
+                start: inDefault(inCycle.start),
+                left: inDefault(inCycle.left),
+              },
       };
     });
-  return { pools, countSavingsInDaily: settings.countSavingsInDaily };
+  // Shares are worked out here so the web app never sums balances.
+  const shares = basisPointShares(
+    pools.map((pool) => (pool.archived ? 0 : pool.balance.amount.amountMinor)),
+    pools.reduce(
+      (sum, pool) =>
+        pool.archived
+          ? sum
+          : sum + Math.max(0, pool.balance.amount.amountMinor),
+      0,
+    ),
+  );
+  return {
+    pools: pools.map((pool, index) => ({
+      ...pool,
+      shareBp: shares[index] ?? 0,
+    })),
+    countSavingsInDaily,
+  };
 }
 
 async function findOwned(db: Db, userId: string, id: string) {
@@ -177,6 +209,8 @@ export async function createPool(
             counts_toward_daily:
               (input.countsTowardDaily ?? input.kind === 'spending') ? 1 : 0,
             position: (last?.position ?? 0) + 1,
+            colour: input.colour ?? null,
+            icon: input.icon ?? null,
             created_at: at,
             updated_at: at,
           })
@@ -233,6 +267,8 @@ export async function updatePool(
             ...(input.archived === undefined
               ? {}
               : { archived: input.archived ? 1 : 0 }),
+            ...(input.colour === undefined ? {} : { colour: input.colour }),
+            ...(input.icon === undefined ? {} : { icon: input.icon }),
             updated_at: now.toISOString(),
           })
           .where('user_id', '=', userId)

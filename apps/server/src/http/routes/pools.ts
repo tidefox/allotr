@@ -69,9 +69,9 @@ const updateRoute = createRoute({
   method: 'patch',
   path: '/v1/pools/{id}',
   tags,
-  summary: 'Rename, switch or archive a pool',
+  summary: 'Rename, restyle, switch or archive a pool',
   description:
-    'The Budget pool always counts and neither default pool can be archived (`pool_fixed`). Only an empty pool is archived (`pool_not_empty`).',
+    'The Budget pool always counts and neither default pool can be archived (`pool_fixed`). Only an empty pool is archived (`pool_not_empty`). `colour` and `icon` only change how the pool is drawn; null clears them.',
   request: {
     params: idParamSchema,
     body: {

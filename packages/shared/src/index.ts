@@ -12,6 +12,7 @@ export {
   localDateIn,
   isoWeekday,
   lastDayOfMonth,
+  monthsBetween,
   nextDayOfMonth,
   localDateSchema,
   isLocalTime,
@@ -65,7 +66,9 @@ export * from './ledger.ts';
 export * from './goals.ts';
 export * from './pools.ts';
 export * from './budgets.ts';
+export * from './transaction-detail.ts';
 export * from './ious.ts';
+export * from './payees.ts';
 export * from './plan.ts';
 export * from './reminders.ts';
 export * from './bundle.ts';

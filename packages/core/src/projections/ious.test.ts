@@ -174,6 +174,7 @@ describe('a split bill', () => {
       ['Sam Example', 3_000],
     ]);
     expect(iouTotals(v, today).owedToMe).toEqual(usd(6_000));
+    expect(iouTotals(v, today).net).toEqual(usd(6_000));
     expect(iouBalanceGaps(v, today).size).toBe(0);
   });
 });
@@ -419,5 +420,33 @@ describe('savings', () => {
     });
     const v = make([openingUsd('2026-02-18', 100_000, savings), split]);
     expect(dailyFiguresOn(v, today).cycleSpent).toEqual(usd(0));
+  });
+});
+
+describe('net', () => {
+  const lent = lend(chart, meta('2026-03-06'), {
+    accountId: card,
+    owed: [usd(5_000)],
+  });
+  const borrowed = borrow(chart, meta('2026-03-07'), {
+    accountId: card,
+    owed: [usd(8_000)],
+  });
+  const ious = [
+    iou('iou-lent', lent, 'Sam Example', 5_000),
+    iou('iou-borrowed', borrowed, 'Alex Example', 8_000, {
+      direction: 'owed-by-me',
+    }),
+  ];
+
+  it('is negative when the user owes more than people owe them', () => {
+    const totals = iouTotals(make([lent, borrowed], ious), today);
+    expect(totals.owedToMe).toEqual(usd(5_000));
+    expect(totals.owedByMe).toEqual(usd(8_000));
+    expect(totals.net).toEqual(usd(-3_000));
+  });
+
+  it('is zero with no IOUs', () => {
+    expect(iouTotals(make([]), today).net).toEqual(usd(0));
   });
 });

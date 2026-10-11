@@ -33,6 +33,13 @@ export type SnapshotAccount = Readonly<{
   archived: boolean;
   /** The creation day in the user's time zone. */
   createdOn: LocalDate;
+  colour: CategoryView['colour'];
+  icon: CategoryView['icon'];
+  /** Credit accounts only. */
+  creditLimitMinor: number | null;
+  dueDay: number | null;
+  minPaymentMinor: number | null;
+  subtype: string | null;
 }>;
 
 export type SystemRole =
@@ -94,6 +101,8 @@ export type SnapshotPool = Readonly<{
   countsTowardDaily: boolean;
   defaultFor: 'on' | 'off' | null;
   archived: boolean;
+  colour: CategoryView['colour'];
+  icon: CategoryView['icon'];
 }>;
 
 export type SnapshotPoolMove = Readonly<{
@@ -158,6 +167,12 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'currency',
         'archived',
         'created_at',
+        'colour',
+        'icon',
+        'credit_limit_minor',
+        'due_day',
+        'min_payment_minor',
+        'subtype',
       ])
       .where('user_id', '=', userId)
       .orderBy('created_at')
@@ -262,6 +277,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'counts_toward_daily',
         'default_for',
         'archived',
+        'colour',
+        'icon',
       ])
       .where('user_id', '=', userId)
       .orderBy('position')
@@ -298,6 +315,12 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       currency: row.currency,
       archived: row.archived === 1,
       createdOn: localDateIn(new Date(row.created_at), settings.timeZone),
+      colour: row.colour as SnapshotAccount['colour'],
+      icon: row.icon as SnapshotAccount['icon'],
+      creditLimitMinor: row.credit_limit_minor,
+      dueDay: row.due_day,
+      minPaymentMinor: row.min_payment_minor,
+      subtype: row.subtype,
     });
   }
 
@@ -404,6 +427,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
           ? row.default_for
           : null,
       archived: row.archived === 1,
+      colour: row.colour as SnapshotPool['colour'],
+      icon: row.icon as SnapshotPool['icon'],
     })),
     poolMoves: moveRows.map((row) => ({
       accountId: row.account_id,

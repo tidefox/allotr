@@ -51,6 +51,29 @@
         "purple": "mauve",
         "pink": "pink"
       }
+    },
+    "roles": {
+      "primary": {
+        "slot": "blue"
+      },
+      "ring": {
+        "slot": "blue"
+      },
+      "on-primary": {
+        "slot": "base"
+      },
+      "warning": {
+        "slot": "yellow"
+      },
+      "reserved": {
+        "slot": "yellow"
+      },
+      "negative": {
+        "slot": "red"
+      },
+      "card": {
+        "slot": "crust"
+      }
     }
   },
   {
@@ -104,6 +127,29 @@
         "blue": "blue",
         "purple": "mauve",
         "pink": "pink"
+      }
+    },
+    "roles": {
+      "primary": {
+        "slot": "blue"
+      },
+      "ring": {
+        "slot": "blue"
+      },
+      "on-primary": {
+        "slot": "base"
+      },
+      "warning": {
+        "slot": "yellow"
+      },
+      "reserved": {
+        "slot": "yellow"
+      },
+      "negative": {
+        "slot": "red"
+      },
+      "outline-variant": {
+        "slot": "surface0"
       }
     }
   },
@@ -159,6 +205,29 @@
         "purple": "mauve",
         "pink": "pink"
       }
+    },
+    "roles": {
+      "primary": {
+        "slot": "blue"
+      },
+      "ring": {
+        "slot": "blue"
+      },
+      "on-primary": {
+        "slot": "base"
+      },
+      "warning": {
+        "slot": "yellow"
+      },
+      "reserved": {
+        "slot": "yellow"
+      },
+      "negative": {
+        "slot": "red"
+      },
+      "outline-variant": {
+        "slot": "surface0"
+      }
     }
   },
   {
@@ -212,6 +281,29 @@
         "blue": "blue",
         "purple": "mauve",
         "pink": "pink"
+      }
+    },
+    "roles": {
+      "primary": {
+        "slot": "blue"
+      },
+      "ring": {
+        "slot": "blue"
+      },
+      "on-primary": {
+        "slot": "base"
+      },
+      "warning": {
+        "slot": "yellow"
+      },
+      "reserved": {
+        "slot": "yellow"
+      },
+      "negative": {
+        "slot": "red"
+      },
+      "outline-variant": {
+        "slot": "surface0"
       }
     }
   }

@@ -5,6 +5,7 @@ import {
   money,
   MoneyError,
   parseMoney,
+  type ConvertToIouBody,
   type CreateIouBody,
   type CreateTransactionBody,
   type IouDirectionView,
@@ -177,6 +178,25 @@ export function toSplitBody(
       ...(expense.tagIds === undefined ? {} : { tagIds: expense.tagIds }),
     },
   };
+}
+
+export type ConvertResult =
+  | { ok: true; body: ConvertToIouBody }
+  | { ok: false; errors: Record<number, PersonError> };
+
+/**
+ * Splitting a logged expense with people: each person owes their amount
+ * (an even share until typed), and the server keeps the rest as the user's
+ * own share, or refuses when people owe more than the bill.
+ */
+export function toConvertBody(
+  bill: Money,
+  people: readonly PersonDraft[],
+  locale: string,
+): ConvertResult {
+  const built = lines(fillEven(people, bill, locale), bill.currency, locale);
+  if (!built.ok) return built;
+  return { ok: true, body: { people: built.lines } };
 }
 
 /** Lending to, or borrowing from, one person. */

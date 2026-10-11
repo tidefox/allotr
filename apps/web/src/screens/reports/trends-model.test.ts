@@ -1,0 +1,211 @@
+import { money as sharedMoney } from '@allotr/shared';
+import fc from 'fast-check';
+import { describe, expect, it } from 'vitest';
+import type { CategorySeriesView, CategoryView, Money } from '@allotr/shared';
+import {
+  hasSpending,
+  periodLabels,
+  tickIndexes,
+  totalsColumns,
+  trendLines,
+  versusRows,
+} from './trends-model.ts';
+
+const money = (amountMinor: number): Money => sharedMoney(amountMinor, 'USD');
+
+const category = (id: string): CategoryView => ({
+  id,
+  name: id,
+  kind: 'expense',
+  parentId: null,
+  isPaycheck: false,
+  position: 0,
+  colour: null,
+  icon: null,
+  mergedIntoId: null,
+});
+const categories = [category('food'), category('rent'), category('fun')];
+
+const series = {
+  periods: [
+    { from: '2026-08-01', to: '2026-08-31' },
+    { from: '2026-09-01', to: '2026-09-30' },
+    { from: '2026-10-01', to: '2026-10-31' },
+  ],
+  groups: [
+    {
+      categoryId: 'rent',
+      points: [money(900), money(900), money(900)],
+      average: money(900),
+      changeBp: 0,
+    },
+    {
+      categoryId: 'food',
+      points: [money(300), money(500), money(400)],
+      average: money(400),
+      changeBp: 0,
+    },
+    {
+      categoryId: 'fun',
+      points: [money(0), money(0), money(0)],
+      average: money(0),
+      changeBp: null,
+    },
+    {
+      categoryId: null,
+      points: [money(0), money(20), money(50)],
+      average: money(23),
+      changeBp: 11739,
+    },
+  ],
+  totals: [money(1200), money(1420), money(1350)],
+  totalAverage: money(1323),
+  missingRates: [],
+} as unknown as CategorySeriesView;
+
+describe('trendLines', () => {
+  it('draws the largest categories with one point per period', () => {
+    const lines = trendLines(series, categories, 'en', 2);
+    expect(lines.series.map((s) => s.id)).toEqual(['rent', 'food']);
+    expect(lines.series[1]?.points).toEqual([
+      { x: 0, y: 300 },
+      { x: 1, y: 500 },
+      { x: 2, y: 400 },
+    ]);
+    expect(lines.xTicks.map((t) => t.label)).toEqual([
+      'aug 01',
+      'sep 01',
+      'oct 01',
+    ]);
+    expect(lines.table.headers).toEqual(['Period', 'rent', 'food']);
+    expect(lines.table.rows[0]).toEqual(['aug 01', '$9.00', '$3.00']);
+  });
+
+  it('covers the data with its y ticks', () => {
+    const lines = trendLines(series, categories, 'en');
+    const top = Math.max(...lines.yTicks.map((t) => t.value));
+    expect(top).toBeGreaterThanOrEqual(900);
+    expect(lines.yTicks[0]?.value).toBe(0);
+  });
+
+  it('names the one that dwarfs the rest and keeps it out of the scale', () => {
+    const big = {
+      ...series,
+      groups: [
+        { categoryId: 'rent', points: [money(900), money(900), money(900)] },
+        { categoryId: 'food', points: [money(300), money(400), money(350)] },
+      ],
+    } as unknown as CategorySeriesView;
+    const lines = trendLines(big, categories, 'en');
+    expect(lines.series.map((s) => s.id)).toEqual(['food']);
+    expect(lines.leftOut).toEqual({ name: 'rent', amount: money(900) });
+    expect(trendLines(series, categories, 'en').leftOut).toBeNull();
+  });
+
+  it('gives a category with no id its own name', () => {
+    const lines = trendLines(series, categories, 'en', 10);
+    expect(lines.series.find((s) => s.id === 'none')?.label).toBe(
+      'No category',
+    );
+  });
+});
+
+describe('versusRows', () => {
+  it('compares the last period with the server average, by comparison only', () => {
+    const rows = versusRows(series, categories);
+    expect(rows.map((r) => [r.key, r.movement])).toEqual([
+      ['rent', 'same'],
+      ['food', 'same'],
+      ['none', 'up'],
+    ]);
+    expect(rows[1]?.current).toEqual(money(400));
+    expect(rows[1]?.average).toEqual(money(400));
+    expect(rows[2]?.average).toEqual(money(23));
+    // The server's 11 739 bp, rounded for display.
+    expect(rows.map((r) => r.percent)).toEqual([0, 0, 117]);
+  });
+
+  it('moves down when the period came in under the average', () => {
+    const under = {
+      ...series,
+      groups: [
+        {
+          categoryId: 'food',
+          points: [money(300), money(500), money(250)],
+          average: money(350),
+          changeBp: -2857,
+        },
+      ],
+    } as unknown as CategorySeriesView;
+    expect(versusRows(under, categories)[0]).toMatchObject({
+      movement: 'down',
+      percent: 29,
+    });
+  });
+
+  it('has no movement with a single period', () => {
+    const one = {
+      ...series,
+      periods: [{ from: '2026-10-01', to: '2026-10-31' }],
+      groups: [
+        {
+          categoryId: 'food',
+          points: [money(400)],
+          average: money(400),
+          changeBp: null,
+        },
+      ],
+      totals: [money(400)],
+    } as unknown as CategorySeriesView;
+    expect(versusRows(one, categories)[0]).toMatchObject({
+      average: money(400),
+      movement: null,
+      percent: null,
+    });
+  });
+});
+
+describe('totalsColumns', () => {
+  it('scales columns against the tallest and marks the last period', () => {
+    const { columns, rows } = totalsColumns(series, 'en');
+    expect(columns.map((c) => Math.round(c.fraction * 100))).toEqual([
+      85, 100, 95,
+    ]);
+    expect(columns.map((c) => c.color)).toEqual([
+      'primary',
+      'primary',
+      'series-4',
+    ]);
+    expect(rows[2]).toEqual(['oct 01', '$13.50']);
+  });
+});
+
+describe('helpers', () => {
+  it('knows when nothing was spent', () => {
+    expect(hasSpending(series)).toBe(true);
+    expect(hasSpending({ ...series, totals: [money(0), money(0)] })).toBe(
+      false,
+    );
+  });
+
+  it('labels each period by its first day', () => {
+    expect(periodLabels(series, 'en')).toEqual(['aug 01', 'sep 01', 'oct 01']);
+  });
+
+  it('keeps first and last ticks and never exceeds the maximum', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 60 }),
+        fc.integer({ min: 2, max: 10 }),
+        (count, max) => {
+          const ticks = tickIndexes(count, max);
+          expect(ticks.length).toBeLessThanOrEqual(max);
+          expect(ticks[0]).toBe(0);
+          expect(ticks.at(-1)).toBe(count - 1);
+          expect([...ticks].sort((a, b) => a - b)).toEqual(ticks);
+        },
+      ),
+    );
+    expect(tickIndexes(0)).toEqual([]);
+  });
+});

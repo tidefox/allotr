@@ -60,6 +60,43 @@ function floorDiv(total: bigint, n: bigint): bigint {
 }
 
 /**
+ * The even-pace cumulative spending by the end of day `at` (0-based) of a
+ * cycle of `count` days that spreads `budget` evenly, rounded down.
+ */
+function evenPace(budget: bigint, at: number, count: number): bigint {
+  return floorDiv(budget * BigInt(at + 1), BigInt(count));
+}
+
+/**
+ * How far spending is from the even pace today (docs/domain.md "Pace
+ * difference"): even pace by the end of today less pace spending so far.
+ * Positive is under pace, negative over. It uses the closed form of the
+ * `pace` and `cumulativeSpent` of today's row in `cycleDays`, so the three
+ * figures on screen always agree, without walking the cycle.
+ */
+export function paceDiff(
+  input: Readonly<{
+    cycle: Cycle;
+    /** `cycleEndOn(cycle, today)`: payday, or the day after today when overdue. */
+    cycleEnd: LocalDate;
+    today: LocalDate;
+    /** Pace spending from the cycle's first day through today. */
+    paceSpent: Money;
+    /** Available budget now. */
+    available: Money;
+  }>,
+): Money {
+  const { cycle, today, paceSpent, available } = input;
+  const count = Math.max(1, daysBetween(cycle.openedOn, input.cycleEnd));
+  const at = Math.min(count - 1, daysBetween(cycle.openedOn, today));
+  const budget = BigInt(paceSpent.amountMinor + available.amountMinor);
+  return money(
+    Number(evenPace(budget, at, count)) - paceSpent.amountMinor,
+    paceSpent.currency,
+  );
+}
+
+/**
  * One row per day of `cycle`, from the day it opened to the day before
  * payday (through today while payday is overdue, or the day before it
  * closed once it has). Figures are in the default currency at each day's
@@ -143,10 +180,7 @@ export function cycleDays(
       : latest.cumulativeSpent.amountMinor + latest.availableEnd.amountMinor,
   );
   const days = Array.from({ length: count }, (_, at): CycleDay => {
-    const pace = money(
-      Number(floorDiv(budget * BigInt(at + 1), BigInt(count))),
-      currency,
-    );
+    const pace = money(Number(evenPace(budget, at, count)), currency);
     const row = past[at];
     return row === undefined
       ? {

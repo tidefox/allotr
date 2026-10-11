@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { accountBalances, accountId, poolsOn, totalOn } from '@allotr/core';
+import {
+  accountBalances,
+  accountId,
+  goalMonthlyNeeded,
+  goalProgressBp,
+  poolsOn,
+  totalOn,
+} from '@allotr/core';
 import {
   currencyCode,
   localDate,
@@ -124,6 +131,17 @@ async function readGoals(
       saved: figure.amount,
       remaining: money(Math.max(0, row.target_minor - saved), row.currency),
       reached: saved >= row.target_minor,
+      progressBp: goalProgressBp(
+        figure.amount,
+        money(row.target_minor, row.currency),
+      ),
+      monthlyNeeded: goalMonthlyNeeded(
+        {
+          remaining: money(Math.max(0, row.target_minor - saved), row.currency),
+          targetOn: row.target_on === null ? null : localDate(row.target_on),
+        },
+        today,
+      ),
       missingRates: [...figure.missingRates],
     };
   });

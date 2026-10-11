@@ -61,7 +61,7 @@ const createRouteDef = createRoute({
   tags,
   summary: 'Open an account',
   description:
-    'The currency is fixed at creation. An opening balance is posted against Equity:Opening.',
+    'The currency is fixed at creation. An opening balance is posted against Equity:Opening. `creditLimit`, `dueDay` and `minPayment` are for credit (liability) accounts only (`credit_only`). `subtype` is free text for any account.',
   request: {
     body: {
       content: { 'application/json': { schema: createAccountBodySchema } },
@@ -92,9 +92,9 @@ const updateRoute = createRoute({
   method: 'patch',
   path: '/v1/accounts/{id}',
   tags,
-  summary: 'Rename an account or move it on or off budget',
+  summary: 'Rename an account, restyle it or move it on or off budget',
   description:
-    'A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool.',
+    "A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool. `colour` and `icon` only change how the account is drawn; null clears them. `creditLimit` (in the account's currency) and `dueDay` are for credit (liability) accounts only (`credit_only`); null clears them. `minPayment` is credit only too, in the account's currency; `subtype` is free text and null clears it. All of them are shown, never acted on: a due day or a minimum payment creates no bill.",
   request: {
     params: idParamSchema,
     body: {

@@ -1,6 +1,9 @@
 import {
   categoryId,
+  cycleAllocation,
   dailyFigures,
+  paceDiff,
+  reservedParts,
   transactionId,
   type CategoryId,
   type LedgerView,
@@ -163,6 +166,8 @@ export async function todayFigures(
       billNames: await loadBillNames(trx, userId),
     }));
   const figures = dailyFigures(view, now, timeZone);
+  const allocation = cycleAllocation(view, figures.today);
+  const reservedSplit = reservedParts(view, figures.today);
   return {
     today: figures.today,
     cycle: {
@@ -176,13 +181,37 @@ export async function todayFigures(
     available: figures.available,
     onBudget: figures.onBudget,
     reserved: figures.reserved,
+    reservedBills: reservedSplit.bills,
+    reservedIous: reservedSplit.ious,
     startOfDay: figures.startOfDay,
     spentToday: figures.spentToday,
     todayAllowance: figures.todayAllowance,
     leftToday: figures.leftToday,
     liveDaily: figures.liveDaily,
+    dailyMode: figures.dailyMode,
+    held: figures.held,
+    dailyBase: figures.dailyBase,
     cycleSpent: figures.cycleSpent,
     paceSpent: figures.paceSpent,
+    paceDiff: paceDiff({
+      cycle: figures.cycle,
+      cycleEnd: figures.cycleEnd,
+      today: figures.today,
+      paceSpent: figures.paceSpent,
+      available: figures.available,
+    }),
+    allocation: {
+      start: allocation.start,
+      paycheck: allocation.paycheck,
+      carried: allocation.carried,
+      paidBills: allocation.paidBills,
+      savings: allocation.savings,
+      spent: allocation.spent,
+      reserved: allocation.reserved,
+      free: allocation.free,
+      other: allocation.other,
+      shareBp: allocation.shareBp,
+    },
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,
       name: billNames.get(due.billId)?.name ?? '',
@@ -196,6 +225,8 @@ export async function todayFigures(
       amount: bill.amount,
       paidOn: bill.paidOn,
     })),
-    missingRates: [...figures.missingRates],
+    missingRates: [
+      ...new Set([...figures.missingRates, ...allocation.missingRates]),
+    ].sort(),
   };
 }

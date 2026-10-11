@@ -11,8 +11,14 @@ type Figure = {
   missingRates: string[];
 };
 type List = {
-  accounts: { id: string; archived: boolean }[];
-  totals: { on: Figure; off: Figure };
+  accounts: { id: string; archived: boolean; reconcileDue: boolean }[];
+  totals: {
+    on: Figure;
+    off: Figure;
+    creditOwed: Figure;
+    creditLimit: Figure;
+    creditAvailable: Figure;
+  };
 };
 
 let h: TwoUsers;
@@ -56,6 +62,9 @@ describe('account totals', () => {
     expect((await list(h.alice)).totals).toEqual({
       on: { amount: usd(0), missingRates: [] },
       off: { amount: usd(0), missingRates: [] },
+      creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 
@@ -67,6 +76,9 @@ describe('account totals', () => {
     expect((await list(h.alice)).totals).toEqual({
       on: { amount: usd(100_000), missingRates: ['EUR'] },
       off: { amount: usd(500_000), missingRates: ['JPY'] },
+      creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 
@@ -91,6 +103,9 @@ describe('account totals', () => {
     expect((await list(h.alice)).totals).toEqual({
       on: { amount: usd(100_000), missingRates: [] },
       off: { amount: usd(522_000), missingRates: ['JPY'] },
+      creditOwed: { amount: usd(0), missingRates: [] },
+      creditLimit: { amount: usd(0), missingRates: [] },
+      creditAvailable: { amount: usd(0), missingRates: [] },
     });
   });
 
@@ -112,5 +127,49 @@ describe('account totals', () => {
       amount: usd(0),
       missingRates: [],
     });
+  });
+});
+
+describe('credit owed and reconciling due', () => {
+  it('sums the open credit accounts, leaving out other kinds and the missing rates', async () => {
+    const card = await h.bob.post('/v1/accounts', {
+      name: 'Card',
+      kind: 'liability',
+      currency: 'USD',
+      budgetGroup: 'on',
+      openingBalance: usd(-30_000),
+    });
+    expect(card.status).toBe(201);
+    const euro = await h.bob.post('/v1/accounts', {
+      name: 'Euro card',
+      kind: 'liability',
+      currency: 'EUR',
+      budgetGroup: 'on',
+      openingBalance: { amountMinor: -5_000, currency: 'EUR' },
+    });
+    expect(euro.status).toBe(201);
+    await h.bob.post('/v1/accounts', {
+      name: 'Everyday',
+      currency: 'USD',
+      budgetGroup: 'on',
+      openingBalance: usd(90_000),
+    });
+    // Owed money counts with the sign of the balance; EUR has no rate.
+    expect((await list(h.bob)).totals.creditOwed).toEqual({
+      amount: usd(-30_000),
+      missingRates: ['EUR'],
+    });
+  });
+
+  it('flags an open account never reconciled, until it is reconciled', async () => {
+    const id = await open('Joint', 'USD', 10_000, 'on');
+    const find = async () =>
+      (await list(h.alice)).accounts.find((a) => a.id === id);
+    expect((await find())?.reconcileDue).toBe(true);
+    const reconciled = await h.alice.post(`/v1/accounts/${id}/reconcile`, {
+      balance: usd(10_000),
+    });
+    expect(reconciled.status).toBe(200);
+    expect((await find())?.reconcileDue).toBe(false);
   });
 });

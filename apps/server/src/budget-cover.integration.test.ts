@@ -16,7 +16,11 @@ type Status = {
     held: Money;
     overflow: Money;
     coveredOut: Money;
+    planned: Money;
+    spent: Money;
+    coverUsed: Source[];
   }[];
+  totals: { planned: Money; spent: Money; left: Money };
   free: Money;
   held: Money;
   dailyNumber: Money;
@@ -288,6 +292,18 @@ describe('cover once free money is used up', () => {
       left: usd(0),
       overflow: usd(4_000),
     });
+    // Food went past its $100: the Buffer paid the rest. Spending outside
+    // any budget (the rent-like entry) is listed under no budget.
+    expect(line(s, 'Food').coverUsed).toEqual([
+      { source: ids['b:Buffer'], name: 'Buffer', amount: usd(4_000) },
+    ]);
+    expect(line(s, 'Buffer').coverUsed).toEqual([]);
+    for (const key of ['planned', 'spent', 'left'] as const) {
+      expect(s.totals[key].amountMinor).toBe(
+        s.budgets.reduce((sum, b) => sum + b[key].amountMinor, 0),
+      );
+    }
+    expect(s.totals.spent.amountMinor).toBeGreaterThanOrEqual(14_000);
     expect(s.covered).toEqual({
       shortfall: usd(99_000),
       fromFree: usd(95_000),

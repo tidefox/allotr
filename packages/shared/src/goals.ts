@@ -23,6 +23,19 @@ export const goalSchema = z.object({
   /** What is still missing; zero once the goal is reached. */
   remaining: moneySchema,
   reached: z.boolean(),
+  /**
+   * How far along the goal is, in basis points (10 000 is reached): `saved`
+   * over the target, rounded down and clamped to 0..10 000, so a goal never
+   * reads as done before it is.
+   */
+  progressBp: z.number().int().min(0).max(10_000),
+  /**
+   * What to put aside each month to reach the target by `targetOn`:
+   * `remaining` over the calendar months from this month to the target's
+   * month (at least 1), rounded up to a minor unit. Null with no date, once
+   * reached, or when the date has passed.
+   */
+  monthlyNeeded: moneySchema.nullable(),
   /** Currencies in the target that have no rate to the goal's currency. */
   missingRates: z.array(z.string()),
 });

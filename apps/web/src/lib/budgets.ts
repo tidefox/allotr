@@ -40,6 +40,7 @@ export const budgetsQuery = queryOptions({
   queryFn: () => call(endpoints.budgets),
 });
 
+/** Each entry's cover in the current period, as the server split it. */
 export const coversQuery = queryOptions({
   queryKey: ['today', 'budgets', 'covers'],
   queryFn: () => call(endpoints.covers),
@@ -96,4 +97,11 @@ export function setCoverOverride(id: string, body: CoverOverrideBody) {
 
 export function clearCoverOverride(id: string) {
   return call(endpoints.clearCoverOverride, { params: { id } });
+}
+
+export function moveAccountToPool(accountId: string, poolId: string) {
+  return call(endpoints.moveAccountPool, {
+    params: { id: accountId },
+    body: { poolId },
+  });
 }

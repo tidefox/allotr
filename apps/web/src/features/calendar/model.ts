@@ -3,7 +3,6 @@ import {
   isoWeekday,
   lastDayOfMonth,
   localDate,
-  type CalendarDayView,
   type LocalDate,
 } from '@allotr/shared';
 
@@ -31,9 +30,4 @@ export function shiftMonth(range: MonthRange, delta: -1 | 1): MonthRange {
 /** Empty cells before the first day, with the week starting on Monday. */
 export function leadingBlanks(from: LocalDate): number {
   return isoWeekday(from) - 1;
-}
-
-/** Days with something due: a bill, a payday or an IOU. */
-export function hasDue(day: CalendarDayView): boolean {
-  return day.bills.length > 0 || day.payday || day.ious.length > 0;
 }

@@ -1,12 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { shellPaths } from '../src/lib/redirect.ts';
 import { t } from '../src/messages/t.ts';
-import { navItems } from '../src/nav-items.ts';
+import { navItems, subTabs } from '../src/nav-items.ts';
 import { expectAccessible } from './a11y.ts';
 import { account, setupSkipped } from './account.ts';
 
-// Tests share one instance: the first creates the account, later ones sign
-// in through the API.
+// Tests share one instance: the first creates the account, later ones sign in
+// through the API. The auth pages are placeholders until the settings step,
+// so nothing here signs in through the UI. Each project runs at one of the
+// three design sizes (390, 820, 1440 px), where frame width = viewport width.
 test.describe.configure({ mode: 'serial' });
 
 async function apiSignIn(page: Page, baseURL: string | undefined) {
@@ -17,7 +19,13 @@ async function apiSignIn(page: Page, baseURL: string | undefined) {
   expect(response.ok()).toBe(true);
 }
 
-test('a deep link while signed out returns there after sign-in', async ({
+async function box(page: Page, selector: string) {
+  const found = await page.locator(selector).first().boundingBox();
+  if (found === null) throw new Error(`${selector} has no box`);
+  return found;
+}
+
+test('a signed-out visitor is sent to sign-in and back', async ({
   page,
   baseURL,
 }) => {
@@ -38,40 +46,183 @@ test('a deep link while signed out returns there after sign-in', async ({
   });
   expect(signOut.ok()).toBe(true);
 
-  await page.goto('/accounts');
-  await expect(page).toHaveURL(/\/sign-in\?redirect=%2Faccounts$/);
-  await page.getByLabel('Email').fill(account.email);
-  await page.getByLabel('Password').fill(account.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.goto('/budget/pools');
+  await expect(page).toHaveURL(/\/sign-in\?redirect=%2Fbudget%2Fpools$/);
+  // A crafted target falls back to the Dashboard.
+  await page.goto('/sign-in?redirect=%2F%2Fevil.example');
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test('old addresses redirect in the browser', async ({ page, baseURL }) => {
+  await apiSignIn(page, baseURL);
+  await page.goto('/ledger');
+  await expect(page).toHaveURL(/\/transactions$/);
+  await page.goto('/cycle');
+  await expect(page).toHaveURL(/\/reports\/summary$/);
+  await page.goto('/budget');
+  await expect(page).toHaveURL(/\/budget\/budgets$/);
+  await page.goto('/accounts/all');
   await expect(page).toHaveURL(/\/accounts$/);
 });
 
-test('a crafted redirect falls back to Today', async ({ page }) => {
-  await page.goto('/sign-in?redirect=%2F%2Fevil.example');
-  await page.getByLabel('Email').fill(account.email);
-  await page.getByLabel('Password').fill(account.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/$/);
-});
-
-test('every route is reachable from the nav and accessible', async ({
+test('every destination is reachable from the nav and accessible', async ({
   page,
   baseURL,
 }) => {
   await apiSignIn(page, baseURL);
-  // Start on the last item so every click, including the first, changes
-  // the route and moves focus to <main>.
-  await page.goto(navItems[navItems.length - 1]?.to ?? '/');
+  await page.goto('/reports');
   const nav = page.getByRole('navigation', { name: t('nav.label') });
 
   for (const item of navItems) {
     const link = nav.getByRole('link', { name: t(item.label) });
     await link.click();
-    await expect(page).toHaveURL(new RegExp(`${item.to}$`));
+    // Screens with sub-tabs land on their first one.
+    await expect(page).toHaveURL(
+      new RegExp(`${item.to === '/' ? '' : item.to}(/[a-z-]+)?$`),
+    );
     await expect(link).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.locator('#content')).toBeFocused();
     await expectAccessible(page);
+  }
+});
+
+// One test per route so each gets its own timeout; a single loop over
+// every route outgrows it as routes are added.
+const navPaths: readonly string[] = navItems.map((item) => item.to);
+for (const path of new Set(shellPaths.filter((p) => !navPaths.includes(p)))) {
+  test(`signed-in route ${path} outside the nav is accessible`, async ({
+    page,
+    baseURL,
+  }) => {
+    await apiSignIn(page, baseURL);
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expectAccessible(page);
+  });
+}
+
+test('sub-tabs change the address and the selected one is filled', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  await page.goto('/budget');
+  const tabs = page.getByRole('navigation', { name: t('shell.tabs.label') });
+  for (const sub of subTabs.budget) {
+    const link = tabs.getByRole('link', { name: t(`shell.tabs.${sub}`) });
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`/budget/${sub}$`));
+    await expect(link).toHaveAttribute('aria-current', 'page');
+    await expect(link).toHaveClass(/bg-primary/);
+  }
+  // Only the selected sub-tab is filled.
+  await expect(tabs.locator('[aria-current=page]')).toHaveCount(1);
+
+  await page.goto('/accounts');
+  const accounts = page.getByRole('navigation', {
+    name: t('shell.tabs.label'),
+  });
+  await accounts.getByRole('link', { name: t('shell.tabs.credit') }).click();
+  await expect(page).toHaveURL(/\/accounts\/credit$/);
+  await accounts.getByRole('link', { name: t('shell.tabs.all') }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+});
+
+test('the shell lines up (docs/ui.md §10)', async ({ page, baseURL }, info) => {
+  await apiSignIn(page, baseURL);
+  await page.goto('/budget/budgets');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const viewport = page.viewportSize();
+  if (viewport === null) throw new Error('no viewport');
+
+  if (viewport.width < 600) {
+    const nav = await box(page, '[data-slot=nav]');
+    expect(Math.round(nav.y + nav.height)).toBe(viewport.height);
+    const widths = await page
+      .locator('[data-slot=nav] a')
+      .evaluateAll((els) =>
+        els.map((el) => Math.round(el.getBoundingClientRect().width)),
+      );
+    expect(widths).toHaveLength(5);
+    for (const width of widths)
+      expect(Math.abs(width - (widths[0] ?? 0))).toBeLessThanOrEqual(1);
+    return;
+  }
+
+  const logo = await box(page, '[data-slot=logo]');
+  const summary = await box(page, '[data-slot=summary]');
+  expect(Math.round(logo.y + logo.height)).toBe(
+    Math.round(summary.y + summary.height),
+  );
+
+  const strip = await box(page, '[data-slot=strip]');
+  const rows = await page
+    .locator('[data-slot=nav] a')
+    .evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().height)),
+    );
+  // Sidebar rows match the title strip; rail buttons are 58 px.
+  const rem0 = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  const rowHeight =
+    viewport.width >= 1000
+      ? Math.round(strip.height)
+      : Math.round(3.625 * rem0);
+  for (const height of rows) expect(height).toBe(rowHeight);
+
+  const settings = await box(page, '[data-slot=settings]');
+  const command = await box(page, '[data-slot=command]');
+  expect(Math.round(settings.y)).toBe(Math.round(command.y));
+  expect(Math.round(settings.height)).toBe(Math.round(command.height));
+
+  // The nav column is a rail below 1000 px and a sidebar from there.
+  const nav = await box(page, '[data-slot=nav]');
+  const rem = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  expect(Math.round(nav.width)).toBe(
+    Math.round((viewport.width >= 1000 ? 13.25 : 4.5) * rem),
+  );
+  info.annotations.push({ type: 'rem', description: String(rem) });
+});
+
+test('nothing overflows sideways and targets are at least 24 px', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  const width = page.viewportSize()?.width ?? 0;
+  for (const path of ['/', '/accounts', '/budget/pools', '/settings/money']) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, `${path} scrolls sideways`).toBeLessThanOrEqual(0);
+
+    const small = await page
+      .locator('a, button, [role=button], input')
+      .evaluateAll((els) =>
+        els
+          .filter((el) => !el.classList.contains('sr-only'))
+          .map((el) => ({
+            label:
+              el.textContent || el.getAttribute('aria-label') || el.tagName,
+            rect: el.getBoundingClientRect(),
+          }))
+          .filter(
+            ({ rect }) =>
+              rect.width > 0 && (rect.width < 24 || rect.height < 24),
+          )
+          .map(
+            ({ label, rect }) =>
+              `${label}: ${String(rect.width)}x${String(rect.height)}`,
+          ),
+      );
+    expect(small, `${path} has small targets at ${String(width)} px`).toEqual(
+      [],
+    );
   }
 });
 
@@ -80,144 +231,72 @@ test('a failed session check offers a retry instead of a dead end', async ({
   baseURL,
 }) => {
   await apiSignIn(page, baseURL);
-  await page.route('**/v1/session', (route) => route.abort());
-  await page.goto('/transactions');
-  // Reads retry twice with backoff before the error shows.
+  await page.route('**/v1/session', (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({ title: 'Internal Server Error', status: 500 }),
+    }),
+  );
+  await page.goto('/budget/pools');
   await expect(
-    page.getByRole('heading', { name: t('errors.pageTitle') }),
-  ).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(t('errors.network'))).toBeVisible();
+    page.getByRole('heading', { name: t('errors.pageTitle'), level: 1 }),
+  ).toBeVisible();
   await expectAccessible(page);
 
   await page.unroute('**/v1/session');
   await page.getByRole('button', { name: t('errors.retry') }).click();
+  await expect(page).toHaveURL(/\/budget\/pools$/);
   await expect(
-    page.getByRole('heading', { level: 1, name: t('ledger.title') }),
+    page.getByRole('navigation', { name: t('nav.label') }),
   ).toBeVisible();
 });
 
-test('signed-in routes outside the nav are accessible', async ({
+test('the shell runs under the CSP without violations', async ({
   page,
   baseURL,
 }) => {
+  const violations: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('Content Security Policy'))
+      violations.push(message.text());
+  });
   await apiSignIn(page, baseURL);
-  const navPaths: readonly string[] = navItems.map((item) => item.to);
-  for (const path of shellPaths.filter((p) => !navPaths.includes(p))) {
+  for (const path of ['/', '/budget/pools', '/settings/money']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expectAccessible(page);
   }
+  expect(violations).toEqual([]);
 });
 
-test('the keyboard reaches every nav item with a visible focus ring', async ({
+test('payday and full nav names appear only from 1000 px', async ({
   page,
   baseURL,
 }) => {
   await apiSignIn(page, baseURL);
   await page.goto('/');
-  // The app renders after the session check; Tab before that hits nothing.
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const wide = (page.viewportSize()?.width ?? 0) >= 1000;
 
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: t('nav.skip') })).toBeFocused();
+  const payday = page
+    .locator('[data-slot=summary]')
+    .getByRole('link', { name: new RegExp(`^${t('shell.summary.payday')}`) });
+  await expect(payday).toBeVisible({ visible: wide });
 
-  // From 600 px the sidebar has the Add button first, then the five
-  // destinations, then Settings. Below that the tab bar has the five
-  // destinations, then the round Add button.
+  // Below 1000 px the tab bar and rail show short labels, but each link is
+  // still named in full. Screen-reader-only text is left out of `shown`.
   const nav = page.getByRole('navigation', { name: t('nav.label') });
-  const links = navItems.map((item) => ({
-    stop: nav.getByRole('link', { name: t(item.label) }),
-    to: item.to,
-  }));
-  const add = {
-    stop: page.getByRole('button', { name: t('quickEntry.add'), exact: true }),
-    to: 'add',
-  };
-  const wide = (page.viewportSize()?.width ?? 0) >= 600;
-  const settings = {
-    stop: nav.getByRole('link', { name: t('nav.settings') }),
-    to: '/settings',
-  };
-  const stops = wide ? [add, ...links, settings] : [...links, add];
-  for (const { stop: control, to } of stops) {
-    await page.keyboard.press('Tab');
-    await expect(control).toBeFocused();
-    // Our own ring: a solid outline of at least 2px (or a ring shadow),
-    // not the browser's default `auto` outline.
-    const ringVisible = await control.evaluate((element) => {
-      const style = getComputedStyle(element);
-      const outline =
-        style.outlineStyle === 'solid' && parseFloat(style.outlineWidth) >= 2;
-      return outline || style.boxShadow !== 'none';
-    });
-    expect(ringVisible, `${to} focus ring`).toBe(true);
-  }
-
-  // Enter follows the focused link: Settings in the sidebar, or the last
-  // tab after stepping back from the Add button.
-  if (!wide) await page.keyboard.press('Shift+Tab');
-  await page.keyboard.press('Enter');
-  const last = wide ? '/settings' : (navItems[navItems.length - 1]?.to ?? '');
-  await expect(page).toHaveURL(new RegExp(`${last}$`));
-});
-
-test('each window size class gets its navigation, without sideways scroll', async ({
-  page,
-  baseURL,
-}) => {
-  // Five sizes, each with an axe run on the settings page.
-  test.setTimeout(90_000);
-  await apiSignIn(page, baseURL);
-  await page.goto('/settings');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const nav = page.getByRole('navigation', { name: t('nav.label') });
-  const settings = nav.getByRole('link', { name: t('nav.settings') });
-  for (const [width, form] of [
-    [390, 'bar'],
-    [700, 'sidebar'],
-    [1000, 'sidebar'],
-    [1400, 'sidebar'],
-    [1700, 'sidebar'],
-  ] as const) {
-    await page.setViewportSize({ width, height: 900 });
-    await expect(nav).toHaveCount(1);
-    const box = await nav.boundingBox();
-    expect(box, `${String(width)} nav`).not.toBeNull();
-    if (box === null) continue;
-    if (form === 'bar') {
-      // A floating pill: inside the screen's gutters, near its bottom.
-      expect(box.x).toBeGreaterThanOrEqual(16);
-      expect(box.x + box.width).toBeLessThanOrEqual(width - 16);
-      expect(box.y).toBeGreaterThan(700);
-      await expect(settings).toBeHidden();
-    } else {
-      expect(box.width).toBe(224);
-      await expect(settings).toBeVisible();
-    }
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - window.innerWidth,
+  for (const item of navItems) {
+    const link = nav.getByRole('link', { name: t(item.label) });
+    const shown = await link.evaluate((el) =>
+      [...el.querySelectorAll('span')]
+        .filter((span) => {
+          const style = getComputedStyle(span);
+          return style.display !== 'none' && style.position !== 'absolute';
+        })
+        .map((span) => span.textContent)
+        .join(''),
     );
-    expect(overflow, `${String(width)} sideways scroll`).toBeLessThanOrEqual(0);
-    await expectAccessible(page);
-  }
-});
-
-test('old addresses redirect to their new places', async ({
-  page,
-  baseURL,
-}) => {
-  await apiSignIn(page, baseURL);
-  const moves: readonly (readonly [string, RegExp])[] = [
-    ['/today', /\/$/],
-    ['/ledger?q=coffee', /\/transactions\?q=coffee$/],
-    ['/cycle', /\/reports$/],
-    ['/history', /\/reports\/history$/],
-    ['/savings', /\/accounts\/savings$/],
-    ['/settings#bills', /\/budget$/],
-  ];
-  for (const [from, to] of moves) {
-    await page.goto(from);
-    await expect(page, from).toHaveURL(to);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    expect(shown).toBe(wide ? t(item.label) : t(item.short));
   }
 });

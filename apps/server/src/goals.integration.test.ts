@@ -18,6 +18,8 @@ type Goal = {
   saved: Money;
   remaining: Money;
   reached: boolean;
+  progressBp: number;
+  monthlyNeeded: Money | null;
 };
 type Account = { id: string; poolId: string };
 type Pool = { id: string; defaultFor: string | null };
@@ -92,6 +94,10 @@ describe('goals on savings', () => {
       saved: usd(40_000),
       remaining: usd(60_000),
       reached: false,
+      // 40 000 of 100 000.
+      progressBp: 4_000,
+      // March to December is 9 months: 6,666.67 rounds up.
+      monthlyNeeded: usd(6_667),
     });
   });
 
@@ -107,8 +113,33 @@ describe('goals on savings', () => {
       saved: usd(25_000),
       remaining: usd(0),
       reached: true,
+      // Past the target is still a full bar.
+      progressBp: 10_000,
       targetOn: null,
     });
+  });
+
+  it('ask for nothing monthly with no date, once reached, or after the date', async () => {
+    const list = (await h.alice.get('/v1/goals')).body as { goals: Goal[] };
+    const fund = list.goals.find((g) => g.name === 'Emergency fund');
+    const trip = list.goals.find((g) => g.name === 'Trip');
+    expect(trip?.monthlyNeeded).toBeNull();
+    for (const [targetOn, expected] of [
+      ['2026-03-14', null],
+      // This month: everything that is missing, at once.
+      ['2026-03-31', usd(35_000)],
+    ] as const) {
+      const changed = await h.alice.patch(`/v1/goals/${fund?.id ?? ''}`, {
+        targetOn,
+      });
+      expect(changed.status).toBe(200);
+      expect((changed.body as Goal).monthlyNeeded).toEqual(expected);
+    }
+    const restored = await h.alice.patch(`/v1/goals/${fund?.id ?? ''}`, {
+      targetOn: '2026-12-31',
+    });
+    // The Trip jar joined the pool, so 35,000 is missing: 3,888.89 rounds up.
+    expect((restored.body as Goal).monthlyNeeded).toEqual(usd(3_889));
   });
 
   it('refuse a second goal on the same target', async () => {

@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   DEFAULT_PALETTE_THEME_ID,
   findPaletteTheme,
@@ -87,5 +88,68 @@ describe('styles.css', () => {
 
   it('never uses a box shadow for depth', () => {
     expect(css).not.toMatch(/box-shadow/);
+  });
+
+  it('keeps the root at 100 % and sizes in rem', () => {
+    expect(css).toMatch(/html\s*{[^}]*font-size:\s*100%/);
+  });
+
+  it('has no radius anywhere', () => {
+    expect(css).toContain('--radius-*: initial;');
+    expect(css).not.toMatch(/border-radius/);
+  });
+
+  it('keeps surfaces opaque', () => {
+    // Opacity is only for a dragged item, never in the base stylesheet.
+    expect(css).not.toMatch(/(?<!-)opacity\s*:/);
+    expect(css).not.toMatch(/rgba?\(|hsla?\(|transparent/);
+  });
+
+  it('puts container thresholds in px, not rem', () => {
+    const queries = [...css.matchAll(/@container frame \(([^)]*)\)/g)];
+    expect(queries.length).toBeGreaterThan(0);
+    for (const [, condition] of queries)
+      expect(condition).not.toMatch(/rem|em/);
+  });
+
+  it('uses the terminal fonts: Geist for text, Geist Mono for the interface', () => {
+    expect(css).toContain("--font-ui: 'Geist Variable'");
+    expect(css).toContain("--font-num: 'Geist Mono Variable'");
+    // The page defaults to the interface face; font-sans is content text.
+    expect(css).toContain('--default-font-family: var(--font-num);');
+    expect(css).toContain('--font-sans: var(--font-ui);');
+  });
+});
+
+// React Aria marks states with data attributes that Tailwind has no variant
+// for, and Tailwind drops a class with an unknown variant silently.
+const reactAriaStates = [
+  'selected',
+  'pressed',
+  'hovered',
+  'focused',
+  'entering',
+  'exiting',
+  'dragging',
+  'drop-target',
+  'allows-dragging',
+  'pending',
+  'expanded',
+  'resizing',
+  'outside-month',
+  'unavailable',
+] as const;
+
+function sources(dir: URL): string[] {
+  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .map((f) => readFileSync(join(dir.pathname, f), 'utf8'));
+}
+
+describe('state variants', () => {
+  const code = sources(new URL('./', import.meta.url)).join('\n');
+  it.each(reactAriaStates)('declares %s: wherever a class uses it', (state) => {
+    const used = new RegExp(`[\\s'"\`:]${state}:[a-z!\\[-]`).test(code);
+    if (used) expect(css).toContain(`@custom-variant ${state} (`);
   });
 });

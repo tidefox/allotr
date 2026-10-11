@@ -148,6 +148,20 @@ Users may add more, such as *Emergency*.
   or Savings pool.
 - A pool holding accounts cannot be archived; the default pools cannot be
   archived at all.
+- **Cycle figures.** For a pool that counts today, the API gives `start`
+  (what its open accounts held at the end of the day before the open cycle
+  began, accounts opened during the cycle included, as in a cycle snapshot's
+  opening balances, plus the income they have received since, as the cycle
+  allocation's start counts it) and `left` (what they hold now, ignoring
+  entries dated after today). Both read the accounts in the pool today, so
+  moving an account mid-cycle never looks like spending. The paycheck that
+  opens a cycle is in both, so spending is what separates them; `left`
+  exceeds `start` only when money came in another way, such as a transfer
+  from savings or a refund, and a "left of" bar shows full then.
+  Core gives them per currency; the API converts each once at today's
+  rates, and lists currencies without a rate. Pools that do not count
+  (savings by default) get `cycle: null`, so savings never appear as
+  usable money.
 
 ## Goals
 
@@ -165,6 +179,49 @@ optionally a date, on one savings pool or one account in a savings pool.
   goal holds its target.
 - A goal is reached when the target holds at least its amount; remaining is
   then zero, never negative.
+- `monthlyNeeded` is what to put aside each month to reach the target by its
+  date: `remaining` over the calendar months from today's month to the
+  target's month (October to March is 5), rounded up to the next minor unit
+  so the goal is never short. The target's own month counts, so a date in the
+  current month asks for all of `remaining` (1 month). It is null with no
+  date, once the goal is reached, and when the date is before today.
+
+## Credit limit and due day
+
+A credit account (kind `liability`) may carry a limit, a due day and a
+minimum payment. All are **display only**: they never change a balance, the
+daily number or a reminder, and a due day or a minimum payment does **not**
+create a bill. A user who wants a reminder adds a bill separately. Other kinds
+cannot carry any of them (`credit_only`).
+
+- `minPayment` is more than zero, in the account's currency. It is what the
+  card asks for each month, as the owner entered it; nothing derives from it.
+- Any account may carry a `subtype`: free text up to 100 characters, trimmed
+  (for example "debit card"). It labels the account and means nothing to the
+  ledger.
+
+- `creditLimit` is more than zero, in the account's currency.
+- A debt is a negative balance, so `creditAvailable` is the limit plus the
+  balance: owing 400.00 on a 2,000.00 limit leaves 1,600.00. It is not
+  clamped. Past the limit it is negative, and a card in credit (a positive
+  balance) leaves more than the limit. It is null without a limit.
+- `dueDay` is 1 to 31. `nextDueOn` is the next date on or after the user's
+  today that falls on it; a month shorter than the day uses its last day, so
+  day 31 is 28 February (29 in a leap year). Today counts: a card due today
+  shows today's date.
+- `totals.creditLimit` and `totals.creditAvailable` sum the same set of
+  accounts, the open credit accounts that have a limit, converted once to the
+  default currency at today's rates (missing rates are listed). A card with
+  no limit is in the owed total but in neither of these, so available over
+  limit is a fair bar.
+
+## Look of pools and accounts
+
+Pools and accounts have an optional `colour` (a chart series role,
+`series-1` to `series-8`, never a hex value) and `icon` (a key from the
+category icon set). They change only how the item is drawn. When null, the
+web app uses the pool's place among the open pools for the colour and the
+kind's icon, and an account follows its pool.
 
 ## Budgets
 
@@ -218,6 +275,16 @@ corrects past and present figures through the same function.
 - **Overspending.** A budget never goes below zero. What its own budget
   could not pay is covered (see Cover and refill); `spent` still counts the
   whole entry, less any refund, and `overflow` is the part that went past.
+- **Totals and cover used.** `/v1/budgets` adds `totals`: every budget's
+  `planned`, `spent` and `left` added up once in the default currency (parent
+  totals are not counted again, and the Buffer adds what it holds to `left`),
+  and `coverUsed` on each budget: what each other source paid of its
+  shortfall in the current period, per source in cover order, leaving out
+  sources that paid nothing. Spending no budget counts (loans, entries in no
+  budget) has no budget to list under, so the `coverUsed` of all budgets plus
+  the cover of those lines is `covered.shortfall − covered.uncovered`. The
+  period is the budget period, which is a calendar month when that is the
+  setting.
 - **Free money** = `available − Σ held`, where `held` is what each set-aside
   budget has left, floored at zero, and `available` is counted accounts less
   unpaid reserved bills.
@@ -292,6 +359,9 @@ with autocomplete from earlier ones, not contacts.
   Receivables. No cash moves, so it is not spending against the day and not
   covered, but it is an expense for category reports, and it lowers net
   worth. Reminders come with the scheduler (ADR 0024).
+- **Net.** The list's `totals` carry `owedToMe`, `owedByMe` (each currency
+  converted once to the default currency) and `net = owedToMe − owedByMe`,
+  negative when the user owes more.
 - **Net worth** counts receivables and payables by their sign.
 - **Consistency.** For every currency the Receivables balance equals what the
   IOUs owed to the user have outstanding, and Payables equals what the user
@@ -467,6 +537,13 @@ live_daily       = available(now) / days_left
   pace bar sets `pace_spent / (pace_spent + available)` against the share
   of the cycle's days gone, so paying a bill or reconciling never makes the
   pace look worse.
+- **Pace difference.** `paceDiff` on `/v1/today` is the even pace by the end
+  of today less `pace_spent`: positive is under pace, negative over, zero on
+  pace. The even pace spreads `pace_spent + available` evenly over the
+  cycle's days (`floor(budget × (day + 1) / days)`, day 0 being the first
+  day), exactly the `pace` of today's row in `/v1/cycles/{openedOn}/days`,
+  so the three figures on screen agree. `days` runs to payday, or through
+  today while payday is overdue.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 
@@ -505,6 +582,51 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 - Snapshot figures are in the default currency at the rate on the cycle's
   last day. Spending by category counts every expense, whichever account
   paid it.
+
+## Cycle allocation
+
+How the open cycle's on-budget money divides, for the Today view's
+allocation bar. Computed on every request from the ledger (`cycleAllocation`
+in `core`), per currency and converted once to the default currency.
+
+```
+start     = on_budget(day before the cycle opened) + income since it opened
+paycheck   = income since the cycle opened (any category, any account)
+carried    = start − paycheck                              # what the cycle opened with
+paid_bills = linked bill payments this cycle, less their undos
+spent      = other spending this cycle, less undos        # cycle_spent − paid_bills
+reserved   = on_budget(today) − available(today)          # unpaid bills + owed
+free       = available(today)
+savings    = money moved into off-budget accounts and savings pools this cycle
+other      = start − paid_bills − savings − spent − reserved − free
+```
+
+- `start` is the same opening balance and income a closed cycle's snapshot
+  shows, so an account opened during the cycle counts from the start, not as
+  income. Income counts whichever account it lands in.
+- `paycheck` and `carried` split `start` for the allocation tile's subtitle.
+  `carried` is `start − paycheck`, so the two always add up to `start`
+  exactly and conversion rounding lands in `carried`. `carried` is negative
+  when the accounts were overdrawn when the cycle opened.
+- `savings` is money actually moved to savings: what on-budget accounts gave
+  to transfers that reach an off-budget account (entries that also touch
+  Expenses or Income are spending or income, not savings), plus the balance
+  of an account the day it joined a savings pool, less that of one that left.
+  It is negative when more came back from savings than went.
+- `other` is what is left to explain: money lent (which lowers the allowance
+  like a transfer, ADR 0024), borrowed cash, conversions and anything else
+  that changed the on-budget total without being spent, saved or a bill.
+  Often zero; it may be negative.
+- `spent` leaves out the same linked bill payments pace leaves out, but
+  keeps reconcile adjustments, so `paid_bills + spent` equals `cycle_spent`.
+- `reserved` includes what the user owes people, as `available` does.
+  `/v1/today` also sends its two parts, `reservedBills` and `reservedIous`
+  (the Payables balances turned positive); `reservedBills` is
+  `reserved − reservedIous`, so the two add up to `reserved` exactly.
+- `free` is `available`: budget holds are not taken off.
+- The parts are converted one by one and `start` is their sum, so the six
+  always add up to `start` exactly. Currencies without a rate are left out
+  and listed in `missingRates`. Any part can be negative (overspending).
 
 ## Policies
 
@@ -617,7 +739,9 @@ identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
          conversion|receivables|payables], budget_group[on|off], currency,
-         counterparty_id, archived)
+         counterparty_id, archived, colour[series-1..8], icon,
+         credit_limit_minor[liability only], due_day[1..31, liability only],
+         min_payment_minor[liability only], subtype)
 budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
         mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
 budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)
@@ -628,7 +752,7 @@ ious(id, user_id, direction[owed-to-me|owed-by-me], person, amount_minor,
 iou_settlements(id, user_id, iou_id, transaction_id, kind[repayment|write-off],
                 amount_minor, currency)         -- append-only
 pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
-      default_for[on|off], position, archived)
+      default_for[on|off], position, archived, colour[series-1..8], icon)
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)
                                         -- append-only
 categories(id, user_id, name, kind[expense|income|transfer], parent_id,

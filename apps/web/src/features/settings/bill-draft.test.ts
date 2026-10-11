@@ -195,6 +195,8 @@ describe('linkCandidates', () => {
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],
+    billId: null,
+    billName: null,
     ...more,
   });
 

@@ -45,6 +45,8 @@ function entry(
     impliedRate: impliedRate as Rate | null,
     budgetSwitch: null,
     tagIds: [],
+    billId: null,
+    billName: null,
   };
 }
 

@@ -195,6 +195,12 @@ export type SpendLine = Readonly<{
    * out of free money.
    */
   fromHold: bigint;
+  /**
+   * What its own budget had left right after this line, covers included
+   * (so the cover other lines took earlier is already out of it); null when
+   * no budget counts the line. Later refunds and covers do not change it.
+   */
+  leftAfter: bigint | null;
 }>;
 
 export type BudgetPeriodLine = Readonly<{
@@ -766,6 +772,7 @@ export function foldBudgets(
         uncovered: shortfall,
         overridden: asked !== undefined,
         fromHold,
+        leftAfter: own === undefined ? null : positive(left(own)),
       });
     }
     lines = [...state.values()];

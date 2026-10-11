@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 // Preferences kept on this device only (the configurable-defaults rule):
-// motion, haptics, celebrations and density. public/theme-init.js applies
+// motion, haptics, celebrations, density and key hints. public/theme-init.js applies
 // the motion and density attributes before first paint from the same
 // keys: change both together. Every storage access may throw (private
 // browsing, blocked storage), so each is guarded and falls back to the
@@ -28,6 +28,11 @@ export const DEVICE_PREFS = {
     key: 'allotr.density',
     schema: z.enum(['comfortable', 'compact']),
     fallback: 'compact',
+  },
+  hints: {
+    key: 'allotr.hints',
+    schema: z.enum(['on', 'off']),
+    fallback: 'on',
   },
 } as const;
 
@@ -83,16 +88,22 @@ export function effectiveMotion(
   return pref;
 }
 
-/** `data-motion` and `data-density` on <html>; absent for the defaults. */
+/** `data-motion`, `data-density` and `data-hints` on <html>; absent for the defaults. */
 export function applyPrefs(
   doc: Readonly<{ documentElement: { dataset: DOMStringMap } }>,
-  prefs: Readonly<{ motion: MotionPref; density: DevicePrefValue<'density'> }>,
+  prefs: Readonly<{
+    motion: MotionPref;
+    density: DevicePrefValue<'density'>;
+    hints?: DevicePrefValue<'hints'>;
+  }>,
 ): void {
   const root = doc.documentElement;
   if (prefs.motion === 'system') delete root.dataset.motion;
   else root.dataset.motion = prefs.motion;
   if (prefs.density === 'compact') delete root.dataset.density;
   else root.dataset.density = prefs.density;
+  if (prefs.hints === 'off') root.dataset.hints = 'off';
+  else delete root.dataset.hints;
 }
 
 const reducedQuery = '(prefers-reduced-motion: reduce)';
@@ -119,6 +130,10 @@ export function useDevicePref<P extends DevicePref>(
         pref === 'density'
           ? (next as DevicePrefValue<'density'>)
           : readPref('density'),
+      hints:
+        pref === 'hints'
+          ? (next as DevicePrefValue<'hints'>)
+          : readPref('hints'),
     });
   }
   return [value, set];

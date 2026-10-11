@@ -238,7 +238,17 @@ async function readStatus(
       coveredOut: line.coveredOut,
       restored: line.restored,
       held: line.held,
+      coverUsed: line.coverUsed.map((used) => ({
+        source: used.source,
+        name: orderItem(used.source, names).name,
+        amount: used.amount,
+      })),
     })),
+    parents: status.parents.map((parent) => ({
+      ...parent,
+      budgetIds: [...parent.budgetIds],
+    })),
+    totals: status.totals,
     available: status.available,
     held: status.held,
     free: status.free,

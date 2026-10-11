@@ -24,6 +24,13 @@ export function defaultColour(id: string): CategoryColour {
   return categoryColours[sum] ?? 'series-1';
 }
 
+export type SeriesNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+/** `series-3` → 3, the index `CategoryIcon` takes. */
+export function seriesNumber(colour: CategoryColour): SeriesNumber {
+  return (categoryColours.indexOf(colour) + 1) as SeriesNumber;
+}
+
 /** The CSS colour of a category colour: the theme's series role. */
 export function colourVar(colour: CategoryColour): string {
   return `var(--${colour})`;
@@ -49,4 +56,10 @@ export function categoryStyles(
       ] as const;
     }),
   );
+}
+
+/** "shopping-basket" as "Shopping basket". */
+export function iconLabel(name: CategoryIcon): string {
+  const words = name.replaceAll('-', ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }

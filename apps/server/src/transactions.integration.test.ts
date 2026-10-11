@@ -138,9 +138,11 @@ describe('recording entries', () => {
       }),
     ]);
     expect(await balance(h.alice, card)).toBe(200000 - 4250);
-    expect((await h.alice.get(`/v1/transactions/${entry.id}`)).body).toEqual(
-      entry,
-    );
+    // The detail view adds the budget figures; none without budgets.
+    expect((await h.alice.get(`/v1/transactions/${entry.id}`)).body).toEqual({
+      ...entry,
+      budget: null,
+    });
   });
 
   it('records income and a transfer', async () => {
@@ -366,6 +368,7 @@ describe('undo and edit', () => {
     const stored = (await h.alice.get(`/v1/transactions/${id}`)).body as Entry;
     expect(stored).toEqual({
       ...(original.body as Entry),
+      budget: null,
       reversedById: reversal.id,
     });
 
@@ -814,6 +817,21 @@ describe('listing', () => {
   it('filters by account', async () => {
     const entries = await list(`accountId=${b}`);
     expect(entries.map((e) => e.kind)).toEqual(['transfer']);
+  });
+
+  it('filters by several accounts and categories at once', async () => {
+    const both = await list(`accountId=${a},${b}`);
+    expect(both.length).toBeGreaterThan((await list(`accountId=${b}`)).length);
+    const two = await list(
+      `categoryId=${food},${transport}&from=2026-04-01&to=2026-04-30`,
+    );
+    const each = [
+      ...(await list(`categoryId=${food}&from=2026-04-01&to=2026-04-30`)),
+      ...(await list(`categoryId=${transport}&from=2026-04-01&to=2026-04-30`)),
+    ];
+    expect(new Set(two.map((e) => e.id))).toEqual(
+      new Set(each.map((e) => e.id)),
+    );
   });
 
   it('filters by category, including subcategories', async () => {

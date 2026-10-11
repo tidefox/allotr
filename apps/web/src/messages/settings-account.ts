@@ -1,0 +1,72 @@
+// Messages for the Settings account tab (WP10). Spread into `en` as
+// `settingsAccount`. Wording shared with the old settings stays under
+// `settings.security`, `settings.instance` and `settings.deleteAccount`.
+export const settingsAccount = {
+  loading: 'Loading…',
+  failed: 'Could not load this.',
+  retry: 'Try again',
+  cancel: 'Cancel',
+  on: 'on',
+  off: 'off',
+  signIn: {
+    title: 'account',
+    email: 'email',
+    emailHint: 'The address you sign in with.',
+    role: 'role',
+    roleHint: 'Administrators also see the instance settings.',
+    roles: { admin: 'administrator', user: 'member' },
+    signOut: 'sign out',
+    signOutHint: 'End the session on this device.',
+    signOutAction: 'sign out',
+  },
+  twoFactor: {
+    title: 'two-factor authentication',
+    status: 'authenticator app',
+    required:
+      'This instance requires two-factor authentication. Turn it on to use the rest of the app.',
+    heldTitle: 'Turn on two-factor authentication first',
+    goTo: 'open account settings',
+    turnOn: 'turn on',
+    turnOff: 'turn off',
+    passwordTitleOn: 'Turn on two-factor authentication',
+    passwordTitleOff: 'Turn off two-factor authentication?',
+    passwordIntroOff:
+      'Signing in will no longer ask for a code. Enter your password to confirm.',
+    passwordIntroOn: 'Enter your password to get a key and backup codes.',
+  },
+  sessions: {
+    title: 'sessions',
+    signOut: 'sign out',
+    signOutAll: 'sign out others',
+    confirmTitle: 'Sign out {name}?',
+    confirmBody:
+      'That device is signed out and has to sign in again. This device stays signed in.',
+    confirmAllTitle: 'Sign out every other device?',
+    confirmAllBody: 'All other sessions end. This device stays signed in.',
+    confirmAction: 'Sign out',
+    working: 'Signing out…',
+  },
+  instance: {
+    title: 'instance',
+    subtitle: 'administrators',
+    registration: 'registration',
+    twoFactor: 'require two-factor',
+    twoFactorHint: 'Everyone must set it up, and nobody can turn it off.',
+    themeUrl: 'theme import from a URL',
+    themeUrlHint: 'The server fetches public https theme files for people.',
+  },
+  invites: {
+    title: 'invites',
+    subtitle: 'single use',
+    create: 'create link',
+    createTitle: 'Create an invite link',
+    submit: 'Create link',
+    creating: 'Creating…',
+    lifetime: 'link works for',
+    closed: 'Registration is closed, so invite links do not work yet.',
+    open: 'Registration is open to anyone, so a link is not needed.',
+    empty: 'Each link makes one account and is shown only when you create it.',
+    done: 'Done',
+    linkField: 'Invite link',
+  },
+} as const;

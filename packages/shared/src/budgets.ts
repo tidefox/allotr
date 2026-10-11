@@ -62,6 +62,19 @@ export const budgetSchema = z.object({
   restored: moneySchema,
   /** What a set-aside budget still holds out of free money; zero otherwise. */
   held: moneySchema,
+  /**
+   * What other sources paid of this budget's shortfall in the current
+   * period, per source in cover order; sources that paid nothing are left
+   * out. Spending that no budget counts (loans, say) is listed nowhere.
+   */
+  coverUsed: z.array(
+    z.object({
+      /** Free money, or a budget's ID (the Buffer's included). */
+      source: z.string().min(1).max(64),
+      name: z.string(),
+      amount: moneySchema,
+    }),
+  ),
 });
 export type BudgetView = z.infer<typeof budgetSchema>;
 
@@ -92,6 +105,31 @@ export const budgetStatusSchema = z.object({
   periodRule: budgetPeriodRuleSchema,
   daysLeft: z.int(),
   budgets: z.array(budgetSchema),
+  /**
+   * Totals for each parent category with a budget on at least one of its
+   * children, summing every category budget under it (children and the
+   * parent's own), in the default currency.
+   */
+  parents: z.array(
+    z.object({
+      categoryId: idSchema,
+      /** The budgets counted, in the order of `budgets`. */
+      budgetIds: z.array(idSchema),
+      planned: moneySchema,
+      spent: moneySchema,
+      left: moneySchema,
+    }),
+  ),
+  /**
+   * Every budget's `planned`, `spent` and `left` added up once (parent
+   * totals are not counted again), the Buffer included: it adds what it
+   * holds to `left`. In the default currency.
+   */
+  totals: z.object({
+    planned: moneySchema,
+    spent: moneySchema,
+    left: moneySchema,
+  }),
   /** Counted accounts less unpaid reserved bills. */
   available: moneySchema,
   /** Set-aside budgets' holds, Buffer included. */

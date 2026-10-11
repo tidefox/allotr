@@ -97,6 +97,15 @@ export {
   type LedgerView,
 } from './projections/types.ts';
 export { cycleOn, cyclesOf } from './projections/cycles.ts';
+export {
+  cycleAllocation,
+  reservedParts,
+  type CycleAllocation,
+} from './projections/allocation.ts';
+export {
+  reconcileDue,
+  reconcileEveryDays,
+} from './projections/reconcile-due.ts';
 export { lastWorkingDayOfMonth, nextPayday } from './projections/payday.ts';
 export {
   availableOn,
@@ -110,6 +119,7 @@ export {
 } from './projections/daily.ts';
 export {
   emergencyFund,
+  netWorthChange,
   netWorthOn,
   netWorthSeries,
   paydayPlan,
@@ -125,8 +135,20 @@ export {
 } from './projections/plan.ts';
 export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';
 export {
+  compareGroupKeys,
+  entryGroupKeys,
+  entryGroupTotals,
+  entryTotals,
+  totalsFromSums,
+  type CurrencyTotals,
+  type EntryGroupTotals,
+  type EntryGrouping,
+  type EntryTotals,
+} from './projections/entry-totals.ts';
+export {
   balanceHistory,
   cycleDays,
+  paceDiff,
   type CycleDay,
   type CycleDays,
 } from './projections/series.ts';
@@ -164,9 +186,14 @@ export {
 export {
   budgetCovers,
   budgetStatus,
+  budgetTotals,
   coverPreview,
+  entryBudgetLines,
   type BudgetCover,
+  type EntryBudgetLine,
   type BudgetLineStatus,
+  type BudgetTotals,
+  type CoverUsed,
   type BudgetStatus,
   type CoveredFigures,
   type CoverPreview,
@@ -185,6 +212,10 @@ export {
   type PoolSetup,
 } from './projections/pools.ts';
 export {
+  poolCycleFigures,
+  type PoolCycleFigure,
+} from './projections/pool-cycle.ts';
+export {
   defaultWriteOffAfterDays,
   iouBalanceGaps,
   iouId,
@@ -192,6 +223,9 @@ export {
   iouStatus,
   iouStatuses,
   iouTotals,
+  personOpenOf,
+  personOpenTotals,
+  type PersonOpen,
   iousOf,
   loanKey,
   type Iou,
@@ -228,11 +262,29 @@ export {
   type GroupTotals,
 } from './projections/history.ts';
 export {
+  categoryGroupsTotal,
   categoryTotalsBetween,
+  dailyAverage,
   rollUpCategories,
   type CategoryGroup,
   type SummaryCategoryNode,
 } from './projections/category-summary.ts';
+export {
+  payeeKey,
+  topPayees,
+  type CurrencyPayees,
+  type PayeeTotal,
+} from './projections/payees.ts';
+export {
+  averageOf,
+  changeBp,
+  categorySeries,
+  cyclePeriods,
+  monthPeriods,
+  type CategorySeries,
+  type SeriesGroup,
+  type SeriesPeriod,
+} from './projections/category-series.ts';
 export {
   calendar,
   heatLevel,
@@ -249,10 +301,14 @@ export {
   type DueReminder,
   type ReminderKind,
 } from './projections/reminders.ts';
+export { goalMonthlyNeeded, goalProgressBp } from './projections/goals.ts';
+export { creditAvailable, creditNextDue } from './projections/credit.ts';
 export { savingsRate } from './projections/savings-rate.ts';
+export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,
+  savedBetween,
   type CategoryTotal,
   type CycleSnapshot,
   type Leftover,
