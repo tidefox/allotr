@@ -26,8 +26,9 @@ type Summary = {
   missingRates: string[];
   series?: {
     periods: { from: string; to: string }[];
-    groups: { categoryId: string | null; points: Money[] }[];
+    groups: { categoryId: string | null; points: Money[]; average: Money }[];
     totals: Money[];
+    totalAverage: Money;
     missingRates: string[];
   };
 };
@@ -209,10 +210,20 @@ describe('GET /v1/reports/categories', () => {
       { from: '2026-03-01', to: '2026-03-31' },
     ]);
     expect(body.series?.groups).toEqual([
-      { categoryId: food, points: [usd(0), usd(900), usd(4700)] },
-      { categoryId: fun, points: [usd(0), usd(0), usd(2000)] },
+      {
+        categoryId: food,
+        points: [usd(0), usd(900), usd(4700)],
+        // 5,600 over all three months, the empty one included, rounded down.
+        average: usd(1866),
+      },
+      {
+        categoryId: fun,
+        points: [usd(0), usd(0), usd(2000)],
+        average: usd(666),
+      },
     ]);
     expect(body.series?.totals).toEqual([usd(0), usd(900), usd(6700)]);
+    expect(body.series?.totalAverage).toEqual(usd(2533));
     expect(body.series?.missingRates).toEqual([]);
   });
 

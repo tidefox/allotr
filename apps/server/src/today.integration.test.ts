@@ -22,8 +22,11 @@ type Today = {
   liveDaily: Money;
   cycleSpent: Money;
   paceSpent: Money;
+  paceDiff: Money;
   allocation: {
     start: Money;
+    paycheck: Money;
+    carried: Money;
     paidBills: Money;
     savings: Money;
     spent: Money;
@@ -151,8 +154,11 @@ describe('today for a new user', () => {
       dailyBase: usd(0),
       cycleSpent: usd(0),
       paceSpent: usd(0),
+      paceDiff: usd(0),
       allocation: {
         start: usd(0),
+        paycheck: usd(0),
+        carried: usd(0),
         paidBills: usd(0),
         savings: usd(0),
         spent: usd(0),
@@ -210,9 +216,13 @@ describe('daily figures', () => {
       liveDaily: usd(9852),
       cycleSpent: usd(2500),
       paceSpent: usd(2500),
+      // 170,000 over the 17 days is 10,000 a day: 7,500 under pace.
+      paceDiff: usd(7500),
       // The 170,000 the account opened with, less the 2,500 spent.
       allocation: {
         start: usd(170000),
+        paycheck: usd(0),
+        carried: usd(170000),
         paidBills: usd(0),
         savings: usd(0),
         spent: usd(2500),
@@ -638,6 +648,8 @@ describe('cycle allocation', () => {
     // The savings account's own opening balance was never on budget.
     expect(figures.allocation).toEqual({
       start: usd(100000),
+      paycheck: usd(0),
+      carried: usd(100000),
       paidBills: usd(0),
       savings: usd(20000),
       spent: usd(3000),
@@ -654,6 +666,26 @@ describe('cycle allocation', () => {
       },
     });
     expect(figures.available).toEqual(figures.allocation.free);
+  });
+
+  it('splits the start into the paycheck and what was carried over', async () => {
+    const everyday = (
+      (await own.alice.get('/v1/accounts')).body as {
+        accounts: { id: string; name: string }[];
+      }
+    ).accounts.find((a) => a.name === 'Everyday');
+    expect(everyday).toBeDefined();
+    const paid = await own.alice.post('/v1/transactions', {
+      kind: 'income',
+      accountId: everyday?.id,
+      amount: usd(40000),
+      categoryId: await categoryId(own.alice, 'Paycheck'),
+    });
+    expect(paid.status).toBe(201);
+    const { allocation } = await today(own.alice);
+    expect(allocation.paycheck).toEqual(usd(40000));
+    expect(allocation.carried).toEqual(usd(100000));
+    expect(allocation.start).toEqual(usd(140000));
   });
 
   it('keeps money lent under other, and splits the reserve into bills and what is owed', async () => {
@@ -695,12 +727,45 @@ describe('cycle allocation', () => {
       ),
     ).toBe(a.start.amountMinor);
     expect(a.other.amountMinor).not.toBe(0);
+    expect(a.paycheck.amountMinor + a.carried.amountMinor).toBe(
+      a.start.amountMinor,
+    );
     // Shares are of the start; a part that is not positive has none.
     for (const [name, share] of Object.entries(a.shareBp)) {
       expect(share).toBeGreaterThanOrEqual(0);
       expect(share).toBeLessThanOrEqual(10000);
       const part = a[name as keyof typeof a.shareBp];
       if (part.amountMinor <= 0) expect(share).toBe(0);
+    }
+  });
+});
+
+describe('paceDiff', () => {
+  it('turns negative once spending runs ahead of the even pace', async () => {
+    const own = await startWithTwoUsers({ now: () => clock });
+    try {
+      await own.db
+        .updateTable('users')
+        .set({ created_at: started.toISOString() })
+        .execute();
+      const everyday = await openAccount(own.alice, 'Everyday', usd(170000));
+      const groceries = await categoryId(own.alice, 'Groceries');
+      const spendNow = (amountMinor: number) =>
+        own.alice.post('/v1/transactions', {
+          kind: 'expense',
+          accountId: everyday,
+          amount: usd(amountMinor),
+          categoryId: groceries,
+        });
+      // Day 1 of 17: 170,000 spreads to 10,000 a day.
+      expect((await spendNow(14000)).status).toBe(201);
+      const over = await today(own.alice);
+      expect(over.paceDiff).toEqual(usd(-4000));
+      expect(over.paceDiff.amountMinor).toBe(
+        10000 - over.paceSpent.amountMinor,
+      );
+    } finally {
+      await own.close();
     }
   });
 });

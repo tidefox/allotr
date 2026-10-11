@@ -71,8 +71,10 @@ const seriesView = (series: CategorySeries): CategorySeriesView => ({
   groups: series.groups.map((g) => ({
     categoryId: g.categoryId,
     points: [...g.points],
+    average: g.average,
   })),
   totals: [...series.totals],
+  totalAverage: series.totalAverage,
   missingRates: [...series.missingRates],
 });
 

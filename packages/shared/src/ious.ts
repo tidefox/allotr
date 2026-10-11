@@ -69,6 +69,8 @@ export const iouListSchema = z.object({
   totals: z.object({
     owedToMe: moneySchema,
     owedByMe: moneySchema,
+    /** `owedToMe − owedByMe`: negative when the user owes more. */
+    net: moneySchema,
     /** Currencies without a rate to the default one, left out of the totals. */
     missingRates: z.array(currencyCodeSchema),
   }),
