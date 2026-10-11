@@ -225,7 +225,9 @@ describe('topPayees properties', () => {
               a.total.amountMinor > b.total.amountMinor ||
                 (a.total.amountMinor === b.total.amountMinor &&
                   (a.count > b.count ||
-                    (a.count === b.count && a.payee < b.payee))),
+                    // Ties break on the payee key, not the shown spelling.
+                    (a.count === b.count &&
+                      (payeeKey(a.payee) ?? '') < (payeeKey(b.payee) ?? '')))),
             ).toBe(true);
           }
           expect(new Set(g.payees.map((p) => p.payee.toLowerCase())).size).toBe(
