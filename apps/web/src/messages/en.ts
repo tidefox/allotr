@@ -516,6 +516,14 @@ export const en = {
       name: 'Name',
       currency: 'Currency',
       group: 'Counts toward',
+      kind: 'Type',
+      kinds: { asset: 'Account', liability: 'Credit' },
+      limit: 'Credit limit in {currency}',
+      dueDay: 'Payment due on day (1–31)',
+      creditHint:
+        'Optional. The limit and due day are shown only; they create no bill and change no figure.',
+      creditBalanceHint:
+        'Optional. Enter what you owe as a negative amount, such as −250.00.',
       balance: 'Opening balance in {currency}',
       balanceHint: 'Optional. Negative for money owed, such as a card.',
       save: 'Add account',
@@ -527,6 +535,8 @@ export const en = {
         currencyRequired: 'Choose a currency.',
         balanceInvalid: 'Enter an amount such as {example}.',
         balanceDecimals: 'This currency has fewer decimal places.',
+        limitInvalid: 'Enter a limit above zero, such as {example}.',
+        dayInvalid: 'Enter a day from 1 to 31.',
         dateInvalid: 'Enter a date.',
       },
     },

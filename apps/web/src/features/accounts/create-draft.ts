@@ -16,13 +16,25 @@ export interface AccountDraft {
   readonly name: string;
   readonly currency: string;
   readonly budgetGroup: AccountView['budgetGroup'];
+  /** What can be added here: money you hold, or a credit account. */
+  readonly kind: CreatableKind;
+  /** Credit only: as typed, in `currency`; empty for none. */
+  readonly creditLimit: string;
+  /** Credit only: 1 to 31 as typed; empty for none. */
+  readonly dueDay: string;
   /** As typed, in `currency`; empty for none, negative for a debt. */
   readonly openingBalance: string;
   /** YYYY-MM-DD; the day the opening balance counts from. */
   readonly openedOn: string;
 }
 
-export type AccountDraftField = Exclude<keyof AccountDraft, 'budgetGroup'>;
+/** Receivable and payable accounts belong to IOUs and are made there. */
+export type CreatableKind = Extract<AccountView['kind'], 'asset' | 'liability'>;
+
+export type AccountDraftField = Exclude<
+  keyof AccountDraft,
+  'budgetGroup' | 'kind'
+>;
 export type AccountDraftErrorKey = Extract<
   MessageKey,
   `accounts.create.errors.${string}`
@@ -35,6 +47,8 @@ export type AccountDraftErrors = Partial<
 export const ACCOUNT_FIELD_ORDER: readonly AccountDraftField[] = [
   'name',
   'currency',
+  'creditLimit',
+  'dueDay',
   'openingBalance',
   'openedOn',
 ];
@@ -47,6 +61,9 @@ export function newAccountDraft(
     name: '',
     currency: defaultCurrency,
     budgetGroup: 'on',
+    kind: 'asset',
+    creditLimit: '',
+    dueDay: '',
     openingBalance: '',
     openedOn: today,
   };
@@ -83,6 +100,30 @@ export function toCreateBody(
     }
   }
 
+  // A limit and a due day belong to credit accounts, and both are optional.
+  let creditLimit: CreateAccountBody['creditLimit'];
+  let dueDay: number | undefined;
+  if (draft.kind === 'liability') {
+    const typedLimit = draft.creditLimit.trim();
+    if (currency !== undefined && typedLimit !== '') {
+      try {
+        const limit = parseMoney(typedLimit, currency, locale);
+        if (limit.amountMinor <= 0)
+          errors.creditLimit = 'accounts.create.errors.limitInvalid';
+        else creditLimit = limit;
+      } catch (error) {
+        if (!(error instanceof MoneyError)) throw error;
+        errors.creditLimit = 'accounts.create.errors.limitInvalid';
+      }
+    }
+    const typedDay = draft.dueDay.trim();
+    if (typedDay !== '') {
+      const day = /^\d{1,2}$/.test(typedDay) ? Number(typedDay) : Number.NaN;
+      if (day >= 1 && day <= 31) dueDay = day;
+      else errors.dueDay = 'accounts.create.errors.dayInvalid';
+    }
+  }
+
   // The date only matters with a balance to date.
   const openedOn =
     openingBalance === undefined
@@ -98,7 +139,10 @@ export function toCreateBody(
     body: {
       name,
       currency,
+      kind: draft.kind,
       budgetGroup: draft.budgetGroup,
+      ...(creditLimit === undefined ? {} : { creditLimit }),
+      ...(dueDay === undefined ? {} : { dueDay }),
       ...(openingBalance === undefined ? {} : { openingBalance }),
       ...(openedOn?.success === true ? { openedOn: openedOn.data } : {}),
     },
