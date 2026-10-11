@@ -11,6 +11,7 @@ import { Timeline } from '@/charts/timeline';
 import { formatDay } from '@/features/today/format';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
+import { openNewForm } from '@/shell/command/store.ts';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { billsView, cycleDayDate, type DueItem } from './bills-model.ts';
@@ -140,6 +141,15 @@ export function BillsTab() {
         })}
         span="full"
         primary
+        actions={
+          <BracketButton
+            onPress={() => {
+              openNewForm('bill');
+            }}
+          >
+            {t('billForm.add')}
+          </BracketButton>
+        }
         bodyClassName="grid content-start gap-3 pt-2.5"
       >
         <KeyFigures
