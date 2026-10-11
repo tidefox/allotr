@@ -188,8 +188,9 @@ test('a split with people records the bill and the shares', async ({
   // Even shares of 60 between three: 20 each, so people owe 40.
   await dialog.getByRole('button', { name: t('quickEntry.save') }).click();
   await expect(dialog).toBeHidden();
+  // The result line shows the recorded expense: the whole bill.
   const line = resultLine(page);
-  await expect(line).toContainText('20');
+  await expect(line).toContainText('60.00');
   await expect(line).toContainText('Groceries');
   const ious = await page.request.get('/v1/ious');
   const body = (await ious.json()) as {
