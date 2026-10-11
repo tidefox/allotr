@@ -364,10 +364,13 @@ function RepayForm({
     (a) => !a.archived && a.currency === currency,
   );
   const toMe = iou.direction === 'owed-to-me';
+  // With several open IOUs for the person, the payment goes to the person:
+  // the server settles the oldest first and moves the surplus on. The most it
+  // may take is the person's open total, which the server sends.
+  const byPerson = iou.personOpen.count > 1;
+  const owed = byPerson ? iou.personOpen.outstanding : iou.outstanding;
   const [accountId, setAccountId] = useState(options[0]?.id ?? '');
-  const [amount, setAmount] = useState(
-    formatMoneyInput(iou.outstanding, locale),
-  );
+  const [amount, setAmount] = useState(formatMoneyInput(owed, locale));
   const [date, setDate] = useState<string>(today);
   const [amountBad, setAmountBad] = useState(false);
   const [dateIssue, setDateIssue] = useState<DateError>();
@@ -379,12 +382,22 @@ function RepayForm({
     setAmountBad(parsed === null);
     setDateIssue(on.ok ? undefined : on.error);
     if (parsed === null || !on.ok) return;
-    repay.mutate({
-      accountId,
-      settles: [{ iouId: iou.id, amount: parsed }],
-      direction: iou.direction,
-      occurredOn: on.date,
-    });
+    repay.mutate(
+      byPerson
+        ? {
+            accountId,
+            person: iou.person,
+            amount: parsed,
+            direction: iou.direction,
+            occurredOn: on.date,
+          }
+        : {
+            accountId,
+            settles: [{ iouId: iou.id, amount: parsed }],
+            direction: iou.direction,
+            occurredOn: on.date,
+          },
+    );
   };
 
   return (
@@ -426,9 +439,14 @@ function RepayForm({
         onChange={setAmount}
       />
       <p className="num text-small text-text-muted">
-        {t('budgetGoalsIous.ious.form.stillOwed', {
-          amount: formatMoney(iou.outstanding, 'symbol', locale),
-        })}
+        {byPerson
+          ? t('budgetGoalsIous.ious.form.stillOwedAcross', {
+              count: iou.personOpen.count,
+              amount: formatMoney(owed, 'symbol', locale),
+            })
+          : t('budgetGoalsIous.ious.form.stillOwed', {
+              amount: formatMoney(owed, 'symbol', locale),
+            })}
       </p>
       <TextField
         label={t('budgetGoalsIous.ious.form.date')}

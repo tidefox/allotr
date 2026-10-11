@@ -8,6 +8,9 @@ import {
   iouStatus,
   iouStatuses,
   iouTotals,
+  personOpenOf,
+  personOpenTotals,
+  type PersonOpen,
   lend,
   repayment,
   writeOffReceivable,
@@ -72,7 +75,11 @@ const notFound = () => problem(404, 'iou_not_found', 'There is no such IOU.');
 
 // ---------------------------------------------------------------- reading
 
-function iouView(status: IouStatus, view: LedgerView): IouView {
+function iouView(
+  status: IouStatus,
+  view: LedgerView,
+  open: ReadonlyMap<string, PersonOpen>,
+): IouView {
   const reversed = new Set(
     view.ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
   );
@@ -93,6 +100,7 @@ function iouView(status: IouStatus, view: LedgerView): IouView {
     daysOverdue: status.daysOverdue,
     writeOffOfferedOn: status.writeOffOfferedOn,
     writeOffOffered: status.writeOffOffered,
+    personOpen: personOpenOf(open, status),
     settlements: iou.settlements.map((s) => ({
       id: s.id,
       transactionId: s.transactionId,
@@ -134,8 +142,9 @@ export function listIous(
               ) || a.iou.recordedOn.localeCompare(b.iou.recordedOn),
           );
     const totals = iouTotals(view, today, all);
+    const open = personOpenTotals(all);
     return {
-      ious: ordered.map((s) => iouView(s, view)),
+      ious: ordered.map((s) => iouView(s, view, open)),
       totals: {
         owedToMe: totals.owedToMe,
         owedByMe: totals.owedByMe,
@@ -178,6 +187,7 @@ async function viewsOf(
 ): Promise<IouView[]> {
   const { view } = await loadView(db, userId);
   const today = await userToday(db, userId, now);
+  const open = personOpenTotals(iouStatuses(view, endOfTime));
   const found = (view.ious?.ious ?? []).filter((i) => ids.includes(i.id));
   // A future-dated IOU is shown as of its own day.
   return found
@@ -185,6 +195,7 @@ async function viewsOf(
       iouView(
         iouStatus(view, i, i.recordedOn > today ? i.recordedOn : today),
         view,
+        open,
       ),
     )
     .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));

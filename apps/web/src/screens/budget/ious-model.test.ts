@@ -24,6 +24,7 @@ function iou(patch: Partial<IouView> & { id: string }): IouView {
     daysOverdue: 0,
     writeOffOfferedOn: null,
     writeOffOffered: false,
+    personOpen: { count: 1, outstanding: money(5000, 'USD') },
     settlements: [],
     ...patch,
   };

@@ -50,6 +50,16 @@ export const iouSchema = z.object({
   writeOffOfferedOn: localDateSchema.nullable(),
   writeOffOffered: z.boolean(),
   settlements: z.array(iouSettlementSchema),
+  /**
+   * The person's open IOUs in this direction and currency, this one
+   * included while it is open (case-insensitive name). A payment to the
+   * person (`person` and `amount` on `POST /v1/ious/repayments`) settles
+   * them oldest first, so this is the most it may take.
+   */
+  personOpen: z.object({
+    count: z.int().min(0),
+    outstanding: moneySchema,
+  }),
 });
 export type IouView = z.infer<typeof iouSchema>;
 

@@ -13570,6 +13570,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -13588,7 +13617,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     },
@@ -14315,6 +14345,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -14333,7 +14392,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     }
@@ -14765,6 +14825,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -14783,7 +14872,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     }
@@ -16286,6 +16376,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -16304,7 +16423,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     }
@@ -17340,6 +17460,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -17358,7 +17507,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     }
@@ -18029,6 +18179,35 @@
                                 "undone"
                               ]
                             }
+                          },
+                          "personOpen": {
+                            "type": "object",
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "outstanding": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "outstanding"
+                            ]
                           }
                         },
                         "required": [
@@ -18047,7 +18226,8 @@
                           "daysOverdue",
                           "writeOffOfferedOn",
                           "writeOffOffered",
-                          "settlements"
+                          "settlements",
+                          "personOpen"
                         ]
                       }
                     }
@@ -18804,6 +18984,35 @@
                               "undone"
                             ]
                           }
+                        },
+                        "personOpen": {
+                          "type": "object",
+                          "properties": {
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "outstanding": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "outstanding"
+                          ]
                         }
                       },
                       "required": [
@@ -18822,7 +19031,8 @@
                         "daysOverdue",
                         "writeOffOfferedOn",
                         "writeOffOffered",
-                        "settlements"
+                        "settlements",
+                        "personOpen"
                       ]
                     }
                   },
@@ -19331,6 +19541,35 @@
                           "undone"
                         ]
                       }
+                    },
+                    "personOpen": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "outstanding": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "outstanding"
+                      ]
                     }
                   },
                   "required": [
@@ -19349,7 +19588,8 @@
                     "daysOverdue",
                     "writeOffOfferedOn",
                     "writeOffOffered",
-                    "settlements"
+                    "settlements",
+                    "personOpen"
                   ]
                 }
               }

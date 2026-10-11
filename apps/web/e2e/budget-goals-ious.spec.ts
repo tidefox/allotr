@@ -340,3 +340,88 @@ test('a new IOU is recorded from the form', async ({ page, baseURL }) => {
   await expect(page.getByRole('button', { name: /Cy/ })).toBeVisible();
   await expectAccessible(page);
 });
+
+test('a repayment to a person with two IOUs settles the oldest first', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await signIn(page, origin);
+  const minor = (amountMinor: number) => ({ amountMinor, currency });
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string }[];
+  };
+  const everyday = accounts.accounts.find((a) => a.name === 'Everyday');
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  await post(page, origin, '/v1/ious', {
+    direction: 'owed-to-me',
+    accountId: everyday?.id,
+    people: [{ person: 'Dee', amount: minor(3_000) }],
+    occurredOn: yesterday,
+  });
+  await post(page, origin, '/v1/ious', {
+    direction: 'owed-to-me',
+    accountId: everyday?.id,
+    people: [{ person: 'Dee', amount: minor(2_000) }],
+  });
+
+  await page.goto('/budget/ious');
+  await page.getByRole('button', { name: /Dee/ }).click();
+  const pane = detail(page, 'Dee');
+  await pane
+    .getByRole('button', {
+      name: t('budgetGoalsIous.ious.actionFor', {
+        action: t('budgetGoalsIous.ious.repay'),
+        person: 'Dee',
+      }),
+    })
+    .first()
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: t('budgetGoalsIous.ious.sheets.repay', { person: 'Dee' }),
+  });
+  await expect(sheet).toBeVisible();
+  // The server's total across both IOUs is offered, not one IOU's figure.
+  const amount = sheet.getByLabel(t('budgetGoalsIous.ious.form.amount'), {
+    exact: true,
+  });
+  await expect(amount).toHaveValue('50.00');
+  await expect(
+    sheet.getByText(
+      t('budgetGoalsIous.ious.form.stillOwedAcross', {
+        count: 2,
+        amount: '$50.00',
+      }),
+    ),
+  ).toBeVisible();
+  await expectAccessible(page);
+  await amount.fill('35.00');
+  await sheet
+    .getByRole('button', {
+      name: t('budgetGoalsIous.ious.form.recordRepayment'),
+    })
+    .click();
+  await expect(sheet).toBeHidden();
+
+  // One entry took the oldest IOU in full and the surplus went to the next.
+  const list = (await (
+    await page.request.get('/v1/ious?person=Dee&status=all')
+  ).json()) as {
+    ious: {
+      amount: { amountMinor: number };
+      repaid: { amountMinor: number };
+      settled: boolean;
+    }[];
+  };
+  const byAmount = new Map(list.ious.map((i) => [i.amount.amountMinor, i]));
+  expect(byAmount.get(3_000)).toMatchObject({
+    settled: true,
+    repaid: { amountMinor: 3_000 },
+  });
+  expect(byAmount.get(2_000)).toMatchObject({
+    settled: false,
+    repaid: { amountMinor: 500 },
+  });
+});

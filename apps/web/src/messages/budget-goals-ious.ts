@@ -123,6 +123,8 @@ export const budgetGoalsIous = {
       note: 'Note (optional)',
       category: 'Recorded under',
       stillOwed: 'Still owed: {amount}.',
+      stillOwedAcross:
+        'Still owed across {count} IOUs: {amount}. The oldest is settled first.',
       writeOffBody:
         'Write off {amount} that {person} owes you. It is recorded as an expense and cannot be collected afterwards.',
       writeOffOffered: 'A write-off is offered now.',
