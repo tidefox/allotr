@@ -367,7 +367,8 @@ settings, so no ledger read is made that the server would refuse.
   and what was left after this entry, one row per budget line, from
   `budget.lines[].leftAfter`; no bar, since the budget's amount and spent
   are not sent), cover (`budget.lines[].covers` and what was not covered,
-  or `none`), source, history (`earlier version`, `edited since`, `—`).
+  or `none`), source, history (`earlier version`, `edited since`,
+  `deleted since`, `brought back as`, or `—`).
   Below: the versions with `[go back to this]` when there is history, the
   newest three other entries from the same payee (date, account, amount;
   any date; `first time` when none; a `[see all]` link opens
