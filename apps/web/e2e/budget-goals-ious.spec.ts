@@ -308,7 +308,7 @@ test('a due date can be set and an IOU written off', async ({
     .getByRole('button', { name: t('budgetGoalsIous.ious.form.saveDue') })
     .click();
   await expect(due).toBeHidden();
-  await expect(pane).toContainText('Jan 1');
+  await expect(pane).toContainText('due jan 01');
   await expect(pane).not.toContainText('late');
 
   await pane
@@ -338,7 +338,7 @@ test('a new IOU is recorded from the form', async ({ page, baseURL }) => {
   await signIn(page, baseURL ?? '');
   await page.goto('/budget/ious');
   await page
-    .getByRole('button', { name: t('budgetGoalsIous.ious.add') })
+    .getByRole('button', { name: t('budgetGoalsIous.ious.lendLabel') })
     .click();
   const sheet = page.getByRole('dialog', {
     name: t('budgetGoalsIous.ious.sheets.loan'),

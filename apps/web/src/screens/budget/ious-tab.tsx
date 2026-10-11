@@ -2,34 +2,60 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
-import { BracketButton, PrimaryButton, Tag } from '@/components/buttons';
+import { BracketButton, Tag } from '@/components/buttons';
 import { Split, Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { Sheet } from '@/components/sheet';
-import { Stats, type Stat } from '@/components/stats';
 import { EmptyState } from '@/components/states';
 import { useFrameWidth } from '@/components/use-frame-width';
+import { IconAddLine, IconHandCoinLine } from '@/generated/icons';
+import { formatTerminalDate } from '@/features/today/format';
 import { allIousQuery } from '@/lib/ious';
 import { t } from '@/messages/t';
 import { PersonDetail } from './iou-detail.tsx';
 import { IouSheet, type IouFlow } from './iou-sheets.tsx';
 import {
   groupPeople,
-  openCount,
-  overdueCount,
-  soleOpen,
+  nextDue,
+  personFigure,
   type Person,
 } from './ious-model.ts';
+import { SumLine } from './sum-line.tsx';
 import { TabFailed } from './tab-failed.tsx';
 
 const locale = 'en';
 
+// Icon, name with the direction, status tag, figure (`rows tall`).
 const columns: readonly RowColumn[] = [
+  { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
   { width: 'auto' },
-  { width: '6rem', from: 'medium' },
+  { width: '12ch' },
 ];
+
+function direction(person: Person): string {
+  if (person.settled) return t('budgetGoalsIous.ious.even');
+  return [
+    person.owedToMe.length > 0 ? t('budgetGoalsIous.ious.owesYouTag') : null,
+    person.owedByMe.length > 0 ? t('budgetGoalsIous.ious.youOweTag') : null,
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
+}
+
+function StatusTag({ person }: { person: Person }) {
+  if (person.settled)
+    return <Tag tone="positive">{t('budgetGoalsIous.ious.settledTag')}</Tag>;
+  if (person.daysOverdue > 0)
+    return (
+      <Tag tone="negative">
+        {t('budgetGoalsIous.ious.overdueTag', { count: person.daysOverdue })}
+      </Tag>
+    );
+  const due = nextDue(person);
+  return due === null ? null : <Tag>{formatTerminalDate(due, locale)}</Tag>;
+}
 
 function PersonRow({
   person,
@@ -40,43 +66,44 @@ function PersonRow({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const sole = soleOpen(person);
+  const figure = personFigure(person);
   return (
     <Row
       columns={columns}
       selected={selected}
       onPress={onSelect}
+      tall
       cells={[
+        <IconHandCoinLine
+          key="i"
+          aria-hidden="true"
+          className="size-4 text-text-muted"
+        />,
         <span key="name" className="font-sans">
-          {person.name}
+          {person.name}{' '}
+          <span className="text-text-muted">{direction(person)}</span>
         </span>,
-        <span key="tags" className="flex items-center gap-1">
-          {person.owedToMe.length > 0 ? (
-            <Tag>{t('budgetGoalsIous.ious.owesYouTag')}</Tag>
-          ) : null}
-          {person.owedByMe.length > 0 ? (
-            <Tag>{t('budgetGoalsIous.ious.youOweTag')}</Tag>
-          ) : null}
-          {person.daysOverdue > 0 ? (
-            <Tag tone="warning">
-              {t('budgetGoalsIous.ious.overdueTag', {
-                count: person.daysOverdue,
+        <StatusTag key="tag" person={person} />,
+        <span key="figure" className="block text-right">
+          {figure === null ? (
+            <span className="text-text-muted">
+              {t('budgetGoalsIous.ious.openMany', {
+                count: person.open.length,
               })}
-            </Tag>
-          ) : null}
-          {person.writeOffOffered ? (
-            <Tag>{t('budgetGoalsIous.ious.writeOffTag')}</Tag>
-          ) : null}
-          {person.settled ? (
-            <Tag tone="positive">{t('budgetGoalsIous.ious.settledTag')}</Tag>
-          ) : null}
-        </span>,
-        <span key="figure" className="num block text-right">
-          {sole !== null ? (
-            <Amount amount={sole.outstanding} locale={locale} />
-          ) : person.open.length > 1 ? (
-            t('budgetGoalsIous.ious.openMany', { count: person.open.length })
-          ) : null}
+            </span>
+          ) : (
+            <Amount
+              amount={figure.amount}
+              locale={locale}
+              className={
+                person.settled
+                  ? 'text-text-muted'
+                  : figure.toMe
+                    ? 'text-positive'
+                    : 'text-negative'
+              }
+            />
+          )}
         </span>,
       ]}
     />
@@ -89,53 +116,16 @@ function PersonRow({
 export function IousTab() {
   const ious = useQuery(allIousQuery);
   const wide = useFrameWidth() >= 1000;
-  const [showSettled, setShowSettled] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [flow, setFlow] = useState<IouFlow | null>(null);
 
   const list = ious.data?.ious;
   const people = useMemo(
-    () => (list === undefined ? undefined : groupPeople(list, showSettled)),
-    [list, showSettled],
+    () => (list === undefined ? undefined : groupPeople(list, true)),
+    [list],
   );
   const person =
-    selected === null || list === undefined
-      ? undefined
-      : groupPeople(list, true).find((p) => p.key === selected);
-
-  const stats: Stat[] | undefined =
-    ious.data === undefined || list === undefined
-      ? undefined
-      : [
-          {
-            label: t('budgetGoalsIous.ious.stats.owesYou'),
-            figure: (
-              <Amount amount={ious.data.totals.owedToMe} locale={locale} />
-            ),
-            sub: t('budgetGoalsIous.ious.stats.owesYouSub'),
-            tone: 'primary',
-          },
-          {
-            label: t('budgetGoalsIous.ious.stats.youOwe'),
-            figure: (
-              <Amount amount={ious.data.totals.owedByMe} locale={locale} />
-            ),
-            sub: t('budgetGoalsIous.ious.stats.youOweSub'),
-          },
-          {
-            label: t('budgetGoalsIous.ious.stats.open'),
-            figure: String(openCount(list)),
-            sub: t('budgetGoalsIous.ious.stats.openSub'),
-          },
-          {
-            label: t('budgetGoalsIous.ious.stats.overdue'),
-            figure:
-              overdueCount(list) === 0
-                ? t('budgetGoalsIous.ious.stats.overdueNone')
-                : String(overdueCount(list)),
-            sub: t('budgetGoalsIous.ious.stats.overdueSub'),
-          },
-        ];
+    selected === null ? undefined : people?.find((p) => p.key === selected);
 
   let body;
   if (ious.isError) {
@@ -146,7 +136,7 @@ export function IousTab() {
         }}
       />
     );
-  } else if (people === undefined) {
+  } else if (people === undefined || ious.data === undefined) {
     body = <SkeletonTile />;
   } else if (people.length === 0) {
     body = (
@@ -156,8 +146,26 @@ export function IousTab() {
       />
     );
   } else {
+    const { totals } = ious.data;
     body = (
-      <div>
+      <>
+        <SumLine
+          className="px-3 pt-2"
+          parts={[
+            {
+              key: 'to-me',
+              label: t('budgetGoalsIous.ious.owedToYou'),
+              value: <Amount amount={totals.owedToMe} locale={locale} />,
+              tone: 'positive',
+            },
+            {
+              key: 'by-me',
+              label: t('budgetGoalsIous.ious.youOweTag'),
+              value: <Amount amount={totals.owedByMe} locale={locale} />,
+              tone: 'negative',
+            },
+          ]}
+        />
         {people.map((p) => (
           <PersonRow
             key={p.key}
@@ -168,7 +176,7 @@ export function IousTab() {
             }}
           />
         ))}
-      </div>
+      </>
     );
   }
 
@@ -179,31 +187,34 @@ export function IousTab() {
 
   return (
     <>
-      {stats === undefined ? null : <Stats stats={stats} />}
       <Split
+        className="min-h-full"
         list={
           <Tile
             title={t('budgetGoalsIous.ious.title')}
-            bodyClassName="px-0 pb-0"
+            icon={IconHandCoinLine}
+            className="h-full"
+            bodyClassName="px-0 pt-0 pb-0"
             actions={
               <>
                 <BracketButton
-                  aria-pressed={showSettled}
+                  icon={IconAddLine}
+                  aria-label={t('budgetGoalsIous.ious.lendLabel')}
                   onPress={() => {
-                    setShowSettled(!showSettled);
+                    setFlow({ kind: 'loan', direction: 'owed-to-me' });
                   }}
                 >
-                  {showSettled
-                    ? t('budgetGoalsIous.ious.hideSettled')
-                    : t('budgetGoalsIous.ious.showSettled')}
+                  {t('budgetGoalsIous.ious.lend')}
                 </BracketButton>
-                <PrimaryButton
+                <BracketButton
+                  icon={IconAddLine}
+                  aria-label={t('budgetGoalsIous.ious.borrowLabel')}
                   onPress={() => {
-                    setFlow({ kind: 'loan' });
+                    setFlow({ kind: 'loan', direction: 'owed-by-me' });
                   }}
                 >
-                  {t('budgetGoalsIous.ious.add')}
-                </PrimaryButton>
+                  {t('budgetGoalsIous.ious.borrow')}
+                </BracketButton>
               </>
             }
           >
@@ -214,13 +225,14 @@ export function IousTab() {
           wide ? (
             <Tile
               title={person?.name ?? t('budgetGoalsIous.ious.detailTitle')}
-              bodyClassName="px-0 pb-0"
+              icon={IconHandCoinLine}
+              primary={person !== undefined}
+              className="h-full"
             >
               {detail ?? (
-                <EmptyState
-                  title={t('budgetGoalsIous.ious.detailTitle')}
-                  hint={t('budgetGoalsIous.ious.pickOne')}
-                />
+                <p className="font-sans text-text-muted">
+                  {t('budgetGoalsIous.ious.pickOne')}
+                </p>
               )}
             </Tile>
           ) : null
@@ -235,7 +247,7 @@ export function IousTab() {
           title={person?.name ?? t('budgetGoalsIous.ious.detailTitle')}
           closeLabel={t('budgetGoalsIous.ious.closeDetail')}
         >
-          {detail}
+          <div className="p-3">{detail}</div>
         </Sheet>
       )}
       <IouSheet

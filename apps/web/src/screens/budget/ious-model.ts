@@ -88,3 +88,40 @@ export function soleOpen(person: Person): IouView | null {
   const [only] = person.open;
   return person.open.length === 1 && only !== undefined ? only : null;
 }
+
+/**
+ * What stands for the person in the list: the server's `personOpen` total
+ * when every open IOU runs one way in one currency, the settled IOU's zero
+ * when nothing is open, or null when they run both ways or in several
+ * currencies (a net would be browser maths; the row shows a count).
+ */
+export function personFigure(
+  person: Person,
+): Readonly<{ amount: IouView['outstanding']; toMe: boolean }> | null {
+  const [first] = person.open;
+  if (first === undefined) {
+    const [last] = person.ious;
+    return last === undefined ? null : { amount: last.outstanding, toMe: true };
+  }
+  const oneWay = person.open.every(
+    (i) =>
+      i.direction === first.direction &&
+      i.outstanding.currency === first.outstanding.currency,
+  );
+  return oneWay
+    ? {
+        amount: first.personOpen.outstanding,
+        toMe: first.direction === 'owed-to-me',
+      }
+    : null;
+}
+
+/** The earliest due date among the person's open IOUs, if any has one. */
+export function nextDue(person: Person): IouView['dueOn'] {
+  return (
+    person.open
+      .map((i) => i.dueOn)
+      .filter((d) => d !== null)
+      .sort()[0] ?? null
+  );
+}
