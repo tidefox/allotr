@@ -42,6 +42,8 @@ async function choose(dialog: Locator, page: Page, label: string, to: string) {
   await page
     .getByRole('menuitemradio', { name: new RegExp(`(^|› )${to}$`) })
     .click();
+  // The next choice opens its own menu, so wait for this one to be gone.
+  await expect(page.getByRole('menu')).toBeHidden();
 }
 
 function resultLine(page: Page) {
