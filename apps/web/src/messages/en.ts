@@ -787,6 +787,13 @@ export const en = {
     category: 'Category',
     categoryOptional: 'Category (optional)',
     chooseCategory: 'Choose a category',
+    funding: {
+      label: 'Paid with',
+      own: 'My money',
+      outside: 'Outside money',
+      outsideHint:
+        'A gift or other money that was never yours to budget. It stays in your balances but not in spending or pace.',
+    },
     noCategory: 'None',
     date: 'Date',
     time: 'Time (optional)',

@@ -88,6 +88,7 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
     note: '',
     occurredOn: defaults.today,
     occurredTime: '',
+    funding: 'own',
     ...choicesFor('expense', defaults),
   };
 }

@@ -67,6 +67,7 @@ function migrationsUpTo(last: string): string {
     '0018_entry_client.sql',
     '0019_goals.sql',
     '0020_pool_account_style_credit.sql',
+    '0021_account_subtype_min_payment.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -172,6 +173,7 @@ const starterTree = [
   'Other income',
   'Interest',
   'Tax refund',
+  'Gifts',
 ];
 
 describe('migration 0003_ledger', () => {
@@ -476,6 +478,8 @@ describe('migration 0005_reconciliations', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     insertReconciliation('r1');
@@ -577,6 +581,8 @@ describe('migration 0006_bill_prices', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(
@@ -673,6 +679,8 @@ describe('migration 0007_pools', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(pools()).toEqual([
@@ -835,6 +843,8 @@ describe('migration 0008_budgets', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(
@@ -1005,6 +1015,8 @@ describe('migration 0009_budget_cover', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1078,6 +1090,8 @@ describe('migration 0010_category_style', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1171,6 +1185,8 @@ describe('migration 0012_ious', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1328,6 +1344,8 @@ describe('migration 0011_income_categories', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1412,6 +1430,8 @@ describe('migration 0013_reminders', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1634,6 +1654,8 @@ describe('migration 0015_entry_replacements', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1721,6 +1743,8 @@ describe('migration 0016_buffer_currency', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(
@@ -1812,6 +1836,8 @@ describe('migration 0018_entry_client', () => {
       '0019_goals',
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(sql('SELECT id, client FROM transactions').all()).toEqual([
@@ -1898,6 +1924,8 @@ describe('migration 0020_pool_account_style_credit', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(
@@ -2002,6 +2030,8 @@ describe('migration 0021_account_subtype_min_payment', () => {
 
     expect(migrateFrom(repoMigrations)).toEqual([
       '0021_account_subtype_min_payment',
+      '0022_income_class',
+      '0023_expense_funding',
     ]);
 
     expect(
@@ -2048,6 +2078,105 @@ describe('migration 0021_account_subtype_min_payment', () => {
     }
     expect(() =>
       sql(`UPDATE accounts SET min_payment_minor = 100 WHERE id = 'a1'`).run(),
+    ).toThrow();
+  });
+});
+
+describe('migration 0022_income_class', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+  const classOf = (userId: string, name: string) =>
+    sql('SELECT income_class FROM categories WHERE user_id = ? AND name = ?')
+      .pluck()
+      .all(userId, name);
+
+  it('classes the starter names and adds Gifts to existing users', () => {
+    migrateFrom(migrationsUpTo('0021'));
+    insertUser('u1');
+    insertUser('u2');
+    // A user who already has a category called Gifts keeps just that one.
+    sql(
+      "UPDATE categories SET name = 'gifts' WHERE user_id = 'u2' AND name = 'Other income'",
+    ).run();
+
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0022_income_class',
+      '0023_expense_funding',
+    ]);
+
+    expect(classOf('u1', 'Interest')).toEqual(['passive']);
+    expect(classOf('u1', 'Tax refund')).toEqual(['refund']);
+    expect(classOf('u1', 'Paycheck')).toEqual(['earned']);
+    expect(classOf('u1', 'Other income')).toEqual(['earned']);
+    expect(classOf('u1', 'Gifts')).toEqual(['gift']);
+    expect(
+      count(
+        "SELECT count(*) FROM categories WHERE user_id = 'u2' AND lower(name) = 'gifts'",
+      ),
+    ).toBe(1);
+  });
+
+  it('gives new users the classes and refuses a class on a non-income or paycheck category', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    expect(classOf('u1', 'Interest')).toEqual(['passive']);
+    expect(classOf('u1', 'Gifts')).toEqual(['gift']);
+    expect(classOf('u1', 'Shopping')).toEqual(['earned']);
+    expect(() =>
+      sql(
+        "UPDATE categories SET income_class = 'gift' WHERE user_id = 'u1' AND name = 'Shopping'",
+      ).run(),
+    ).toThrow();
+    expect(() =>
+      sql(
+        "UPDATE categories SET income_class = 'gift' WHERE user_id = 'u1' AND name = 'Paycheck'",
+      ).run(),
+    ).toThrow();
+    expect(() =>
+      sql(
+        "UPDATE categories SET income_class = 'bonus' WHERE user_id = 'u1' AND name = 'Gifts'",
+      ).run(),
+    ).toThrow();
+  });
+});
+
+describe('migration 0023_expense_funding', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+  const fundingOf = (id: string) =>
+    sql('SELECT funding FROM transactions WHERE id = ?').pluck().get(id);
+
+  it('reads existing entries as own money', () => {
+    migrateFrom(migrationsUpTo('0021'));
+    insertUser('u1');
+    insertTransaction('t1', 'u1');
+
+    migrateFrom(repoMigrations);
+
+    expect(fundingOf('t1')).toBe('own');
+  });
+
+  it('allows outside funding on an expense only', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    const insert = (id: string, kind: string, funding: string) =>
+      sql(
+        `INSERT INTO transactions (id, user_id, kind, occurred_on, created_at, source, funding)
+         VALUES (?, 'u1', ?, '2026-01-05', ?, 'api', ?)`,
+      ).run(id, kind, at, funding);
+
+    insert('t1', 'expense', 'outside');
+    expect(fundingOf('t1')).toBe('outside');
+    expect(() => insert('t2', 'income', 'outside')).toThrow();
+    expect(() => insert('t3', 'transfer', 'outside')).toThrow();
+    expect(() => insert('t4', 'expense', 'gift')).toThrow();
+    insert('t5', 'income', 'own');
+  });
+
+  it('keeps entries append-only', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertTransaction('t1', 'u1');
+    expect(() =>
+      sql("UPDATE transactions SET funding = 'outside' WHERE id = 't1'").run(),
     ).toThrow();
   });
 });

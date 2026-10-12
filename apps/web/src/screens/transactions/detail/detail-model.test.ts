@@ -39,6 +39,7 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     source: 'api',
     categoryId: 'c-cafe',
     note: 'Corner cafe',
+    funding: 'own',
     postings: [
       {
         accountId: 'a-everyday',

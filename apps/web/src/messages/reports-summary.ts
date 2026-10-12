@@ -8,6 +8,10 @@ export const reportsSummary = {
   stats: {
     spent: 'spent {period}',
     income: 'income',
+    otherInflows: 'other inflows',
+    otherInflowsSub: 'gifts and refunds, not counted as income',
+    outside: 'outside spending',
+    outsideSub: 'paid with outside money, not counted as spent',
     saved: 'saved',
     average: 'daily avg',
     inclBills: 'incl. {amount} bills',
@@ -18,6 +22,7 @@ export const reportsSummary = {
     missingRates: 'No rate for {currencies}',
   },
   categories: {
+    outside: 'paid with outside money',
     title: 'by category',
     subtitle: 'spent · budget · share',
     expandAll: 'expand all',

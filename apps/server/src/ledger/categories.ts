@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { CategoryView } from '@allotr/shared';
+import type { CategoryView, IncomeClass } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
@@ -18,6 +18,7 @@ type Row = {
   kind: string;
   parent_id: string | null;
   is_paycheck: number;
+  income_class: string;
   position: number;
   colour: string | null;
   icon: string | null;
@@ -30,6 +31,7 @@ const columns = [
   'kind',
   'parent_id',
   'is_paycheck',
+  'income_class',
   'position',
   'colour',
   'icon',
@@ -43,6 +45,7 @@ function toView(row: Row): CategoryView {
     kind: row.kind as Kind,
     parentId: row.parent_id,
     isPaycheck: row.is_paycheck === 1,
+    incomeClass: row.income_class as IncomeClass,
     position: row.position,
     colour: row.colour as CategoryView['colour'],
     icon: row.icon as CategoryView['icon'],
@@ -135,6 +138,22 @@ function checkPaycheck(isPaycheck: boolean, kind: string): void {
   }
 }
 
+function checkIncomeClass(
+  incomeClass: IncomeClass,
+  kind: string,
+  isPaycheck: boolean,
+): void {
+  if (incomeClass !== 'earned' && (kind !== 'income' || isPaycheck)) {
+    throw new RequestProblem(
+      400,
+      'invalid_income_class',
+      kind !== 'income'
+        ? 'Only an income category has an income class.'
+        : 'The paycheck category is always earned income.',
+    );
+  }
+}
+
 const kindOrder: Record<string, number> = {
   expense: 0,
   income: 1,
@@ -195,6 +214,8 @@ export type CreateCategory = Readonly<{
   kind?: Kind | undefined;
   parentId?: string | undefined;
   isPaycheck: boolean;
+  /** Defaults to the parent's class, else `earned`. */
+  incomeClass?: IncomeClass | undefined;
   position?: number | undefined;
   colour?: CategoryView['colour'] | undefined;
   icon?: CategoryView['icon'] | undefined;
@@ -209,8 +230,11 @@ export async function insertCategory(
 ): Promise<string> {
   const id = randomUUID();
   let kind = input.kind;
+  let inherited: IncomeClass = 'earned';
   if (input.parentId !== undefined) {
-    kind = (await checkParent(db, userId, input.parentId, kind)).kind as Kind;
+    const parent = await checkParent(db, userId, input.parentId, kind);
+    kind = parent.kind as Kind;
+    inherited = parent.income_class as IncomeClass;
   }
   if (kind === undefined) {
     throw new RequestProblem(
@@ -220,6 +244,9 @@ export async function insertCategory(
     );
   }
   checkPaycheck(input.isPaycheck, kind);
+  const incomeClass =
+    input.incomeClass ?? (input.isPaycheck ? 'earned' : inherited);
+  checkIncomeClass(incomeClass, kind, input.isPaycheck);
   const last = await db
     .selectFrom('categories')
     .select(sql<number>`coalesce(max(position), 0)`.as('position'))
@@ -242,6 +269,7 @@ export async function insertCategory(
           kind,
           parent_id: input.parentId ?? null,
           is_paycheck: input.isPaycheck ? 1 : 0,
+          income_class: incomeClass,
           position: input.position ?? last.position + 1,
           colour: input.colour ?? null,
           icon: input.icon ?? null,
@@ -270,6 +298,7 @@ export type UpdateCategory = Readonly<{
   name?: string | undefined;
   parentId?: string | null | undefined;
   isPaycheck?: boolean | undefined;
+  incomeClass?: IncomeClass | undefined;
   position?: number | undefined;
   colour?: CategoryView['colour'] | undefined;
   icon?: CategoryView['icon'] | undefined;
@@ -295,6 +324,15 @@ export async function updateCategory(
     }
     if (input.isPaycheck !== undefined)
       checkPaycheck(input.isPaycheck, row.kind);
+    // Making a category the paycheck category makes it earned income; the
+    // class cannot move away from earned while it is one.
+    const isPaycheck = input.isPaycheck ?? row.is_paycheck === 1;
+    const incomeClass =
+      input.incomeClass ??
+      (input.isPaycheck === true
+        ? 'earned'
+        : (row.income_class as IncomeClass));
+    checkIncomeClass(incomeClass, row.kind, isPaycheck);
     await uniquely(
       () =>
         trx
@@ -307,6 +345,9 @@ export async function updateCategory(
             ...(input.isPaycheck === undefined
               ? {}
               : { is_paycheck: input.isPaycheck ? 1 : 0 }),
+            ...(input.incomeClass === undefined && input.isPaycheck !== true
+              ? {}
+              : { income_class: incomeClass }),
             ...(input.position === undefined
               ? {}
               : { position: input.position }),

@@ -28,6 +28,7 @@ const days: CalendarDayView[] = Array.from({ length: 31 }, (_, i) => {
     date,
     spent: level === null ? null : money(level * 1200, 'USD'),
     heat: level,
+    outsideSpent: level === null ? null : money(i === 3 ? 39830 : 0, 'USD'),
     bills:
       i === 4
         ? [{ billId: 'bill-rent', amount: money(90000, 'USD'), paid: true }]

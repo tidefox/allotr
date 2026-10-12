@@ -81,7 +81,9 @@ function summary(report: CycleReport): CycleSummaryView {
     lastDay: report.lastDay,
     payday: cycle.payday,
     income: report.income,
+    otherInflows: report.otherInflows,
     spending: report.spending,
+    outsideSpending: report.outsideSpending,
     leftover: report.leftover,
     savingsNetChange: report.savingsNetChange,
     savingsRate: savingsRate(report.income, report.savingsNetChange),
@@ -142,6 +144,7 @@ export async function cycleDetail(
     closing: report.closing,
     incomeByCategory: [...report.incomeByCategory],
     spendingByCategory: [...report.spendingByCategory],
+    outsideByCategory: [...report.outsideByCategory],
     spendingTop: { top: [...top], other },
     amendments: report.amendments.flatMap((amendment) => {
       const entry = entries.get(amendment.transactionId);

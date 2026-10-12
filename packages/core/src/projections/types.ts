@@ -2,6 +2,7 @@ import type {
   CurrencyCode,
   LocalDate,
   Money,
+  IncomeClass,
   PaydayRule,
   Rate,
 } from '@allotr/shared';
@@ -84,6 +85,11 @@ export type LedgerSettings = Readonly<{
   payYourselfFirst?: PayYourselfFirst | null;
   /** Months of expenses the emergency fund aims at (3 when omitted). */
   emergencyMonths?: number;
+  /**
+   * Outside-funded expenses count against budgets (docs/domain.md
+   * "Funding"). Off when omitted: they do not.
+   */
+  outsideConsumesBudgets?: boolean;
 }>;
 
 /** Everything the projections read. */
@@ -92,6 +98,12 @@ export type LedgerView = Readonly<{
   ledger: readonly Transaction[];
   /** Income categories whose entries are paychecks. */
   paycheckCategories: ReadonlySet<CategoryId>;
+  /**
+   * The income categories that are not earned income (`passive` counts as
+   * earnings, `gift` and `refund` do not). A category not listed is earned.
+   * None when omitted.
+   */
+  incomeClasses?: ReadonlyMap<CategoryId, IncomeClass>;
   settings: LedgerSettings;
   bills: readonly Bill[];
   rates: readonly ExchangeRate[];
@@ -109,6 +121,13 @@ export type LedgerView = Readonly<{
    * them out. None when omitted.
    */
   reconcileAdjustments?: ReadonlySet<TransactionId>;
+  /**
+   * Expense entries paid with money that was never the user's to budget.
+   * Pace, the calendar and cycle reports leave their spending out and show
+   * it apart; balances and the daily number do not read it. None when
+   * omitted.
+   */
+  outsideFunded?: ReadonlySet<TransactionId>;
   /** Defaults to the default strategies (docs/domain.md "Policies"). */
   policies?: Partial<Policies>;
 }>;

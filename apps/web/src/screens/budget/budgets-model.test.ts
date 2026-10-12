@@ -21,6 +21,7 @@ function category(
     kind: 'expense',
     parentId,
     isPaycheck: false,
+    incomeClass: 'earned',
     position,
     colour: null,
     icon: null,

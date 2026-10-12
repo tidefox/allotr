@@ -5,6 +5,7 @@ import type {
   TransactionId,
 } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
+import { isEarnings } from './income-class.ts';
 import { totalOn } from './rates.ts';
 import { cycleSnapshot, type CategoryTotal } from './snapshot.ts';
 import type { Cycle, Figure, LedgerView } from './types.ts';
@@ -34,11 +35,18 @@ export type CycleReport = Readonly<{
   opening: GroupTotals;
   /** At the end of `lastDay`. */
   closing: GroupTotals;
+  /** Earnings: `earned` and `passive` income (docs/domain.md "Income classes"). */
   income: Money;
+  /** Gifts and refunds: money that came in but was not earned. */
+  otherInflows: Money;
+  /** Spending of the user's own money: outside-funded expenses are apart. */
   spending: Money;
+  /** Outside-funded expenses (docs/domain.md "Funding"), shown muted. */
+  outsideSpending: Money;
   /** Largest first; a merged category counts as the one it merged into. */
   incomeByCategory: readonly CategoryTotal[];
   spendingByCategory: readonly CategoryTotal[];
+  outsideByCategory: readonly CategoryTotal[];
   /** Available budget at the end of `lastDay`. */
   leftover: Money;
   savingsNetChange: Money;
@@ -147,10 +155,23 @@ export function cycleReports(
       lastDay,
       opening: groups(snapshot.opening),
       closing: groups(snapshot.closing),
-      income: figure(snapshot.income.map((total) => total.amount)),
+      income: figure(
+        snapshot.income
+          .filter((total) => isEarnings(view, total.categoryId))
+          .map((total) => total.amount),
+      ),
+      otherInflows: figure(
+        snapshot.income
+          .filter((total) => !isEarnings(view, total.categoryId))
+          .map((total) => total.amount),
+      ),
       spending: figure(snapshot.spending.map((total) => total.amount)),
+      outsideSpending: figure(
+        snapshot.outsideSpending.map((total) => total.amount),
+      ),
       incomeByCategory: byCategory(snapshot.income),
       spendingByCategory: byCategory(snapshot.spending),
+      outsideByCategory: byCategory(snapshot.outsideSpending),
       leftover: figure(snapshot.leftover.map((entry) => entry.leftover)),
       savingsNetChange: figure(snapshot.savingsNetChange),
       amendments: amendmentsOf(view, cycle),

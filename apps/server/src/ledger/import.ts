@@ -168,6 +168,9 @@ function toBody(
     ...(entry.foreignAmount === undefined
       ? {}
       : { foreignAmount: entry.foreignAmount }),
+    ...(entry.kind === 'expense' && entry.funding !== undefined
+      ? { funding: entry.funding }
+      : {}),
     ...common,
   };
 }
@@ -363,6 +366,7 @@ export async function importBundle(
           {
             name: category.name,
             isPaycheck: category.isPaycheck ?? false,
+            incomeClass: category.incomeClass,
             colour: category.colour,
             icon: category.icon,
             ...placement,

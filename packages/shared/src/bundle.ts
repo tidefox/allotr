@@ -3,10 +3,12 @@ import { budgetPeriodRuleSchema, dailyModeSchema } from './budgets.ts';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema, localTimeSchema } from './dates.ts';
 import { iouDirectionSchema } from './ious.ts';
+import { fundingSchema } from './ledger.ts';
 import {
   budgetGroupSchema,
   categoryKindSchema,
   createAccountBodySchema,
+  incomeClassSchema,
   paydayRuleSchema,
 } from './ledger.ts';
 import {
@@ -42,6 +44,7 @@ const settingsSchema = z.strictObject({
   countSavingsInDaily: z.boolean().optional(),
   budgetPeriod: budgetPeriodRuleSchema.optional(),
   dailyMode: dailyModeSchema.optional(),
+  outsideConsumesBudgets: z.boolean().optional(),
 });
 
 const categorySchema = z.strictObject({
@@ -52,6 +55,12 @@ const categorySchema = z.strictObject({
   kind: categoryKindSchema.optional(),
   /** New categories default to false; a match keeps its own. */
   isPaycheck: z.boolean().optional(),
+  /**
+   * Only used when the category is created; a match keeps its own. Only an
+   * income category can be anything but earned. Omitted, a new category
+   * takes its parent's class, else `earned`.
+   */
+  incomeClass: incomeClassSchema.optional(),
   /** Only used when the category is created; a match keeps its own. */
   colour: categoryColourSchema.optional(),
   icon: categoryIconSchema.optional(),
@@ -264,7 +273,12 @@ const transactionSchema = z.discriminatedUnion('kind', [
     ...entryFields,
   }),
   z
-    .strictObject({ kind: z.literal('expense'), ...spendFields })
+    .strictObject({
+      kind: z.literal('expense'),
+      ...spendFields,
+      /** Paid with money that was never the user's to budget; own when omitted. */
+      funding: fundingSchema.optional(),
+    })
     .refine(oneCategorySide, oneCategorySideError),
   z
     .strictObject({ kind: z.literal('income'), ...spendFields })

@@ -14,6 +14,7 @@ const day = (over: Partial<CalendarDayView>): CalendarDayView => ({
   date: localDate('2026-10-05'),
   spent: null,
   heat: null,
+  outsideSpent: null,
   bills: [],
   payday: false,
   ious: [],

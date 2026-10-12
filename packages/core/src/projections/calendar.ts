@@ -46,6 +46,11 @@ export type CalendarDay = Readonly<{
    * most in the range; null after today.
    */
   heat: number | null;
+  /**
+   * Expenses of outside money dated that day (docs/domain.md "Funding"),
+   * apart from `spent` and out of the heat; null after today.
+   */
+  outsideSpent: Money | null;
   /** Bills due that day, paid or not. */
   bills: readonly CalendarBill[];
   /** A paycheck is expected, or arrived, that day. */
@@ -127,6 +132,21 @@ export function calendar(
     for (const code of figure.missingRates) missing.add(code);
     return figure.amount;
   });
+  // Outside-funded spending, found as what the pace sums lose to it.
+  const withOutside = paceExclusions(view, true);
+  const outsideSpent = Array.from({ length: count }, (_, at) => {
+    const date = addDays(from, at);
+    if (date > today) return null;
+    const own = spentSums(view, date, date, excluded).kept;
+    const all = spentSums(view, date, date, withOutside).kept;
+    const apart = new Map(all);
+    for (const [code, amount] of own) {
+      apart.set(code, (apart.get(code) ?? 0n) - amount);
+    }
+    const figure = toFigure(view, apart, date);
+    for (const code of figure.missingRates) missing.add(code);
+    return figure.amount;
+  });
   const peak = spent.reduce(
     (best, s) => Math.max(best, s?.amountMinor ?? 0),
     0,
@@ -138,6 +158,7 @@ export function calendar(
       date,
       spent: amount,
       heat: amount === null ? null : heatLevel(amount.amountMinor, peak),
+      outsideSpent: outsideSpent[at] ?? null,
       bills: (bills.get(date) ?? []).sort((a, b) =>
         a.billId.localeCompare(b.billId),
       ),

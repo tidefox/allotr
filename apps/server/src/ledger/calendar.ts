@@ -42,6 +42,7 @@ export async function calendarView(
       date: day.date,
       spent: day.spent,
       heat: day.heat,
+      outsideSpent: day.outsideSpent,
       bills: day.bills.map((b) => ({ ...b })),
       payday: day.payday,
       ious: day.ious.map((i) => ({ ...i })),

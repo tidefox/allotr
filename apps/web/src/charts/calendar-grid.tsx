@@ -21,12 +21,15 @@ export function heatBackground(heat: number | null): string {
   return `color-mix(in srgb, var(--negative) ${String(heatPercent(heat))}%, var(--canvas))`;
 }
 
-/** The marks for a day: b bill, i IOU, $ payday. */
+/** The marks for a day: b bill, i IOU, $ payday, o outside-funded spending. */
 export function dayMarks(day: CalendarDayView): string[] {
   return [
     ...(day.bills.length > 0 ? ['b'] : []),
     ...(day.ious.length > 0 ? ['i'] : []),
     ...(day.payday ? ['$'] : []),
+    ...(day.outsideSpent !== null && day.outsideSpent.amountMinor > 0
+      ? ['o']
+      : []),
   ];
 }
 
@@ -154,7 +157,9 @@ export function CalendarGrid(props: CalendarGridProps) {
                           ? 'bg-positive'
                           : mark === 'i'
                             ? 'bg-series-2'
-                            : 'bg-warning',
+                            : mark === 'o'
+                              ? 'bg-text-muted'
+                              : 'bg-warning',
                       )}
                     >
                       {mark}

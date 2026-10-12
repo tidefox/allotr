@@ -68,6 +68,10 @@ export function cycleOf(
 export interface StatFigures {
   spent: Money;
   income: Money;
+  /** Gifts and refunds: money that came in but was not earned. */
+  otherInflows: Money;
+  /** Expenses paid with outside money, apart from `spent`. */
+  outside: Money;
   saved: Money;
   /** Spending per day over the days so far, as the server sends it. */
   average: Money;
@@ -89,11 +93,15 @@ export function statFigures(
       ? {
           spent: summary.spendingTotal,
           income: summary.incomeTotal,
+          otherInflows: summary.otherInflowsTotal,
+          outside: summary.outsideSpendingTotal,
           saved: summary.saved,
         }
       : {
           spent: cycle.spending,
           income: cycle.income,
+          otherInflows: cycle.otherInflows,
+          outside: cycle.outsideSpending,
           saved: cycle.savingsNetChange,
         };
   return {
@@ -160,6 +168,32 @@ export function budgetsByCategory(
     ),
     ...parents.map((p) => [p.categoryId, p.planned] as const),
   ]);
+}
+
+/** A top-level category's spending paid with outside money. */
+export interface OutsideRow {
+  key: string;
+  name: string;
+  amount: Money;
+}
+
+/**
+ * Spending paid with outside money per top-level category, largest first as
+ * the server sends it. It is shown apart from the spending rows, so their
+ * shares still add up to the spending total.
+ */
+export function outsideRows(
+  summary: CategorySummaryView,
+  categories: readonly CategoryView[],
+): OutsideRow[] {
+  const names = new Map(categories.map((c) => [c.id, c.name]));
+  return summary.outsideSpending.map((group) => ({
+    key: group.categoryId ?? 'none',
+    name:
+      (group.categoryId === null ? undefined : names.get(group.categoryId)) ??
+      t('reportsSummary.categories.none'),
+    amount: group.amount,
+  }));
 }
 
 export function categoryRows(

@@ -353,6 +353,20 @@ function PlanRows({ settings }: { settings: LedgerSettingsView }) {
             save.mutate({ countSavingsInDaily });
         }}
       />
+      <ChoiceRow
+        label={t('settingsMoney.plan.outsideBudgets')}
+        value={settings.outsideConsumesBudgets ? 'on' : 'off'}
+        choices={[
+          { id: 'off', label: t('settingsMoney.plan.outsideOff') },
+          { id: 'on', label: t('settingsMoney.plan.outsideOn') },
+        ]}
+        hint={t('settingsMoney.plan.outsideBudgetsHint')}
+        onChange={(next) => {
+          const outsideConsumesBudgets = next === 'on';
+          if (outsideConsumesBudgets !== settings.outsideConsumesBudgets)
+            save.mutate({ outsideConsumesBudgets });
+        }}
+      />
       <SaveError error={save.error} />
     </>
   );

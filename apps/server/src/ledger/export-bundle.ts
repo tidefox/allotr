@@ -387,6 +387,9 @@ export function toBundle(snapshot: Snapshot): Bundle {
           ...(total.currency === leg.amount.currency
             ? {}
             : { foreignAmount: total }),
+          ...(entry.kind === 'expense' && snapshot.outsideFunded.has(entry.id)
+            ? { funding: 'outside' as const }
+            : {}),
           ...common,
         });
         break;
@@ -409,6 +412,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
           ? { kind: c.kind }
           : { parent: bundleCategoryName(parent.name) }),
         isPaycheck: c.isPaycheck,
+        ...(c.incomeClass === 'earned' ? {} : { incomeClass: c.incomeClass }),
         ...(c.colour === null ? {} : { colour: c.colour }),
         ...(c.icon === null ? {} : { icon: c.icon }),
       };
@@ -502,6 +506,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
       countSavingsInDaily: settings.countSavingsInDaily,
       budgetPeriod: settings.budgetPeriod,
       dailyMode: settings.dailyMode,
+      outsideConsumesBudgets: settings.outsideConsumesBudgets,
     },
     categories,
     accounts: [...accounts.values()],

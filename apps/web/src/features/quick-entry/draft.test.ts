@@ -62,6 +62,7 @@ const draft = (patch: Partial<QuickEntryDraft> = {}): QuickEntryDraft => ({
   note: '',
   occurredOn: '2026-03-14',
   occurredTime: '',
+  funding: 'own',
   ...patch,
 });
 
@@ -79,6 +80,7 @@ describe('toBody', () => {
       ok: true,
       body: {
         kind: 'expense',
+        funding: 'own',
         accountId,
         amount: { amountMinor: minor, currency },
         categoryId: 'food',
@@ -96,6 +98,7 @@ describe('toBody', () => {
       ok: true,
       body: {
         kind: 'expense',
+        funding: 'own',
         accountId: 'eur',
         amount: { amountMinor: 123456, currency: 'EUR' },
         categoryId: 'food',
@@ -152,6 +155,7 @@ describe('toBody', () => {
       ok: true,
       body: {
         kind: 'expense',
+        funding: 'own',
         accountId: 'usd',
         amount: { amountMinor: 1250, currency: 'USD' },
         categoryId: 'food',
@@ -381,6 +385,7 @@ describe('splits', () => {
       ok: true,
       body: {
         kind: 'expense',
+        funding: 'own',
         accountId: 'usd',
         amount: money(8000, 'USD'),
         lines: [

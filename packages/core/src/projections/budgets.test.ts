@@ -488,3 +488,30 @@ describe('parent category totals', () => {
     expect(budgetStatus(v, today).parents).toEqual([]);
   });
 });
+
+describe('outside-funded spending and budgets', () => {
+  const trip = spend('2026-03-05', 10_000, travel);
+  const ledger = [trip, spend('2026-03-06', 5_000, other)];
+  const outside = { outsideFunded: new Set([trip.id]) };
+  const budgets = [foodBudget, travelBudget, buffer];
+
+  it('does not consume a budget by default, so a hold stays full', () => {
+    const v = withBudgets(ledger, budgets, outside);
+    expect(line(v, 'travel')).toMatchObject({
+      spent: usd(0),
+      left: usd(30_000),
+      held: usd(30_000),
+    });
+  });
+
+  it('consumes budgets when the setting is on', () => {
+    const v = withBudgets(ledger, budgets, {
+      ...outside,
+      settings: settings({ outsideConsumesBudgets: true }),
+    });
+    expect(line(v, 'travel')).toMatchObject({
+      spent: usd(10_000),
+      held: usd(20_000),
+    });
+  });
+});

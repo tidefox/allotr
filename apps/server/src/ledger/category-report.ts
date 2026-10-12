@@ -6,6 +6,7 @@ import {
   categoryTotalsBetween,
   cyclePeriods,
   dailyAverage,
+  isEarnings,
   monthPeriods,
   rollUpCategories,
   savedBetween,
@@ -120,6 +121,13 @@ export async function categorySummary(
     'expenses',
     merged,
   );
+  const outside = categoryTotalsBetween(
+    loaded.view,
+    { from, to },
+    'expenses',
+    merged,
+    'outside',
+  );
   const income = categoryTotalsBetween(
     loaded.view,
     { from, to },
@@ -128,9 +136,19 @@ export async function categorySummary(
   );
   const currency = loaded.view.settings.defaultCurrency;
   const spendingGroups = rollUpCategories(spending.totals, parentOf);
-  const incomeGroups = rollUpCategories(income.totals, parentOf);
+  const outsideGroups = rollUpCategories(outside.totals, parentOf);
+  const incomeGroups = rollUpCategories(
+    income.totals.filter((total) => isEarnings(loaded.view, total.categoryId)),
+    parentOf,
+  );
+  const otherGroups = rollUpCategories(
+    income.totals.filter((total) => !isEarnings(loaded.view, total.categoryId)),
+    parentOf,
+  );
   const spendingTotal = categoryGroupsTotal(spendingGroups, currency);
+  const outsideTotal = categoryGroupsTotal(outsideGroups, currency);
   const incomeTotal = categoryGroupsTotal(incomeGroups, currency);
+  const otherInflowsTotal = categoryGroupsTotal(otherGroups, currency);
   const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
   const savings = savedBetween(loaded.view, { from, to });
   return {
@@ -139,14 +157,19 @@ export async function categorySummary(
     to,
     spending: view(spendingGroups, spendingTotal),
     income: view(incomeGroups, incomeTotal),
+    otherInflows: view(otherGroups, otherInflowsTotal),
+    outsideSpending: view(outsideGroups, outsideTotal),
     spendingTotal,
+    outsideSpendingTotal: outsideTotal,
     incomeTotal,
+    otherInflowsTotal,
     days,
     dailyAverage: average,
     saved: savings.saved,
     missingRates: [
       ...new Set([
         ...spending.missingRates,
+        ...outside.missingRates,
         ...income.missingRates,
         ...savings.missingRates,
       ]),

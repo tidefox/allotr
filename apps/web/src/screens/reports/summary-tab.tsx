@@ -39,6 +39,7 @@ import { reportPayeesQuery, reportCategoriesQuery } from './summary-queries.ts';
 import {
   budgetsByCategory,
   categoryRows,
+  outsideRows,
   cycleDayFigures,
   cycleOf,
   dayChart,
@@ -183,6 +184,28 @@ function StatsRow({ params }: { params: ReportParams }) {
       figureTone: 'positive',
       ...missing,
     },
+    ...(figures.otherInflows.amountMinor === 0
+      ? []
+      : [
+          {
+            label: t('reportsSummary.stats.otherInflows'),
+            icon: IconMoneyDollarCircleLine,
+            figure: money(figures.otherInflows),
+            sub: t('reportsSummary.stats.otherInflowsSub'),
+            ...missing,
+          },
+        ]),
+    ...(figures.outside.amountMinor === 0
+      ? []
+      : [
+          {
+            label: t('reportsSummary.stats.outside'),
+            icon: IconBarChartBoxLine,
+            figure: money(figures.outside),
+            sub: t('reportsSummary.stats.outsideSub'),
+            ...missing,
+          },
+        ]),
     {
       label: t('reportsSummary.stats.saved'),
       icon: IconSafe2Line,
@@ -249,6 +272,13 @@ function CategoriesTile({ params }: { params: ReportParams }) {
           ),
     [summary.data, categories.data, budgets.data, period],
   );
+  const outside = useMemo(
+    () =>
+      summary.data === undefined
+        ? []
+        : outsideRows(summary.data, categories.data?.categories ?? []),
+    [summary.data, categories.data],
+  );
   if (summary.isError) {
     return (
       <Tile
@@ -303,20 +333,22 @@ function CategoriesTile({ params }: { params: ReportParams }) {
         )
       }
     >
-      {rows.length === 0 ? (
+      {rows.length === 0 && outside.length === 0 ? (
         <EmptyState
           title={t('reportsSummary.categories.emptyTitle')}
           hint={t('reportsSummary.categories.emptyHint')}
         />
       ) : (
         <>
-          <div className="px-3 pb-2.5">
-            <ShareBar
-              className="h-3.5"
-              segments={shareSegments(rows)}
-              label={t('reportsSummary.categories.share')}
-            />
-          </div>
+          {rows.length === 0 ? null : (
+            <div className="px-3 pb-2.5">
+              <ShareBar
+                className="h-3.5"
+                segments={shareSegments(rows)}
+                label={t('reportsSummary.categories.share')}
+              />
+            </div>
+          )}
           {shown.map((row) => (
             <CategoryLine
               key={row.key}
@@ -328,6 +360,30 @@ function CategoriesTile({ params }: { params: ReportParams }) {
               }}
             />
           ))}
+          {outside.length === 0 ? null : (
+            <section
+              aria-label={t('reportsSummary.categories.outside')}
+              className="border-t text-text-muted"
+            >
+              <h3 className="px-3 py-1.5 text-title">
+                {t('reportsSummary.categories.outside')}
+              </h3>
+              {outside.map((row) => (
+                <Row
+                  key={row.key}
+                  columns={[{ width: 'minmax(0,1fr)' }, { width: 'auto' }]}
+                  cells={[
+                    <span key="name" className="font-sans">
+                      {row.name}
+                    </span>,
+                    <span key="amount" className="block text-right">
+                      <Amount amount={row.amount} locale={locale} />
+                    </span>,
+                  ]}
+                />
+              ))}
+            </section>
+          )}
           {pace === null ? null : (
             <ChartLegend
               className="px-3"

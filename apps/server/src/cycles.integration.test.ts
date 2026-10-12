@@ -14,9 +14,11 @@ type Summary = {
   lastDay: string;
   payday: string;
   income: Money;
+  otherInflows: Money;
   spending: Money;
   leftover: Money;
   savingsNetChange: Money;
+  savingsRate: number | null;
   offBudgetClosing: Money;
   amended: boolean;
   missingRates: string[];
@@ -130,7 +132,9 @@ describe('cycles', () => {
       lastDay: '2026-03-31',
       payday: '2026-04-01',
       income: usd(0),
+      otherInflows: usd(0),
       spending: usd(2000),
+      outsideSpending: usd(0),
       leftover: usd(98000),
       savingsNetChange: usd(0),
       savingsRate: null,
@@ -291,5 +295,76 @@ describe('cycles of an imported ledger without a paycheck', () => {
     expect(list.map((c) => [c.openedOn, c.payday])).toEqual([
       ['2026-03-15', '2026-04-01'],
     ]);
+  });
+});
+
+describe('income classes', () => {
+  it('count earnings as income and show gifts and refunds apart', async () => {
+    const main = await h.bob.post('/v1/accounts', {
+      name: 'Wallet',
+      currency: 'USD',
+      openingBalance: usd(0),
+    });
+    const account = (main.body as { id: string }).id;
+    const gifts = await categoryId(h.bob, 'Gifts');
+    const interest = await categoryId(h.bob, 'Interest');
+    const taxRefund = await categoryId(h.bob, 'Tax refund');
+    clock = new Date('2026-04-06T12:00:00Z');
+    const income = async (categoryId: string, amountMinor: number) => {
+      const response = await h.bob.post('/v1/transactions', {
+        kind: 'income',
+        accountId: account,
+        amount: usd(amountMinor),
+        categoryId,
+        occurredOn: '2026-04-06',
+      });
+      expect(response.status).toBe(201);
+    };
+    const before = (await cycles(h.bob))[0];
+    await income(gifts, 400000);
+    await income(taxRefund, 25000);
+    await income(interest, 70);
+
+    const [current] = await cycles(h.bob);
+    expect(current?.income.amountMinor).toBe(
+      (before?.income.amountMinor ?? 0) + 70,
+    );
+    expect(current?.otherInflows).toEqual(usd(425000));
+    expect(current?.savingsRate).toBe(before?.savingsRate);
+  });
+
+  it('can be changed per category, with limits', async () => {
+    const gifts = await categoryId(h.bob, 'Gifts');
+    const shopping = await categoryId(h.bob, 'Shopping');
+    const paycheck = await categoryId(h.bob, 'Paycheck');
+
+    const earned = await h.bob.patch(`/v1/categories/${gifts}`, {
+      incomeClass: 'earned',
+    });
+    expect(earned.status).toBe(200);
+    const [current] = await cycles(h.bob);
+    expect(current?.otherInflows).toEqual(usd(25000));
+    await h.bob.patch(`/v1/categories/${gifts}`, { incomeClass: 'gift' });
+
+    for (const [id, body] of [
+      [shopping, { incomeClass: 'gift' }],
+      [paycheck, { incomeClass: 'refund' }],
+    ] as const) {
+      const response = await h.bob.patch(`/v1/categories/${id}`, body);
+      expect(response.status).toBe(400);
+      expect((response.body as { code: string }).code).toMatch(
+        /invalid_(income_class|paycheck)/,
+      );
+    }
+  });
+
+  it('are inherited by a new subcategory', async () => {
+    const gifts = await categoryId(h.bob, 'Gifts');
+    const created = await h.bob.post('/v1/categories', {
+      name: 'Birthday',
+      parentId: gifts,
+    });
+    expect(created.status).toBe(201);
+    expect((created.body as { incomeClass: string }).incomeClass).toBe('gift');
   });
 });

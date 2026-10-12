@@ -427,7 +427,10 @@ write-off may give `time` (HH:MM); within a day, entries keep the order
 they have in the bundle. An account without `openedOn` opens on the
 earliest entry day. A transaction `ref` lets a bill payment or a
 reconciliation's adjustment link to it. An expense or income gives
-`category` or, for a split, `lines: [{category, amount}]`. A `write_off`
+`category` or, for a split, `lines: [{category, amount}]`. An `expense` may carry
+`funding: "outside"` (paid with money that was never the user's to budget; a
+missing field reads as `own`, and `settings.outsideConsumesBudgets` round-trips
+too). A `write_off`
 entry (`account`, `balance`) empties an account into Expenses, as archiving
 does. An account may list `switches: [{on, budgetGroup}]`, later moves on or
 off budget (its `budgetGroup` is the group it started in), and
@@ -435,6 +438,8 @@ off budget (its `budgetGroup` is the group it started in), and
 (`account_not_empty`). `reconciliations: [{account, on, stated, computed,
 adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
+`incomeClass` (`earned`, `passive`, `gift` or `refund`; an income category
+only, default its parent's class, else `earned`) and
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
 `packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
 `creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype`,

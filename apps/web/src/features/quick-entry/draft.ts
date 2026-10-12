@@ -9,6 +9,7 @@ import {
   parseMoney,
   type AccountView,
   type CreateTransactionBody,
+  type Funding,
   type Money,
 } from '@allotr/shared';
 import { t, type MessageKey } from '@/messages/t';
@@ -52,6 +53,11 @@ export interface QuickEntryDraft {
   readonly occurredOn: string;
   /** HH:MM, when entry times are on; empty for none. */
   readonly occurredTime: string;
+  /**
+   * Whose money paid for an expense. Always sent for an expense, so an edit
+   * can set it back to `own`; ignored by income and transfers.
+   */
+  readonly funding: Funding;
 }
 
 export interface SplitLineDraft {
@@ -324,6 +330,7 @@ export function toBody(
       amount,
       ...(lines === undefined ? { categoryId: draft.categoryId } : { lines }),
       ...(typeof foreign === 'object' ? { foreignAmount: foreign } : {}),
+      ...(draft.kind === 'expense' ? { funding: draft.funding } : {}),
       ...entry,
     },
   };

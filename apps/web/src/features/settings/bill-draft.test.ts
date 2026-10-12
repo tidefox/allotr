@@ -181,6 +181,7 @@ describe('linkCandidates', () => {
     source: 'api',
     categoryId: null,
     note: null,
+    funding: 'own',
     postings: postings.map(([accountId, minor]) => ({
       accountId,
       systemRole: null,

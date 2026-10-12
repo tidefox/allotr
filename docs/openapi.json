@@ -6055,6 +6055,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -6218,6 +6225,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -16114,6 +16122,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -16277,6 +16292,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -16594,6 +16610,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -16757,6 +16780,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -18145,6 +18169,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -18308,6 +18339,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -18991,6 +19023,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -19154,6 +19193,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -19229,6 +19269,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -19392,6 +19439,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -19710,6 +19758,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -19873,6 +19928,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -19948,6 +20004,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -20111,6 +20174,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -20755,6 +20819,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -20918,6 +20989,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -24198,6 +24270,15 @@
                           "isPaycheck": {
                             "type": "boolean"
                           },
+                          "incomeClass": {
+                            "type": "string",
+                            "enum": [
+                              "earned",
+                              "passive",
+                              "gift",
+                              "refund"
+                            ]
+                          },
                           "position": {
                             "type": "integer"
                           },
@@ -24290,6 +24371,7 @@
                           "kind",
                           "parentId",
                           "isPaycheck",
+                          "incomeClass",
                           "position",
                           "colour",
                           "icon",
@@ -24505,6 +24587,15 @@
                     "type": "boolean",
                     "default": false
                   },
+                  "incomeClass": {
+                    "type": "string",
+                    "enum": [
+                      "earned",
+                      "passive",
+                      "gift",
+                      "refund"
+                    ]
+                  },
                   "position": {
                     "type": "integer",
                     "minimum": 0,
@@ -24619,6 +24710,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -24711,6 +24811,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -24996,6 +25097,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -25088,6 +25198,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -25303,6 +25414,15 @@
                   "isPaycheck": {
                     "type": "boolean"
                   },
+                  "incomeClass": {
+                    "type": "string",
+                    "enum": [
+                      "earned",
+                      "passive",
+                      "gift",
+                      "refund"
+                    ]
+                  },
                   "position": {
                     "type": "integer",
                     "minimum": 0,
@@ -25422,6 +25542,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -25514,6 +25643,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -27095,6 +27225,13 @@
                               "null"
                             ]
                           },
+                          "funding": {
+                            "type": "string",
+                            "enum": [
+                              "own",
+                              "outside"
+                            ]
+                          },
                           "postings": {
                             "type": "array",
                             "items": {
@@ -27267,6 +27404,7 @@
                           "source",
                           "categoryId",
                           "note",
+                          "funding",
                           "postings",
                           "reversesId",
                           "reversedById",
@@ -27850,6 +27988,13 @@
                           "maxLength": 64
                         },
                         "maxItems": 20
+                      },
+                      "funding": {
+                        "type": "string",
+                        "enum": [
+                          "own",
+                          "outside"
+                        ]
                       }
                     },
                     "required": [
@@ -28131,6 +28276,13 @@
                         "null"
                       ]
                     },
+                    "funding": {
+                      "type": "string",
+                      "enum": [
+                        "own",
+                        "outside"
+                      ]
+                    },
                     "postings": {
                       "type": "array",
                       "items": {
@@ -28294,6 +28446,7 @@
                     "source",
                     "categoryId",
                     "note",
+                    "funding",
                     "postings",
                     "reversesId",
                     "reversedById",
@@ -28376,6 +28529,13 @@
                         "null"
                       ]
                     },
+                    "funding": {
+                      "type": "string",
+                      "enum": [
+                        "own",
+                        "outside"
+                      ]
+                    },
                     "postings": {
                       "type": "array",
                       "items": {
@@ -28539,6 +28699,7 @@
                     "source",
                     "categoryId",
                     "note",
+                    "funding",
                     "postings",
                     "reversesId",
                     "reversedById",
@@ -28919,6 +29080,13 @@
                         "null"
                       ]
                     },
+                    "funding": {
+                      "type": "string",
+                      "enum": [
+                        "own",
+                        "outside"
+                      ]
+                    },
                     "postings": {
                       "type": "array",
                       "items": {
@@ -29255,6 +29423,7 @@
                     "source",
                     "categoryId",
                     "note",
+                    "funding",
                     "postings",
                     "reversesId",
                     "reversedById",
@@ -29542,6 +29711,13 @@
                         "null"
                       ]
                     },
+                    "funding": {
+                      "type": "string",
+                      "enum": [
+                        "own",
+                        "outside"
+                      ]
+                    },
                     "postings": {
                       "type": "array",
                       "items": {
@@ -29705,6 +29881,7 @@
                     "source",
                     "categoryId",
                     "note",
+                    "funding",
                     "postings",
                     "reversesId",
                     "reversedById",
@@ -30085,6 +30262,13 @@
                         "null"
                       ]
                     },
+                    "funding": {
+                      "type": "string",
+                      "enum": [
+                        "own",
+                        "outside"
+                      ]
+                    },
                     "postings": {
                       "type": "array",
                       "items": {
@@ -30248,6 +30432,7 @@
                     "source",
                     "categoryId",
                     "note",
+                    "funding",
                     "postings",
                     "reversesId",
                     "reversedById",
@@ -30618,6 +30803,13 @@
                           "maxLength": 64
                         },
                         "maxItems": 20
+                      },
+                      "funding": {
+                        "type": "string",
+                        "enum": [
+                          "own",
+                          "outside"
+                        ]
                       }
                     },
                     "required": [
@@ -30902,6 +31094,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -31065,6 +31264,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -31140,6 +31340,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -31303,6 +31510,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -31692,6 +31900,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -31855,6 +32070,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -31930,6 +32146,13 @@
                             "null"
                           ]
                         },
+                        "funding": {
+                          "type": "string",
+                          "enum": [
+                            "own",
+                            "outside"
+                          ]
+                        },
                         "postings": {
                           "type": "array",
                           "items": {
@@ -32093,6 +32316,7 @@
                         "source",
                         "categoryId",
                         "note",
+                        "funding",
                         "postings",
                         "reversesId",
                         "reversedById",
@@ -33516,6 +33740,9 @@
                         "daily-budgets"
                       ]
                     },
+                    "outsideConsumesBudgets": {
+                      "type": "boolean"
+                    },
                     "payYourselfFirst": {
                       "oneOf": [
                         {
@@ -33617,6 +33844,7 @@
                     "countSavingsInDaily",
                     "budgetPeriod",
                     "dailyMode",
+                    "outsideConsumesBudgets",
                     "payYourselfFirst",
                     "emergencyMonths",
                     "iouWriteOffAfterDays",
@@ -33804,6 +34032,9 @@
                       "daily-budgets"
                     ]
                   },
+                  "outsideConsumesBudgets": {
+                    "type": "boolean"
+                  },
                   "payYourselfFirst": {
                     "oneOf": [
                       {
@@ -33955,6 +34186,9 @@
                         "daily-budgets"
                       ]
                     },
+                    "outsideConsumesBudgets": {
+                      "type": "boolean"
+                    },
                     "payYourselfFirst": {
                       "oneOf": [
                         {
@@ -34056,6 +34290,7 @@
                     "countSavingsInDaily",
                     "budgetPeriod",
                     "dailyMode",
+                    "outsideConsumesBudgets",
                     "payYourselfFirst",
                     "emergencyMonths",
                     "iouWriteOffAfterDays",
@@ -34298,7 +34533,39 @@
                               "currency"
                             ]
                           },
+                          "otherInflows": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "spending": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "outsideSpending": {
                             "type": "object",
                             "properties": {
                               "amountMinor": {
@@ -34386,7 +34653,9 @@
                           "lastDay",
                           "payday",
                           "income",
+                          "otherInflows",
                           "spending",
+                          "outsideSpending",
                           "leftover",
                           "savingsNetChange",
                           "savingsRate",
@@ -34925,7 +35194,39 @@
                         "currency"
                       ]
                     },
+                    "otherInflows": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "spending": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "outsideSpending": {
                       "type": "object",
                       "properties": {
                         "amountMinor": {
@@ -35159,6 +35460,42 @@
                         ]
                       }
                     },
+                    "outsideByCategory": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "categoryId",
+                          "amount"
+                        ]
+                      }
+                    },
                     "spendingTop": {
                       "type": "object",
                       "properties": {
@@ -35290,7 +35627,9 @@
                     "lastDay",
                     "payday",
                     "income",
+                    "otherInflows",
                     "spending",
+                    "outsideSpending",
                     "leftover",
                     "savingsNetChange",
                     "savingsRate",
@@ -35301,6 +35640,7 @@
                     "closing",
                     "incomeByCategory",
                     "spendingByCategory",
+                    "outsideByCategory",
                     "spendingTop",
                     "amendments"
                   ]
@@ -35559,6 +35899,25 @@
                             "minimum": 0,
                             "maximum": 4
                           },
+                          "outsideSpent": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "bills": {
                             "type": "array",
                             "items": {
@@ -35649,6 +36008,7 @@
                           "date",
                           "spent",
                           "heat",
+                          "outsideSpent",
                           "bills",
                           "payday",
                           "ious"
@@ -36102,6 +36462,176 @@
                         ]
                       }
                     },
+                    "otherInflows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "shareBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
+                          "children": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "categoryId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "shareBp": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10000
+                                }
+                              },
+                              "required": [
+                                "categoryId",
+                                "amount",
+                                "shareBp"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "categoryId",
+                          "amount",
+                          "shareBp",
+                          "children"
+                        ]
+                      }
+                    },
+                    "outsideSpending": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "shareBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
+                          "children": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "categoryId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "shareBp": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10000
+                                }
+                              },
+                              "required": [
+                                "categoryId",
+                                "amount",
+                                "shareBp"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "categoryId",
+                          "amount",
+                          "shareBp",
+                          "children"
+                        ]
+                      }
+                    },
                     "spendingTotal": {
                       "type": "object",
                       "properties": {
@@ -36118,7 +36648,39 @@
                         "currency"
                       ]
                     },
+                    "outsideSpendingTotal": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "incomeTotal": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "otherInflowsTotal": {
                       "type": "object",
                       "properties": {
                         "amountMinor": {
@@ -36321,8 +36883,12 @@
                     "to",
                     "spending",
                     "income",
+                    "otherInflows",
+                    "outsideSpending",
                     "spendingTotal",
+                    "outsideSpendingTotal",
                     "incomeTotal",
+                    "otherInflowsTotal",
                     "days",
                     "dailyAverage",
                     "saved",
@@ -44642,6 +45208,9 @@
                           "pool-minus-bills",
                           "daily-budgets"
                         ]
+                      },
+                      "outsideConsumesBudgets": {
+                        "type": "boolean"
                       }
                     },
                     "additionalProperties": false
@@ -44671,6 +45240,15 @@
                         },
                         "isPaycheck": {
                           "type": "boolean"
+                        },
+                        "incomeClass": {
+                          "type": "string",
+                          "enum": [
+                            "earned",
+                            "passive",
+                            "gift",
+                            "refund"
+                          ]
                         },
                         "colour": {
                           "type": "string",
@@ -45460,6 +46038,13 @@
                                 "maxLength": 100
                               },
                               "maxItems": 20
+                            },
+                            "funding": {
+                              "type": "string",
+                              "enum": [
+                                "own",
+                                "outside"
+                              ]
                             }
                           },
                           "required": [
@@ -46663,6 +47248,9 @@
                             "pool-minus-bills",
                             "daily-budgets"
                           ]
+                        },
+                        "outsideConsumesBudgets": {
+                          "type": "boolean"
                         }
                       },
                       "additionalProperties": false
@@ -46692,6 +47280,15 @@
                           },
                           "isPaycheck": {
                             "type": "boolean"
+                          },
+                          "incomeClass": {
+                            "type": "string",
+                            "enum": [
+                              "earned",
+                              "passive",
+                              "gift",
+                              "refund"
+                            ]
                           },
                           "colour": {
                             "type": "string",
@@ -47481,6 +48078,13 @@
                                   "maxLength": 100
                                 },
                                 "maxItems": 20
+                              },
+                              "funding": {
+                                "type": "string",
+                                "enum": [
+                                  "own",
+                                  "outside"
+                                ]
                               }
                             },
                             "required": [

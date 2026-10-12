@@ -7,6 +7,7 @@ import {
   localDateIn,
   money,
   type CategoryView,
+  type IncomeClass,
   type LedgerSettingsView,
   type LocalDate,
   type Money,
@@ -65,6 +66,7 @@ export type SnapshotCategory = Readonly<{
   kind: 'expense' | 'income' | 'transfer';
   parentId: string | null;
   isPaycheck: boolean;
+  incomeClass: IncomeClass;
   colour: CategoryView['colour'];
   icon: CategoryView['icon'];
   mergedIntoId: string | null;
@@ -121,6 +123,8 @@ export type Snapshot = Readonly<{
   categories: readonly SnapshotCategory[];
   /** Every entry, undos too, by date, then time of entry, then id. */
   entries: readonly Transaction[];
+  /** Expenses paid with outside money (`funding`); absent entries are own. */
+  outsideFunded: ReadonlySet<string>;
   /** Tag names by entry id. */
   tags: ReadonlyMap<string, readonly string[]>;
   rates: readonly ExchangeRate[];
@@ -155,6 +159,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     moveRows,
     budgetSetup,
     tagNameRows,
+    outsideRows,
   ] = await Promise.all([
     db
       .selectFrom('accounts')
@@ -187,6 +192,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'kind',
         'parent_id',
         'is_paycheck',
+        'income_class',
         'colour',
         'icon',
         'merged_into_id',
@@ -298,6 +304,12 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       .select(['id', 'name'])
       .where('user_id', '=', userId)
       .execute(),
+    db
+      .selectFrom('transactions')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('funding', '=', 'outside')
+      .execute(),
   ]);
 
   const accounts: SnapshotAccount[] = [];
@@ -330,6 +342,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     kind: row.kind as SnapshotCategory['kind'],
     parentId: row.parent_id,
     isPaycheck: row.is_paycheck === 1,
+    incomeClass: row.income_class as IncomeClass,
     colour: row.colour as SnapshotCategory['colour'],
     icon: row.icon as SnapshotCategory['icon'],
     mergedIntoId: row.merged_into_id,
@@ -412,6 +425,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     systemRoles,
     categories,
     entries,
+    outsideFunded: new Set(outsideRows.map((row) => row.id)),
     tags,
     rates,
     bills,
