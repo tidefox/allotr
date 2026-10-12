@@ -26,6 +26,7 @@ function cycle(
     income: usd(300_000),
     otherInflows: usd(0),
     spending: usd(120_000),
+    outsideSpending: usd(0),
     leftover: usd(0),
     savingsNetChange: usd(30_000),
     savingsRate: 1000,

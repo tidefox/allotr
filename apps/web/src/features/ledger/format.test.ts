@@ -36,6 +36,7 @@ function entry(
     source: 'api',
     categoryId: null,
     note: null,
+    funding: 'own',
     postings,
     reversesId: null,
     reversedById: null,

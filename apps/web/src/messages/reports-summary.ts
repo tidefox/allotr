@@ -10,6 +10,8 @@ export const reportsSummary = {
     income: 'income',
     otherInflows: 'other inflows',
     otherInflowsSub: 'gifts and refunds, not counted as income',
+    outside: 'outside spending',
+    outsideSub: 'paid with outside money, not counted as spent',
     saved: 'saved',
     average: 'daily avg',
     inclBills: 'incl. {amount} bills',

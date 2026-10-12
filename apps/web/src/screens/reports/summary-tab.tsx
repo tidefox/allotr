@@ -194,6 +194,17 @@ function StatsRow({ params }: { params: ReportParams }) {
             ...missing,
           },
         ]),
+    ...(figures.outside.amountMinor === 0
+      ? []
+      : [
+          {
+            label: t('reportsSummary.stats.outside'),
+            icon: IconBarChartBoxLine,
+            figure: money(figures.outside),
+            sub: t('reportsSummary.stats.outsideSub'),
+            ...missing,
+          },
+        ]),
     {
       label: t('reportsSummary.stats.saved'),
       icon: IconSafe2Line,

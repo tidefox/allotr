@@ -81,6 +81,11 @@ export const settingsMoney = {
     countSavingsHint: 'Off unless you turn it on and the pool counts.',
     on: 'counted',
     off: 'never counted',
+    outsideBudgets: 'outside money and budgets',
+    outsideBudgetsHint:
+      'Spending paid with outside money, such as a gift, stays out of budgets unless you count it.',
+    outsideOn: 'counted',
+    outsideOff: 'not counted',
   },
   rates: {
     title: 'exchange rates',

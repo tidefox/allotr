@@ -97,6 +97,7 @@ describe('cycleOf and statFigures', () => {
       spending: money(500),
       income: money(2000),
       otherInflows: money(150),
+      outsideSpending: money(60),
       savingsNetChange: money(300),
     }) as unknown as CycleSummaryView;
   const list = [cycle('2026-10-01'), cycle('2026-09-01')];
@@ -112,6 +113,7 @@ describe('cycleOf and statFigures', () => {
     spendingTotal: money(900),
     incomeTotal: money(4000),
     otherInflowsTotal: money(250),
+    outsideSpendingTotal: money(80),
     saved: money(700),
     dailyAverage: money(30),
     missingRates: ['EUR'],
@@ -122,6 +124,7 @@ describe('cycleOf and statFigures', () => {
       spent: money(500),
       income: money(2000),
       otherInflows: money(150),
+      outside: money(60),
       saved: money(300),
       average: money(30),
       missingRates: ['EUR'],
@@ -130,6 +133,7 @@ describe('cycleOf and statFigures', () => {
       spent: money(900),
       income: money(4000),
       otherInflows: money(250),
+      outside: money(80),
       saved: money(700),
       average: money(30),
       missingRates: ['EUR'],

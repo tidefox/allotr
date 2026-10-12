@@ -70,6 +70,8 @@ export interface StatFigures {
   income: Money;
   /** Gifts and refunds: money that came in but was not earned. */
   otherInflows: Money;
+  /** Expenses paid with outside money, apart from `spent`. */
+  outside: Money;
   saved: Money;
   /** Spending per day over the days so far, as the server sends it. */
   average: Money;
@@ -92,12 +94,14 @@ export function statFigures(
           spent: summary.spendingTotal,
           income: summary.incomeTotal,
           otherInflows: summary.otherInflowsTotal,
+          outside: summary.outsideSpendingTotal,
           saved: summary.saved,
         }
       : {
           spent: cycle.spending,
           income: cycle.income,
           otherInflows: cycle.otherInflows,
+          outside: cycle.outsideSpending,
           saved: cycle.savingsNetChange,
         };
   return {

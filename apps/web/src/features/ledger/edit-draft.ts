@@ -31,6 +31,7 @@ export function draftFromEntry(
     note: entry.note ?? '',
     occurredOn: entry.occurredOn,
     occurredTime: entry.occurredTime ?? '',
+    funding: entry.funding,
     categoryId: entry.categoryId ?? '',
     foreign: '',
     foreignCurrency: '',

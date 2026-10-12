@@ -242,6 +242,28 @@ export function EntryFields({
         </>
       )}
 
+      {draft.kind === 'expense' ? (
+        <>
+          <ChoiceField
+            label={t('quickEntry.funding.label')}
+            value={draft.funding}
+            choices={[
+              { id: 'own', label: t('quickEntry.funding.own') },
+              { id: 'outside', label: t('quickEntry.funding.outside') },
+            ]}
+            placeholder={t('quickEntry.funding.own')}
+            onChange={(funding) => {
+              patch({ funding: funding === 'outside' ? 'outside' : 'own' });
+            }}
+          />
+          {draft.funding === 'outside' ? (
+            <p className="text-small text-text-muted">
+              {t('quickEntry.funding.outsideHint')}
+            </p>
+          ) : null}
+        </>
+      ) : null}
+
       <TextField
         label={t('transactionDetail.edit.payee')}
         value={draft.note}
