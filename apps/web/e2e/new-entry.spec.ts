@@ -19,6 +19,8 @@ async function post(page: Page, origin: string, path: string, data: object) {
   return (await response.json()) as { id: string };
 }
 
+type Entry = { funding: string };
+
 let currency = 'USD';
 let walletId = '';
 
@@ -101,6 +103,34 @@ test('an expense is logged and shown in the result line', async ({ page }) => {
   await expect(line).toContainText('Groceries');
   await expect(line).toContainText('Everyday');
   await expectAccessible(page);
+});
+
+test('an expense paid with outside money is flagged by keyboard', async ({
+  page,
+}) => {
+  const dialog = await openForm(page, 'expense');
+  await dialog
+    .getByRole('textbox', { name: t('quickEntry.amountIn', { currency }) })
+    .fill('39.83');
+  await choose(dialog, page, t('quickEntry.category'), 'Shopping');
+  const paidWith = dialog.getByRole('button', {
+    name: t('quickEntry.funding.label'),
+  });
+  await paidWith.focus();
+  await page.keyboard.press('Enter');
+  await page
+    .getByRole('menuitemradio', { name: t('quickEntry.funding.outside') })
+    .press('Enter');
+  await expect(
+    dialog.getByText(t('quickEntry.funding.outsideHint')),
+  ).toBeVisible();
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: t('quickEntry.save') }).click();
+  await expect(dialog).toBeHidden();
+  const listed = await page.request.get('/v1/transactions');
+  const entries = ((await listed.json()) as { transactions: Entry[] })
+    .transactions;
+  expect(entries.filter((e) => e.funding === 'outside')).toHaveLength(1);
 });
 
 test('income is logged by keyboard and Escape closes a form', async ({
