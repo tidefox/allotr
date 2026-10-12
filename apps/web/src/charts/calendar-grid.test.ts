@@ -6,6 +6,7 @@ const base = {
   date: localDate('2026-10-09'),
   spent: null,
   heat: null,
+  outsideSpent: null,
   bills: [],
   payday: false,
   ious: [],
@@ -43,5 +44,15 @@ describe('dayMarks', () => {
       payday: true,
     } as unknown as CalendarDayView;
     expect(dayMarks(busy)).toEqual(['b', 'i', '$']);
+  });
+
+  it('marks outside-funded spending with o, only when there was some', () => {
+    const outside = (amountMinor: number) =>
+      ({
+        ...base,
+        outsideSpent: { amountMinor, currency: 'USD' },
+      }) as unknown as CalendarDayView;
+    expect(dayMarks(outside(0))).toEqual([]);
+    expect(dayMarks(outside(398300))).toEqual(['o']);
   });
 });

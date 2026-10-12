@@ -16,6 +16,7 @@ import {
   cycleOf,
   dayChart,
   fractionOf,
+  outsideRows,
   reportParams,
   shareSegments,
   statFigures,
@@ -334,5 +335,23 @@ describe('dayChart', () => {
 
   it('draws nothing for no days', () => {
     expect(dayChart([], 'en').columns).toEqual([]);
+  });
+});
+
+describe('outsideRows', () => {
+  it('names the categories paid with outside money, as the server sends them', () => {
+    const summary = {
+      outsideSpending: [
+        { categoryId: 'shopping', amount: money(39830) },
+        { categoryId: null, amount: money(100) },
+      ],
+    } as unknown as CategorySummaryView;
+    const categories = [
+      { id: 'shopping', name: 'Shopping' },
+    ] as unknown as CategoryView[];
+    expect(outsideRows(summary, categories)).toEqual([
+      { key: 'shopping', name: 'Shopping', amount: money(39830) },
+      { key: 'none', name: 'No category', amount: money(100) },
+    ]);
   });
 });

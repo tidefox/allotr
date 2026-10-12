@@ -263,6 +263,7 @@ export function CalendarTab() {
                 b: t('reportsCalendar.marks.b'),
                 i: t('reportsCalendar.marks.i'),
                 $: t('reportsCalendar.marks.$'),
+                o: t('reportsCalendar.marks.o'),
               }}
               locale={locale}
             />

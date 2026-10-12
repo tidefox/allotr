@@ -6,7 +6,8 @@ export const reportsCalendar = {
     label: 'Layers',
     heat: 'spending heat',
     due: 'bills & dues',
-    legend: 'b bill · i iou · $ payday · bill payments not in heat',
+    legend:
+      'b bill · i iou · $ payday · o outside money spent · bill payments not in heat',
   },
   month: {
     previous: 'Previous month',
@@ -15,7 +16,7 @@ export const reportsCalendar = {
   grid: 'grid',
   table: 'table',
   headers: { date: 'Date', spent: 'Spent', due: 'Due' },
-  marks: { b: 'bill', i: 'iou', $: 'payday' },
+  marks: { b: 'bill', i: 'iou', $: 'payday', o: 'outside money spent' },
   failed: 'The calendar could not be loaded.',
   retry: 'Try again',
   day: {

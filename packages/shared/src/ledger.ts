@@ -1399,6 +1399,11 @@ export const calendarDaySchema = z.object({
   spent: moneySchema.nullable(),
   /** 0 for nothing spent up to 4 for the busiest day of the range; null after today. */
   heat: z.int().min(0).max(4).nullable(),
+  /**
+   * Expenses paid with outside money dated that day, apart from `spent` and
+   * out of the heat; null after today.
+   */
+  outsideSpent: moneySchema.nullable(),
   /** Bills due that day. */
   bills: z.array(
     z.object({ billId: idSchema, amount: moneySchema, paid: z.boolean() }),

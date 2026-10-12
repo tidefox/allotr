@@ -621,10 +621,17 @@ restore and revert.
   ([Income classes](#income-classes)). `cycle_spent` and `spent_today`, which
   the daily number is built from, are unchanged.
 - It is left out of `pace_spent`, the calendar's `spent` and heat, the
-  cycle charts' series, the weekly review, a cycle's `spending` and the
-  category summary's spending and trends. Reports show it apart, as
-  `outsideSpending` with its categories, so nothing disappears. The
-  savings rate reads income and savings, so it is unaffected.
+  cycle charts' series, the weekly review, a cycle's `spending`, and the
+  category summary's `spending` totals, shares and trends, so the shares
+  still add up. Nothing disappears: reports show it alongside, per
+  category, as `outsideSpending` and `outsideByCategory` on the cycle and
+  category summary and as `outsideSpent` on each calendar day (a mark, not
+  heat). The pace chart has no outside series yet. The savings rate reads
+  income and savings, so it is unaffected. The payday plan's category
+  averages and the emergency-fund target read a cycle's `spending`, so they
+  leave it out too.
+- The cycle allocation is a view of cash, so its `spent` part still counts an
+  outside expense ([Cycle allocation](#cycle-allocation)).
 - The amounts never need to match: a gift of 4,000 and a purchase of 3,983
   leave 17 as plain cash, never earnings. A gift that covers part of a
   purchase is a split of the purchase, and only the gifted part is

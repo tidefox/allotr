@@ -78,6 +78,13 @@ describe('outside-funded expenses', () => {
       today,
     ).days;
     expect(days.find((d) => d.date === '2026-04-05')?.spent).toEqual(usd(0));
+    // Shown muted beside the day, and out of the heat.
+    expect(days.find((d) => d.date === '2026-04-05')?.outsideSpent).toEqual(
+      usd(398300),
+    );
+    expect(days.find((d) => d.date === '2026-04-06')?.outsideSpent).toEqual(
+      usd(0),
+    );
   });
 
   it('never change balances, net worth or the daily number', () => {

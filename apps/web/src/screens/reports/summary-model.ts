@@ -170,6 +170,32 @@ export function budgetsByCategory(
   ]);
 }
 
+/** A top-level category's spending paid with outside money. */
+export interface OutsideRow {
+  key: string;
+  name: string;
+  amount: Money;
+}
+
+/**
+ * Spending paid with outside money per top-level category, largest first as
+ * the server sends it. It is shown apart from the spending rows, so their
+ * shares still add up to the spending total.
+ */
+export function outsideRows(
+  summary: CategorySummaryView,
+  categories: readonly CategoryView[],
+): OutsideRow[] {
+  const names = new Map(categories.map((c) => [c.id, c.name]));
+  return summary.outsideSpending.map((group) => ({
+    key: group.categoryId ?? 'none',
+    name:
+      (group.categoryId === null ? undefined : names.get(group.categoryId)) ??
+      t('reportsSummary.categories.none'),
+    amount: group.amount,
+  }));
+}
+
 export function categoryRows(
   summary: CategorySummaryView,
   total: Money | null,

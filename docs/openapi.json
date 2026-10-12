@@ -35899,6 +35899,25 @@
                             "minimum": 0,
                             "maximum": 4
                           },
+                          "outsideSpent": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "bills": {
                             "type": "array",
                             "items": {
@@ -35989,6 +36008,7 @@
                           "date",
                           "spent",
                           "heat",
+                          "outsideSpent",
                           "bills",
                           "payday",
                           "ious"

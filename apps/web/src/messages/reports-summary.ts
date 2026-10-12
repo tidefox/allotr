@@ -22,6 +22,7 @@ export const reportsSummary = {
     missingRates: 'No rate for {currencies}',
   },
   categories: {
+    outside: 'paid with outside money',
     title: 'by category',
     subtitle: 'spent · budget · share',
     expandAll: 'expand all',
