@@ -11,7 +11,7 @@ All examples use made-up accounts and amounts.
 
 ```
 entry     := amount ws category [ws "@" account [ws number]] [ws date]
-             [ws time] [ws "#" tag]* [ws "//" note]
+             [ws time] [ws "!outside"] [ws "#" tag]* [ws "//" note]
 amount    := ("+" | "-") [symbol] number [ws code]     # -12.50 · -€45 · -45 EUR
 split     := amount ws (category ws number)+           # -80 groceries 60 home 20
 iou       := entry ws "owe:" name ws number            # part of an entry owed to me
@@ -46,6 +46,12 @@ code      := ISO 4217 alphabetic code, case-insensitive
   may repeat (`lend:alex 30 lend:sam 20`) to lend to several people from one
   entry, and `due:` sets the IOU's due date. Lending takes cash out of the
   account and borrowing brings it in, the same as the API (`/v1/ious`).
+- `!outside` marks a spending entry as paid with money that was never the
+  user's to budget, such as a gift (domain.md "Funding"). It is left out of
+  the cycle's spending, pace and calendar heat, and shown apart in reports.
+  It is only valid on spending: on income, a transfer, `lend:` or `borrow:`
+  the line fails with the closest valid form. The marker's spelling is
+  provisional until the parser lands; it is one constant there.
 - Names (accounts, categories) resolve through the user's aliases,
   case-insensitively.
 - The number in `bal` is the bank's balance; for an account holding a debt
@@ -61,6 +67,7 @@ code      := ISO 4217 alphabetic code, case-insensitive
 -4 coffee 08:15                   with the time it happened
 -80 groceries 60 home 20          split across two categories
 -60 dinner owe:alex 30            paid $60; $30 is owed back by Alex
+-39.83 shoes !outside             paid with a gift, so it is not cycle spending
 lend:alex 50 @card                lent Alex $50 from Daily Card
 lend:alex 50 due:15/11            the same, due back on 15 November
 borrow:sam 80 @card               Sam lent me $80; reserved until I pay it back

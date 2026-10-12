@@ -427,7 +427,10 @@ write-off may give `time` (HH:MM); within a day, entries keep the order
 they have in the bundle. An account without `openedOn` opens on the
 earliest entry day. A transaction `ref` lets a bill payment or a
 reconciliation's adjustment link to it. An expense or income gives
-`category` or, for a split, `lines: [{category, amount}]`. A `write_off`
+`category` or, for a split, `lines: [{category, amount}]`. An `expense` may carry
+`funding: "outside"` (paid with money that was never the user's to budget; a
+missing field reads as `own`, and `settings.outsideConsumesBudgets` round-trips
+too). A `write_off`
 entry (`account`, `balance`) empties an account into Expenses, as archiving
 does. An account may list `switches: [{on, budgetGroup}]`, later moves on or
 off budget (its `budgetGroup` is the group it started in), and

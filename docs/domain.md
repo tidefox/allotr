@@ -457,8 +457,8 @@ All of these are computed from the ledger and settings when read.
 ## Calendar
 
 `calendar(view, from, to, today)` gives one row per day. `spent` is the
-pace spending of the day (linked bill payments and reconcile adjustments are
-left out, as in the cycle charts), in the default currency at the rate of
+pace spending of the day (linked bill payments, reconcile adjustments and
+outside-funded expenses are left out, as in the cycle charts), in the default currency at the rate of
 that day, and null after today. `heat` is `ceil(4 * spent / peak)` clamped to
 1 to 4 for a day with spending, 0 for none, where `peak` is the most spent on
 one day of the range. Bills are the due dates of each bill with whether that
@@ -530,10 +530,11 @@ live_daily       = available(now) / days_left
 - `cycle_spent` is `spent_today` summed from the day the cycle opened through
   today, each entry by the budget groups of its own day. Paying a bill
   counts as spending, because the reserve is released at the same time.
-- `pace_spent` is `cycle_spent` without two kinds of entry, and without
+- `pace_spent` is `cycle_spent` without three kinds of entry, and without
   their undos: a payment linked to a bill's payment mark (the bill was
-  already reserved) and a reconcile adjustment (it makes up for entries
-  never recorded, not new spending). Both still lower `available`. A bill
+  already reserved), a reconcile adjustment (it makes up for entries
+  never recorded, not new spending) and an outside-funded expense
+  ([Funding](#funding)). All three still lower `available`. A bill
   payment that is not linked to its mark still counts. The Today view's
   pace bar sets `pace_spent / (pace_spent + available)` against the share
   of the cycle's days gone, so paying a bill or reconciling never makes the
@@ -605,6 +606,38 @@ any income category. A merged category counts as the one it merged into.
   still count every inflow ([Cycle allocation](#cycle-allocation)).
 - An entry with no category is `earned`.
 
+## Funding
+
+An expense entry has a *funding*: `own` (the default) or `outside`, meaning
+it was paid with money that was never the user's to budget, such as a gift
+that was transferred in and then spent. Funding exists on expense entries
+only; an undo (a reversal) is stored as `own` and follows the entry it
+undoes, and an edit that does not say keeps the entry's funding, as do
+restore and revert.
+
+- An outside expense stays in the ledger. Balances, net worth, available
+  money and the daily number never read the flag: the money is gone either
+  way, and the gift that paid for it is already an other inflow
+  ([Income classes](#income-classes)). `cycle_spent` and `spent_today`, which
+  the daily number is built from, are unchanged.
+- It is left out of `pace_spent`, the calendar's `spent` and heat, the
+  cycle charts' series, the weekly review, a cycle's `spending` and the
+  category summary's spending and trends. Reports show it apart, as
+  `outsideSpending` with its categories, so nothing disappears. The
+  savings rate reads income and savings, so it is unaffected.
+- The amounts never need to match: a gift of 4,000 and a purchase of 3,983
+  leave 17 as plain cash, never earnings. A gift that covers part of a
+  purchase is a split of the purchase, and only the gifted part is
+  `outside`. A gift is not linked to the purchase it paid for.
+- **Budgets.** An outside expense does not count against a budget, so it
+  also leaves a set-aside budget's hold full. The setting
+  `outsideConsumesBudgets` (off by default) counts it like any other
+  expense. With it off and a set-aside budget in the same category, the hold
+  stays, so the daily number can differ from the unflagged ledger; with no
+  budgets, or the setting on, flagging never moves the daily number.
+- The transactions list and its totals follow the entries shown and do not
+  read the flag.
+
 ## Cycle allocation
 
 How the open cycle's on-budget money divides, for the Today view's
@@ -661,6 +694,7 @@ Per-user settings. The default is listed first.
 | Pay yourself first | None | A fixed amount or a percentage of the paycheck, set aside first at payday |
 | Emergency fund target | 3 months of average expenses | 1 to 24 months |
 | Cover order | Free money, the Buffer, then budgets in the order planned | A list the user orders by dragging; a per-entry override |
+| Outside-funded spending and budgets | Does not count against budgets | Counts like any expense |
 | Savings in the daily number | Off: savings pools never count | On: a savings pool whose own switch is on counts too |
 | Bills | Reserve at payday | No reservation · dedicated off-budget bills account |
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
@@ -783,7 +817,8 @@ categories(id, user_id, name, kind[expense|income|transfer], parent_id,
 tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)
 aliases(id, user_id, alias, target_type, target_id)
 transactions(id, user_id, kind, occurred_on, occurred_time, created_at,
-             source, client, category_id, note, reverses_id, idempotency_key,
+             source, client, category_id, note, funding[own|outside; outside
+             on expense entries only], reverses_id, idempotency_key,
              message_id, cycle_id, fx_rate_implied, switch_account_id,
              switch_budget_group)
 transaction_ranks(transaction_id, user_id, occurred_on, sort_rank,
