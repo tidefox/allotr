@@ -39,10 +39,14 @@ export type CycleReport = Readonly<{
   income: Money;
   /** Gifts and refunds: money that came in but was not earned. */
   otherInflows: Money;
+  /** Spending of the user's own money: outside-funded expenses are apart. */
   spending: Money;
+  /** Outside-funded expenses (docs/domain.md "Funding"), shown muted. */
+  outsideSpending: Money;
   /** Largest first; a merged category counts as the one it merged into. */
   incomeByCategory: readonly CategoryTotal[];
   spendingByCategory: readonly CategoryTotal[];
+  outsideByCategory: readonly CategoryTotal[];
   /** Available budget at the end of `lastDay`. */
   leftover: Money;
   savingsNetChange: Money;
@@ -162,8 +166,12 @@ export function cycleReports(
           .map((total) => total.amount),
       ),
       spending: figure(snapshot.spending.map((total) => total.amount)),
+      outsideSpending: figure(
+        snapshot.outsideSpending.map((total) => total.amount),
+      ),
       incomeByCategory: byCategory(snapshot.income),
       spendingByCategory: byCategory(snapshot.spending),
+      outsideByCategory: byCategory(snapshot.outsideSpending),
       leftover: figure(snapshot.leftover.map((entry) => entry.leftover)),
       savingsNetChange: figure(snapshot.savingsNetChange),
       amendments: amendmentsOf(view, cycle),

@@ -18,6 +18,7 @@ import {
   type Policies,
 } from './policies.ts';
 import { foldBudgets, heldBy, leftOf, type BudgetFold } from './budgets.ts';
+import { outsideEntries } from './funding.ts';
 import { groupsOn } from './pools.ts';
 import { totalOn } from './rates.ts';
 import type { DailyMode } from './budgets.ts';
@@ -155,12 +156,20 @@ export function billPaymentEntries(view: LedgerView): Set<TransactionId> {
  * The entries pace leaves out (docs/domain.md "Daily usable"): payments
  * linked to a bill, whose reserve already came out of the budget when
  * the cycle opened, and reconcile adjustments, which make up for past
- * entries rather than record new spending. Their undos go with them, so
- * undoing one never moves pace.
+ * entries rather than record new spending, and outside-funded expenses
+ * (docs/domain.md "Funding"). Their undos go with them, so undoing one
+ * never moves pace.
  */
-export function paceExclusions(view: LedgerView): Set<TransactionId> {
+export function paceExclusions(
+  view: LedgerView,
+  /** Leaves outside-funded expenses in, as budgets can be set to. */
+  keepOutside = false,
+): Set<TransactionId> {
   const excluded = linkedPayments(view);
   for (const id of view.reconcileAdjustments ?? []) excluded.add(id);
+  if (!keepOutside) {
+    for (const id of outsideEntries(view)) excluded.add(id);
+  }
   return withUndos(view, excluded);
 }
 
@@ -376,8 +385,9 @@ function availableBeforeEntries(
 
 /**
  * The budget figures for the period holding `today`, leaving out the entries
- * pace leaves out (linked bill payments, reconcile adjustments). Null when
- * the view has no budgets.
+ * pace leaves out (linked bill payments, reconcile adjustments, and
+ * outside-funded expenses unless the settings let them consume budgets).
+ * Null when the view has no budgets.
  */
 export function budgetFold(
   view: LedgerView,
@@ -389,7 +399,10 @@ export function budgetFold(
   const cycles = cyclesOf(view, today);
   let before: Map<TransactionId, bigint> | undefined;
   return foldBudgets(view, today, {
-    excluded: paceExclusions(view),
+    excluded: paceExclusions(
+      view,
+      view.settings.outsideConsumesBudgets === true,
+    ),
     // Only worked out when an entry actually needs cover.
     availableBefore: (id) => {
       before ??= availableBeforeEntries(view, cycles, today);

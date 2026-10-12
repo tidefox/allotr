@@ -7,7 +7,8 @@ import {
 } from '@allotr/shared';
 import { budgetGroupBalances, type GroupBalances } from '../ledger/balances.ts';
 import { groupsOn } from './pools.ts';
-import type { AccountId, CategoryId } from '../ledger/types.ts';
+import type { AccountId, CategoryId, Transaction } from '../ledger/types.ts';
+import { outsideEntries } from './funding.ts';
 import { cyclesOf } from './cycles.ts';
 import { totalOn } from './rates.ts';
 import { availableSums, policiesOf } from './daily.ts';
@@ -36,7 +37,10 @@ export type CycleSnapshot = Readonly<{
   /** At the end of `lastDay`. */
   closing: GroupBalances;
   income: readonly CategoryTotal[];
+  /** Expense legs of the user's own money; outside-funded ones are apart. */
   spending: readonly CategoryTotal[];
+  /** Expense legs of outside-funded entries and their undos. */
+  outsideSpending: readonly CategoryTotal[];
   /** Available budget at the end, per currency, and what the policy does with it. */
   leftover: readonly Leftover[];
   savingsNetChange: readonly Money[];
@@ -151,9 +155,14 @@ export function cycleSnapshot(
     (t) => t.occurredOn >= cycle.openedOn && t.occurredOn <= lastDay,
   );
   const roleOf = (id: AccountId) => view.chart.get(id)?.systemRole ?? null;
-  const legs = (role: 'income' | 'expenses', sign: number) =>
+  const outside = outsideEntries(view);
+  const legs = (
+    role: 'income' | 'expenses',
+    sign: number,
+    entries: readonly Transaction[] = inCycle,
+  ) =>
     byCategory(
-      inCycle.flatMap((t) =>
+      entries.flatMap((t) =>
         t.postings
           .filter((p) => roleOf(p.accountId) === role)
           .map(
@@ -195,7 +204,16 @@ export function cycleSnapshot(
     opening,
     closing,
     income: legs('income', -1),
-    spending: legs('expenses', 1),
+    spending: legs(
+      'expenses',
+      1,
+      inCycle.filter((t) => !outside.has(t.id)),
+    ),
+    outsideSpending: legs(
+      'expenses',
+      1,
+      inCycle.filter((t) => outside.has(t.id)),
+    ),
     leftover,
     savingsNetChange,
   };
