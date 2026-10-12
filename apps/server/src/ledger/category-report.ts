@@ -121,6 +121,13 @@ export async function categorySummary(
     'expenses',
     merged,
   );
+  const outside = categoryTotalsBetween(
+    loaded.view,
+    { from, to },
+    'expenses',
+    merged,
+    'outside',
+  );
   const income = categoryTotalsBetween(
     loaded.view,
     { from, to },
@@ -129,6 +136,7 @@ export async function categorySummary(
   );
   const currency = loaded.view.settings.defaultCurrency;
   const spendingGroups = rollUpCategories(spending.totals, parentOf);
+  const outsideGroups = rollUpCategories(outside.totals, parentOf);
   const incomeGroups = rollUpCategories(
     income.totals.filter((total) => isEarnings(loaded.view, total.categoryId)),
     parentOf,
@@ -138,6 +146,7 @@ export async function categorySummary(
     parentOf,
   );
   const spendingTotal = categoryGroupsTotal(spendingGroups, currency);
+  const outsideTotal = categoryGroupsTotal(outsideGroups, currency);
   const incomeTotal = categoryGroupsTotal(incomeGroups, currency);
   const otherInflowsTotal = categoryGroupsTotal(otherGroups, currency);
   const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
@@ -149,7 +158,9 @@ export async function categorySummary(
     spending: view(spendingGroups, spendingTotal),
     income: view(incomeGroups, incomeTotal),
     otherInflows: view(otherGroups, otherInflowsTotal),
+    outsideSpending: view(outsideGroups, outsideTotal),
     spendingTotal,
+    outsideSpendingTotal: outsideTotal,
     incomeTotal,
     otherInflowsTotal,
     days,
@@ -158,6 +169,7 @@ export async function categorySummary(
     missingRates: [
       ...new Set([
         ...spending.missingRates,
+        ...outside.missingRates,
         ...income.missingRates,
         ...savings.missingRates,
       ]),

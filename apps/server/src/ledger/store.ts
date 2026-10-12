@@ -27,6 +27,7 @@ import {
   money,
   parseRate,
   type CurrencyCode,
+  type Funding,
   type LocalDate,
   type LocalTime,
 } from '@allotr/shared';
@@ -251,6 +252,8 @@ export type AppendOptions = Readonly<{
    * keeps. A reversal keeps to its original without this.
    */
   placeAfter?: TransactionId;
+  /** Whose money paid for an expense; `own` when omitted (migration 0023). */
+  funding?: Funding;
 }>;
 
 /** Inserts a committed transaction, its postings and its place in the day. */
@@ -273,6 +276,8 @@ export async function appendTransaction(
       client: options.source === 'api' ? currentClient() : null,
       category_id: transaction.categoryId,
       note: transaction.note,
+      funding:
+        transaction.kind === 'expense' ? (options.funding ?? 'own') : 'own',
       reverses_id: transaction.reversesId,
       idempotency_key: options.idempotencyKey ?? null,
       fx_rate_implied: transaction.impliedRate,

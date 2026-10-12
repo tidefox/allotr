@@ -168,6 +168,9 @@ function toBody(
     ...(entry.foreignAmount === undefined
       ? {}
       : { foreignAmount: entry.foreignAmount }),
+    ...(entry.kind === 'expense' && entry.funding !== undefined
+      ? { funding: entry.funding }
+      : {}),
     ...common,
   };
 }

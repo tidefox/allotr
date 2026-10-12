@@ -123,6 +123,8 @@ export type Snapshot = Readonly<{
   categories: readonly SnapshotCategory[];
   /** Every entry, undos too, by date, then time of entry, then id. */
   entries: readonly Transaction[];
+  /** Expenses paid with outside money (`funding`); absent entries are own. */
+  outsideFunded: ReadonlySet<string>;
   /** Tag names by entry id. */
   tags: ReadonlyMap<string, readonly string[]>;
   rates: readonly ExchangeRate[];
@@ -157,6 +159,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     moveRows,
     budgetSetup,
     tagNameRows,
+    outsideRows,
   ] = await Promise.all([
     db
       .selectFrom('accounts')
@@ -301,6 +304,12 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       .select(['id', 'name'])
       .where('user_id', '=', userId)
       .execute(),
+    db
+      .selectFrom('transactions')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('funding', '=', 'outside')
+      .execute(),
   ]);
 
   const accounts: SnapshotAccount[] = [];
@@ -416,6 +425,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     systemRoles,
     categories,
     entries,
+    outsideFunded: new Set(outsideRows.map((row) => row.id)),
     tags,
     rates,
     bills,

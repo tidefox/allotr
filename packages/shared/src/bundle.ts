@@ -3,6 +3,7 @@ import { budgetPeriodRuleSchema, dailyModeSchema } from './budgets.ts';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema, localTimeSchema } from './dates.ts';
 import { iouDirectionSchema } from './ious.ts';
+import { fundingSchema } from './ledger.ts';
 import {
   budgetGroupSchema,
   categoryKindSchema,
@@ -43,6 +44,7 @@ const settingsSchema = z.strictObject({
   countSavingsInDaily: z.boolean().optional(),
   budgetPeriod: budgetPeriodRuleSchema.optional(),
   dailyMode: dailyModeSchema.optional(),
+  outsideConsumesBudgets: z.boolean().optional(),
 });
 
 const categorySchema = z.strictObject({
@@ -271,7 +273,12 @@ const transactionSchema = z.discriminatedUnion('kind', [
     ...entryFields,
   }),
   z
-    .strictObject({ kind: z.literal('expense'), ...spendFields })
+    .strictObject({
+      kind: z.literal('expense'),
+      ...spendFields,
+      /** Paid with money that was never the user's to budget; own when omitted. */
+      funding: fundingSchema.optional(),
+    })
     .refine(oneCategorySide, oneCategorySideError),
   z
     .strictObject({ kind: z.literal('income'), ...spendFields })

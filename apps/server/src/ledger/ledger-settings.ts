@@ -40,6 +40,7 @@ const paydayOverrideKey = 'payday_override';
 const countSavingsKey = 'count_savings_in_daily';
 const budgetPeriodKey = 'budget_period';
 const dailyModeKey = 'daily_mode';
+const outsideBudgetsKey = 'outside_consumes_budgets';
 const payFirstKey = 'pay_yourself_first';
 const emergencyKey = 'emergency_months';
 const iouWriteOffKey = 'iou_write_off_after_days';
@@ -84,6 +85,7 @@ export async function readLedgerSettings(
         countSavingsKey,
         budgetPeriodKey,
         dailyModeKey,
+        outsideBudgetsKey,
         payFirstKey,
         emergencyKey,
         iouWriteOffKey,
@@ -108,6 +110,8 @@ export async function readLedgerSettings(
     budgetPeriod:
       parsed(budgetPeriodRuleSchema, stored.get(budgetPeriodKey)) ?? 'cycle',
     dailyMode: parsed(dailyModeSchema, stored.get(dailyModeKey)) ?? 'free',
+    outsideConsumesBudgets:
+      parsed(z.boolean(), stored.get(outsideBudgetsKey)) ?? false,
     payYourselfFirst:
       parsed(payYourselfFirstSchema, stored.get(payFirstKey)) ?? null,
     emergencyMonths:
@@ -193,6 +197,7 @@ export type LedgerSettingsPatch = Readonly<{
   countSavingsInDaily?: boolean | undefined;
   budgetPeriod?: BudgetPeriodRule | undefined;
   dailyMode?: DailyMode | undefined;
+  outsideConsumesBudgets?: boolean | undefined;
   payYourselfFirst?: PayYourselfFirstSetting | null | undefined;
   emergencyMonths?: number | undefined;
   iouWriteOffAfterDays?: number | undefined;
@@ -326,6 +331,14 @@ export async function applyLedgerSettings(
     ...(patch.dailyMode === undefined
       ? []
       : [{ key: dailyModeKey, value: JSON.stringify(patch.dailyMode) }]),
+    ...(patch.outsideConsumesBudgets === undefined
+      ? []
+      : [
+          {
+            key: outsideBudgetsKey,
+            value: JSON.stringify(patch.outsideConsumesBudgets),
+          },
+        ]),
     ...(patch.payYourselfFirst === undefined
       ? []
       : [

@@ -784,6 +784,7 @@ describe('ledger settings', () => {
       countSavingsInDaily: false,
       budgetPeriod: 'cycle',
       dailyMode: 'free',
+      outsideConsumesBudgets: false,
       payYourselfFirst: null,
       emergencyMonths: 3,
       iouWriteOffAfterDays: 90,

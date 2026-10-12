@@ -100,6 +100,21 @@ async function reconcileAdjustments(
   );
 }
 
+// The expenses paid with outside money, which pace, the calendar and cycle
+// reports leave out of spending (docs/domain.md "Funding").
+async function outsideFunded(
+  db: Db,
+  userId: string,
+): Promise<Set<TransactionId>> {
+  const rows = await db
+    .selectFrom('transactions')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('funding', '=', 'outside')
+    .execute();
+  return new Set(rows.map((row) => transactionId(row.id)));
+}
+
 /** Everything core's projections read, and the user's time zone. */
 export async function loadView(
   db: Db,
@@ -115,6 +130,7 @@ export async function loadView(
     rates,
     importedFrom,
     adjustments,
+    outside,
     pools,
     budgets,
   ] = await Promise.all([
@@ -131,6 +147,7 @@ export async function loadView(
     loadRates(db, userId),
     readLedgerStart(db, userId),
     reconcileAdjustments(db, userId),
+    outsideFunded(db, userId),
     loadPoolSetup(db, userId),
     loadBudgetSetup(db, userId),
   ]);
@@ -158,6 +175,7 @@ export async function loadView(
       dailyMode: settings.dailyMode,
       payYourselfFirst: settings.payYourselfFirst,
       emergencyMonths: settings.emergencyMonths,
+      outsideConsumesBudgets: settings.outsideConsumesBudgets,
     },
     pools,
     budgets,
@@ -165,6 +183,7 @@ export async function loadView(
     bills,
     rates,
     reconcileAdjustments: adjustments,
+    outsideFunded: outside,
   };
   return { view, timeZone: settings.timeZone };
 }

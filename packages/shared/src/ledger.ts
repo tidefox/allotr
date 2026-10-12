@@ -363,6 +363,14 @@ export const postingSchema = z.object({
   categoryId: idSchema.nullable(),
 });
 
+/**
+ * Whose money paid for an expense: the user's `own`, or `outside` money that
+ * was never theirs to budget, such as a gift spent on a purchase. Reports
+ * and pace leave an outside expense out of spending and show it apart.
+ */
+export const fundingSchema = z.enum(['own', 'outside']);
+export type Funding = z.infer<typeof fundingSchema>;
+
 export const transactionSchema = z.object({
   id: idSchema,
   kind: transactionKindSchema,
@@ -379,6 +387,8 @@ export const transactionSchema = z.object({
   source: z.enum(['web', 'chat', 'api', 'import', 'system']),
   categoryId: idSchema.nullable(),
   note: z.string().nullable(),
+  /** `own` unless it is an expense paid with outside money; an undo is `own`. */
+  funding: fundingSchema,
   postings: z.array(postingSchema),
   reversesId: idSchema.nullable(),
   /** The undo of this entry, if it was undone. */
@@ -452,7 +462,15 @@ const oneCategorySideError = {
 
 export const createTransactionBodySchema = z.discriminatedUnion('kind', [
   z
-    .object({ kind: z.literal('expense'), ...spendFields })
+    .object({
+      kind: z.literal('expense'),
+      ...spendFields,
+      /**
+       * `outside` when money that was never the user's to budget paid for
+       * it. On an edit, omitted keeps the entry's funding; elsewhere `own`.
+       */
+      funding: fundingSchema.optional(),
+    })
     .refine(oneCategorySide, oneCategorySideError),
   z
     .object({ kind: z.literal('income'), ...spendFields })
@@ -708,6 +726,11 @@ export const ledgerSettingsSchema = z.object({
    * less bills, or what the daily budgets have left.
    */
   dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']),
+  /**
+   * Whether expenses paid with outside money count against budgets. Off by
+   * default: they do not (docs/domain.md "Funding").
+   */
+  outsideConsumesBudgets: z.boolean(),
   /** The savings line first at payday; null for none. */
   payYourselfFirst: payYourselfFirstSchema.nullable(),
   /** Months of average expenses the emergency fund aims at. */
@@ -741,6 +764,7 @@ export const updateLedgerSettingsBodySchema = z
     countSavingsInDaily: z.boolean().optional(),
     budgetPeriod: z.enum(['cycle', 'month']).optional(),
     dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']).optional(),
+    outsideConsumesBudgets: z.boolean().optional(),
     /** null clears it. */
     payYourselfFirst: payYourselfFirstSchema.nullable().optional(),
     emergencyMonths: z.int().min(1).max(24).optional(),
@@ -1011,8 +1035,15 @@ export const categorySummarySchema = z.object({
   income: z.array(categoryGroupSchema),
   /** Gifts and refunds: categories of class `gift` or `refund`. */
   otherInflows: z.array(categoryGroupSchema),
+  /**
+   * Expenses paid with outside money (`funding`), apart from `spending` and
+   * shown muted; the groups are the same shape.
+   */
+  outsideSpending: z.array(categoryGroupSchema),
   /** All spending in the period: the sum of the `spending` groups. */
   spendingTotal: moneySchema,
+  /** The sum of the `outsideSpending` groups. */
+  outsideSpendingTotal: moneySchema,
   /** All earnings in the period: the sum of the `income` groups. */
   incomeTotal: moneySchema,
   /** All other inflows: the sum of the `otherInflows` groups. */
@@ -1056,8 +1087,13 @@ export const cycleSummarySchema = z.object({
   income: moneySchema,
   /** Gifts and refunds: money that came in but was not earned. */
   otherInflows: moneySchema,
-  /** Every entry in an expense category, whichever account paid. */
+  /**
+   * Every entry in an expense category, whichever account paid, less the
+   * expenses paid with outside money.
+   */
   spending: moneySchema,
+  /** Expenses paid with outside money, apart from `spending`. */
+  outsideSpending: moneySchema,
   /** Available budget at the end of `lastDay`. */
   leftover: moneySchema,
   /** Change in the off-budget total over the cycle. */
@@ -1096,6 +1132,7 @@ export const cycleDetailSchema = cycleSummarySchema.extend({
   /** Largest first. */
   incomeByCategory: z.array(categoryTotalSchema),
   spendingByCategory: z.array(categoryTotalSchema),
+  outsideByCategory: z.array(categoryTotalSchema),
   /**
    * For charts: the six largest spending categories, and the rest summed
    * into one (null when at most one was left, which is then in `top`).

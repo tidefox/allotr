@@ -23,6 +23,7 @@ import type {
   TransactionListView,
   TransactionSort,
   TransactionView,
+  Funding,
 } from '@allotr/shared';
 import { isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
@@ -79,6 +80,7 @@ type TransactionRow = {
   client: string | null;
   category_id: string | null;
   note: string | null;
+  funding: string;
   reverses_id: string | null;
   fx_rate_implied: string | null;
   switch_account_id: string | null;
@@ -96,6 +98,7 @@ const transactionColumns = [
   'transactions.client',
   'transactions.category_id',
   'transactions.note',
+  'transactions.funding',
   'transactions.reverses_id',
   'transactions.fx_rate_implied',
   'transactions.switch_account_id',
@@ -216,6 +219,7 @@ async function views(
     source: (row.client ?? row.source) as TransactionView['source'],
     categoryId: row.category_id,
     note: row.note,
+    funding: row.funding as TransactionView['funding'],
     postings: (legs.get(row.id) ?? []).map((p) => ({
       accountId: p.account_id,
       systemRole:
@@ -756,7 +760,12 @@ async function build(
   body: CreateTransactionBody,
   now: Date,
   keepTime = false,
-): Promise<{ transaction: Transaction; chart: Chart; tagIds: string[] }> {
+): Promise<{
+  transaction: Transaction;
+  chart: Chart;
+  tagIds: string[];
+  funding: Funding | undefined;
+}> {
   const chart = await ensureSystemAccounts(
     db,
     userId,
@@ -787,7 +796,7 @@ async function build(
       ...(body.received === undefined ? {} : { received: body.received }),
       categoryId: category === null ? null : categoryId(category),
     });
-    return { transaction, chart, tagIds };
+    return { transaction, chart, tagIds, funding: undefined };
   }
   const make = body.kind === 'expense' ? expense : income;
   const kind = body.kind;
@@ -824,7 +833,23 @@ async function build(
       ? {}
       : { foreignAmount: body.foreignAmount }),
   });
-  return { transaction, chart, tagIds };
+  return {
+    transaction,
+    chart,
+    tagIds,
+    funding: body.kind === 'expense' ? body.funding : undefined,
+  };
+}
+
+/** The funding of a stored entry; `own` for one that is not an expense. */
+async function fundingOf(db: Db, userId: string, id: string): Promise<Funding> {
+  const row = await db
+    .selectFrom('transactions')
+    .select('funding')
+    .where('user_id', '=', userId)
+    .where('id', '=', id)
+    .executeTakeFirst();
+  return row?.funding === 'outside' ? 'outside' : 'own';
 }
 
 /** Stores a built entry and its tags inside the caller's transaction. */
@@ -836,11 +861,13 @@ export async function storeTransaction(
   idempotencyKey: string | null,
   source: TransactionSource,
   placeAfter?: TransactionId,
+  funding?: Funding,
 ): Promise<void> {
   await appendTransaction(db, userId, transaction, {
     source,
     idempotencyKey,
     ...(placeAfter === undefined ? {} : { placeAfter }),
+    ...(funding === undefined ? {} : { funding }),
   });
   if (transaction.reversesId !== null) {
     await releaseImpliedRate(db, userId, transaction.reversesId);
@@ -873,14 +900,23 @@ export async function recordTransaction(
   source: TransactionSource,
   now: Date,
 ): Promise<string> {
-  const { transaction, tagIds } = await build(
+  const { transaction, tagIds, funding } = await build(
     db,
     userId,
     body,
     now,
     source === 'import',
   );
-  await storeTransaction(db, userId, transaction, tagIds, null, source);
+  await storeTransaction(
+    db,
+    userId,
+    transaction,
+    tagIds,
+    null,
+    source,
+    undefined,
+    funding,
+  );
   return transaction.id;
 }
 
@@ -917,8 +953,22 @@ export async function createTransaction(
         const earlier = await byIdempotencyKey(trx, userId, key);
         if (earlier !== undefined) return null;
       }
-      const { transaction, tagIds } = await build(trx, userId, body, now);
-      await storeTransaction(trx, userId, transaction, tagIds, key, 'api');
+      const { transaction, tagIds, funding } = await build(
+        trx,
+        userId,
+        body,
+        now,
+      );
+      await storeTransaction(
+        trx,
+        userId,
+        transaction,
+        tagIds,
+        key,
+        'api',
+        undefined,
+        funding,
+      );
       return transaction.id;
     });
     if (id !== null) {
@@ -1017,6 +1067,7 @@ export async function restoreTransaction(
       key,
       'api',
       transactionId(id),
+      await fundingOf(trx, userId, id),
     );
     await restoreIouRows(trx, userId, id, copy.id, now);
     return copy.id;
@@ -1067,6 +1118,11 @@ export async function editTransaction(
         built.transaction,
       );
       await storeTransaction(trx, userId, reversal, [], null, 'api');
+      // An edit that does not say keeps the entry's funding.
+      const funding =
+        replacement.kind === 'expense'
+          ? (built.funding ?? (await fundingOf(trx, userId, id)))
+          : undefined;
       await storeTransaction(
         trx,
         userId,
@@ -1075,6 +1131,7 @@ export async function editTransaction(
         null,
         'api',
         transactionId(id),
+        funding,
       );
       await recordReplacement(trx, userId, id, replacement.id);
       return [reversal.id, replacement.id] as const;
@@ -1136,6 +1193,7 @@ export async function revertTransaction(
       null,
       'api',
       transactionId(current.id),
+      version.funding,
     );
     await recordReplacement(trx, userId, current.id, copy.id);
     return [reversal.id, copy.id] as const;

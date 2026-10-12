@@ -7,6 +7,7 @@ import {
 } from '@allotr/shared';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
 import { perDay } from './daily.ts';
+import { outsideEntries } from './funding.ts';
 import { totalOn } from './rates.ts';
 import { byCategory, type CategoryTotal } from './snapshot.ts';
 import type { LedgerView } from './types.ts';
@@ -69,19 +70,28 @@ export function rollUpCategories(
  * Spending (`expenses`) or income per category for entries dated from
  * `from` to `to`, in the default currency at the rate of `to`. A merged
  * category counts as the one it merged into. Currencies without a rate are
- * left out and named.
+ * left out and named. Entries paid with outside money (docs/domain.md
+ * "Funding") are apart: `own`, the default, leaves them out and `outside`
+ * is only them.
  */
 export function categoryTotalsBetween(
   view: LedgerView,
   range: Readonly<{ from: LocalDate; to: LocalDate }>,
   role: 'expenses' | 'income',
   mergedInto: ReadonlyMap<CategoryId, CategoryId> = new Map(),
+  funding: 'own' | 'outside' = 'own',
 ): Readonly<{ totals: SummaryCategoryNode[]; missingRates: CurrencyCode[] }> {
+  const outside = outsideEntries(view);
   const roleOf = (id: AccountId) => view.chart.get(id)?.systemRole ?? null;
   const sign = role === 'expenses' ? 1 : -1;
   const native = byCategory(
     view.ledger
-      .filter((t) => t.occurredOn >= range.from && t.occurredOn <= range.to)
+      .filter(
+        (t) =>
+          t.occurredOn >= range.from &&
+          t.occurredOn <= range.to &&
+          outside.has(t.id) === (funding === 'outside'),
+      )
       .flatMap((t) =>
         t.postings
           .filter((p) => roleOf(p.accountId) === role)
