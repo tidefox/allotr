@@ -6,6 +6,7 @@ import {
   categoryTotalsBetween,
   cyclePeriods,
   dailyAverage,
+  isEarnings,
   monthPeriods,
   rollUpCategories,
   savedBetween,
@@ -128,9 +129,17 @@ export async function categorySummary(
   );
   const currency = loaded.view.settings.defaultCurrency;
   const spendingGroups = rollUpCategories(spending.totals, parentOf);
-  const incomeGroups = rollUpCategories(income.totals, parentOf);
+  const incomeGroups = rollUpCategories(
+    income.totals.filter((total) => isEarnings(loaded.view, total.categoryId)),
+    parentOf,
+  );
+  const otherGroups = rollUpCategories(
+    income.totals.filter((total) => !isEarnings(loaded.view, total.categoryId)),
+    parentOf,
+  );
   const spendingTotal = categoryGroupsTotal(spendingGroups, currency);
   const incomeTotal = categoryGroupsTotal(incomeGroups, currency);
+  const otherInflowsTotal = categoryGroupsTotal(otherGroups, currency);
   const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
   const savings = savedBetween(loaded.view, { from, to });
   return {
@@ -139,8 +148,10 @@ export async function categorySummary(
     to,
     spending: view(spendingGroups, spendingTotal),
     income: view(incomeGroups, incomeTotal),
+    otherInflows: view(otherGroups, otherInflowsTotal),
     spendingTotal,
     incomeTotal,
+    otherInflowsTotal,
     days,
     dailyAverage: average,
     saved: savings.saved,

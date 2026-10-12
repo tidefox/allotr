@@ -16,6 +16,7 @@ const category = (
   kind: 'expense',
   parentId: null,
   isPaycheck: false,
+  incomeClass: 'earned',
   position: 1,
   colour: null,
   icon: null,

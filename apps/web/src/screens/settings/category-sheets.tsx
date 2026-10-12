@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type SyntheticEvent } from 'react';
 import {
+  incomeClassSchema,
   type CategoryColour,
   type CategoryIcon as CategoryIconKey,
   type CategoryView,
+  type IncomeClass,
   type TagView,
 } from '@allotr/shared';
 import {
@@ -113,6 +115,39 @@ function validName(value: string): string | undefined {
   return undefined;
 }
 
+/**
+ * What an income category is: earned and passive income count as earnings,
+ * gifts and refunds are other inflows. Not offered for a paycheck category,
+ * which is always earned.
+ */
+function IncomeClassField({
+  value,
+  onChange,
+}: {
+  value: IncomeClass;
+  onChange: (value: IncomeClass) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <ToggleGroup
+        label={t('settingsCategories.create.incomeClass')}
+        options={incomeClassSchema.options.map((id) => ({
+          id,
+          label: t(`settingsCategories.incomeClasses.${id}`),
+        }))}
+        value={value}
+        onChange={onChange}
+        className="flex-wrap self-start"
+      />
+      <p className="font-sans text-small text-text-muted">
+        {t('settingsCategories.create.incomeClass')}
+        {': '}
+        {t('settingsCategories.create.incomeClassHint')}
+      </p>
+    </div>
+  );
+}
+
 /** A new top-level category of a kind, or a subcategory of a parent. */
 export function CreateSheet({
   kind,
@@ -125,6 +160,9 @@ export function CreateSheet({
 }) {
   const [name, setName] = useState('');
   const [paycheck, setPaycheck] = useState<'yes' | 'no'>('no');
+  const [incomeClass, setIncomeClass] = useState<IncomeClass>(
+    parent?.incomeClass ?? 'earned',
+  );
   const [error, setError] = useState<string | undefined>();
   const save = useWrite(createCategory, categoryQueryKeys, onClose);
   const problem = save.isError ? describeProblem(save.error) : null;
@@ -138,6 +176,7 @@ export function CreateSheet({
       name: value,
       ...(parent === null ? { kind } : { parentId: parent.id }),
       isPaycheck: kind === 'income' && paycheck === 'yes',
+      ...(kind === 'income' && paycheck === 'no' ? { incomeClass } : {}),
     });
   };
   return (
@@ -181,6 +220,9 @@ export function CreateSheet({
             </p>
           </div>
         ) : null}
+        {kind === 'income' && paycheck === 'no' ? (
+          <IncomeClassField value={incomeClass} onChange={setIncomeClass} />
+        ) : null}
         <Failure
           message={
             problem === null ? null : t('settingsCategories.create.failed')
@@ -209,10 +251,16 @@ export function RenameSheet({
   const [paycheck, setPaycheck] = useState<'yes' | 'no'>(
     category.isPaycheck ? 'yes' : 'no',
   );
+  const [incomeClass, setIncomeClass] = useState<IncomeClass>(
+    category.incomeClass,
+  );
   const [error, setError] = useState<string | undefined>();
   const save = useWrite(
-    (body: { name?: string; isPaycheck?: boolean }) =>
-      updateCategory(category.id, body),
+    (body: {
+      name?: string;
+      isPaycheck?: boolean;
+      incomeClass?: IncomeClass;
+    }) => updateCategory(category.id, body),
     categoryQueryKeys,
     onClose,
   );
@@ -224,13 +272,22 @@ export function RenameSheet({
     setError(invalid);
     if (invalid !== undefined) return;
     const isPaycheck = paycheck === 'yes';
-    if (value === category.name && isPaycheck === category.isPaycheck) {
+    // A paycheck category is always earned; the server sets that itself.
+    const nextClass = isPaycheck ? category.incomeClass : incomeClass;
+    if (
+      value === category.name &&
+      isPaycheck === category.isPaycheck &&
+      nextClass === category.incomeClass
+    ) {
       onClose();
       return;
     }
     save.mutate({
       ...(value === category.name ? {} : { name: value }),
       ...(isPaycheck === category.isPaycheck ? {} : { isPaycheck }),
+      ...(isPaycheck || nextClass === category.incomeClass
+        ? {}
+        : { incomeClass: nextClass }),
     });
   };
   return (
@@ -267,6 +324,9 @@ export function RenameSheet({
               {t('settingsCategories.create.paycheckHint')}
             </p>
           </div>
+        ) : null}
+        {category.kind === 'income' && paycheck === 'no' ? (
+          <IncomeClassField value={incomeClass} onChange={setIncomeClass} />
         ) : null}
         <Failure
           message={

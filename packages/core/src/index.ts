@@ -304,6 +304,7 @@ export {
 export { goalMonthlyNeeded, goalProgressBp } from './projections/goals.ts';
 export { creditAvailable, creditNextDue } from './projections/credit.ts';
 export { savingsRate } from './projections/savings-rate.ts';
+export { incomeClassOf, isEarnings } from './projections/income-class.ts';
 export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {

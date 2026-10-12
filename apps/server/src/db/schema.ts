@@ -102,6 +102,7 @@ export interface Categories {
   default_account_id: string | null;
   icon: string | null;
   id: string;
+  income_class: Generated<string>;
   is_paycheck: Generated<number>;
   kind: string;
   merged_into_id: string | null;
@@ -290,6 +291,7 @@ export interface SignInFailures {
 export interface StarterCategories {
   colour: string | null;
   icon: string | null;
+  income_class: Generated<string>;
   is_paycheck: number;
   kind: string;
   name: string;

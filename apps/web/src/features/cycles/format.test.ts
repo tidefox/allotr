@@ -13,6 +13,7 @@ function category(
     kind: 'expense',
     parentId,
     isPaycheck: false,
+    incomeClass: 'earned',
     position: 0,
     colour: null,
     icon: null,

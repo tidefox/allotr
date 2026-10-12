@@ -81,6 +81,7 @@ function summary(report: CycleReport): CycleSummaryView {
     lastDay: report.lastDay,
     payday: cycle.payday,
     income: report.income,
+    otherInflows: report.otherInflows,
     spending: report.spending,
     leftover: report.leftover,
     savingsNetChange: report.savingsNetChange,

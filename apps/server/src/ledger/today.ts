@@ -9,8 +9,14 @@ import {
   type LedgerView,
   type TransactionId,
 } from '@allotr/core';
-import { localDateIn, money, type Money, type TodayView } from '@allotr/shared';
-import type { Kysely } from 'kysely';
+import {
+  localDateIn,
+  money,
+  type IncomeClass,
+  type Money,
+  type TodayView,
+} from '@allotr/shared';
+import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { loadBills } from './bills.ts';
 import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
@@ -45,6 +51,36 @@ async function paycheckCategories(
   return new Set(rows.map((row) => categoryId(row.id)));
 }
 
+// The income categories that are not earned income. A category merged into
+// another one takes the class of the one it merged into, so merging never
+// reshapes past cycles either.
+async function incomeClasses(
+  db: Db,
+  userId: string,
+): Promise<Map<CategoryId, IncomeClass>> {
+  const rows = await db
+    .selectFrom('categories as c')
+    .leftJoin('categories as m', (join) =>
+      join
+        .onRef('m.id', '=', 'c.merged_into_id')
+        .onRef('m.user_id', '=', 'c.user_id'),
+    )
+    .select([
+      'c.id',
+      sql<string>`coalesce(m.income_class, c.income_class)`.as('income_class'),
+    ])
+    .where('c.user_id', '=', userId)
+    .where('c.kind', '=', 'income')
+    .execute();
+  return new Map(
+    rows.flatMap((row) =>
+      row.income_class === 'earned'
+        ? []
+        : [[categoryId(row.id), row.income_class as IncomeClass] as const],
+    ),
+  );
+}
+
 // The entries reconciling posted to make up a difference, which pace
 // leaves out (docs/domain.md "Daily usable"). Found by the reconciliation
 // that recorded them, not by category, so renaming or merging the
@@ -74,6 +110,7 @@ export async function loadView(
     settings,
     user,
     paychecks,
+    classes,
     bills,
     rates,
     importedFrom,
@@ -89,6 +126,7 @@ export async function loadView(
       .where('id', '=', userId)
       .executeTakeFirstOrThrow(),
     paycheckCategories(db, userId),
+    incomeClasses(db, userId),
     loadBills(db, userId),
     loadRates(db, userId),
     readLedgerStart(db, userId),
@@ -102,6 +140,7 @@ export async function loadView(
     chart,
     ledger: await loadLedger(db, userId, chart),
     paycheckCategories: paychecks,
+    incomeClasses: classes,
     settings: {
       defaultCurrency: settings.defaultCurrency,
       // The first cycle opens on the day the user joined, or with the

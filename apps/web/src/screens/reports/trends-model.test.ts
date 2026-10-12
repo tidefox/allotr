@@ -19,6 +19,7 @@ const category = (id: string): CategoryView => ({
   kind: 'expense',
   parentId: null,
   isPaycheck: false,
+  incomeClass: 'earned',
   position: 0,
   colour: null,
   icon: null,

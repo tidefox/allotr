@@ -120,6 +120,43 @@ describe('resolveBundle', () => {
     expect([...r.paycheckFlags.values()]).toEqual([true, false]);
   });
 
+  it('accepts an income class on a new income category only', () => {
+    const ok = resolveBundle(
+      bundle({
+        categories: [
+          { name: 'Prizes', kind: 'income', incomeClass: 'gift' },
+          { name: 'Cashback', kind: 'income', incomeClass: 'refund' },
+        ],
+      }),
+      starters,
+    );
+    expect(ok.errors).toEqual([]);
+    expect(ok.toCreate).toHaveLength(2);
+
+    const expense = resolveBundle(
+      bundle({
+        categories: [{ name: 'Toys', kind: 'expense', incomeClass: 'gift' }],
+      }),
+      starters,
+    );
+    expect(expense.errors).toHaveLength(1);
+
+    const paycheck = resolveBundle(
+      bundle({
+        categories: [
+          {
+            name: 'Salary',
+            kind: 'income',
+            isPaycheck: true,
+            incomeClass: 'passive',
+          },
+        ],
+      }),
+      starters,
+    );
+    expect(paycheck.errors).toHaveLength(1);
+  });
+
   it('creates new parents before their children', () => {
     const r = resolveBundle(
       bundle({

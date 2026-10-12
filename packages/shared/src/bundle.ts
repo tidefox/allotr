@@ -7,6 +7,7 @@ import {
   budgetGroupSchema,
   categoryKindSchema,
   createAccountBodySchema,
+  incomeClassSchema,
   paydayRuleSchema,
 } from './ledger.ts';
 import {
@@ -52,6 +53,12 @@ const categorySchema = z.strictObject({
   kind: categoryKindSchema.optional(),
   /** New categories default to false; a match keeps its own. */
   isPaycheck: z.boolean().optional(),
+  /**
+   * Only used when the category is created; a match keeps its own. Only an
+   * income category can be anything but earned. Omitted, a new category
+   * takes its parent's class, else `earned`.
+   */
+  incomeClass: incomeClassSchema.optional(),
   /** Only used when the category is created; a match keeps its own. */
   colour: categoryColourSchema.optional(),
   icon: categoryIconSchema.optional(),

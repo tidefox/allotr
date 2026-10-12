@@ -126,6 +126,7 @@ describe('savingsCycles', () => {
       lastDay: closedOn ?? '2026-05-10',
       payday: '2026-06-01',
       income: usd(0),
+      otherInflows: usd(0),
       spending: usd(0),
       leftover: usd(0),
       savingsNetChange: usd(total - 100_000),

@@ -24198,6 +24198,15 @@
                           "isPaycheck": {
                             "type": "boolean"
                           },
+                          "incomeClass": {
+                            "type": "string",
+                            "enum": [
+                              "earned",
+                              "passive",
+                              "gift",
+                              "refund"
+                            ]
+                          },
                           "position": {
                             "type": "integer"
                           },
@@ -24290,6 +24299,7 @@
                           "kind",
                           "parentId",
                           "isPaycheck",
+                          "incomeClass",
                           "position",
                           "colour",
                           "icon",
@@ -24505,6 +24515,15 @@
                     "type": "boolean",
                     "default": false
                   },
+                  "incomeClass": {
+                    "type": "string",
+                    "enum": [
+                      "earned",
+                      "passive",
+                      "gift",
+                      "refund"
+                    ]
+                  },
                   "position": {
                     "type": "integer",
                     "minimum": 0,
@@ -24619,6 +24638,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -24711,6 +24739,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -24996,6 +25025,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -25088,6 +25126,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -25303,6 +25342,15 @@
                   "isPaycheck": {
                     "type": "boolean"
                   },
+                  "incomeClass": {
+                    "type": "string",
+                    "enum": [
+                      "earned",
+                      "passive",
+                      "gift",
+                      "refund"
+                    ]
+                  },
                   "position": {
                     "type": "integer",
                     "minimum": 0,
@@ -25422,6 +25470,15 @@
                     "isPaycheck": {
                       "type": "boolean"
                     },
+                    "incomeClass": {
+                      "type": "string",
+                      "enum": [
+                        "earned",
+                        "passive",
+                        "gift",
+                        "refund"
+                      ]
+                    },
                     "position": {
                       "type": "integer"
                     },
@@ -25514,6 +25571,7 @@
                     "kind",
                     "parentId",
                     "isPaycheck",
+                    "incomeClass",
                     "position",
                     "colour",
                     "icon",
@@ -34298,6 +34356,22 @@
                               "currency"
                             ]
                           },
+                          "otherInflows": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "spending": {
                             "type": "object",
                             "properties": {
@@ -34386,6 +34460,7 @@
                           "lastDay",
                           "payday",
                           "income",
+                          "otherInflows",
                           "spending",
                           "leftover",
                           "savingsNetChange",
@@ -34925,6 +35000,22 @@
                         "currency"
                       ]
                     },
+                    "otherInflows": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "spending": {
                       "type": "object",
                       "properties": {
@@ -35290,6 +35381,7 @@
                     "lastDay",
                     "payday",
                     "income",
+                    "otherInflows",
                     "spending",
                     "leftover",
                     "savingsNetChange",
@@ -36102,6 +36194,91 @@
                         ]
                       }
                     },
+                    "otherInflows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "shareBp": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          },
+                          "children": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "categoryId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "shareBp": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 10000
+                                }
+                              },
+                              "required": [
+                                "categoryId",
+                                "amount",
+                                "shareBp"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "categoryId",
+                          "amount",
+                          "shareBp",
+                          "children"
+                        ]
+                      }
+                    },
                     "spendingTotal": {
                       "type": "object",
                       "properties": {
@@ -36119,6 +36296,22 @@
                       ]
                     },
                     "incomeTotal": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "otherInflowsTotal": {
                       "type": "object",
                       "properties": {
                         "amountMinor": {
@@ -36321,8 +36514,10 @@
                     "to",
                     "spending",
                     "income",
+                    "otherInflows",
                     "spendingTotal",
                     "incomeTotal",
+                    "otherInflowsTotal",
                     "days",
                     "dailyAverage",
                     "saved",
@@ -44672,6 +44867,15 @@
                         "isPaycheck": {
                           "type": "boolean"
                         },
+                        "incomeClass": {
+                          "type": "string",
+                          "enum": [
+                            "earned",
+                            "passive",
+                            "gift",
+                            "refund"
+                          ]
+                        },
                         "colour": {
                           "type": "string",
                           "enum": [
@@ -46692,6 +46896,15 @@
                           },
                           "isPaycheck": {
                             "type": "boolean"
+                          },
+                          "incomeClass": {
+                            "type": "string",
+                            "enum": [
+                              "earned",
+                              "passive",
+                              "gift",
+                              "refund"
+                            ]
                           },
                           "colour": {
                             "type": "string",

@@ -8,6 +8,8 @@ export const reportsSummary = {
   stats: {
     spent: 'spent {period}',
     income: 'income',
+    otherInflows: 'other inflows',
+    otherInflowsSub: 'gifts and refunds, not counted as income',
     saved: 'saved',
     average: 'daily avg',
     inclBills: 'incl. {amount} bills',

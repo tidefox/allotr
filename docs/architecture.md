@@ -435,6 +435,8 @@ off budget (its `budgetGroup` is the group it started in), and
 (`account_not_empty`). `reconciliations: [{account, on, stated, computed,
 adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
+`incomeClass` (`earned`, `passive`, `gift` or `refund`; an income category
+only, default its parent's class, else `earned`) and
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
 `packages/shared/src/category-style.ts`); a match keeps its own style. Accounts may carry `colour`, `icon`,
 `creditLimit`, `dueDay` and `minPayment` (credit accounts only), `subtype`,

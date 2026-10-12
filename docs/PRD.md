@@ -133,6 +133,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-C12 | Cover: when spending passes what its budget has left, the shortfall is covered automatically in the user's cover order (free money, then the Buffer, then budgets from lowest priority up; bills never). The daily number goes negative only when everything is used. The entry sheet previews the cover, with a second tap when it reaches set-aside money; the user can change an entry's cover later; refunds and repayments refill what the cover took, in reverse order. | M | v2 |
 | FR-C13 | Payday sheet: the savings line first (a fixed amount or a percentage of the paycheck), then budgets prefilled from this period or suggested from average spending per category over past cycles, confirmed in one step. | M | v2 |
 | FR-C14 | Emergency fund target (3 to 6 months of average expenses) with progress, net worth with a daily series, and weekly review figures. | S | v2 |
+| FR-C15 | Income classes: an income category is earned, passive, a gift or a refund. Reports and the savings rate count earnings; gifts and refunds are shown as other inflows. Balances and the daily number are unchanged. | M | v2 |
 
 ### 6.3 Input and chat
 

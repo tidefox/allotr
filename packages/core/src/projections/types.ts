@@ -2,6 +2,7 @@ import type {
   CurrencyCode,
   LocalDate,
   Money,
+  IncomeClass,
   PaydayRule,
   Rate,
 } from '@allotr/shared';
@@ -92,6 +93,12 @@ export type LedgerView = Readonly<{
   ledger: readonly Transaction[];
   /** Income categories whose entries are paychecks. */
   paycheckCategories: ReadonlySet<CategoryId>;
+  /**
+   * The income categories that are not earned income (`passive` counts as
+   * earnings, `gift` and `refund` do not). A category not listed is earned.
+   * None when omitted.
+   */
+  incomeClasses?: ReadonlyMap<CategoryId, IncomeClass>;
   settings: LedgerSettings;
   bills: readonly Bill[];
   rates: readonly ExchangeRate[];
