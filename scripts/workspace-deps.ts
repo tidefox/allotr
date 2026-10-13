@@ -1,10 +1,11 @@
-// Dependency direction: apps/* → parser → core → shared (AGENTS.md "Layout").
+// Dependency direction: apps/* → store, parser → core → shared (AGENTS.md "Layout").
 // Apps may use any package but never another app; packages only use the
 // packages listed below them.
 const allowedPackageDeps: Readonly<Record<string, readonly string[]>> = {
   '@allotr/shared': [],
   '@allotr/core': ['@allotr/shared'],
   '@allotr/parser': ['@allotr/core', '@allotr/shared'],
+  '@allotr/store': ['@allotr/core', '@allotr/shared'],
 };
 
 export interface Workspace {

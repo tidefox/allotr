@@ -34,7 +34,7 @@ import {
   type WriteOffBody,
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { RequestProblem } from './domain-errors.ts';
 import { coverPreviewView } from './budgets.ts';
 import {

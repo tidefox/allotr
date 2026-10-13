@@ -22,7 +22,7 @@ import {
 import { defaultWriteOffAfterDays } from '@allotr/core';
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { RequestProblem } from './domain-errors.ts';
 import type { Db } from './store.ts';
 

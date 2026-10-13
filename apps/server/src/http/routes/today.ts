@@ -7,8 +7,8 @@ import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
   readLedgerSettings,
   updateLedgerSettings,
-} from '../../ledger/ledger-settings.ts';
-import { todayFigures } from '../../ledger/today.ts';
+  todayFigures,
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

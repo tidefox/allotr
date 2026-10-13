@@ -1,6 +1,6 @@
 import { instanceSettingsSchema, type InstanceSettings } from '@allotr/shared';
 import type { Kysely } from 'kysely';
-import type { DB } from './db/schema.ts';
+import type { DB } from '@allotr/store';
 
 // Admin-managed settings in instance_settings (docs/architecture.md §7).
 // Each key holds a JSON value; missing keys fall back to the defaults.

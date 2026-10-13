@@ -76,6 +76,7 @@ export default tseslint.config(
       'apps/**/*.{ts,tsx}',
       'packages/core/**/*.ts',
       'packages/parser/**/*.ts',
+      'packages/store/**/*.ts',
     ],
     rules: {
       'no-restricted-syntax': [

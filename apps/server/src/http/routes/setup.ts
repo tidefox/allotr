@@ -1,6 +1,6 @@
 import { setupSchema } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import { readSetup, saveSetup } from '../../setup.ts';
+import { readSetup, saveSetup } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import {
   forbidden,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { createTestDatabase } from '../testing/database.ts';
 import { defaultAuthLimits } from './limits.ts';
 import {

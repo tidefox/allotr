@@ -6,7 +6,7 @@ import {
   describeDomainError,
   RequestProblem,
   type ProblemStatus,
-} from '../ledger/domain-errors.ts';
+} from '@allotr/store';
 
 export type { ProblemStatus };
 

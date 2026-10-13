@@ -1,6 +1,6 @@
 import type { Kysely } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { DB } from './db/schema.ts';
+import type { DB } from '@allotr/store';
 import type { TestClient, TestResponse } from './testing/http-client.ts';
 import { startWithTwoUsers, userIdOf, type TwoUsers } from './testing/users.ts';
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import type { Logger } from '../logger.ts';
 import {
   sendWebPush,

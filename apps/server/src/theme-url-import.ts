@@ -4,8 +4,7 @@ import {
   type ThemeFileV2,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
-import type { DB } from './db/schema.ts';
-import { RequestProblem } from './ledger/domain-errors.ts';
+import { type DB, RequestProblem } from '@allotr/store';
 import { readSettings } from './settings.ts';
 import { ThemeUrlError, type ThemeUrlRefusal } from './theme-url.ts';
 

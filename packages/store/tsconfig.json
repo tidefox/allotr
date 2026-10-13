@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Web platform globals (TextEncoder, crypto) are what the store may use
+    // on every runtime; @types/node is only for tests, and ESLint forbids
+    // node:* imports in sources.
+    "lib": ["es2024", "dom"],
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

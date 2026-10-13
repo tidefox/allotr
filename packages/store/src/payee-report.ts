@@ -5,7 +5,7 @@ import {
   type PayeeReportView,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { resolveReportPeriod } from './report-period.ts';
 import { loadView } from './today.ts';
 

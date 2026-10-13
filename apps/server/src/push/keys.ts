@@ -1,6 +1,6 @@
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { generateVapidKeys, type VapidKeys } from './web-push.ts';
 
 // The instance's VAPID key pair (ADR 0024), generated the first time the

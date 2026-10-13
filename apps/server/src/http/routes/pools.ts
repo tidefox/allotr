@@ -9,12 +9,7 @@ import {
   updatePoolBodySchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import {
-  createPool,
-  listPools,
-  moveAccount,
-  updatePool,
-} from '../../ledger/pools.ts';
+import { createPool, listPools, moveAccount, updatePool } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

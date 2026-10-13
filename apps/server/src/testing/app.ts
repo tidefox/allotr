@@ -2,7 +2,7 @@ import type { Kysely } from 'kysely';
 import { createAuth } from '../auth/auth.ts';
 import { defaultAuthLimits } from '../auth/limits.ts';
 import type { Config } from '../config.ts';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { createApp } from '../http/app.ts';
 import { createLogger } from '../logger.ts';
 import { createPushService } from '../push/service.ts';

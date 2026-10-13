@@ -1,15 +1,55 @@
 import { LedgerError, type LedgerErrorCode } from '@allotr/core';
 import { DateError, MoneyError } from '@allotr/shared';
-import type {
-  ClientErrorStatusCode,
-  ServerErrorStatusCode,
-} from 'hono/utils/http-status';
 
 // Domain errors from core and shared become problem details with the error's
 // stable code, minus its namespace (code-style rule "Errors").
 
-/** An error status the API can answer with (types only, no HTTP code). */
-export type ProblemStatus = ClientErrorStatusCode | ServerErrorStatusCode;
+/**
+ * An error status the API can answer with (types only, no HTTP code). The
+ * members match the 4xx and 5xx unions of the HTTP framework, so the server
+ * can pass one straight to it.
+ */
+export type ProblemStatus =
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 405
+  | 406
+  | 407
+  | 408
+  | 409
+  | 410
+  | 411
+  | 412
+  | 413
+  | 414
+  | 415
+  | 416
+  | 417
+  | 418
+  | 421
+  | 422
+  | 423
+  | 424
+  | 425
+  | 426
+  | 428
+  | 429
+  | 431
+  | 451
+  | 500
+  | 501
+  | 502
+  | 503
+  | 504
+  | 505
+  | 506
+  | 507
+  | 508
+  | 510
+  | 511;
 
 const ledgerStatus: Record<LedgerErrorCode, ProblemStatus> = {
   'ledger.unbalanced': 400,

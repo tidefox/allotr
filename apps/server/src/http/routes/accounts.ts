@@ -21,8 +21,8 @@ import {
   getAccount,
   listAccounts,
   updateAccount,
-} from '../../ledger/accounts.ts';
-import { reconcileAccount } from '../../ledger/reconcile.ts';
+  reconcileAccount,
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

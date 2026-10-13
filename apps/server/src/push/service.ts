@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { createSender, type PushSender } from './delivery.ts';
 import { ensureVapidKeys } from './keys.ts';
 

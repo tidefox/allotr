@@ -16,12 +16,23 @@ const parser: Workspace = {
   kind: 'package',
   dependencies: ['@allotr/core', '@allotr/shared'],
 };
+const store: Workspace = {
+  name: '@allotr/store',
+  kind: 'package',
+  dependencies: ['@allotr/core', '@allotr/shared'],
+};
 const server: Workspace = {
   name: '@allotr/server',
   kind: 'app',
-  dependencies: ['@allotr/parser', '@allotr/core', '@allotr/shared', 'hono'],
+  dependencies: [
+    '@allotr/parser',
+    '@allotr/store',
+    '@allotr/core',
+    '@allotr/shared',
+    'hono',
+  ],
 };
-const valid = [shared, core, parser, server];
+const valid = [shared, core, parser, store, server];
 
 describe('findViolations', () => {
   it('accepts the documented direction', () => {
@@ -39,6 +50,20 @@ describe('findViolations', () => {
     const coupled = { ...shared, dependencies: ['@allotr/core'] };
     expect(findViolations([coupled, core])).toEqual([
       '@allotr/shared must not depend on @allotr/core; allowed: none',
+    ]);
+  });
+
+  it('rejects the store depending on the parser', () => {
+    const coupled = { ...store, dependencies: ['@allotr/parser'] };
+    expect(findViolations([shared, core, parser, coupled, server])).toEqual([
+      '@allotr/store must not depend on @allotr/parser; allowed: @allotr/core, @allotr/shared',
+    ]);
+  });
+
+  it('rejects the parser depending on the store', () => {
+    const coupled = { ...parser, dependencies: ['@allotr/store'] };
+    expect(findViolations([shared, core, coupled, store, server])).toEqual([
+      '@allotr/parser must not depend on @allotr/store; allowed: @allotr/core, @allotr/shared',
     ]);
   });
 

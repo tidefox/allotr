@@ -1,4 +1,5 @@
-// Regenerates src/db/schema.ts from the migrations with kysely-codegen.
+// Regenerates packages/store/src/schema.ts from the migrations with
+// kysely-codegen.
 // `--verify` fails instead of writing when the committed file is stale.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -27,7 +28,7 @@ try {
     [
       '--dialect=sqlite',
       `--url=${databasePath}`,
-      `--out-file=${join(root, 'src/db/schema.ts')}`,
+      `--out-file=${join(root, '../../packages/store/src/schema.ts')}`,
       ...process.argv.slice(2).filter((arg) => arg === '--verify'),
     ],
     { cwd: root, stdio: 'inherit' },
