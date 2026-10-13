@@ -41,13 +41,15 @@ rules are in [domain.md](domain.md); the reasons for each choice are in the
 | `packages/core` | Domain types, ledger, projections, policy strategies, invariants | Pure TypeScript, **no I/O**. Fully unit- and property-tested |
 | `packages/parser` | Command grammar, alias resolution, LLM prompt and output schema | Depends on `core` and `shared` only |
 | `packages/shared` | Zod schemas, money and currency utilities, ISO 4217 table | Single source for HTTP, OpenAPI, MCP and LLM schemas |
-| `apps/server` | HTTP API, auth, persistence, scheduler, AI module, serves the web build | Only component with database access |
+| `packages/store` | Ledger persistence: Kysely queries, entry ordering, imports and exports, reports, generated schema types | Depends on `core` and `shared` only. Takes a `Kysely<DB>`; no database driver, HTTP framework, auth or `node:*` imports, so the dialect is the caller's choice |
+| `apps/server` | HTTP API, auth, database driver and migrations, scheduler, AI module, serves the web build | Only app with database access; opens SQLite and hands the store a `Kysely<DB>` |
 | `apps/gateway` | Platform adapters (Discord, Telegram, …) | Uses the public API only; no database, no domain logic |
 | `apps/web` | React SPA/PWA | Talks to the API; no business rules beyond display |
 | `apps/cli` | Import/export, backup/restore, admin, stdio MCP bridge | Uses the API or `core` + database through the server's modules |
 
-Dependency direction: `apps/* → packages/parser → packages/core →
-packages/shared`. Nothing depends on an app.
+Dependency direction: `apps/* → packages/store | packages/parser →
+packages/core → packages/shared`. Nothing depends on an app; `store` and
+`parser` do not depend on each other.
 
 ## 3. Technology stack
 
@@ -634,7 +636,7 @@ See [SECURITY.md](../SECURITY.md) for the threat model. Architectural rules:
 
 ```
 allotr/
-├─ packages/  core/  parser/  shared/
+├─ packages/  core/  parser/  shared/  store/
 ├─ apps/      server/  web/  gateway/  cli/
 ├─ migrations/                 forward-only SQL
 ├─ testdata/  golden/  eval/  synthetic/   (private/ is git-ignored)

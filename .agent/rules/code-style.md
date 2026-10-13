@@ -19,7 +19,8 @@ Tooling enforces most of this; the rest is on you.
   with Zod schemas from `packages/shared`.
 - `packages/core` has no I/O: no database, network, filesystem, clock or
   randomness. Pass time (`now`, the user's timezone) and IDs in.
-- Only `apps/server` talks to the database, through Kysely.
+- Only `packages/store` and `apps/server` talk to the database, through
+  Kysely: the store holds the queries, the server owns the driver.
 - Gateways and the web app use the public API only.
 
 ## Dates and time

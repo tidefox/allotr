@@ -87,7 +87,8 @@ Target (created during M0), see [architecture.md §10](docs/architecture.md#10-r
 packages/core        domain, policies, invariants — pure, no I/O
 packages/parser      grammar, aliases, LLM schema
 packages/shared      Zod schemas, money and currency utilities
-apps/server          API, auth, persistence, scheduler, AI module
+packages/store       ledger persistence: Kysely queries, imports, exports, reports
+apps/server          API, auth, database driver, scheduler, AI module
 apps/web             React PWA
 apps/gateway         chat platform adapters (public API only)
 apps/cli             import/export, backup, admin
@@ -95,8 +96,9 @@ migrations/          forward-only SQL
 testdata/            golden/, eval/, synthetic/ (private/ is git-ignored)
 ```
 
-Dependency direction: `apps/* → parser → core → shared`. Never import from an
-app, and never give `core` I/O.
+Dependency direction: `apps/* → store | parser → core → shared`. Never import
+from an app, never give `core` I/O, and keep `store` free of Node-only APIs
+(it takes a `Kysely<DB>`; the driver belongs to the app).
 
 ## Commands
 
