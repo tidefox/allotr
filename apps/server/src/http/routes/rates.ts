@@ -6,7 +6,7 @@ import {
   listRatesQuerySchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import { deleteRate, listRates, putRate } from '../../ledger/rates.ts';
+import { deleteRate, listRates, putRate } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

@@ -7,7 +7,7 @@ import {
   updateGoalBodySchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import { createGoal, listGoals, updateGoal } from '../../ledger/goals.ts';
+import { createGoal, listGoals, updateGoal } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

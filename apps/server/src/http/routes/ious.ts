@@ -27,7 +27,7 @@ import {
   recordRepayment,
   updateIou,
   writeOffIou,
-} from '../../ledger/ious.ts';
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

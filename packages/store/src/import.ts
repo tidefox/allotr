@@ -8,8 +8,8 @@ import type {
   Money,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
-import { finishSetup } from '../setup.ts';
+import type { DB } from './schema.ts';
+import { finishSetup } from './setup.ts';
 import { atPath, isDomainError, RequestProblem } from './domain-errors.ts';
 import { insertAccount } from './accounts.ts';
 import { insertBill, insertBillPayment } from './bills.ts';

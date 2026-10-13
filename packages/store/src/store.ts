@@ -31,7 +31,7 @@ import {
   type LocalTime,
 } from '@allotr/shared';
 import type { Kysely, Transaction as KyselyTransaction } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { currentClient } from './client.ts';
 import { placeNewEntry } from './entry-order.ts';
 import { newId } from './ids.ts';

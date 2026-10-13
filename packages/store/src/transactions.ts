@@ -27,7 +27,7 @@ import type {
 } from '@allotr/shared';
 import { isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { decodeBase64Url, encodeBase64Url } from './base64url.ts';
 import { atPath, RequestProblem } from './domain-errors.ts';
 import {

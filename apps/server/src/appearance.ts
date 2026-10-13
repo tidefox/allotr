@@ -34,8 +34,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely, Transaction } from 'kysely';
 import { z } from 'zod';
-import type { DB } from './db/schema.ts';
-import { RequestProblem } from './ledger/domain-errors.ts';
+import { type DB, RequestProblem } from '@allotr/store';
 
 // A user's appearance settings and custom themes (FR-W5, ADR 0016), each
 // kept as one JSON value in user_settings. A value that no longer parses

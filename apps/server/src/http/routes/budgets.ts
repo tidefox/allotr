@@ -21,7 +21,7 @@ import {
   setCoverOrder,
   setCoverOverride,
   updateBudget,
-} from '../../ledger/budgets.ts';
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

@@ -4,7 +4,7 @@ import { twoFactor } from 'better-auth/plugins';
 import { MAX_PASSWORD_LENGTH } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { Config } from '../config.ts';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import type { Logger } from '../logger.ts';
 import { readSettings } from '../settings.ts';
 import type { AuthLimits } from './limits.ts';

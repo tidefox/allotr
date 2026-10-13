@@ -258,6 +258,9 @@ importers:
       '@allotr/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@allotr/store':
+        specifier: workspace:*
+        version: link:../../packages/store
       '@hono/node-server':
         specifier: 2.1.3
         version: 2.1.3(hono@4.13.13)
@@ -425,6 +428,31 @@ importers:
       fast-check:
         specifier: 'catalog:'
         version: 4.10.2
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.1)(vite@8.3.2(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/store:
+    dependencies:
+      '@allotr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@allotr/shared':
+        specifier: workspace:*
+        version: link:../shared
+      kysely:
+        specifier: 0.29.6
+        version: 0.29.6
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

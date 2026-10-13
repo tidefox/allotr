@@ -14,7 +14,7 @@ import {
   getCategory,
   listCategories,
   updateCategory,
-} from '../../ledger/categories.ts';
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

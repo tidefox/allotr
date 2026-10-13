@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { payeeKey } from '@allotr/core';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect } from 'kysely';
-import type { DB } from './schema.ts';
+import type { DB } from '@allotr/store';
 
 // ADR 0004: WAL, foreign keys on, STRICT tables (declared in migrations).
 export function openSqlite(path: string): Database.Database {

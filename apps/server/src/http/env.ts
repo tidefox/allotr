@@ -3,7 +3,7 @@ import type { Kysely } from 'kysely';
 import type { Auth } from '../auth/auth.ts';
 import type { AuthLimits } from '../auth/limits.ts';
 import type { Config } from '../config.ts';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import type { Logger } from '../logger.ts';
 import type { PushService } from '../push/service.ts';
 

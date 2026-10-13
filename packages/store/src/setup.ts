@@ -1,5 +1,5 @@
 import { setupSchema, type SetupState } from '@allotr/shared';
-import type { Db } from './ledger/store.ts';
+import type { Db } from './store.ts';
 
 // Where a user is in setup after first sign-in (FR-W7), kept as one JSON
 // value in user_settings. It cannot be worked out from the ledger: the

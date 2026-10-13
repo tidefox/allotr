@@ -6,7 +6,7 @@ import {
   ensureSystemAccounts,
   loadChart,
   newEntry,
-} from './ledger/store.ts';
+} from '@allotr/store';
 import {
   createClient,
   type TestClient,

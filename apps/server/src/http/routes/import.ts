@@ -1,8 +1,7 @@
 import { bundleSchema, importResultSchema } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import { bodyLimit } from 'hono/body-limit';
-import { importBundle } from '../../ledger/import.ts';
-import { pointer } from '../../ledger/import-resolve.ts';
+import { importBundle, pointer } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

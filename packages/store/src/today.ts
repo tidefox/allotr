@@ -17,7 +17,7 @@ import {
   type TodayView,
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { loadBills } from './bills.ts';
 import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';

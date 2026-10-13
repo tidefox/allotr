@@ -1,7 +1,7 @@
 import type { SessionUser } from '@allotr/shared';
 import { APIError } from 'better-auth/api';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import type { Auth } from './auth.ts';
 import { normaliseEmail } from './lockout.ts';
 

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect } from 'vitest';
 import type { Kysely } from 'kysely';
 import { defaultAuthLimits } from '../auth/limits.ts';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { createKysely, openSqlite } from '../db/sqlite.ts';
 import { createLogger } from '../logger.ts';
 import type { PushSender } from '../push/delivery.ts';

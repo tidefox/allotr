@@ -16,7 +16,7 @@ import {
   payBill,
   unpayBill,
   updateBill,
-} from '../../ledger/bills.ts';
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

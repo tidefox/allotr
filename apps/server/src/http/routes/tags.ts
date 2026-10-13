@@ -5,7 +5,7 @@ import {
   tagSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import { createTag, listTags, renameTag } from '../../ledger/tags.ts';
+import { createTag, listTags, renameTag } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

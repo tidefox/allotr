@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import type { Kysely } from 'kysely';
 import { migrate } from '../db/migrate.ts';
-import type { DB } from '../db/schema.ts';
+import type { DB } from '@allotr/store';
 import { createKysely, openSqlite } from '../db/sqlite.ts';
 
 export const repoMigrations = join(

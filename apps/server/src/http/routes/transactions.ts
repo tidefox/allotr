@@ -20,8 +20,8 @@ import {
   restoreTransaction,
   revertTransaction,
   reverseTransaction,
-} from '../../ledger/transactions.ts';
-import { getTransactionDetail } from '../../ledger/transaction-budget.ts';
+  getTransactionDetail,
+} from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {

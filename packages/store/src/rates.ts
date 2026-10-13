@@ -9,7 +9,7 @@ import {
   type Rate,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import { RequestProblem } from './domain-errors.ts';
 import { userToday, type Db } from './store.ts';
 import { newId } from './ids.ts';

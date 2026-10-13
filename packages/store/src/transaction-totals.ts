@@ -7,7 +7,7 @@ import {
 } from '@allotr/core';
 import { currencyCode, type CurrencyCode } from '@allotr/shared';
 import { sql, type SelectQueryBuilder } from 'kysely';
-import type { DB } from '../db/schema.ts';
+import type { DB } from './schema.ts';
 import type { Db } from './store.ts';
 
 // Totals of the entries a transaction filter matches, added up by the
