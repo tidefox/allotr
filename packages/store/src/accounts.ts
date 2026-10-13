@@ -79,7 +79,7 @@ function nameTaken(): RequestProblem {
 
 type LedgerState = {
   chart: Chart;
-  ledger: Transaction[];
+  ledger: readonly Transaction[];
   today: LocalDate;
   /** What core reads to tell which pool and group each account is in. */
   pools: PoolInputs;

@@ -20,14 +20,17 @@ import { sql, type Kysely } from 'kysely';
 import type { DB } from './schema.ts';
 import { loadBills } from './bills.ts';
 import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
+import { cachedLoad } from './ledger-cache.ts';
 import { loadRates } from './rates.ts';
 import { loadBudgetSetup } from './budgets.ts';
 import { loadIouSetup } from './iou-setup.ts';
 import { loadChart, loadLedger, loadPoolSetup, type Db } from './store.ts';
 
 // Today's figures (FR-C4, FR-C5): everything core's projections read,
-// loaded in one read transaction and computed fresh on every request, so a
-// back-dated entry, a new rate or a settings change shows at once.
+// loaded in one read transaction. The load is kept between writes
+// (ledger-cache.ts) and the figures are computed fresh for the supplied
+// "now" on every request, so a back-dated entry, a new rate or a settings
+// change shows at once.
 
 // A category merged into a paycheck category still marks paychecks, so
 // merging never reshapes past cycles.
@@ -115,8 +118,19 @@ async function outsideFunded(
   return new Set(rows.map((row) => transactionId(row.id)));
 }
 
-/** Everything core's projections read, and the user's time zone. */
-export async function loadView(
+/**
+ * Everything core's projections read, and the user's time zone. Nothing in
+ * it depends on the date, so it is kept between writes and shared between
+ * requests, frozen (ledger-cache.ts).
+ */
+export function loadView(
+  db: Db,
+  userId: string,
+): Promise<{ view: LedgerView; timeZone: string }> {
+  return cachedLoad(db, userId, 'view', null, () => readView(db, userId));
+}
+
+async function readView(
   db: Db,
   userId: string,
 ): Promise<{ view: LedgerView; timeZone: string }> {

@@ -21,6 +21,7 @@ export * from './import.ts';
 export * from './iou-links.ts';
 export * from './iou-setup.ts';
 export * from './ious.ts';
+export * from './ledger-cache.ts';
 export * from './ledger-settings.ts';
 export * from './payee-report.ts';
 export * from './plan.ts';
