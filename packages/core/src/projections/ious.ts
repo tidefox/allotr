@@ -1,3 +1,4 @@
+import { reversedIds } from '../ledger/indexes.ts';
 import {
   addDays,
   daysBetween,
@@ -7,7 +8,7 @@ import {
   type Money,
 } from '@allotr/shared';
 import type { IouDirection } from '../ledger/ious.ts';
-import type { Transaction, TransactionId } from '../ledger/types.ts';
+import type { TransactionId } from '../ledger/types.ts';
 import type { BudgetReturn } from './budgets.ts';
 import { totalOn } from './rates.ts';
 import type { LedgerView } from './types.ts';
@@ -74,12 +75,6 @@ export function loanKey(origin: TransactionId): TransactionId {
   return `${origin}#loan` as TransactionId;
 }
 
-function reversedSet(ledger: readonly Transaction[]): Set<TransactionId> {
-  return new Set(
-    ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
-  );
-}
-
 export type IouStatus = Readonly<{
   iou: Iou;
   /** Its entry stands and is dated on or before the day asked about. */
@@ -109,7 +104,7 @@ export function iouStatus(
   view: Pick<LedgerView, 'ious' | 'ledger'>,
   iou: Iou,
   today: LocalDate,
-  reversed: ReadonlySet<TransactionId> = reversedSet(view.ledger),
+  reversed: ReadonlySet<TransactionId> = reversedIds(view.ledger),
 ): IouStatus {
   const { currency } = iou.amount;
   const active = !reversed.has(iou.originId) && iou.recordedOn <= today;
@@ -152,7 +147,7 @@ export function iouStatuses(
   view: Pick<LedgerView, 'ious' | 'ledger'>,
   today: LocalDate,
 ): IouStatus[] {
-  const reversed = reversedSet(view.ledger);
+  const reversed = reversedIds(view.ledger);
   return [...iousOf(view).ious]
     .sort(
       (a, b) =>
@@ -248,7 +243,7 @@ export function iouTotals(
  * free money again (ADR 0021). Write-offs bring nothing back.
  */
 export function iouReturns(view: LedgerView): BudgetReturn[] {
-  const reversed = reversedSet(view.ledger);
+  const reversed = reversedIds(view.ledger);
   return iousOf(view).ious.flatMap((iou) =>
     iou.direction !== 'owed-to-me' || reversed.has(iou.originId)
       ? []

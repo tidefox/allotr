@@ -1,3 +1,4 @@
+import { entriesInOrder, reversedIds } from '../ledger/indexes.ts';
 import {
   addDays,
   lastDayOfMonth,
@@ -9,7 +10,6 @@ import {
 } from '@allotr/shared';
 import type { CategoryId, TransactionId } from '../ledger/types.ts';
 import { cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
-import { compareEntries } from '../ledger/order.ts';
 import { iouReturns, loanKey } from './ious.ts';
 import { groupsOn } from './pools.ts';
 import { convertOn } from './rates.ts';
@@ -265,8 +265,6 @@ export function heldBy(line: BudgetPeriodLine): bigint {
   return left > 0n ? left : 0n;
 }
 
-const ordered = compareEntries;
-
 export type CountedSpend = Readonly<{
   entryId: TransactionId;
   date: LocalDate;
@@ -287,9 +285,7 @@ export function countedSpendLines(
   excluded: ReadonlySet<TransactionId>,
   missing: Set<CurrencyCode>,
 ): CountedSpend[] {
-  const reversed = new Set(
-    view.ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
-  );
+  const reversed = reversedIds(view.ledger);
   const expenses = new Set(
     [...view.chart.values()]
       .filter((a) => a.systemRole === 'expenses')
@@ -302,7 +298,7 @@ export function countedSpendLines(
   );
   const groups = new Map<LocalDate, ReturnType<typeof groupsOn>>();
   const raw: CountedSpend[] = [];
-  for (const t of [...view.ledger].sort(ordered)) {
+  for (const t of entriesInOrder(view.ledger)) {
     if (
       t.kind === 'reversal' ||
       reversed.has(t.id) ||

@@ -1,5 +1,5 @@
 import type { LocalDate } from '@allotr/shared';
-import { activeSwitches } from '../ledger/balances.ts';
+import { activeSwitches } from '../ledger/indexes.ts';
 import type { AccountId, BudgetGroup } from '../ledger/types.ts';
 import type { Chart } from '../ledger/chart.ts';
 import type { Transaction } from '../ledger/types.ts';

@@ -1,3 +1,4 @@
+import { reversedIds } from '../ledger/indexes.ts';
 import { addDays, type LocalDate } from '@allotr/shared';
 import type { Transaction } from '../ledger/types.ts';
 import { compareEntries } from '../ledger/order.ts';
@@ -19,9 +20,7 @@ function earliest(first: LocalDate, ...dates: LocalDate[]): LocalDate {
 }
 
 function paychecks(view: LedgerView, today: LocalDate): Transaction[] {
-  const reversed = new Set(
-    view.ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
-  );
+  const reversed = reversedIds(view.ledger);
   return view.ledger
     .filter(
       (t) =>
