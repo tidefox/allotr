@@ -41,7 +41,7 @@ rules are in [domain.md](domain.md); the reasons for each choice are in the
 | `packages/core` | Domain types, ledger, projections, policy strategies, invariants | Pure TypeScript, **no I/O**. Fully unit- and property-tested |
 | `packages/parser` | Command grammar, alias resolution, LLM prompt and output schema | Depends on `core` and `shared` only |
 | `packages/shared` | Zod schemas, money and currency utilities, ISO 4217 table | Single source for HTTP, OpenAPI, MCP and LLM schemas |
-| `packages/store` | Ledger persistence: Kysely queries, entry ordering, imports and exports, reports, generated schema types | Depends on `core` and `shared` only. Takes a `Kysely<DB>`; no database driver, HTTP framework, auth or `node:*` imports, so the dialect is the caller's choice |
+| `packages/store` | Ledger persistence: Kysely queries, entry ordering, imports and exports, reports, generated schema types | Depends on `core` and `shared` only. Takes a `Kysely<DB>`; no database driver, HTTP framework, auth or `node:*` imports, so the dialect is the caller's choice. The loaded ledger (chart, entries and the settings projections read) is cached per user between writes: the server wraps its dialect in `withLedgerCache`, which counts every statement that is not plainly a read (and every transaction that wrote) and drops what was loaded earlier. Nothing cached depends on "now", so figures are still computed for each request |
 | `apps/server` | HTTP API, auth, database driver and migrations, scheduler, AI module, serves the web build | Only app with database access; opens SQLite and hands the store a `Kysely<DB>` |
 | `apps/gateway` | Platform adapters (Discord, Telegram, …) | Uses the public API only; no database, no domain logic |
 | `apps/web` | React SPA/PWA | Talks to the API; no business rules beyond display |
@@ -241,7 +241,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   live daily, days left, cycle end, spending so far this cycle, the overdue
   flag, unpaid bills due by today, every bill due date in the cycle with
   its payment day, and currencies left out for lack of a rate), computed
-  from the ledger on every request. `onBudget` and `reserved` split
+  from the ledger on every request (the loaded ledger is reused until the
+  next write; the figures are computed afresh for the current time). `onBudget` and `reserved` split
   `available` for charts; `reserved` is always exactly
   `onBudget − available`. `reservedBills` and `reservedIous` split
   `reserved` into unpaid bills and what is owed to people. `allocation`

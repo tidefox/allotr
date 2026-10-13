@@ -35,6 +35,7 @@ import type { DB } from './schema.ts';
 import { currentClient } from './client.ts';
 import { placeNewEntry } from './entry-order.ts';
 import { newId } from './ids.ts';
+import { cachedLoad } from './ledger-cache.ts';
 
 // Persistence for the ledger. Rows are always read and written for one
 // user (invariant 7); transactions and postings are only ever inserted
@@ -94,7 +95,11 @@ function toAccount(row: AccountRow): Account {
   };
 }
 
-export async function loadChart(db: Db, userId: string): Promise<Chart> {
+export function loadChart(db: Db, userId: string): Promise<Chart> {
+  return cachedLoad(db, userId, 'chart', null, () => readChart(db, userId));
+}
+
+async function readChart(db: Db, userId: string): Promise<Chart> {
   const rows = await db
     .selectFrom('accounts')
     .select([
@@ -110,12 +115,25 @@ export async function loadChart(db: Db, userId: string): Promise<Chart> {
   return chartOf(rows.map(toAccount));
 }
 
-/** Every committed transaction of a user, rebuilt through core. */
-export async function loadLedger(
+/**
+ * Every committed transaction of a user, rebuilt through core. The result is
+ * shared between requests and frozen (ledger-cache.ts); copy it to change it.
+ */
+export function loadLedger(
   db: Db,
   userId: string,
   chart: Chart,
-): Promise<Transaction[]> {
+): Promise<readonly Transaction[]> {
+  return cachedLoad(db, userId, 'ledger', chart, () =>
+    readLedger(db, userId, chart),
+  );
+}
+
+async function readLedger(
+  db: Db,
+  userId: string,
+  chart: Chart,
+): Promise<readonly Transaction[]> {
   const [transactions, postings] = await Promise.all([
     db
       .selectFrom('transactions')
