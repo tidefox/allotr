@@ -18,8 +18,8 @@ UPDATE users SET ledger_id =
 
 CREATE UNIQUE INDEX users_ledger_id_idx ON users (ledger_id);
 
--- Seeding moves to code (`seedLedger` in packages/store), which runs in the
--- transaction that creates the user and gives every row a deterministic id.
+-- Seeding moves to code (`seedLedger` in packages/store), which runs right
+-- after the user is created and gives every row a deterministic id.
 -- Rows seeded by these triggers keep their ids.
 DROP TRIGGER users_seed_categories;
 DROP TRIGGER users_seed_pools;
