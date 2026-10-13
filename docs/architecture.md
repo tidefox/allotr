@@ -34,6 +34,13 @@ rules are in [domain.md](domain.md); the reasons for each choice are in the
   the default `all` runs both. The image runs as uid 1000 and keeps its
   database and backups in the `/data` volume (`deploy/docker-compose.yml`).
 
+**Local mode** (ADRs [0032](adr/0032-local-mode-event-log.md)–[0037](adr/0037-in-process-runtime.md),
+being built): the store, the API and the web UI run in-process inside a notes
+app's webview with no server. Each device appends events to its own files in
+the user's vault, the files sync with whatever tool the user already has, and a
+WASM SQLite database is a disposable cache of the fold. Server mode moves to
+the same event model, so both modes share one write path.
+
 ## 2. Components
 
 | Package / app | Responsibility | Rules |
