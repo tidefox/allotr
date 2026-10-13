@@ -1,5 +1,6 @@
-// Times a warm /v1/today (the store's `todayFigures`) with the ledger cache
-// off and on, over a synthetic ledger of made-up entries.
+// Times warm /v1/today (the store's `todayFigures`) and the category and payee
+// reports with the ledger cache off and on, over a synthetic ledger of made-up
+// entries.
 //
 //   node scripts/bench-ledger-cache.ts [entries ...]   (default: 5000 50000)
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -7,7 +8,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { addDays, bundleSchema, localDate } from '@allotr/shared';
-import { importBundle, todayFigures } from '@allotr/store';
+import {
+  categorySummary,
+  importBundle,
+  payeeReport,
+  todayFigures,
+} from '@allotr/store';
 import { migrate } from '../src/db/migrate.ts';
 import { createKysely, openSqlite } from '../src/db/sqlite.ts';
 import { insertUser, repoMigrations } from '../src/testing/database.ts';
@@ -80,21 +86,34 @@ for (const entries of counts.length > 0 ? counts : [5_000, 50_000]) {
   await insertUser(cached, 'bench');
   await importBundle(cached, 'bench', synthetic(entries), now);
 
-  const time = async (db: typeof cached, runs: number) => {
-    await todayFigures(db, 'bench', now); // warm-up (and fills the cache)
+  const operations = {
+    today: (db: typeof cached) => todayFigures(db, 'bench', now),
+    categories: (db: typeof cached) =>
+      categorySummary(db, 'bench', { period: 'cycle', series: 6 }, now),
+    payees: (db: typeof cached) =>
+      payeeReport(db, 'bench', { period: 'cycle', limit: 10 }, now),
+  };
+  const time = async (
+    run: (db: typeof cached) => Promise<unknown>,
+    db: typeof cached,
+    runs: number,
+  ) => {
+    await run(db); // warm-up (and fills the cache)
     const samples: number[] = [];
     for (let i = 0; i < runs; i++) {
       const began = performance.now();
-      await todayFigures(db, 'bench', now);
+      await run(db);
       samples.push(performance.now() - began);
     }
     return median(samples) ?? 0;
   };
-  const off = await time(plain, 7);
-  const on = await time(cached, 7);
-  console.log(
-    `${String(entries)} entries: cache off ${String(Math.round(off))} ms, on ${String(Math.round(on))} ms (median of 7 warm calls)`,
-  );
+  for (const [name, run] of Object.entries(operations)) {
+    const off = await time(run, plain, 7);
+    const on = await time(run, cached, 7);
+    console.log(
+      `${String(entries)} entries, ${name}: cache off ${String(Math.round(off))} ms, on ${String(Math.round(on))} ms (median of 7 warm calls)`,
+    );
+  }
   sqlite.close();
   rmSync(dir, { recursive: true, force: true });
 }

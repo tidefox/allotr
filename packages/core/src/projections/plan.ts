@@ -1,3 +1,4 @@
+import { reversedIds } from '../ledger/indexes.ts';
 import {
   addDays,
   money,
@@ -139,9 +140,7 @@ export function paydayPlan(view: LedgerView, today: LocalDate): PaydayPlan {
   const cycle = cycles.at(-1);
   const m = (amount: bigint) => money(Number(amount), currency);
   const paychecks = new Set(view.paycheckCategories);
-  const reversed = new Set(
-    view.ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
-  );
+  const reversed = reversedIds(view.ledger);
   const income = totalOn(
     view.rates,
     view.ledger

@@ -1,3 +1,4 @@
+import { entriesInOrder } from '../ledger/indexes.ts';
 import {
   daysBetween,
   localDateIn,
@@ -8,7 +9,6 @@ import {
 } from '@allotr/shared';
 import type { AccountId, TransactionId } from '../ledger/types.ts';
 import { accountBalances } from '../ledger/balances.ts';
-import { compareEntries } from '../ledger/order.ts';
 import type { Transaction } from '../ledger/types.ts';
 import { billWindow, cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
 import {
@@ -347,7 +347,7 @@ function availableBeforeEntries(
   const running = new Map<AccountId, bigint>();
   const before = new Map<TransactionId, bigint>();
   const groupsByDate = new Map<LocalDate, ReturnType<typeof groupsOn>>();
-  const sorted = [...view.ledger].sort(compareEntries);
+  const sorted = entriesInOrder(view.ledger);
   for (const t of sorted) {
     if (t.occurredOn > today) break;
     if (t.postings.some((p) => expenses.has(p.accountId))) {
