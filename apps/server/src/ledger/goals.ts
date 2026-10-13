@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountBalances,
   accountId,
@@ -19,7 +18,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { loadRates } from './rates.ts';
 import { uniquely } from './sqlite-errors.ts';
 import {
@@ -29,6 +28,7 @@ import {
   userToday,
   type Db,
 } from './store.ts';
+import { newId } from './ids.ts';
 
 // Savings goals (ADR 0021, docs/domain.md "Goals"): a target amount, and
 // optionally a date, on one savings account or one savings pool. Progress is
@@ -223,7 +223,7 @@ export async function createGoal(
   input: CreateGoalBody,
   now: Date,
 ): Promise<GoalView> {
-  const id = randomUUID();
+  const id = newId();
   const at = now.toISOString();
   await db.transaction().execute(async (trx) => {
     await checkTarget(trx, userId, input, await userToday(trx, userId, now));

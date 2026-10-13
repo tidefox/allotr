@@ -1,5 +1,5 @@
 import type { Bundle } from '@allotr/shared';
-import type { PathError } from '../http/domain-errors.ts';
+import type { PathError } from './domain-errors.ts';
 
 // Checks every name a bundle refers to before anything is written, so most
 // mistakes come back together, each with its place in the bundle. Pure: the

@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountId,
   accountBalances,
@@ -20,7 +19,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { getAccount } from './accounts.ts';
 import { loadView } from './today.ts';
 import { uniquely } from './sqlite-errors.ts';
@@ -33,6 +32,7 @@ import {
   userToday,
   type Db,
 } from './store.ts';
+import { newId } from './ids.ts';
 
 // Pools (ADR 0021, docs/domain.md "Pools"): groups of accounts that do or do
 // not count toward the daily number. Moves are dated rows that are only ever
@@ -189,7 +189,7 @@ export async function createPool(
   input: CreatePoolBody,
   now: Date,
 ): Promise<PoolView> {
-  const id = randomUUID();
+  const id = newId();
   const at = now.toISOString();
   await db.transaction().execute(async (trx) => {
     const last = await trx
@@ -338,7 +338,7 @@ export async function moveAccount(
     await trx
       .insertInto('pool_moves')
       .values({
-        id: randomUUID(),
+        id: newId(),
         user_id: userId,
         account_id: id,
         pool_id: input.poolId,

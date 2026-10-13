@@ -28,7 +28,8 @@ import type {
 import { isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { atPath, RequestProblem } from '../http/domain-errors.ts';
+import { decodeBase64Url, encodeBase64Url } from './base64url.ts';
+import { atPath, RequestProblem } from './domain-errors.ts';
 import {
   refuseIouEdit,
   refuseUndoWithPayments,
@@ -295,14 +296,12 @@ function encodeCursor(row: SortedRow, sort: TransactionSort): string {
   const cursor: Cursor = amountOrders.has(sort)
     ? [String(row.sort_amount), ...tail]
     : tail;
-  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+  return encodeBase64Url(JSON.stringify(cursor));
 }
 
 function decodeCursor(text: string, sort: TransactionSort): Cursor {
   try {
-    const value: unknown = JSON.parse(
-      Buffer.from(text, 'base64url').toString(),
-    );
+    const value: unknown = JSON.parse(decodeBase64Url(text));
     const parts = amountOrders.has(sort) ? 4 : 3;
     if (
       Array.isArray(value) &&

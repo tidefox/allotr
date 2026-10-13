@@ -1,7 +1,7 @@
 import { type LedgerView } from '@allotr/core';
 import { currencyCode, localDate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { resolveReportPeriod } from './report-period.ts';
 
 // The ledger here has no paychecks, so there is one open cycle, opened on

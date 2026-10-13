@@ -23,7 +23,7 @@ import { defaultWriteOffAfterDays } from '@allotr/core';
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import type { Db } from './store.ts';
 
 // A user's ledger settings (FR-C2, FR-X2). Locale, time zone and default

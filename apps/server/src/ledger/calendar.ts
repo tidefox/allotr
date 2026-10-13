@@ -10,7 +10,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { loadView } from './today.ts';
 
 // The calendar (FR-W2): per-day spending and what falls due, computed from

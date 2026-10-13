@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountId,
   baseSystemRoles,
@@ -36,7 +35,7 @@ import {
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { coverPreviewView } from './budgets.ts';
 import {
   byIdempotencyKey,
@@ -56,6 +55,7 @@ import {
   type Db,
 } from './store.ts';
 import { loadView } from './today.ts';
+import { newId } from './ids.ts';
 
 // IOUs and split bills (ADR 0024, docs/domain.md "IOUs"). The money is in
 // the ledger, built by core's `lend`, `borrow`, `repayment` and
@@ -318,7 +318,7 @@ async function insertIous(
 ): Promise<string[]> {
   const at = now.toISOString();
   const rows = body.people.map((p) => ({
-    id: randomUUID(),
+    id: newId(),
     user_id: userId,
     direction: body.direction,
     person: p.person,
@@ -710,7 +710,7 @@ export async function recordRepaymentIn(
     .insertInto('iou_settlements')
     .values(
       settles.map((line) => ({
-        id: randomUUID(),
+        id: newId(),
         user_id: userId,
         iou_id: line.iouId,
         transaction_id: transaction.id,
@@ -798,7 +798,7 @@ export async function writeOffIouIn(
   await trx
     .insertInto('iou_settlements')
     .values({
-      id: randomUUID(),
+      id: newId(),
       user_id: userId,
       iou_id: id,
       transaction_id: transaction.id,

@@ -1,15 +1,11 @@
-import { randomUUID } from 'node:crypto';
 import type { Bundle, LocalDate } from '@allotr/shared';
-import {
-  atPath,
-  isDomainError,
-  RequestProblem,
-} from '../http/domain-errors.ts';
+import { atPath, isDomainError, RequestProblem } from './domain-errors.ts';
 import { checkAmount } from './budgets.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { nameKey } from './import-resolve.ts';
 import { uniquely } from './sqlite-errors.ts';
 import { userToday, type Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // The budget setup of a bundle (ADR 0021): pools, budgets, the cover order
 // and per-entry cover. The resolve pass has checked the names, so a miss in
@@ -86,7 +82,7 @@ export async function importPools(
         ids.set(nameKey(pool.name), existing.id);
         return;
       }
-      const id = randomUUID();
+      const id = newId();
       position += 1;
       await uniquely(
         () =>
@@ -133,7 +129,7 @@ export async function importPoolMoves(
       await db
         .insertInto('pool_moves')
         .values({
-          id: randomUUID(),
+          id: newId(),
           user_id: userId,
           account_id: lookup(accountIds, nameKey(account.name)),
           pool_id: lookup(poolIds, nameKey(move.pool)),
@@ -183,7 +179,7 @@ export async function importBudgets(
   }
   for (const [index, budget] of bundle.budgets.entries()) {
     const path = `/budgets/${String(index)}`;
-    const id = randomUUID();
+    const id = newId();
     for (const [a, amount] of budget.amounts.entries()) {
       await at(`${path}/amounts/${String(a)}/amount`, () => {
         checkAmount(
@@ -234,7 +230,7 @@ export async function importBudgets(
         .insertInto('budget_amounts')
         .values(
           budget.amounts.map((amount) => ({
-            id: randomUUID(),
+            id: newId(),
             user_id: userId,
             budget_id: id,
             effective_on: amount.from,
@@ -292,7 +288,7 @@ export async function importCover(
           await db
             .insertInto('cover_overrides')
             .values({
-              id: randomUUID(),
+              id: newId(),
               user_id: userId,
               transaction_id: entry,
               position,

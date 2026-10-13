@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { ExchangeRate, Transaction } from '@allotr/core';
 import {
   currencyCode,
@@ -11,8 +10,9 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { userToday, type Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // Manual exchange rates (ADR 0010, FR-X2). They are only read when a figure
 // is converted to the default currency; entries never change with them.
@@ -119,7 +119,7 @@ export async function upsertRate(
     .where('as_of', '=', asOf)
     .executeTakeFirst();
   const row = {
-    id: existing?.id ?? randomUUID(),
+    id: existing?.id ?? newId(),
     base: input.base,
     quote: input.quote,
     rate: input.rate,
@@ -229,7 +229,7 @@ export async function recordImpliedRate(
   if (stored?.source === 'manual') return;
   let rateId = stored?.id;
   if (rateId === undefined) {
-    rateId = randomUUID();
+    rateId = newId();
     await db
       .insertInto('fx_rates')
       .values({

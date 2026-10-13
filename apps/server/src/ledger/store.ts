@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountId,
   categoryId,
@@ -35,6 +34,7 @@ import type { Kysely, Transaction as KyselyTransaction } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { currentClient } from './client.ts';
 import { placeNewEntry } from './entry-order.ts';
+import { newId } from './ids.ts';
 
 // Persistence for the ledger. Rows are always read and written for one
 // user (invariant 7); transactions and postings are only ever inserted
@@ -191,7 +191,7 @@ function plannedSystemAccounts(
   const at = now.toISOString();
   const rows = systemAccountsNeeded(chart, currencies, roles).map(
     ({ role, currency }) => ({
-      id: randomUUID(),
+      id: newId(),
       user_id: userId,
       name: `${systemAccountNames[role]}:${currency}`,
       kind: systemAccountKinds[role],
@@ -297,7 +297,7 @@ export async function appendTransaction(
     .insertInto('postings')
     .values(
       transaction.postings.map((posting, position) => ({
-        id: randomUUID(),
+        id: newId(),
         user_id: userId,
         transaction_id: transaction.id,
         account_id: posting.accountId,
@@ -325,7 +325,7 @@ export async function userToday(
 }
 
 export function newTransactionId() {
-  return transactionId(randomUUID());
+  return transactionId(newId());
 }
 
 /** Metadata for a new entry: a fresh ID and the current instant. */

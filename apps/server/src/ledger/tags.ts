@@ -1,9 +1,9 @@
-import { randomUUID } from 'node:crypto';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { uniquely } from './sqlite-errors.ts';
 import type { Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // Free-form tags (FR-L7).
 
@@ -32,7 +32,7 @@ export async function createTag(
   name: string,
   now: Date,
 ): Promise<TagView> {
-  const id = randomUUID();
+  const id = newId();
   const at = now.toISOString();
   await uniquely(
     () =>

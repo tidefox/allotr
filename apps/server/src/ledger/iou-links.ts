@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import type { Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // What ties an entry to IOU rows (ADR 0024), kept apart from the IOU module
 // so that recording entries can check it without importing it.
@@ -112,7 +112,7 @@ export async function restoreIouRows(
       .values(
         origin.map((row) => ({
           ...row,
-          id: randomUUID(),
+          id: newId(),
           origin_transaction_id: copyId,
           created_at: at,
           updated_at: at,
@@ -168,7 +168,7 @@ export async function restoreIouRows(
       .insertInto('iou_settlements')
       .values({
         ...row,
-        id: randomUUID(),
+        id: newId(),
         transaction_id: copyId,
         created_at: at,
       })

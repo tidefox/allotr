@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { accountId, balanceOf, budgetSwitch, writeOff } from '@allotr/core';
 import type {
   Bundle,
@@ -11,11 +10,7 @@ import type {
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { finishSetup } from '../setup.ts';
-import {
-  atPath,
-  isDomainError,
-  RequestProblem,
-} from '../http/domain-errors.ts';
+import { atPath, isDomainError, RequestProblem } from './domain-errors.ts';
 import { insertAccount } from './accounts.ts';
 import { insertBill, insertBillPayment } from './bills.ts';
 import { insertCategory } from './categories.ts';
@@ -44,6 +39,7 @@ import {
 } from './store.ts';
 import { createTag, listTags } from './tags.ts';
 import { recordTransaction, storeTransaction } from './transactions.ts';
+import { newId } from './ids.ts';
 
 // Fills an empty ledger from a bundle (docs/architecture.md "Import
 // bundle"). One database transaction and the same writes the API uses; a
@@ -259,7 +255,7 @@ async function insertReconciliation(
   await db
     .insertInto('reconciliations')
     .values({
-      id: randomUUID(),
+      id: newId(),
       user_id: userId,
       account_id: account.id,
       currency: account.currency,
