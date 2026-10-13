@@ -288,17 +288,6 @@ export interface SignInFailures {
   window_started_at: string;
 }
 
-export interface StarterCategories {
-  colour: string | null;
-  icon: string | null;
-  income_class: Generated<string>;
-  is_paycheck: number;
-  kind: string;
-  name: string;
-  parent_name: string | null;
-  position: number;
-}
-
 export interface Tags {
   created_at: string;
   id: string;
@@ -363,6 +352,7 @@ export interface Users {
   email_verified: Generated<number>;
   id: string;
   image: string | null;
+  ledger_id: Generated<string>;
   locale: Generated<string>;
   name: string;
   role: Generated<string>;
@@ -412,7 +402,6 @@ export interface DB {
   schema_migrations: SchemaMigrations;
   sessions: Sessions;
   sign_in_failures: SignInFailures;
-  starter_categories: StarterCategories;
   tags: Tags;
   transaction_ranks: TransactionRanks;
   transaction_replacements: TransactionReplacements;

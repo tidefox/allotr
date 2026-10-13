@@ -1,0 +1,250 @@
+{
+  "categories": [
+    {
+      "name": "Food",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 1,
+      "colour": "series-6",
+      "icon": "utensils",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Transport",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 2,
+      "colour": "series-1",
+      "icon": "bus",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Housing",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 3,
+      "colour": "series-4",
+      "icon": "house",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Bills and subscriptions",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 4,
+      "colour": "series-2",
+      "icon": "receipt",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Health",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 5,
+      "colour": "series-5",
+      "icon": "heart-pulse",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Shopping",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 6,
+      "colour": "series-7",
+      "icon": "shopping-bag",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Fun",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 7,
+      "colour": "series-3",
+      "icon": "ticket",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Other",
+      "parent": null,
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 8,
+      "colour": "series-8",
+      "icon": "tag",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Groceries",
+      "parent": "Food",
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 1,
+      "colour": null,
+      "icon": "shopping-basket",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Eating out",
+      "parent": "Food",
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 2,
+      "colour": null,
+      "icon": "coffee",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Rent",
+      "parent": "Housing",
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 1,
+      "colour": null,
+      "icon": null,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Utilities",
+      "parent": "Housing",
+      "kind": "expense",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 2,
+      "colour": null,
+      "icon": "lightbulb",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Paycheck",
+      "parent": null,
+      "kind": "income",
+      "is_paycheck": 1,
+      "income_class": "earned",
+      "position": 1,
+      "colour": "series-6",
+      "icon": "banknote",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Other income",
+      "parent": null,
+      "kind": "income",
+      "is_paycheck": 0,
+      "income_class": "earned",
+      "position": 2,
+      "colour": "series-3",
+      "icon": "hand-coins",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Interest",
+      "parent": null,
+      "kind": "income",
+      "is_paycheck": 0,
+      "income_class": "passive",
+      "position": 3,
+      "colour": null,
+      "icon": null,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Tax refund",
+      "parent": null,
+      "kind": "income",
+      "is_paycheck": 0,
+      "income_class": "refund",
+      "position": 4,
+      "colour": null,
+      "icon": null,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Gifts",
+      "parent": null,
+      "kind": "income",
+      "is_paycheck": 0,
+      "income_class": "gift",
+      "position": 5,
+      "colour": null,
+      "icon": null,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "pools": [
+    {
+      "name": "Budget",
+      "kind": "spending",
+      "counts_toward_daily": 1,
+      "default_for": "on",
+      "position": 1,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "name": "Savings",
+      "kind": "savings",
+      "counts_toward_daily": 0,
+      "default_for": "off",
+      "position": 2,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "budgets": [
+    {
+      "name": "Buffer",
+      "kind": "buffer",
+      "category_id": null,
+      "tag_id": null,
+      "mode": "set-aside",
+      "leftover": "carry",
+      "started_on": "2026-01-01",
+      "ended_on": null,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "budgetAmounts": [
+    {
+      "effective_on": "2026-01-01",
+      "amount_minor": 0,
+      "currency": "USD",
+      "created_at": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}
