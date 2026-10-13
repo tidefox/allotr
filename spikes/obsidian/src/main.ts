@@ -3,13 +3,14 @@ import { setApiTransport } from '../../../apps/web/src/lib/embed.tsx';
 import { indexedDbBlobStore } from './blob-store.ts';
 import { DiagnosticsModal } from './diagnostics-modal.ts';
 import type { SeedResult } from './diagnostics.ts';
+import type { LayoutSnapshot } from './layout.ts';
 import { installHeadStyles, removeHeadStyles } from './head-styles.ts';
 import { mountAllotr, type Mounted } from './mount.tsx';
 import { Runtime } from './runtime.ts';
 
 export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
-const PLUGIN_VERSION = '0.0.0-spike-s1';
+const PLUGIN_VERSION = '0.0.1-spike.2';
 
 declare const __BUNDLE_NOTE__: string;
 
@@ -57,6 +58,10 @@ class AllotrView extends ItemView {
     this.teardown();
   }
 
+  layout(): LayoutSnapshot | null {
+    return this.mounted?.layout() ?? null;
+  }
+
   teardown(): void {
     this.torn = true;
     this.mounted?.unmount();
@@ -88,6 +93,7 @@ export default class AllotrPlugin extends Plugin {
           vaultKey: () => this.key || this.vaultKey(),
           runtimeIfStarted: () => this.runtime,
           seedResults: this.seedResults,
+          layouts: () => [...this.views].map((v) => v.layout()).filter((l): l is LayoutSnapshot => l !== null),
           bundleNote: typeof __BUNDLE_NOTE__ === 'string' ? __BUNDLE_NOTE__ : 'dev',
         }).open();
       },

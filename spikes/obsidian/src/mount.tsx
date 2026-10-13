@@ -1,6 +1,7 @@
 // Mounts the real apps/web React app inside a Shadow DOM root.
 import { onlineManager, QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
+import { Platform } from 'obsidian';
 import { UNSAFE_PortalProvider } from 'react-aria';
 import { enableShadowDOM } from 'allotr:shadow-flag';
 import { createRoot } from 'react-dom/client';
@@ -11,6 +12,7 @@ import { EmbedContext, type EmbedHost } from '../../../apps/web/src/lib/embed.ts
 import { createQueryClient } from '../../../apps/web/src/lib/query-client.ts';
 import { sessionQuery } from '../../../apps/web/src/lib/session.ts';
 import { createAppRouter } from '../../../apps/web/src/router.tsx';
+import { trackBottomInset, type LayoutController, type LayoutSnapshot } from './layout.ts';
 import type { Runtime } from './runtime.ts';
 
 // Must run before any overlay renders.
@@ -23,7 +25,9 @@ export const BANNER_TEXT = 'Spike build: data stays on this device and is not sy
 // area is the containing block for the app's `fixed` sheets.
 const EMBED_CSS = `
 :host { all: initial; display: block; position: relative; width: 100%; height: 100%; overflow: hidden; contain: layout paint; }
-.ar { position: relative; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+.ar { position: relative; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+/* Mobile: keep the frame above Obsidian's floating navbar (layout.ts sets the inset on the host). */
+.ar-mobile { padding-bottom: max(var(--allotr-bottom-inset, 0px), env(safe-area-inset-bottom, 0px)); }
 .ar-banner { flex: none; padding: 4px 12px; font-size: 0.6875rem; line-height: 1.3; background: var(--warning-container); color: var(--on-primary-container); border-bottom: 1px solid var(--outline-variant); }
 .ar-app { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; contain: layout paint; }
 .ar-root { position: absolute; inset: 0; overflow: hidden; }
@@ -39,6 +43,7 @@ function isEditable(node: EventTarget | undefined): boolean {
 export interface Mounted {
   readonly shadow: ShadowRoot;
   readonly host: HTMLElement;
+  layout(): LayoutSnapshot;
   unmount(): void;
 }
 
@@ -80,7 +85,7 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   const style = doc.createElement('style');
   style.textContent = appCss + EMBED_CSS;
   const wrapper = doc.createElement('div');
-  wrapper.className = 'ar';
+  wrapper.className = Platform.isMobile ? 'ar ar-mobile' : 'ar';
   const banner = doc.createElement('div');
   banner.className = 'ar-banner';
   banner.textContent = BANNER_TEXT;
@@ -134,6 +139,8 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   });
   topLayer.observe(portals, { childList: true });
 
+  const layout: LayoutController = trackBottomInset(host);
+
   const queryClient = sharedQueryClient(runtime);
   const router = createAppRouter(queryClient, createMemoryHistory({ initialEntries: ['/'] }));
   const root = createRoot(rootEl);
@@ -152,7 +159,9 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   return {
     shadow,
     host,
+    layout: () => layout.snapshot(),
     unmount() {
+      layout.dispose();
       root.unmount();
       topLayer.disconnect();
       for (const name of keyEvents) host.removeEventListener(name, keyGuard);

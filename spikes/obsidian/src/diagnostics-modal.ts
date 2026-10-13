@@ -5,6 +5,7 @@ import {
   seedBenchmark,
   type SeedResult,
 } from './diagnostics.ts';
+import type { LayoutSnapshot } from './layout.ts';
 import type { Runtime } from './runtime.ts';
 
 export interface DiagnosticsHost {
@@ -14,6 +15,7 @@ export interface DiagnosticsHost {
   readonly runtimeIfStarted: () => Runtime | null;
   readonly seedResults: SeedResult[];
   readonly bundleNote: string;
+  readonly layouts: () => LayoutSnapshot[];
 }
 
 export class DiagnosticsModal extends Modal {
@@ -99,6 +101,7 @@ export class DiagnosticsModal extends Modal {
       env: environment(this.app, this.host.vaultKey()),
       runtime: this.host.runtimeIfStarted(),
       seeds: this.host.seedResults,
+      layouts: this.host.layouts(),
       pluginVersion: this.host.version,
       bundleNote: this.host.bundleNote,
     });

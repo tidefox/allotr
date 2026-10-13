@@ -4,6 +4,7 @@ import type { App } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Platform } from 'obsidian';
 import { noBlobStore, type BlobStore } from './blob-store.ts';
+import { formatLayout, type LayoutSnapshot } from './layout.ts';
 import { Runtime, type Timings } from './runtime.ts';
 import { seedSynthetic } from './seed.ts';
 
@@ -173,6 +174,7 @@ export async function buildReport(options: {
   env: Env;
   runtime: Runtime | null;
   seeds: readonly SeedResult[];
+  layouts?: readonly LayoutSnapshot[];
   pluginVersion: string;
   bundleNote: string;
 }): Promise<string> {
@@ -189,6 +191,7 @@ export async function buildReport(options: {
   lines.push(`- Language ${env.language}, DPR ${env.dpr}, viewport ${env.viewport}`);
   lines.push(`- Vault key: ${env.vault}`);
   lines.push('');
+  lines.push(...formatLayout(options.layouts ?? []));
   lines.push('## Features');
   for (const [name, value] of Object.entries(featureChecks())) lines.push(`- ${name}: ${value}`);
   lines.push(`- Storage: ${await storageEstimate()}`);

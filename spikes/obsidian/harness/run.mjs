@@ -88,6 +88,55 @@ async function scenario(engine, browser, { tag, viewport, platform, seed, nodeLi
   c('first-run setup works; account created', before !== null && before !== '$0.00', `left today ${before}`);
   await shot('02-dashboard');
 
+  // --- phone: the frame sits above Obsidian's floating navbar
+  if (platform !== 'desktop') {
+    const geometry = () =>
+      page.evaluate(() => {
+        const sr = document.querySelector('.allotr-host').shadowRoot;
+        const nav = document.querySelector('.mobile-navbar');
+        const navRect = nav.getBoundingClientRect();
+        const targets = {
+          '+ new': sr.querySelector('button[aria-label="new" i], button[aria-label="New" i]') ?? [...sr.querySelectorAll('button')].find((b) => /^\+?\s*new$/i.test((b.getAttribute('aria-label') ?? b.textContent).trim())),
+          'command line': sr.querySelector('input[aria-label="Command line"]'),
+          ...Object.fromEntries([...sr.querySelectorAll('nav[data-slot="nav"] a')].map((a) => [`tab ${a.textContent.trim()}`, a])),
+        };
+        const out = {};
+        for (const [name, el] of Object.entries(targets)) {
+          if (!el) { out[name] = { missing: true }; continue; }
+          const r = el.getBoundingClientRect();
+          const hit = sr.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          const outer = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          out[name] = { bottom: Math.round(r.bottom), above: r.bottom <= navRect.top + 0.5, hit: Boolean(hit) && (el === hit || el.contains(hit) || hit.contains(el)), outerIsHost: outer?.classList.contains('allotr-host') ?? false };
+        }
+        const host = document.querySelector('.allotr-host');
+        return { navTop: Math.round(navRect.top), hostBottom: Math.round(host.getBoundingClientRect().bottom), inset: host.style.getPropertyValue('--allotr-bottom-inset'), targets: out };
+      });
+    const g = await geometry();
+    const names = Object.keys(g.targets);
+    const bad = names.filter((n) => g.targets[n].missing || !g.targets[n].above || !g.targets[n].hit || !g.targets[n].outerIsHost);
+    c('phone: + new, command line and all five tabs sit above the navbar and hit-test to themselves', names.length >= 7 && bad.length === 0, `navTop=${g.navTop} inset=${g.inset} bad=${bad.join(',')} ${JSON.stringify(g.targets)}`);
+    c('phone: inset is the measured overlap', Math.abs(parseFloat(g.inset) - (g.hostBottom - g.navTop)) < 1.5 && parseFloat(g.inset) > 40, `inset=${g.inset} hostBottom=${g.hostBottom} navTop=${g.navTop}`);
+    await shot('02b-above-navbar');
+    // The navbar hides (keyboard, fullscreen): the frame takes the space back.
+    await page.evaluate(() => { document.querySelector('.mobile-navbar').style.display = 'none'; });
+    await page.waitForFunction(() => document.querySelector('.allotr-host').style.getPropertyValue('--allotr-bottom-inset') === '0px', null, { timeout: 5000 }).catch(() => undefined);
+    const hidden = await geometry().catch(() => null);
+    const hiddenInset = await page.evaluate(() => document.querySelector('.allotr-host').style.getPropertyValue('--allotr-bottom-inset'));
+    c('phone: inset drops to 0 when the navbar hides', hiddenInset === '0px', hiddenInset);
+    await page.evaluate(() => { document.querySelector('.mobile-navbar').style.display = 'flex'; });
+    await page.waitForFunction(() => parseFloat(document.querySelector('.allotr-host').style.getPropertyValue('--allotr-bottom-inset')) > 40, null, { timeout: 5000 }).catch(() => undefined);
+    // A shorter viewport (virtual keyboard or rotation): still above the navbar.
+    await page.setViewportSize({ width: 390, height: 600 });
+    await page.waitForTimeout(400);
+    const g2 = await geometry();
+    const bad2 = Object.keys(g2.targets).filter((n) => g2.targets[n].missing || !g2.targets[n].above || !g2.targets[n].hit);
+    c('phone: still above the navbar after the viewport shrinks', bad2.length === 0 && Math.abs(parseFloat(g2.inset) - (g2.hostBottom - g2.navTop)) < 1.5, `navTop=${g2.navTop} inset=${g2.inset} bad=${bad2.join(',')}`);
+    await shot('02c-short-viewport');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(400);
+    void hidden;
+  }
+
   // --- a menu opens inside the shadow root
   await page.getByRole('button', { name: /^new$/i }).click();
   await page.getByRole('menu').waitFor();
@@ -181,7 +230,7 @@ async function scenario(engine, browser, { tag, viewport, platform, seed, nodeLi
   await page.evaluate(() => window.harness.runCommand('Allotr: Diagnostics'));
   await page.getByText('Allotr spike S1 report').waitFor();
   let report = await page.locator('.allotr-diagnostics-output').textContent();
-  c('diagnostics show platform, features and timings', /isDesktopApp=|isIosApp=/.test(report) && /WebAssembly: yes/.test(report) && /migrations:/.test(report) && /View Transitions:/.test(report), report.split('\n').slice(5, 9).join(' | '));
+  c('diagnostics show platform, features and timings', /isDesktopApp=|isIosApp=/.test(report) && /WebAssembly: yes/.test(report) && /migrations:/.test(report) && /View Transitions:/.test(report) && /## Layout/.test(report) && (platform === 'desktop' ? /off \(not mobile\)/.test(report) : /method: element/.test(report) && /navbar rect: top/.test(report) && /safe-area-inset-bottom/.test(report)), report.split('\n').slice(5, 9).join(' | '));
   await shot('07-diagnostics');
   if (seed) {
     await page.getByRole('button', { name: 'Seed 5k' }).click();

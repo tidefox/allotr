@@ -6,6 +6,15 @@
   const platform = params.get('platform') || 'desktop';
   const state = { notices: [], hotkeyHits: [], commands: new Map(), ribbon: [], leaves: [], plugins: [] };
 
+  // Obsidian mobile's floating bottom navbar: a rounded pill over the content.
+  if (platform !== 'desktop') {
+    const nav = document.createElement('div');
+    nav.className = 'mobile-navbar';
+    nav.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:min(340px,calc(100vw - 32px));height:56px;border-radius:28px;box-sizing:border-box;background:#3a3a3cee;box-shadow:0 2px 12px #0006;z-index:50;display:flex;align-items:center;justify-content:space-around;color:#fff;font-size:12px';
+    nav.innerHTML = '<span>back</span><span>fwd</span><span>search</span><span>+</span><span>tabs</span><span>menu</span>';
+    document.body.appendChild(nav);
+  }
+
   const Platform = {
     isDesktopApp: platform === 'desktop',
     isMobileApp: platform !== 'desktop',
