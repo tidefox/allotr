@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountId,
   adjustmentKind,
@@ -12,7 +11,7 @@ import {
 import type { LocalDate, Money, ReconcileResultView } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { findOwned } from './accounts.ts';
 import { insertCategory } from './categories.ts';
 import {
@@ -25,6 +24,7 @@ import {
   type Db,
 } from './store.ts';
 import { getTransaction } from './transactions.ts';
+import { newId } from './ids.ts';
 
 // Reconciling an account against the bank (FR-L9). A match is recorded.
 // What happens to a difference is the reconcile policy's call; the default
@@ -248,7 +248,7 @@ export async function reconcileAccount(
     await trx
       .insertInto('reconciliations')
       .values({
-        id: randomUUID(),
+        id: newId(),
         user_id: userId,
         account_id: id,
         currency: balance.currency,

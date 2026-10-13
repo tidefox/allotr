@@ -5,7 +5,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from './db/schema.ts';
-import { RequestProblem } from './http/domain-errors.ts';
+import { RequestProblem } from './ledger/domain-errors.ts';
 import { readSettings } from './settings.ts';
 import { ThemeUrlError, type ThemeUrlRefusal } from './theme-url.ts';
 

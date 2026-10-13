@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   billAmount,
   billId,
@@ -17,10 +16,11 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
 import { insertReversal, recordTransaction } from './transactions.ts';
 import { userToday, type Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // Bills, only as far as the daily figure needs them (docs/domain.md "Daily
 // usable"): each active bill due in the cycle is reserved from the day the
@@ -334,7 +334,7 @@ export async function insertBill(
   input: CreateBill & { active?: boolean | undefined },
   now: Date,
 ): Promise<string> {
-  const id = randomUUID();
+  const id = newId();
   await checkAccount(
     db,
     userId,
@@ -547,7 +547,7 @@ export async function insertBillPayment(
     await db
       .insertInto('bill_payments')
       .values({
-        id: randomUUID(),
+        id: newId(),
         user_id: userId,
         bill_id: id,
         due_on: input.dueOn,

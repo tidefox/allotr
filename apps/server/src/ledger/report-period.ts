@@ -5,7 +5,7 @@ import {
   localDate,
   type LocalDate,
 } from '@allotr/shared';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 
 // The period a report covers, resolved the same way for every report: a
 // payday cycle (by the day it opened, else the one that holds today) or a

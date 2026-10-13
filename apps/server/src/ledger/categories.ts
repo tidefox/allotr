@@ -1,10 +1,10 @@
-import { randomUUID } from 'node:crypto';
 import type { CategoryView, IncomeClass } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { uniquely } from './sqlite-errors.ts';
 import type { Db } from './store.ts';
+import { newId } from './ids.ts';
 
 // Two-level categories (FR-L7). A category in use is never deleted: it is
 // merged into another one, so committed entries keep pointing at it
@@ -228,7 +228,7 @@ export async function insertCategory(
   input: CreateCategory,
   now: Date,
 ): Promise<string> {
-  const id = randomUUID();
+  const id = newId();
   let kind = input.kind;
   let inherited: IncomeClass = 'earned';
   if (input.parentId !== undefined) {

@@ -1,10 +1,15 @@
 import { LedgerError, type LedgerErrorCode } from '@allotr/core';
 import { DateError, MoneyError } from '@allotr/shared';
-import type { Context } from 'hono';
-import { problem, type ProblemStatus } from './problem.ts';
+import type {
+  ClientErrorStatusCode,
+  ServerErrorStatusCode,
+} from 'hono/utils/http-status';
 
 // Domain errors from core and shared become problem details with the error's
 // stable code, minus its namespace (code-style rule "Errors").
+
+/** An error status the API can answer with (types only, no HTTP code). */
+export type ProblemStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
 const ledgerStatus: Record<LedgerErrorCode, ProblemStatus> = {
   'ledger.unbalanced': 400,
@@ -86,14 +91,4 @@ export function describeDomainError(error: DomainError): {
 export function atPath(error: DomainError, path: string): RequestProblem {
   const { status, code, detail } = describeDomainError(error);
   return new RequestProblem(status, code, detail, [{ path, message: detail }]);
-}
-
-export function domainProblem(c: Context, error: DomainError) {
-  const { status, code, detail } = describeDomainError(error);
-  const errors = error instanceof RequestProblem ? error.errors : undefined;
-  return problem(c, status, {
-    detail,
-    code,
-    ...(errors === undefined ? {} : { errors: [...errors] }),
-  });
 }

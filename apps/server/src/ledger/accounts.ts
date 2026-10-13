@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountBalances,
   accountId,
@@ -38,7 +37,7 @@ import {
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
 import { uniquely } from './sqlite-errors.ts';
@@ -55,6 +54,7 @@ import {
   type TransactionSource,
 } from './store.ts';
 import { loadView } from './today.ts';
+import { newId } from './ids.ts';
 
 // Ledger accounts (FR-L2, FR-L3, FR-L8). Every query is scoped to the user;
 // another user's account is reported as not found.
@@ -370,7 +370,7 @@ export async function insertAccount(
     dueDay: input.dueDay,
     minPayment: input.minPayment,
   });
-  const id = randomUUID();
+  const id = newId();
   const at = now.toISOString();
   await uniquely(
     () =>

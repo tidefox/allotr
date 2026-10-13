@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   accountId,
   budgetCovers,
@@ -38,11 +37,12 @@ import {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { RequestProblem } from './domain-errors.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { uniquely } from './sqlite-errors.ts';
 import { newEntry, userToday, withSystemAccounts, type Db } from './store.ts';
 import { loadView } from './today.ts';
+import { newId } from './ids.ts';
 
 // Budgets (ADR 0021): the user's plan per category or tag. They are virtual;
 // the figures come from core, folded from the ledger on every read. Every
@@ -360,7 +360,7 @@ export async function createBudget(
   input: CreateBudgetBody,
   now: Date,
 ): Promise<BudgetStatusView> {
-  const id = randomUUID();
+  const id = newId();
   await db.transaction().execute(async (trx) => {
     const [settings, today] = await Promise.all([
       readLedgerSettings(trx, userId),
@@ -391,7 +391,7 @@ export async function createBudget(
       await trx
         .insertInto('budget_amounts')
         .values({
-          id: randomUUID(),
+          id: newId(),
           user_id: userId,
           budget_id: id,
           effective_on: today,
@@ -438,7 +438,7 @@ export async function updateBudget(
       await trx
         .insertInto('budget_amounts')
         .values({
-          id: randomUUID(),
+          id: newId(),
           user_id: userId,
           budget_id: id,
           effective_on: today,
@@ -694,7 +694,7 @@ export async function setCoverOverride(
       .insertInto('cover_overrides')
       .values(
         input.covers.map((cover, position) => ({
-          id: randomUUID(),
+          id: newId(),
           user_id: userId,
           transaction_id: entryId,
           position,
