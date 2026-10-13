@@ -1,6 +1,7 @@
 // Spike S1 diagnostics: platform, feature checks, timings, synthetic-data
 // benchmarks, and a Markdown report the maintainer can paste back.
 import type { App } from 'obsidian';
+import * as obsidian from 'obsidian';
 import { Platform } from 'obsidian';
 import { noBlobStore, type BlobStore } from './blob-store.ts';
 import { Runtime, type Timings } from './runtime.ts';
@@ -86,7 +87,7 @@ export function environment(app: App, vaultKey: string): Env {
     `isPhone=${Platform.isPhone}`,
     `isTablet=${Platform.isTablet}`,
   ].join(', ');
-  const version = (globalThis as { apiVersion?: string }).apiVersion ?? (window as { apiVersion?: string }).apiVersion ?? 'unknown';
+  const version = (obsidian as unknown as { apiVersion?: string }).apiVersion ?? 'unknown';
   return {
     platform,
     userAgent: navigator.userAgent,

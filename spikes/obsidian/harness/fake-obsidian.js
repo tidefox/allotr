@@ -140,9 +140,7 @@
     revealLeaf: async (l) => { for (const x of state.leaves) x.containerEl.style.display = x === l ? '' : 'none'; },
     detachLeavesOfType: async (t) => { for (const l of state.leaves.filter((x) => x.type === t)) await l.detach(); },
   };
-  window.apiVersion = '1.9.99-fake';
-
-  const obsidianModule = { Plugin, ItemView, View, WorkspaceLeaf, Modal, Notice, Platform, addIcon() {} };
+  const obsidianModule = { apiVersion: '1.9.99-fake', Plugin, ItemView, View, WorkspaceLeaf, Modal, Notice, Platform, addIcon() {} };
 
   window.harness = {
     state, app, Platform,

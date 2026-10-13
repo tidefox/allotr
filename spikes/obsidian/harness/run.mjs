@@ -159,8 +159,11 @@ async function scenario(engine, browser, { tag, viewport, platform, seed, nodeLi
   });
   c('several leaves share one runtime', shared.hosts === 2 && shared.same && shared.qc && shared.views === 1, JSON.stringify(shared));
 
-  // --- persistence: save, reload the page, load again
-  await page.evaluate(() => window.plugin.runtime.flush());
+  // --- persistence: the debounced save (no manual flush), then reload
+  await page.waitForTimeout(2500);
+  const autoSaved = await page.evaluate(() => window.plugin.runtime.timings.lastSaveMs);
+  const savedBefore = undefined;
+  c('debounced save ran by itself after the write', autoSaved !== undefined, `lastSaveMs=${autoSaved}`);
   const saved = await page.evaluate(() => ({ ms: window.plugin.runtime.timings.lastSaveMs, bytes: window.plugin.runtime.timings.lastSaveBytes }));
   c('saved to IndexedDB', saved.bytes > 100000, JSON.stringify(saved));
   await page.reload();
