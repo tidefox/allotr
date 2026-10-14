@@ -67,6 +67,7 @@ describe('importedCounts', () => {
       pools: 0,
       budgets: 0,
       coverOverrides: 0,
+      withdrawalLinks: 0,
     });
     expect(rows).toEqual([
       { key: 'accounts', count: 2 },

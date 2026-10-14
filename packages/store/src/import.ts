@@ -40,6 +40,7 @@ import {
 import { createTag, listTags } from './tags.ts';
 import { recordTransaction, storeTransaction } from './transactions.ts';
 import { newId } from './ids.ts';
+import { importWithdrawalLinks } from './withdrawal-links.ts';
 
 // Fills an empty ledger from a bundle (docs/architecture.md "Import
 // bundle"). One database transaction and the same writes the API uses; a
@@ -605,6 +606,14 @@ export async function importBundle(
       }
     }
 
+    const withdrawalLinks = await importWithdrawalLinks(
+      trx,
+      userId,
+      bundle,
+      refs,
+      now,
+    );
+
     for (const [index, item] of bundle.reconciliations.entries()) {
       const id = account(item.account);
       const currency =
@@ -646,6 +655,7 @@ export async function importBundle(
       pools: bundle.pools.length,
       budgets: bundle.budgets.length,
       coverOverrides,
+      withdrawalLinks,
     };
   });
 }

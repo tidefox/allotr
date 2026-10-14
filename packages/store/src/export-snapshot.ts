@@ -1,7 +1,9 @@
 import {
   compareEntries,
+  validLinks,
   type ExchangeRate,
   type Transaction,
+  type WithdrawalLink,
 } from '@allotr/core';
 import {
   localDateIn,
@@ -19,6 +21,7 @@ import { loadBudgetSetup } from './budgets.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadChart, loadLedger } from './store.ts';
 import { loadRates } from './rates.ts';
+import { loadView } from './today.ts';
 
 // Everything an export writes, read once in one database transaction so
 // the three formats see the same ledger. The formatters are pure functions
@@ -125,6 +128,11 @@ export type Snapshot = Readonly<{
   entries: readonly Transaction[];
   /** Expenses paid with outside money (`funding`); absent entries are own. */
   outsideFunded: ReadonlySet<string>;
+  /**
+   * The withdrawal links that count (ADR 0038), by link id. Links that do
+   * not fit their entries are left out: an import would refuse them.
+   */
+  withdrawalLinks: readonly WithdrawalLink[];
   /** Tag names by entry id. */
   tags: ReadonlyMap<string, readonly string[]>;
   rates: readonly ExchangeRate[];
@@ -426,6 +434,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     categories,
     entries,
     outsideFunded: new Set(outsideRows.map((row) => row.id)),
+    withdrawalLinks: validLinks((await loadView(db, userId)).view),
     tags,
     rates,
     bills,

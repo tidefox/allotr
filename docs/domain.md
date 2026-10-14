@@ -724,10 +724,26 @@ an amount with its currency, and never changes their postings.
   both sides; and the links on each entry add up to no more than the
   withdrawal moved in or the expense's on-budget side. Links are
   many-to-many and the dates may come in either order.
+- **How it is read.** `core` rewrites the ledger for the budget only: each
+  valid link of amount C takes C off both postings of the withdrawal and
+  off the expense's on-budget posting, and adds a posting of −C on the
+  savings account the withdrawal left, so every entry still balances and
+  keeps its id. The budget projections run on that view; balances, net
+  worth, history, reconciliation and exports run on the real ledger. A link
+  that stops being valid is dropped from the view, never an error, and the
+  API refuses to add one that would be. Links are taken in id order when
+  the sums on an entry would pass its cap.
+- A transfer between currencies cannot be linked: the savings account that
+  pays must hold the link's currency. Budgets count an expense only for the
+  part the counted accounts paid, so a purchase part-paid from savings, with
+  or without a link, counts for that part.
 - Links can be added and removed at any time. Undoing either entry takes
   the link out of every figure; restoring brings it back while it is still
   valid. An edit carries the link to the replacement while it is still
-  valid and drops it otherwise, with a notice.
+  valid and drops it otherwise, with a notice. Restoring or reverting
+  records a new entry with a new id, so the links move to it the same way.
+  A link whose other entry is undone at that moment moves too and counts
+  again when that entry is restored.
 
 ## Cycle allocation
 

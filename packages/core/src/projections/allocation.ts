@@ -5,6 +5,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import { budgetView } from './withdrawal-links.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import { cycleOn, cyclesOf } from './cycles.ts';
 import {
@@ -155,13 +156,14 @@ function movedToSavings(
  * `reserved` figure of the daily numbers.
  */
 export function reservedParts(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
 ): Readonly<{
   bills: Money;
   ious: Money;
   missingRates: readonly CurrencyCode[];
 }> {
+  const view = budgetView(input);
   const cycles = cyclesOf(view, today);
   const onBudget = toFigure(view, onBudgetSums(view, today), today);
   const free = toFigure(view, availableSums(view, cycles, today), today);
@@ -185,9 +187,10 @@ export function reservedParts(
 
 /** The allocation of the cycle holding `today`. */
 export function cycleAllocation(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
 ): CycleAllocation {
+  const view = budgetView(input);
   const cycles = cyclesOf(view, today);
   const cycle = cycleOn(cycles, today);
 

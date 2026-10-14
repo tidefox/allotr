@@ -135,6 +135,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-C14 | Emergency fund target (3 to 6 months of average expenses) with progress, net worth with a daily series, and weekly review figures. | S | v2 |
 | FR-C15 | Income classes: an income category is earned, passive, a gift or a refund. Reports and the savings rate count earnings; gifts and refunds are shown as other inflows. Balances and the daily number are unchanged. | M | v2 |
 | FR-C16 | Expense funding: an expense paid with outside money, such as a gift, is flagged `outside`. It stays in the ledger and balances but is left out of a cycle's spending, pace and calendar heat, and is shown apart in reports. It counts against budgets only when a setting says so. | M | v2 |
+| FR-C17 | Withdrawal links: part of a savings withdrawal can be linked to the expense it paid for ([ADR 0038](adr/0038-withdrawal-links.md)). Entries and balances stay as the bank shows them; the budget reads the linked amount as if savings had paid the expense, so the daily number moves only by what the user paid themselves. Links are added and removed at any time, follow undo, restore and edit, and travel in the export bundle. | M | v2 |
 
 ### 6.3 Input and chat
 

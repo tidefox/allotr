@@ -1,4 +1,5 @@
 import { reversedIds } from '../ledger/indexes.ts';
+import { budgetView } from './withdrawal-links.ts';
 import {
   addDays,
   money,
@@ -427,7 +428,11 @@ export type WeeklyReview = Readonly<{
 }>;
 
 /** The figures a weekly review shows, from the same ledger as every other. */
-export function weeklyReview(view: LedgerView, today: LocalDate): WeeklyReview {
+export function weeklyReview(
+  input: LedgerView,
+  today: LocalDate,
+): WeeklyReview {
+  const view = budgetView(input);
   const currency = view.settings.defaultCurrency;
   const from = addDays(today, -6);
   const previousFrom = addDays(today, -13);

@@ -24,6 +24,7 @@ import { cachedLoad } from './ledger-cache.ts';
 import { loadRates } from './rates.ts';
 import { loadBudgetSetup } from './budgets.ts';
 import { loadIouSetup } from './iou-setup.ts';
+import { loadWithdrawalLinks } from './withdrawal-link-rows.ts';
 import { loadChart, loadLedger, loadPoolSetup, type Db } from './store.ts';
 
 // Today's figures (FR-C4, FR-C5): everything core's projections read,
@@ -147,6 +148,7 @@ async function readView(
     outside,
     pools,
     budgets,
+    withdrawalLinks,
   ] = await Promise.all([
     loadChart(db, userId),
     readLedgerSettings(db, userId),
@@ -164,6 +166,7 @@ async function readView(
     outsideFunded(db, userId),
     loadPoolSetup(db, userId),
     loadBudgetSetup(db, userId),
+    loadWithdrawalLinks(db, userId),
   ]);
   const ious = await loadIouSetup(db, userId, settings.iouWriteOffAfterDays);
   const joinedOn = localDateIn(new Date(user.created_at), settings.timeZone);
@@ -198,6 +201,7 @@ async function readView(
     rates,
     reconcileAdjustments: adjustments,
     outsideFunded: outside,
+    withdrawalLinks,
   };
   return { view, timeZone: settings.timeZone };
 }

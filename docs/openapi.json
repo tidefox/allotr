@@ -6213,6 +6213,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -6236,7 +6309,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     }
                   },
@@ -16280,6 +16354,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -16303,7 +16450,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "ious": {
@@ -16768,6 +16916,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -16791,7 +17012,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "ious": {
@@ -18327,6 +18549,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -18350,7 +18645,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "ious": {
@@ -19181,6 +19477,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -19204,7 +19573,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "transaction": {
@@ -19427,6 +19797,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -19450,7 +19893,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "ious": {
@@ -19916,6 +20360,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -19939,7 +20456,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "transaction": {
@@ -20162,6 +20680,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -20185,7 +20776,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "ious": {
@@ -20977,6 +21569,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -21000,7 +21665,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "iou": {
@@ -27384,6 +28050,79 @@
                               "null"
                             ]
                           },
+                          "withdrawalLinks": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "withdrawalId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "expenseId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "valid": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "withdrawal_missing",
+                                    "withdrawal_undone",
+                                    "withdrawal_not_transfer",
+                                    "withdrawal_not_from_savings",
+                                    "expense_missing",
+                                    "expense_undone",
+                                    "expense_not_expense",
+                                    "expense_outside_funded",
+                                    "expense_bill_payment",
+                                    "expense_not_on_budget",
+                                    "amount_not_positive",
+                                    "currency_mismatch",
+                                    "withdrawal_exceeded",
+                                    "expense_exceeded",
+                                    null
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "withdrawalId",
+                                "expenseId",
+                                "amount",
+                                "valid",
+                                "reason"
+                              ]
+                            }
+                          },
                           "groupKeys": {
                             "type": "array",
                             "items": {
@@ -27416,6 +28155,7 @@
                           "tagIds",
                           "billId",
                           "billName",
+                          "withdrawalLinks",
                           "groupKeys"
                         ]
                       }
@@ -28434,6 +29174,79 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "withdrawalId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "expenseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "valid": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded",
+                              null
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "withdrawalId",
+                          "expenseId",
+                          "amount",
+                          "valid",
+                          "reason"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -28457,7 +29270,8 @@
                     "budgetSwitch",
                     "tagIds",
                     "billId",
-                    "billName"
+                    "billName",
+                    "withdrawalLinks"
                   ]
                 }
               }
@@ -28687,6 +29501,79 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "withdrawalId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "expenseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "valid": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded",
+                              null
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "withdrawalId",
+                          "expenseId",
+                          "amount",
+                          "valid",
+                          "reason"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -28710,7 +29597,8 @@
                     "budgetSwitch",
                     "tagIds",
                     "billId",
-                    "billName"
+                    "billName",
+                    "withdrawalLinks"
                   ]
                 }
               }
@@ -29239,6 +30127,79 @@
                         "null"
                       ]
                     },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "withdrawalId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "expenseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "valid": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded",
+                              null
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "withdrawalId",
+                          "expenseId",
+                          "amount",
+                          "valid",
+                          "reason"
+                        ]
+                      }
+                    },
                     "budget": {
                       "type": [
                         "object",
@@ -29435,7 +30396,574 @@
                     "tagIds",
                     "billId",
                     "billName",
+                    "withdrawalLinks",
                     "budget"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such entry or account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/{id}/withdrawal-links/candidates": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Entries a withdrawal link could tie to this one",
+        "description": "For an expense, the savings withdrawals that can still take a link to it; for a transfer, the expenses it can still pay for. Entries within 14 days either side, nearest first. Each carries `room`, the most a link between the two may be for, to prefill the amount. An entry that is neither has `role: \"none\"` and no candidates.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The candidates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactionId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "expense",
+                        "withdrawal",
+                        "none"
+                      ]
+                    },
+                    "candidates": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transaction": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "expense",
+                                  "income",
+                                  "transfer",
+                                  "opening",
+                                  "write_off",
+                                  "budget_switch",
+                                  "reversal"
+                                ]
+                              },
+                              "occurredOn": {
+                                "type": "string",
+                                "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "occurredTime": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "sortRank": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "web",
+                                  "chat",
+                                  "api",
+                                  "import",
+                                  "system"
+                                ]
+                              },
+                              "categoryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "funding": {
+                                "type": "string",
+                                "enum": [
+                                  "own",
+                                  "outside"
+                                ]
+                              },
+                              "postings": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "accountId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "systemRole": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ],
+                                      "enum": [
+                                        "expenses",
+                                        "income",
+                                        "opening",
+                                        "conversion",
+                                        "receivables",
+                                        "payables",
+                                        null
+                                      ]
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "amountMinor": {
+                                          "type": "integer"
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]{3}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "amountMinor",
+                                        "currency"
+                                      ]
+                                    },
+                                    "categoryId": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ],
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    }
+                                  },
+                                  "required": [
+                                    "accountId",
+                                    "systemRole",
+                                    "amount",
+                                    "categoryId"
+                                  ]
+                                }
+                              },
+                              "reversesId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "reversedById": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "restoredById": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "replacesId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "replacedById": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "impliedRate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40,
+                                "pattern": "^\\d+(\\.\\d+)?$"
+                              },
+                              "budgetSwitch": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "accountId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  },
+                                  "budgetGroup": {
+                                    "type": "string",
+                                    "enum": [
+                                      "on",
+                                      "off"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "accountId",
+                                  "budgetGroup"
+                                ]
+                              },
+                              "tagIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                }
+                              },
+                              "billId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "billName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "withdrawalLinks": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "withdrawalId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "expenseId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 64
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "amountMinor": {
+                                          "type": "integer"
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]{3}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "amountMinor",
+                                        "currency"
+                                      ]
+                                    },
+                                    "valid": {
+                                      "type": "boolean"
+                                    },
+                                    "reason": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ],
+                                      "enum": [
+                                        "withdrawal_missing",
+                                        "withdrawal_undone",
+                                        "withdrawal_not_transfer",
+                                        "withdrawal_not_from_savings",
+                                        "expense_missing",
+                                        "expense_undone",
+                                        "expense_not_expense",
+                                        "expense_outside_funded",
+                                        "expense_bill_payment",
+                                        "expense_not_on_budget",
+                                        "amount_not_positive",
+                                        "currency_mismatch",
+                                        "withdrawal_exceeded",
+                                        "expense_exceeded",
+                                        null
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "withdrawalId",
+                                    "expenseId",
+                                    "amount",
+                                    "valid",
+                                    "reason"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "occurredOn",
+                              "occurredTime",
+                              "createdAt",
+                              "sortRank",
+                              "source",
+                              "categoryId",
+                              "note",
+                              "funding",
+                              "postings",
+                              "reversesId",
+                              "reversedById",
+                              "restoredById",
+                              "replacesId",
+                              "replacedById",
+                              "impliedRate",
+                              "budgetSwitch",
+                              "tagIds",
+                              "billId",
+                              "billName",
+                              "withdrawalLinks"
+                            ]
+                          },
+                          "room": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "transaction",
+                          "room"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "transactionId",
+                    "role",
+                    "candidates"
                   ]
                 }
               }
@@ -29869,6 +31397,79 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "withdrawalId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "expenseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "valid": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded",
+                              null
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "withdrawalId",
+                          "expenseId",
+                          "amount",
+                          "valid",
+                          "reason"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -29892,7 +31493,8 @@
                     "budgetSwitch",
                     "tagIds",
                     "billId",
-                    "billName"
+                    "billName",
+                    "withdrawalLinks"
                   ]
                 }
               }
@@ -30420,6 +32022,79 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "withdrawalId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "expenseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "valid": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded",
+                              null
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "withdrawalId",
+                          "expenseId",
+                          "amount",
+                          "valid",
+                          "reason"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -30443,7 +32118,8 @@
                     "budgetSwitch",
                     "tagIds",
                     "billId",
-                    "billName"
+                    "billName",
+                    "withdrawalLinks"
                   ]
                 }
               }
@@ -31026,7 +32702,7 @@
         },
         "responses": {
           "201": {
-            "description": "The reversal and the replacement.",
+            "description": "The reversal and the replacement, and `notices` for side effects such as a withdrawal link dropped because the replacement no longer fits it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -31252,6 +32928,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -31275,7 +33024,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "replacement": {
@@ -31498,6 +33248,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -31521,13 +33344,99 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
+                    },
+                    "notices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_link_dropped"
+                            ]
+                          },
+                          "link": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "link",
+                          "reason",
+                          "message"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "reversal",
-                    "replacement"
+                    "replacement",
+                    "notices"
                   ]
                 }
               }
@@ -32058,6 +33967,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -32081,7 +34063,8 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
                     },
                     "replacement": {
@@ -32304,6 +34287,79 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "withdrawalLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "valid": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "withdrawal_missing",
+                                  "withdrawal_undone",
+                                  "withdrawal_not_transfer",
+                                  "withdrawal_not_from_savings",
+                                  "expense_missing",
+                                  "expense_undone",
+                                  "expense_not_expense",
+                                  "expense_outside_funded",
+                                  "expense_bill_payment",
+                                  "expense_not_on_budget",
+                                  "amount_not_positive",
+                                  "currency_mismatch",
+                                  "withdrawal_exceeded",
+                                  "expense_exceeded",
+                                  null
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount",
+                              "valid",
+                              "reason"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -32327,13 +34383,99 @@
                         "budgetSwitch",
                         "tagIds",
                         "billId",
-                        "billName"
+                        "billName",
+                        "withdrawalLinks"
                       ]
+                    },
+                    "notices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_link_dropped"
+                            ]
+                          },
+                          "link": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "withdrawalId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "expenseId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "withdrawalId",
+                              "expenseId",
+                              "amount"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "withdrawal_missing",
+                              "withdrawal_undone",
+                              "withdrawal_not_transfer",
+                              "withdrawal_not_from_savings",
+                              "expense_missing",
+                              "expense_undone",
+                              "expense_not_expense",
+                              "expense_outside_funded",
+                              "expense_bill_payment",
+                              "expense_not_on_budget",
+                              "amount_not_positive",
+                              "currency_mismatch",
+                              "withdrawal_exceeded",
+                              "expense_exceeded"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "link",
+                          "reason",
+                          "message"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "reversal",
-                    "replacement"
+                    "replacement",
+                    "notices"
                   ]
                 }
               }
@@ -32854,6 +34996,657 @@
           },
           "409": {
             "description": "The entry has a time and the move would put it out of time order (`out_of_time_order`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/withdrawal-links": {
+      "post": {
+        "tags": [
+          "Withdrawal links"
+        ],
+        "summary": "Link a savings withdrawal to the expense it paid for",
+        "description": "For the budget (the daily number, spending, pace, budgets and cover), the linked amount is read as if the expense had been paid straight from the savings account, and the withdrawal had not moved it. Balances, history and exports keep the real postings. A refusal carries one of the problem codes `withdrawal_missing`, `expense_missing` (404), `withdrawal_exceeded`, `expense_exceeded` (409: the links on one side would add up to more than it moved or paid), or `withdrawal_undone`, `withdrawal_not_transfer`, `withdrawal_not_from_savings`, `expense_undone`, `expense_not_expense`, `expense_outside_funded`, `expense_bill_payment`, `expense_not_on_budget`, `amount_not_positive`, `currency_mismatch` (422).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "withdrawalId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "expenseId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  }
+                },
+                "required": [
+                  "withdrawalId",
+                  "expenseId",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "withdrawalId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "expenseId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "withdrawal_missing",
+                        "withdrawal_undone",
+                        "withdrawal_not_transfer",
+                        "withdrawal_not_from_savings",
+                        "expense_missing",
+                        "expense_undone",
+                        "expense_not_expense",
+                        "expense_outside_funded",
+                        "expense_bill_payment",
+                        "expense_not_on_budget",
+                        "amount_not_positive",
+                        "currency_mismatch",
+                        "withdrawal_exceeded",
+                        "expense_exceeded",
+                        null
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "withdrawalId",
+                    "expenseId",
+                    "amount",
+                    "valid",
+                    "reason"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such withdrawal or expense.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The links on the withdrawal or on the expense would add up to more than it moved or paid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The entries cannot be linked; the problem code says why.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/withdrawal-links/{id}": {
+      "delete": {
+        "tags": [
+          "Withdrawal links"
+        ],
+        "summary": "Remove a withdrawal link",
+        "description": "The figures go back to reading the two entries as recorded. The link is kept as removed, not deleted.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such link, or it was removed already.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -46790,6 +49583,48 @@
                     },
                     "maxItems": 50000,
                     "default": []
+                  },
+                  "withdrawalLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "withdrawal": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "expense": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "withdrawal",
+                        "expense",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 50000,
+                    "default": []
                   }
                 },
                 "required": [
@@ -46849,6 +49684,10 @@
                       "default": 0
                     },
                     "coverOverrides": {
+                      "type": "integer",
+                      "default": 0
+                    },
+                    "withdrawalLinks": {
                       "type": "integer",
                       "default": 0
                     }
@@ -48825,6 +51664,48 @@
                         "required": [
                           "transaction",
                           "covers"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 50000,
+                      "default": []
+                    },
+                    "withdrawalLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "withdrawal": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "expense": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "withdrawal",
+                          "expense",
+                          "amount"
                         ],
                         "additionalProperties": false
                       },

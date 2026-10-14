@@ -47,6 +47,7 @@ export const settingsData = {
       pools: 'Pools',
       budgets: 'Budgets',
       coverOverrides: 'Cover overrides',
+      withdrawalLinks: 'Withdrawal links',
     },
   },
   deleteAccount: {

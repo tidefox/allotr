@@ -5,6 +5,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import { budgetView } from './withdrawal-links.ts';
 import { budgetGroupBalances, type GroupBalances } from '../ledger/balances.ts';
 import { groupsOn } from './pools.ts';
 import type { AccountId, CategoryId, Transaction } from '../ledger/types.ts';
@@ -121,9 +122,10 @@ function periodBalances(
  * without a rate are left out and named.
  */
 export function savedBetween(
-  view: LedgerView,
+  input: LedgerView,
   range: Readonly<{ from: LocalDate; to: LocalDate }>,
 ): Readonly<{ saved: Money; missingRates: readonly CurrencyCode[] }> {
+  const view = budgetView(input);
   const { opening, closing } = periodBalances(view, range.from, range.to);
   const currencies = [
     ...new Set([...opening.off.keys(), ...closing.off.keys()]),
@@ -176,6 +178,13 @@ export function cycleSnapshot(
     );
 
   const { opening, closing } = periodBalances(view, cycle.openedOn, lastDay);
+  // What the cycle saved is a budget figure: a linked withdrawal is not
+  // money taken from savings. The balances shown stay the real ones.
+  const budget = budgetView(view);
+  const savedFrom =
+    budget === view
+      ? { opening, closing }
+      : periodBalances(budget, cycle.openedOn, lastDay);
   const policies = policiesOf(view);
   const leftover = [...availableSums(view, cycles, lastDay)]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -188,12 +197,15 @@ export function cycleSnapshot(
       return { leftover: amount, ...settled };
     });
   const currencies = [
-    ...new Set([...opening.off.keys(), ...closing.off.keys()]),
+    ...new Set([
+      ...savedFrom.opening.off.keys(),
+      ...savedFrom.closing.off.keys(),
+    ]),
   ].sort();
   const savingsNetChange = currencies.map((currency) =>
     money(
-      (closing.off.get(currency)?.amountMinor ?? 0) -
-        (opening.off.get(currency)?.amountMinor ?? 0),
+      (savedFrom.closing.off.get(currency)?.amountMinor ?? 0) -
+        (savedFrom.opening.off.get(currency)?.amountMinor ?? 0),
       currency,
     ),
   );

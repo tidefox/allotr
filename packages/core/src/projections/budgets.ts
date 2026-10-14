@@ -1,4 +1,5 @@
 import { entriesInOrder, reversedIds } from '../ledger/indexes.ts';
+import { budgetView } from './withdrawal-links.ts';
 import {
   addDays,
   lastDayOfMonth,
@@ -280,11 +281,12 @@ export type CountedSpend = Readonly<{
 // `excluded` entries, such as a payment of a bill that was already reserved,
 // do not count: their money left free money when the cycle opened.
 export function countedSpendLines(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
   excluded: ReadonlySet<TransactionId>,
   missing: Set<CurrencyCode>,
 ): CountedSpend[] {
+  const view = budgetView(input);
   const reversed = reversedIds(view.ledger);
   const expenses = new Set(
     [...view.chart.values()]
@@ -331,7 +333,32 @@ export function countedSpendLines(
       (p) => counted.get(p.accountId) === 'on' && p.amount.amountMinor < 0,
     );
     if (!paid) continue;
-    for (const line of lines) {
+    // What savings paid of the entry is a withdrawal, not budget spending,
+    // as in the daily number: a purchase part-paid from savings, or one
+    // with a withdrawal link, counts for the counted accounts' share only.
+    const fromSavings = new Map<CurrencyCode, number>();
+    for (const p of t.postings) {
+      if (counted.get(p.accountId) === 'off' && p.amount.amountMinor < 0) {
+        fromSavings.set(
+          p.amount.currency,
+          (fromSavings.get(p.amount.currency) ?? 0) - p.amount.amountMinor,
+        );
+      }
+    }
+    for (const full of lines) {
+      const cut = Math.min(
+        fromSavings.get(full.amount.currency) ?? 0,
+        full.amount.amountMinor,
+      );
+      fromSavings.set(
+        full.amount.currency,
+        (fromSavings.get(full.amount.currency) ?? 0) - cut,
+      );
+      const line = {
+        ...full,
+        amount: money(full.amount.amountMinor - cut, full.amount.currency),
+      };
+      if (line.amount.amountMinor === 0) continue;
       // Converted at the rate of the day asked about, as the daily number
       // is, so the two always agree and a missing rate is flagged the same.
       const converted = convertOn(
@@ -522,10 +549,11 @@ type Counted = {
  * below zero.
  */
 export function foldBudgets(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
   env: FoldEnv = {},
 ): BudgetFold | null {
+  const view = budgetView(input);
   const setup = view.budgets;
   if (setup === undefined || setup.budgets.length === 0) return null;
   const currency = view.settings.defaultCurrency;

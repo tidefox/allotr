@@ -17,6 +17,7 @@ import {
 } from '@allotr/core';
 import type {
   CreateTransactionBody,
+  EntryNotice,
   DayOrderView,
   LocalDate,
   MoveTransactionBody,
@@ -36,6 +37,7 @@ import {
   restoreIouRows,
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
+import { carryWithdrawalLinks, linkViewsByEntry } from './withdrawal-links.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { aggregateGroups, aggregateTotals } from './transaction-totals.ts';
 import { loadRates, recordImpliedRate, releaseImpliedRate } from './rates.ts';
@@ -128,7 +130,7 @@ async function views(
 ): Promise<TransactionView[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
-  const [postings, tags, reversals, restores, replacements, payments] =
+  const [postings, tags, reversals, restores, replacements, payments, links] =
     await Promise.all([
       db
         .selectFrom('postings')
@@ -187,6 +189,7 @@ async function views(
         .where('bill_payments.user_id', '=', userId)
         .where('bill_payments.transaction_id', 'in', ids)
         .execute(),
+      linkViewsByEntry(db, userId, ids),
     ]);
   const group = <T extends { transaction_id: string }>(items: T[]) => {
     const map = new Map<string, T[]>();
@@ -244,10 +247,11 @@ async function views(
     tagIds: (tagsOf.get(row.id) ?? []).map((t) => t.tag_id),
     billId: paid.get(row.id)?.bill_id ?? null,
     billName: paid.get(row.id)?.name ?? null,
+    withdrawalLinks: links.get(row.id) ?? [],
   }));
 }
 
-async function viewsByIds(
+export async function viewsByIds(
   db: Db,
   userId: string,
   ids: readonly string[],
@@ -1069,6 +1073,8 @@ export async function restoreTransaction(
       await fundingOf(trx, userId, id),
     );
     await restoreIouRows(trx, userId, id, copy.id, now);
+    // The copy has a new id; the links follow it (ADR 0038).
+    await carryWithdrawalLinks(trx, userId, id, copy.id, now);
     return copy.id;
   });
   return getTransaction(db, userId, copyId);
@@ -1095,6 +1101,13 @@ export async function recordReplacement(
     .execute();
 }
 
+type EditedTransaction = {
+  reversal: TransactionView;
+  replacement: TransactionView;
+  /** Side effects to tell the user about, such as a dropped link. */
+  notices: EntryNotice[];
+};
+
 /** Replaces an entry: its reversal plus a new entry (FR-L4). */
 export async function editTransaction(
   db: Kysely<DB>,
@@ -1102,8 +1115,8 @@ export async function editTransaction(
   id: string,
   body: CreateTransactionBody,
   now: Date,
-): Promise<{ reversal: TransactionView; replacement: TransactionView }> {
-  const [reversalId, replacementId] = await db
+): Promise<EditedTransaction> {
+  const [reversalId, replacementId, notices] = await db
     .transaction()
     .execute(async (trx) => {
       await refuseIouEdit(trx, userId, id, 'edit');
@@ -1133,14 +1146,21 @@ export async function editTransaction(
         funding,
       );
       await recordReplacement(trx, userId, id, replacement.id);
-      return [reversal.id, replacement.id] as const;
+      const notices = await carryWithdrawalLinks(
+        trx,
+        userId,
+        id,
+        replacement.id,
+        now,
+      );
+      return [reversal.id, replacement.id, notices] as const;
     });
   const [reversal, replacement] = await viewsByIds(db, userId, [
     reversalId,
     replacementId,
   ]);
   if (reversal === undefined || replacement === undefined) throw notFound();
-  return { reversal, replacement };
+  return { reversal, replacement, notices };
 }
 
 /**
@@ -1153,56 +1173,65 @@ export async function revertTransaction(
   userId: string,
   versionId: string,
   now: Date,
-): Promise<{ reversal: TransactionView; replacement: TransactionView }> {
-  const [reversalId, copyId] = await db.transaction().execute(async (trx) => {
-    const version = await getTransaction(trx, userId, versionId);
-    if (version.replacedById === null)
-      throw new RequestProblem(
-        409,
-        'not_replaced',
-        'This is not an earlier version of an edited entry.',
+): Promise<EditedTransaction> {
+  const [reversalId, copyId, notices] = await db
+    .transaction()
+    .execute(async (trx) => {
+      const version = await getTransaction(trx, userId, versionId);
+      if (version.replacedById === null)
+        throw new RequestProblem(
+          409,
+          'not_replaced',
+          'This is not an earlier version of an edited entry.',
+        );
+      // The version that stands now: follow the edits forward.
+      let current = await getTransaction(trx, userId, version.replacedById);
+      for (let hops = 0; current.replacedById !== null; hops += 1) {
+        if (hops > 10_000) throw new Error('edit chain does not end');
+        current = await getTransaction(trx, userId, current.replacedById);
+      }
+      if (current.reversedById !== null)
+        throw new RequestProblem(
+          409,
+          'entry_deleted',
+          'The entry has been deleted since. Restore it first.',
+        );
+      await refuseIouEdit(trx, userId, current.id, 'edit');
+      const chart = await loadChart(trx, userId);
+      const ledger = await loadLedger(trx, userId, chart);
+      const meta = { id: newTransactionId(), createdAt: now.toISOString() };
+      const reversal = reverse(chart, ledger, transactionId(current.id), meta);
+      const copy = reinstate(chart, ledger, transactionId(versionId), {
+        id: newTransactionId(),
+        createdAt: meta.createdAt,
+      });
+      await storeTransaction(trx, userId, reversal, [], null, 'api');
+      await storeTransaction(
+        trx,
+        userId,
+        copy,
+        version.tagIds,
+        null,
+        'api',
+        transactionId(current.id),
+        version.funding,
       );
-    // The version that stands now: follow the edits forward.
-    let current = await getTransaction(trx, userId, version.replacedById);
-    for (let hops = 0; current.replacedById !== null; hops += 1) {
-      if (hops > 10_000) throw new Error('edit chain does not end');
-      current = await getTransaction(trx, userId, current.replacedById);
-    }
-    if (current.reversedById !== null)
-      throw new RequestProblem(
-        409,
-        'entry_deleted',
-        'The entry has been deleted since. Restore it first.',
+      await recordReplacement(trx, userId, current.id, copy.id);
+      const notices = await carryWithdrawalLinks(
+        trx,
+        userId,
+        current.id,
+        copy.id,
+        now,
       );
-    await refuseIouEdit(trx, userId, current.id, 'edit');
-    const chart = await loadChart(trx, userId);
-    const ledger = await loadLedger(trx, userId, chart);
-    const meta = { id: newTransactionId(), createdAt: now.toISOString() };
-    const reversal = reverse(chart, ledger, transactionId(current.id), meta);
-    const copy = reinstate(chart, ledger, transactionId(versionId), {
-      id: newTransactionId(),
-      createdAt: meta.createdAt,
+      return [reversal.id, copy.id, notices] as const;
     });
-    await storeTransaction(trx, userId, reversal, [], null, 'api');
-    await storeTransaction(
-      trx,
-      userId,
-      copy,
-      version.tagIds,
-      null,
-      'api',
-      transactionId(current.id),
-      version.funding,
-    );
-    await recordReplacement(trx, userId, current.id, copy.id);
-    return [reversal.id, copy.id] as const;
-  });
   const [reversal, replacement] = await viewsByIds(db, userId, [
     reversalId,
     copyId,
   ]);
   if (reversal === undefined || replacement === undefined) throw notFound();
-  return { reversal, replacement };
+  return { reversal, replacement, notices };
 }
 
 /**

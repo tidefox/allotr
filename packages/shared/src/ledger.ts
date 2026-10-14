@@ -6,6 +6,7 @@ import {
   moneySchema,
   rateSchema,
 } from './money/schemas.ts';
+import { entryNoticeSchema, withdrawalLinkSchema } from './withdrawal-links.ts';
 
 // Request and response shapes for ledger accounts, categories and tags
 // (docs/domain.md "Accounts and double-entry", FR-L2, FR-L3, FR-L7, FR-L8).
@@ -413,6 +414,13 @@ export const transactionSchema = z.object({
   billId: idSchema.nullable(),
   /** The name of that bill; null with `billId`. */
   billName: z.string().nullable(),
+  /**
+   * The withdrawal links on this entry (ADR 0038), as the withdrawal or as
+   * the expense, oldest first. Removed links are not listed. A link that
+   * does not count (an entry was undone, or no longer fits) is listed with
+   * `valid: false` and its `reason`.
+   */
+  withdrawalLinks: z.array(withdrawalLinkSchema),
 });
 export type TransactionView = z.infer<typeof transactionSchema>;
 
@@ -516,6 +524,8 @@ export type DayOrderView = z.infer<typeof dayOrderSchema>;
 export const editedTransactionSchema = z.object({
   reversal: transactionSchema,
   replacement: transactionSchema,
+  /** Side effects the user should know about; empty when there are none. */
+  notices: z.array(entryNoticeSchema),
 });
 
 /** One ID, or up to 50 comma-separated IDs, as a list. */

@@ -306,6 +306,19 @@ export { creditAvailable, creditNextDue } from './projections/credit.ts';
 export { savingsRate } from './projections/savings-rate.ts';
 export { incomeClassOf, isEarnings } from './projections/income-class.ts';
 export { outsideEntries } from './projections/funding.ts';
+export {
+  budgetView,
+  checkLink,
+  linkRoom,
+  linkValidity,
+  validLinks,
+  withdrawalLinkId,
+  type DroppedLink,
+  type LinkRefusal,
+  type LinkValidity,
+  type WithdrawalLink,
+  type WithdrawalLinkId,
+} from './projections/withdrawal-links.ts';
 export { basisPointShares, FULL_SHARE_BP } from './projections/shares.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {

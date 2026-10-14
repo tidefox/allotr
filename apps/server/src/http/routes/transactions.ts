@@ -10,6 +10,7 @@ import {
   transactionDetailSchema,
   transactionListSchema,
   transactionSchema,
+  withdrawalLinkCandidatesSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
@@ -21,6 +22,7 @@ import {
   revertTransaction,
   reverseTransaction,
   getTransactionDetail,
+  linkCandidates,
 } from '@allotr/store';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
@@ -93,6 +95,21 @@ const getRoute = createRoute({
   },
 });
 
+const candidatesRoute = createRoute({
+  method: 'get',
+  path: '/v1/transactions/{id}/withdrawal-links/candidates',
+  tags,
+  summary: 'Entries a withdrawal link could tie to this one',
+  description:
+    'For an expense, the savings withdrawals that can still take a link to it; for a transfer, the expenses it can still pay for. Entries within 14 days either side, nearest first. Each carries `room`, the most a link between the two may be for, to prefill the amount. An entry that is neither has `role: "none"` and no candidates.',
+  request: { params: idParamSchema },
+  responses: {
+    200: json(withdrawalLinkCandidatesSchema, 'The candidates.'),
+    ...signedIn,
+    404: notFound,
+  },
+});
+
 const reverseRoute = createRoute({
   method: 'post',
   path: '/v1/transactions/{id}/reverse',
@@ -146,7 +163,10 @@ const editRoute = createRoute({
     'Posts a reversal of the entry plus the replacement described by the body. Nothing is updated in place. The replacement points at the entry it replaced (`replacesId`), and the list leaves the earlier version and its undo out: an edit is not a delete.',
   request: { params: idParamSchema, body: createBody },
   responses: {
-    201: json(editedTransactionSchema, 'The reversal and the replacement.'),
+    201: json(
+      editedTransactionSchema,
+      'The reversal and the replacement, and `notices` for side effects such as a withdrawal link dropped because the replacement no longer fits it.',
+    ),
     400: invalid,
     ...signedIn,
     404: notFound,
@@ -232,6 +252,13 @@ export function registerTransactionRoutes(
       200,
     );
   });
+
+  app.openapi(candidatesRoute, async (c) =>
+    c.json(
+      await linkCandidates(db, c.get('user').id, c.req.valid('param').id),
+      200,
+    ),
+  );
 
   app.openapi(reverseRoute, async (c) => {
     const { id } = c.req.valid('param');

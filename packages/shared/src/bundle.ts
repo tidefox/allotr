@@ -346,6 +346,19 @@ const coverOverrideSchema = z.strictObject({
     .max(bundleLimits.items),
 });
 
+/**
+ * Part of a savings withdrawal that paid for an expense (ADR 0038). Both
+ * entries carry a `ref`; core checks the link when it is imported.
+ */
+const withdrawalLinkSchema = z.strictObject({
+  /** The `ref` of the transfer from savings. */
+  withdrawal: refSchema,
+  /** The `ref` of the expense it paid for. */
+  expense: refSchema,
+  /** In the currency of the withdrawal's inbound side. */
+  amount: positiveMoney,
+});
+
 function list<T extends z.ZodType>(item: T, max: number = bundleLimits.items) {
   return z.array(item).max(max).default([]);
 }
@@ -365,6 +378,8 @@ export const bundleSchema = z.strictObject({
   /** The cover order, first source first; left out, core's default applies. */
   coverOrder: z.array(coverSourceSchema).max(bundleLimits.items).optional(),
   coverOverrides: list(coverOverrideSchema, bundleLimits.transactions),
+  /** Savings withdrawals tied to the expenses they paid for. */
+  withdrawalLinks: list(withdrawalLinkSchema, bundleLimits.transactions),
 });
 export type Bundle = z.infer<typeof bundleSchema>;
 export type BundleTransaction = Bundle['transactions'][number];
@@ -391,5 +406,6 @@ export const importResultSchema = z.object({
   pools: z.int().default(0),
   budgets: z.int().default(0),
   coverOverrides: z.int().default(0),
+  withdrawalLinks: z.int().default(0),
 });
 export type ImportResult = z.infer<typeof importResultSchema>;

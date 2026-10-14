@@ -6,6 +6,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import { budgetView } from './withdrawal-links.ts';
 import { accountIn } from '../ledger/chart.ts';
 import type { AccountId, Transaction } from '../ledger/types.ts';
 import { cycleEndOn, cyclesOf } from './cycles.ts';
@@ -103,10 +104,11 @@ export function paceDiff(
  * rate.
  */
 export function cycleDays(
-  view: LedgerView,
+  input: LedgerView,
   cycle: Cycle,
   today: LocalDate,
 ): CycleDays {
+  const view = budgetView(input);
   const cycles = cyclesOf(view, today);
   const end = cycle.closedOn ?? cycleEndOn(cycle, today);
   const lastDay = addDays(end, -1);

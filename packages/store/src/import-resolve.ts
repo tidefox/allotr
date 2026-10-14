@@ -510,6 +510,21 @@ export function resolveBundle(
     });
   });
 
+  bundle.withdrawalLinks.forEach((link, index) => {
+    const at = ['withdrawalLinks', index] as const;
+    const check = (field: 'withdrawal' | 'expense', kind: string) => {
+      const ref = link[field];
+      const found = refKinds.get(ref);
+      if (found === undefined) {
+        report([...at, field], `No entry has the ref "${ref}".`);
+      } else if (found !== kind) {
+        report([...at, field], `The entry "${ref}" must be a ${kind}.`);
+      }
+    };
+    check('withdrawal', 'transfer');
+    check('expense', 'expense');
+  });
+
   return {
     errors,
     existingIds: categories.existingIds,
