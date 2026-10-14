@@ -42,6 +42,11 @@ import { ledgerRows } from '@/features/ledger/rows';
 import { isEditable } from '@/features/ledger/edit-draft';
 import { call } from '@/lib/api';
 import { budgetsQuery } from '@/lib/budgets';
+import {
+  dismissEntryNotices,
+  postEntryNotices,
+  useEntryNotices,
+} from '@/lib/entry-notices';
 import { seriesNumber } from '@/lib/category-style';
 import { endpoints } from '@/lib/endpoints';
 import {
@@ -66,6 +71,7 @@ import {
   type EntryDetailModel,
 } from './detail-model.ts';
 import { EditSheet } from './edit-sheet.tsx';
+import { WithdrawalLinksSection } from './withdrawal-links-section.tsx';
 import { IouSheet } from './iou-sheet.tsx';
 import type { Move } from '../reorder-model.ts';
 
@@ -266,6 +272,8 @@ function DetailBody({
         )}
       </div>
 
+      <DroppedLinks entryId={entry.id} />
+
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-1.5">
         <Field label={t('transactionDetail.fields.date')}>
           {entry.occurredTime === null
@@ -319,6 +327,8 @@ function DetailBody({
           {historyText(entry)}
         </Field>
       </dl>
+
+      <WithdrawalLinksSection entry={entry} onOpen={onOpen} />
 
       <History entry={entry} onOpen={onOpen} onChanged={refresh} />
 
@@ -469,6 +479,36 @@ function DetailBody({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * What an edit or a revert could not carry to this entry: a withdrawal link
+ * that no longer fits (ADR 0038). Said until dismissed.
+ */
+function DroppedLinks({ entryId }: { entryId: string }) {
+  const notices = useEntryNotices(entryId);
+  if (notices.length === 0) return null;
+  return (
+    <div
+      role="status"
+      aria-label={t('withdrawalLinks.dropped.title')}
+      className="mb-2.5 flex flex-col gap-1 border border-warning px-2 py-1.5"
+    >
+      {notices.map((notice, index) => (
+        <p key={index} className="text-small">
+          {notice.message}
+        </p>
+      ))}
+      <BracketButton
+        className="self-start"
+        onPress={() => {
+          dismissEntryNotices(entryId);
+        }}
+      >
+        {t('withdrawalLinks.dropped.dismiss')}
+      </BracketButton>
+    </div>
   );
 }
 
@@ -676,6 +716,7 @@ function Version({
   const revert = useMutation({
     mutationFn: () => revertTransaction(id),
     onSuccess: (edited) => {
+      postEntryNotices(edited.replacement.id, edited.notices);
       onChanged();
       onOpen(edited.replacement.id);
     },

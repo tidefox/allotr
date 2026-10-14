@@ -33,6 +33,7 @@ const allSpecs = [
   'new-entry',
   'transactions',
   'transactions-detail',
+  'withdrawal-links',
   'accounts',
   'accounts-detail',
   'budget-pools-bills',

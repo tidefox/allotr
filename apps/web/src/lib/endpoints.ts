@@ -1,4 +1,7 @@
 import {
+  createWithdrawalLinkBodySchema,
+  createdWithdrawalLinkSchema,
+  withdrawalLinkCandidatesSchema,
   markReadBodySchema,
   pushConfigSchema,
   pushSubscriptionBodySchema,
@@ -712,6 +715,22 @@ export const endpoints = {
     method: 'POST',
     path: '/v1/transactions/{id}/revert',
     response: editedTransactionSchema,
+  }),
+  withdrawalLinkCandidates: endpoint({
+    method: 'GET',
+    path: '/v1/transactions/{id}/withdrawal-links/candidates',
+    response: withdrawalLinkCandidatesSchema,
+  }),
+  createWithdrawalLink: endpoint({
+    method: 'POST',
+    path: '/v1/withdrawal-links',
+    body: createWithdrawalLinkBodySchema,
+    response: createdWithdrawalLinkSchema,
+  }),
+  deleteWithdrawalLink: endpoint({
+    method: 'DELETE',
+    path: '/v1/withdrawal-links/{id}',
+    response: z.unknown(),
   }),
   moveTransaction: endpoint({
     method: 'POST',

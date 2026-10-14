@@ -415,7 +415,8 @@ settings, so no ledger read is made that the server would refuse.
   are not sent), cover (`budget.lines[].covers` and what was not covered,
   or `none`), source, history (`earlier version`, `edited since`,
   `deleted since`, `brought back as`, or `—`).
-  Below: the versions with `[go back to this]` when there is history, the
+  Below: a withdrawal-links section (see **Withdrawal links** below), the
+  versions with `[go back to this]` when there is history, the
   newest three other entries from the same payee (date, account, amount;
   any date; `first time` when none; a `[see all]` link opens
   `/transactions?payee=…&type=expense&period=all`), then a ruled action row:
@@ -435,6 +436,24 @@ settings, so no ledger read is made that the server would refuse.
   detail. A sheet takes each person's name (with names used before as taps)
   and amount, filled as an even share until typed; the server keeps the rest
   as the user's share and replaces the entry (an undo plus the split).
+
+- Withdrawal links ([ADR 0038](adr/0038-withdrawal-links.md)): an expense
+  has a **Paid from savings** section and a savings withdrawal (a transfer
+  the server names so) has **Paid for**; an entry with neither role and no
+  links shows none. Each link is a row (date, the other entry's note and
+  accounts, amount, `[open]`, `[remove]`); a link that does not count is
+  muted with a `not counting` tag and the reason on a line below. `[remove]`
+  asks first, inline. `[Paid from savings…]` / `[Paid for…]` opens a sheet
+  listing the entries the server offers (`GET
+  /v1/transactions/{id}/withdrawal-links/candidates`: within 14 days, with
+  room left), one to choose; the amount is prefilled with the server's
+  `room` and may be lowered (an input aid; the server refuses what does not
+  fit, and its code is shown as a message). With no candidates the section
+  says so instead of showing the button. The list tags an entry with a link
+  that counts (`from savings` on the expense, `for a purchase` on the
+  withdrawal). After an edit or a revert, a link the server could not carry
+  over is said at the top of the new entry until dismissed. Linking or
+  removing refreshes entries, Today, accounts and budgets.
 
 ### Budget `/budget/…`
 

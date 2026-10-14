@@ -59,6 +59,9 @@ function rowCells(row: TxRow) {
       {row.bill === null ? null : (
         <Tag className="shrink-0">{t('transactions.list.billTag')}</Tag>
       )}
+      {row.link === null ? null : (
+        <Tag className="shrink-0">{t(`withdrawalLinks.tag.${row.link}`)}</Tag>
+      )}
     </span>,
     <span key="category" className="font-sans text-text-muted">
       {row.categoryParts === null ? (

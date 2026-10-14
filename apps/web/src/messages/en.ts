@@ -6,6 +6,7 @@ import { budgetBills, budgetPools } from './budget-pools-bills.ts';
 import { billForm } from './bill-form.ts';
 import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
+import { withdrawalLinks } from './withdrawal-links.ts';
 import { budgetBudgets } from './budget-budgets.ts';
 import { reportsShell } from './reports-shell.ts';
 import { reportsSummary } from './reports-summary.ts';
@@ -26,6 +27,7 @@ export const en = {
   accountsScreen,
   accountDetail,
   transactionDetail,
+  withdrawalLinks,
   budgetPools,
   budgetBills,
   billForm,
@@ -992,6 +994,24 @@ export const en = {
     tooMany: 'Too many attempts. Wait a minute and try again.',
     unexpected: 'The server answered {status} {title}.',
     codes: {
+      withdrawal_missing: 'The savings transfer could not be found.',
+      expense_missing: 'The purchase could not be found.',
+      withdrawal_exceeded:
+        'The transfer has less left to link than that. Lower the amount.',
+      expense_exceeded:
+        'The purchase has less left to link than that. Lower the amount.',
+      withdrawal_undone: 'The savings transfer is deleted.',
+      withdrawal_not_transfer: 'That entry is not a transfer.',
+      withdrawal_not_from_savings:
+        'That transfer does not move money from savings to a budget account.',
+      expense_undone: 'The purchase is deleted.',
+      expense_not_expense: 'That entry is not an expense.',
+      expense_outside_funded:
+        'A purchase paid with outside money cannot take a link.',
+      expense_bill_payment: 'A bill payment cannot take a link.',
+      expense_not_on_budget: 'The purchase is not paid from a budget account.',
+      amount_not_positive: 'Enter an amount above zero.',
+      currency_mismatch: 'The amount must be in the currency of both entries.',
       theme_url_import_off:
         'Importing themes from a URL is turned off on this server.',
       theme_unreadable:

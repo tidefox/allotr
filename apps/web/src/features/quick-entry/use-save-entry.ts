@@ -1,5 +1,6 @@
 import type { CreateTransactionBody } from '@allotr/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { postEntryNotices } from '@/lib/entry-notices';
 import {
   createTransaction,
   editTransaction,
@@ -23,10 +24,13 @@ export function useSaveEntry(editId?: string) {
     }: {
       body: CreateTransactionBody;
       idempotencyKey: string;
-    }) =>
-      editId === undefined
-        ? (await createTransaction(body, idempotencyKey)).id
-        : (await editTransaction(editId, body)).replacement.id,
+    }) => {
+      if (editId === undefined)
+        return (await createTransaction(body, idempotencyKey)).id;
+      const edited = await editTransaction(editId, body);
+      postEntryNotices(edited.replacement.id, edited.notices);
+      return edited.replacement.id;
+    },
     // Not awaited: the dialog closes at once and the views refetch behind it.
     onSuccess: refresh,
     // A refused edit usually means the entry changed elsewhere (undone in
