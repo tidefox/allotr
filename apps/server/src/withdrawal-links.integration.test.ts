@@ -588,7 +588,10 @@ describe('export and import', () => {
         withdrawalLinks: [
           {
             ...first,
-            amount: usd((first?.amount.amountMinor ?? 0) + 1_000_000),
+            amount: {
+              ...first?.amount,
+              amountMinor: (first?.amount.amountMinor ?? 0) + 1_000_000,
+            },
           },
         ],
       };
