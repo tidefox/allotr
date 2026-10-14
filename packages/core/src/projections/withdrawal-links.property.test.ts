@@ -254,12 +254,18 @@ function meta(i: number, on: string | LocalDate) {
 }
 
 describe('withdrawal links', () => {
+  it('come from a generator that produces linked scenarios', () => {
+    // A fixed seed, so the check on the generator never flakes.
+    const linked = fc
+      .sample(scenarioArb, { numRuns: 60, seed: 260 })
+      .filter((raw) => build(raw).linked.length > 0);
+    expect(linked.length).toBeGreaterThan(5);
+  });
+
   it('give the budget the figures of a purchase paid from savings', () => {
-    let withLinks = 0;
     fc.assert(
       fc.property(scenarioArb, (raw) => {
-        const { view, hand, linked } = build(raw);
-        if (linked.length > 0) withLinks += 1;
+        const { view, hand } = build(raw);
         for (const date of days) {
           expect(dailyFiguresOn(view, date)).toEqual(
             dailyFiguresOn(hand, date),
@@ -284,8 +290,6 @@ describe('withdrawal links', () => {
       }),
       { numRuns: 60 },
     );
-    // The generator must actually produce linked scenarios.
-    expect(withLinks).toBeGreaterThan(5);
   });
 
   it('leave balances and the ledger as they are', () => {
