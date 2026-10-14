@@ -29,6 +29,7 @@ export * from './pools.ts';
 export * from './rates.ts';
 export * from './reconcile.ts';
 export * from './report-period.ts';
+export * from './seed.ts';
 export * from './setup.ts';
 export * from './sqlite-errors.ts';
 export * from './store.ts';
