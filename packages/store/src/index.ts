@@ -37,4 +37,6 @@ export * from './today.ts';
 export * from './transaction-budget.ts';
 export * from './transactions.ts';
 export * from './transaction-totals.ts';
+export * from './withdrawal-links.ts';
+export * from './withdrawal-link-candidates.ts';
 export type * from './schema.ts';

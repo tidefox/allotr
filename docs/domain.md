@@ -725,7 +725,10 @@ an amount with its currency, and never changes their postings.
 - Links can be added and removed at any time. Undoing either entry takes
   the link out of every figure; restoring brings it back while it is still
   valid. An edit carries the link to the replacement while it is still
-  valid and drops it otherwise, with a notice.
+  valid and drops it otherwise, with a notice. Restoring or reverting
+  records a new entry with a new id, so the links move to it the same way.
+  A link whose other entry is undone at that moment moves too and counts
+  again when that entry is restored.
 
 ## Cycle allocation
 

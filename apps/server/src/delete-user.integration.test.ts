@@ -28,6 +28,13 @@ const bundle = {
       openingBalance: eur(50_000),
       openedOn: '2026-05-01',
     },
+    {
+      name: 'Spare change',
+      currency: 'EUR',
+      budgetGroup: 'off',
+      openingBalance: eur(100_000),
+      openedOn: '2026-05-01',
+    },
   ],
   rates: [{ base: 'USD', quote: 'EUR', rate: '0.9', asOf: '2026-05-01' }],
   transactions: [
@@ -49,6 +56,26 @@ const bundle = {
       category: 'Snacks',
       occurredOn: '2026-05-03',
     },
+    // A withdrawal from savings and the purchase it paid for, linked.
+    {
+      kind: 'transfer',
+      from: 'Spare change',
+      to: 'Wallet',
+      sent: eur(3_000),
+      occurredOn: '2026-05-04',
+      ref: 'draw',
+    },
+    {
+      kind: 'expense',
+      account: 'Wallet',
+      amount: eur(3_500),
+      category: 'Snacks',
+      occurredOn: '2026-05-04',
+      ref: 'feast',
+    },
+  ],
+  withdrawalLinks: [
+    { withdrawal: 'draw', expense: 'feast', amount: eur(3_000) },
   ],
   bills: [
     {

@@ -68,6 +68,8 @@ export * from './pools.ts';
 export * from './budgets.ts';
 export * from './transaction-detail.ts';
 export * from './ious.ts';
+export * from './withdrawal-links.ts';
+export * from './withdrawal-link-requests.ts';
 export * from './payees.ts';
 export * from './plan.ts';
 export * from './reminders.ts';

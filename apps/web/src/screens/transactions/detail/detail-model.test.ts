@@ -64,6 +64,7 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     tagIds: [],
     billId: null,
     billName: null,
+    withdrawalLinks: [],
     ...overrides,
   };
 }

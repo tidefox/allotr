@@ -179,6 +179,14 @@ export function toBundle(snapshot: Snapshot): Bundle {
     overrides.push({ transaction: entryId, covers: kept });
   }
 
+  // Only links whose entries both stand: core counts no others.
+  for (const link of snapshot.withdrawalLinks) {
+    if (liveIds.has(link.withdrawalId) && liveIds.has(link.expenseId)) {
+      linked.add(link.withdrawalId);
+      linked.add(link.expenseId);
+    }
+  }
+
   // IOUs whose entry stands, by the entry that lent or borrowed, and the
   // payments that settle them, by the entry that paid (ADR 0024). Their
   // entries are not plain transfers or expenses, so they are written as the
@@ -491,6 +499,13 @@ export function toBundle(snapshot: Snapshot): Bundle {
     return named === undefined ? [] : [named];
   });
 
+  // The bundle kind each ref was written as: a link needs a transfer and an
+  // expense, not an IOU entry that happens to be one in core.
+  const kindOfRef = new Map<string, string>();
+  for (const t of transactions) {
+    if (t.ref !== undefined) kindOfRef.set(t.ref, t.kind);
+  }
+
   const { settings } = snapshot;
   return {
     format: 'allotr.bundle',
@@ -523,6 +538,18 @@ export function toBundle(snapshot: Snapshot): Bundle {
     budgets,
     ...(order.length === 0 ? {} : { coverOrder: order }),
     coverOverrides: overrides,
+    withdrawalLinks: snapshot.withdrawalLinks.flatMap((link) =>
+      kindOfRef.get(link.withdrawalId) === 'transfer' &&
+      kindOfRef.get(link.expenseId) === 'expense'
+        ? [
+            {
+              withdrawal: link.withdrawalId,
+              expense: link.expenseId,
+              amount: link.amount,
+            },
+          ]
+        : [],
+    ),
   };
 }
 
