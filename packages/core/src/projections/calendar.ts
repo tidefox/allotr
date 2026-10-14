@@ -6,6 +6,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import { budgetView } from './withdrawal-links.ts';
 import { cyclesOf } from './cycles.ts';
 import { paceExclusions, spentSums, toFigure } from './daily.ts';
 import { iouStatuses } from './ious.ts';
@@ -78,11 +79,12 @@ export function heatLevel(amountMinor: number, peak: number): number {
  * are the days paychecks opened a cycle and the open cycle's expected one.
  */
 export function calendar(
-  view: LedgerView,
+  input: LedgerView,
   from: LocalDate,
   to: LocalDate,
   today: LocalDate,
 ): Calendar {
+  const view = budgetView(input);
   const count = daysBetween(from, to) + 1;
   if (count < 1 || count > MAX_CALENDAR_DAYS)
     throw new RangeError(

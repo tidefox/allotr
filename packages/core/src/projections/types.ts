@@ -17,6 +17,7 @@ import type { Policies } from './policies.ts';
 import type { BudgetPeriodRule, BudgetSetup, DailyMode } from './budgets.ts';
 import type { PayYourselfFirst } from './plan.ts';
 import type { PoolSetup } from './pools.ts';
+import type { WithdrawalLink } from './withdrawal-links.ts';
 
 // Inputs and results of the projections: cycles and the daily figures
 // (docs/domain.md "Daily usable" and "Cycles"). Everything is computed from
@@ -128,6 +129,12 @@ export type LedgerView = Readonly<{
    * omitted.
    */
   outsideFunded?: ReadonlySet<TransactionId>;
+  /**
+   * Savings withdrawals tied to the purchases they paid for (ADR 0038).
+   * The budget reads them through `budgetView`; balances do not. None when
+   * omitted.
+   */
+  withdrawalLinks?: readonly WithdrawalLink[];
   /** Defaults to the default strategies (docs/domain.md "Policies"). */
   policies?: Partial<Policies>;
 }>;

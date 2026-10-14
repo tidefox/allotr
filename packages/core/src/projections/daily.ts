@@ -19,6 +19,7 @@ import {
 } from './policies.ts';
 import { foldBudgets, heldBy, leftOf, type BudgetFold } from './budgets.ts';
 import { outsideEntries } from './funding.ts';
+import { budgetView } from './withdrawal-links.ts';
 import { groupsOn } from './pools.ts';
 import { totalOn } from './rates.ts';
 import type { DailyMode } from './budgets.ts';
@@ -51,10 +52,14 @@ export function policiesOf(view: LedgerView): Policies {
  * passed in when the caller already has them for that day.
  */
 export function onBudgetSums(
-  view: LedgerView,
+  input: LedgerView,
   date: LocalDate,
-  balances: ReadonlyMap<AccountId, Money> = accountBalances(view.ledger, date),
+  balances: ReadonlyMap<AccountId, Money> = accountBalances(
+    budgetView(input).ledger,
+    date,
+  ),
 ): Sums {
+  const view = budgetView(input);
   const groups = groupsOn(view, date);
   const sums: Sums = new Map();
   for (const [id, balance] of balances) {
@@ -108,10 +113,11 @@ export function lessReserved(
 
 /** On-budget balances minus unpaid reserved bills, per currency. */
 export function availableSums(
-  view: LedgerView,
+  input: LedgerView,
   cycles: readonly Cycle[],
   date: LocalDate,
 ): Sums {
+  const view = budgetView(input);
   const balances = accountBalances(view.ledger, date);
   return lessReserved(
     view,
@@ -180,11 +186,12 @@ export function paceExclusions(
  * is the same without the `excluded` entries, found in the same pass.
  */
 export function spentSums(
-  view: LedgerView,
+  input: LedgerView,
   from: LocalDate,
   to: LocalDate,
   excluded: ReadonlySet<TransactionId> = new Set(),
 ): { spent: Sums; kept: Sums } {
+  const view = budgetView(input);
   const groupsByDay = new Map<LocalDate, ReturnType<typeof groupsOn>>();
   const groupsByDate = (date: LocalDate) => {
     let groups = groupsByDay.get(date);
@@ -297,10 +304,11 @@ export function toFigure(
 
 /** Available budget at the end of `date`, as seen from `today`. */
 export function availableOn(
-  view: LedgerView,
+  input: LedgerView,
   date: LocalDate,
   today: LocalDate,
 ): Figure {
+  const view = budgetView(input);
   return toFigure(view, availableSums(view, cyclesOf(view, today), date), date);
 }
 
@@ -390,9 +398,10 @@ function availableBeforeEntries(
  * Null when the view has no budgets.
  */
 export function budgetFold(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
 ): BudgetFold | null {
+  const view = budgetView(input);
   if (view.budgets === undefined || view.budgets.budgets.length === 0) {
     return null;
   }
@@ -505,9 +514,10 @@ function dailyBase(
 }
 
 export function dailyFiguresOn(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
 ): DailyFigures {
+  const view = budgetView(input);
   const cycles = cyclesOf(view, today);
   const cycle = cycleOn(cycles, today);
   const overdue = today > cycle.payday;

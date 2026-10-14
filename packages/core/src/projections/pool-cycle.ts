@@ -5,6 +5,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import { budgetView } from './withdrawal-links.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
 import { cycleOn, cyclesOf } from './cycles.ts';
@@ -89,9 +90,10 @@ function startLedger(
  * function.
  */
 export function poolCycleFigures(
-  view: LedgerView,
+  input: LedgerView,
   today: LocalDate,
 ): ReadonlyMap<PoolId, PoolCycleFigure> {
+  const view = budgetView(input);
   const setup = view.pools ?? defaultPoolSetup;
   const cycle = cycleOn(cyclesOf(view, today), today);
   const startBalances = accountBalances(
