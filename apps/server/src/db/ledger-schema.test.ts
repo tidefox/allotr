@@ -1,4 +1,11 @@
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type Database from 'better-sqlite3';
@@ -14,8 +21,10 @@ import { openSqlite } from './sqlite.ts';
 // 0013_reminders.sql, 0014_entry_order_time.sql and
 // 0015_entry_replacements.sql, 0016_buffer_currency.sql,
 // 0017_implied_rates.sql, 0018_entry_client.sql, 0019_goals.sql,
-// 0020_pool_account_style_credit.sql and 0021_account_subtype_min_payment.sql against
-// real SQLite.
+// 0020_pool_account_style_credit.sql and 0021_account_subtype_min_payment.sql
+// against real SQLite. They run on migrations up to 0023, the last that seeds
+// a new user in SQL; 0024 and what replaced the triggers have their own tests
+// (seed.test.ts, ledger-id.test.ts).
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -45,6 +54,7 @@ function migrateFrom(migrationsDir: string): readonly string[] {
 // Migrations up to and including `last`, copied from the repository.
 function migrationsUpTo(last: string): string {
   const target = join(dir, `migrations-${last}`);
+  if (existsSync(target)) return target;
   mkdirSync(target);
   for (const name of [
     '0001_instance_settings.sql',
@@ -68,6 +78,8 @@ function migrationsUpTo(last: string): string {
     '0019_goals.sql',
     '0020_pool_account_style_credit.sql',
     '0021_account_subtype_min_payment.sql',
+    '0022_income_class.sql',
+    '0023_expense_funding.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -75,13 +87,29 @@ function migrationsUpTo(last: string): string {
   return target;
 }
 
+// From 0024 a user has a unique ledger id and the seed triggers are gone, so
+// a test that needs the seeded rows migrates only as far as 0023.
 function insertUser(id: string): void {
+  const hasLedgerId = sqlite
+    .prepare(
+      "SELECT 1 FROM pragma_table_info('users') WHERE name = 'ledger_id'",
+    )
+    .get();
+  if (hasLedgerId === undefined) {
+    sqlite
+      .prepare(
+        `INSERT INTO users (id, name, email, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(id, `User ${id}`, `${id}@example.test`, at, at);
+    return;
+  }
   sqlite
     .prepare(
-      `INSERT INTO users (id, name, email, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, name, email, ledger_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
     )
-    .run(id, `User ${id}`, `${id}@example.test`, at, at);
+    .run(id, `User ${id}`, `${id}@example.test`, randomUUID(), at, at);
 }
 
 function insertAccount(
@@ -187,7 +215,7 @@ describe('migration 0003_ledger', () => {
       )
       .run(at, at);
 
-    expect(migrateFrom(repoMigrations)).toContain('0003_ledger');
+    expect(migrateFrom(migrationsUpTo('0023'))).toContain('0003_ledger');
 
     expect(
       sqlite
@@ -204,7 +232,7 @@ describe('migration 0003_ledger', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       insertAccount('card', 'u1', 'USD');
@@ -398,7 +426,7 @@ describe('migration 0004_bill_payments', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       insertAccount('card', 'u1', 'USD');
@@ -460,7 +488,7 @@ describe('migration 0005_reconciliations', () => {
     insertUser('u1');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0005_reconciliations',
       '0006_bill_prices',
       '0007_pools',
@@ -489,7 +517,7 @@ describe('migration 0005_reconciliations', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       insertAccount('card', 'u1', 'USD');
@@ -565,7 +593,7 @@ describe('migration 0006_bill_prices', () => {
       )
       .run(at);
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0006_bill_prices',
       '0007_pools',
       '0008_budgets',
@@ -599,7 +627,7 @@ describe('migration 0006_bill_prices', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertAccount('card', 'u1', 'THB');
     });
@@ -665,7 +693,7 @@ describe('migration 0007_pools', () => {
     insertUser('u2');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0007_pools',
       '0008_budgets',
       '0009_budget_cover',
@@ -722,7 +750,7 @@ describe('migration 0007_pools', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertAccount('card', 'u1', 'USD');
     });
@@ -831,7 +859,7 @@ describe('migration 0008_budgets', () => {
     migrateFrom(migrationsUpTo('0007'));
     insertUser('u1');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
@@ -872,7 +900,7 @@ describe('migration 0008_budgets', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       sqlite
         .prepare(
@@ -1005,7 +1033,7 @@ describe('migration 0009_budget_cover', () => {
   it('applies to a database at 0008', () => {
     migrateFrom(migrationsUpTo('0008'));
     insertUser('u1');
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0009_budget_cover',
       '0010_category_style',
       '0011_income_categories',
@@ -1028,7 +1056,7 @@ describe('migration 0009_budget_cover', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertEntry();
     });
@@ -1082,7 +1110,7 @@ describe('migration 0010_category_style', () => {
       )
       .run(at, at);
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0010_category_style',
       '0011_income_categories',
       '0012_ious',
@@ -1109,7 +1137,7 @@ describe('migration 0010_category_style', () => {
   });
 
   it('copies the style to a new user with the starter set', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u2');
     expect(style('Paycheck', 'u2')).toEqual({
       colour: 'series-6',
@@ -1119,7 +1147,7 @@ describe('migration 0010_category_style', () => {
   });
 
   it('refuses a colour outside the series roles and a malformed icon', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     const set = (column: string, value: string) =>
       sqlite
@@ -1180,7 +1208,7 @@ describe('migration 0012_ious', () => {
       )
       .run(at, at);
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
@@ -1213,7 +1241,7 @@ describe('migration 0012_ious', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       insertAccount('card', 'u1', 'USD');
@@ -1339,7 +1367,7 @@ describe('migration 0011_income_categories', () => {
     addCategory('into', 'u1', 'Windfall', 'income');
     addCategory('gone', 'u1', 'Tax refund', 'income', 'into');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
@@ -1374,7 +1402,7 @@ describe('migration 0011_income_categories', () => {
     insertUser('u1');
     addCategory('x', 'u1', 'Interest', 'expense');
 
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
 
     expect(incomeRow('u1', 'Interest')).toEqual([
       {
@@ -1388,7 +1416,7 @@ describe('migration 0011_income_categories', () => {
   });
 
   it('gives every new user the same set, with no paycheck among them', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     expect(categoryTree('u1')).toEqual(starterTree);
     expect(
@@ -1428,7 +1456,7 @@ describe('migration 0013_reminders', () => {
     insertUser('u1');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
@@ -1448,7 +1476,7 @@ describe('migration 0013_reminders', () => {
   });
 
   it('records a reminder once per user and key', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertUser('u2');
     reminder('r1', 'u1', 'bill:rent:2026-03-16');
@@ -1460,7 +1488,7 @@ describe('migration 0013_reminders', () => {
   });
 
   it('keeps a subscription to https, one row per endpoint, and goes with the user', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     subscription('s1', 'u1', 'https://push.example.test/a');
     expect(() =>
@@ -1532,7 +1560,7 @@ describe('migration 0014_entry_order_time', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       entry('t1', 'u1', '2026-01-05', at);
@@ -1655,7 +1683,7 @@ describe('migration 0015_entry_replacements', () => {
     entry('d2', 'u1', '2026-01-05T13:00:00.000Z');
     entry('d3', 'u1', '2026-01-05T13:00:00.000Z');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0015_entry_replacements',
       '0016_buffer_currency',
       '0017_implied_rates',
@@ -1672,7 +1700,7 @@ describe('migration 0015_entry_replacements', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
       insertUser('u2');
       entry('t1', 'u1', at);
@@ -1746,7 +1774,7 @@ describe('migration 0016_buffer_currency', () => {
        FROM budgets WHERE user_id = 'u1' AND kind = 'buffer'`,
     ).run(at);
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
@@ -1773,7 +1801,7 @@ describe('migration 0016_buffer_currency', () => {
 
   describe('on a fresh database', () => {
     beforeEach(() => {
-      migrateFrom(repoMigrations);
+      migrateFrom(migrationsUpTo('0023'));
       insertUser('u1');
     });
 
@@ -1842,7 +1870,7 @@ describe('migration 0018_entry_client', () => {
     insertUser('u1');
     insertTransaction('t1', 'u1');
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0018_entry_client',
       '0019_goals',
       '0020_pool_account_style_credit',
@@ -1886,7 +1914,7 @@ describe('migration 0019_goals', () => {
   }
 
   it('needs exactly one target, one goal per target, and fixes the target', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertAccount('a1', 'u1', 'USD', { group: 'off' });
     const pool = sql(
@@ -1933,7 +1961,7 @@ describe('migration 0020_pool_account_style_credit', () => {
     insertAccount('a1', 'u1', 'USD');
     insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0020_pool_account_style_credit',
       '0021_account_subtype_min_payment',
       '0022_income_class',
@@ -1971,7 +1999,7 @@ describe('migration 0020_pool_account_style_credit', () => {
   });
 
   it('only accepts a series role and a lower-case icon key', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertAccount('a1', 'u1', 'USD');
     for (const table of ['accounts', 'pools']) {
@@ -2000,7 +2028,7 @@ describe('migration 0020_pool_account_style_credit', () => {
   });
 
   it('keeps a limit and a due day to credit accounts, in range', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertAccount('a1', 'u1', 'USD');
     insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
@@ -2041,7 +2069,7 @@ describe('migration 0021_account_subtype_min_payment', () => {
       `UPDATE accounts SET credit_limit_minor = 200000, due_day = 9 WHERE id = 'c1'`,
     ).run();
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
@@ -2069,7 +2097,7 @@ describe('migration 0021_account_subtype_min_payment', () => {
   });
 
   it('keeps a minimum payment to credit accounts and a subtype trimmed', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertAccount('a1', 'u1', 'USD');
     insertAccount('c1', 'u1', 'USD', { kind: 'liability' });
@@ -2112,7 +2140,7 @@ describe('migration 0022_income_class', () => {
       "UPDATE categories SET name = 'gifts' WHERE user_id = 'u2' AND name = 'Other income'",
     ).run();
 
-    expect(migrateFrom(repoMigrations)).toEqual([
+    expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0022_income_class',
       '0023_expense_funding',
       '0024_withdrawal_links',
@@ -2131,7 +2159,7 @@ describe('migration 0022_income_class', () => {
   });
 
   it('gives new users the classes and refuses a class on a non-income or paycheck category', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     expect(classOf('u1', 'Interest')).toEqual(['passive']);
     expect(classOf('u1', 'Gifts')).toEqual(['gift']);
@@ -2164,13 +2192,13 @@ describe('migration 0023_expense_funding', () => {
     insertUser('u1');
     insertTransaction('t1', 'u1');
 
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
 
     expect(fundingOf('t1')).toBe('own');
   });
 
   it('allows outside funding on an expense only', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     const insert = (id: string, kind: string, funding: string) =>
       sql(
@@ -2187,7 +2215,7 @@ describe('migration 0023_expense_funding', () => {
   });
 
   it('keeps entries append-only', () => {
-    migrateFrom(repoMigrations);
+    migrateFrom(migrationsUpTo('0023'));
     insertUser('u1');
     insertTransaction('t1', 'u1');
     expect(() =>
