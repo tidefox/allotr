@@ -12,6 +12,7 @@ import { entryCategoryIds } from '@/lib/entry-categories';
 import { type CategoryStyle } from '@/lib/category-style';
 import { formatMoney, formatSigned } from '@/lib/format-money';
 import { t } from '@/messages/t';
+import { linkRoleOf } from './detail/withdrawal-link-model.ts';
 import { isDateSort, type Group, type Sort } from './search-params.ts';
 
 type EntryTotals = TransactionListView['totals'];
@@ -37,6 +38,8 @@ export interface TxRow {
   amount: Money | null;
   /** The bill this payment settled, by name. */
   bill: string | null;
+  /** Which end of a withdrawal link that counts this entry is (ADR 0038). */
+  link: 'expense' | 'withdrawal' | null;
   moves: boolean;
   /** Deleted and shown anyway, or an undo. */
   undo: boolean;
@@ -116,6 +119,7 @@ export function txRows(
       account: row.accounts.join(' → '),
       amount: row.amount,
       bill: entry?.billId == null ? null : (entry.billName ?? null),
+      link: entry === undefined ? null : linkRoleOf(entry, true),
       moves: row.moves,
       undo: row.kind === 'reversal',
       style: row.style,

@@ -51,6 +51,7 @@ function entry(
     billId: null,
     billName: null,
     groupKeys: [],
+    withdrawalLinks: [],
     ...overrides,
   } as unknown as TransactionListView['transactions'][number];
 }
@@ -140,6 +141,36 @@ describe('bill tag', () => {
   it('names the bill an entry settled', () => {
     const rows = txRows(entries, accounts, categories);
     expect(rows.map((r) => r.bill)).toEqual([null, null, 'Coffee club']);
+  });
+});
+
+describe('link tag', () => {
+  const amount = { amountMinor: 3000, currency: 'USD' };
+  const link = (valid: boolean) => ({
+    id: 'l1',
+    withdrawalId: 'w1',
+    expenseId: 'e1',
+    amount,
+    valid,
+    reason: valid ? null : 'expense_undone',
+  });
+  it('marks the end of a link that counts, and only that', () => {
+    const rows = txRows(
+      [
+        entry({ id: 'e1', kind: 'expense', withdrawalLinks: [link(true)] }),
+        entry({ id: 'w1', kind: 'transfer', withdrawalLinks: [link(true)] }),
+        entry({ id: 'e1', kind: 'expense', withdrawalLinks: [link(false)] }),
+        entry({ id: 'x', kind: 'expense' }),
+      ],
+      accounts,
+      categories,
+    );
+    expect(rows.map((r) => r.link)).toEqual([
+      'expense',
+      'withdrawal',
+      null,
+      null,
+    ]);
   });
 });
 
