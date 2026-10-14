@@ -83,7 +83,10 @@ describe('migration 0024_ledger_id', () => {
     expect(idsBefore.categories).toHaveLength(17 * 3);
     expect(idsBefore.pools).toHaveLength(6);
 
-    expect(run(repoMigrations)).toEqual(['0024_ledger_id']);
+    expect(run(repoMigrations)).toEqual([
+      '0024_ledger_id',
+      '0025_withdrawal_links',
+    ]);
 
     const ledgerIds = names('SELECT ledger_id FROM users ORDER BY id');
     expect(ledgerIds).toHaveLength(3);
