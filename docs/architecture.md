@@ -162,6 +162,19 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   tells the entry sheet what an expense would take before it is saved, and
   `PUT`/`DELETE /v1/transactions/{id}/cover` set or clear a per-entry
   override, a setting that changes no ledger row.
+- Withdrawal links (ADR 0038) are served under `/v1/withdrawal-links`:
+  `POST` ties part of a savings withdrawal to the expense it paid for
+  (`{withdrawalId, expenseId, amount}`), checked by `checkLink` in core and
+  refused with its code as the problem `code` (404 for a missing entry, 409
+  when the links on one side would pass what it moved or paid, 422 for the
+  rest), and `DELETE /v1/withdrawal-links/{id}` removes one. Rows are kept
+  with `removed_at`. `GET /v1/transactions/{id}/withdrawal-links/candidates`
+  lists the entries that can still take a link (within 14 days, nearest
+  first, each with the `room` left). Entries carry `withdrawalLinks` with
+  `valid` and `reason`, and an edit or revert reports links it could not
+  carry in `notices`. A restore moves the links to the restored copy. The
+  store loads the active links into the `LedgerView`, so every figure reads
+  them through core's `budgetView`.
 - IOUs (ADR 0024) are served under `/v1/ious`: `GET` lists them with
   totals, `POST` lends, borrows or splits a bill (one entry, one IOU per
   person), `POST /v1/ious/repayments` records a payment that names the IOUs it
@@ -204,7 +217,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `groupKeys`, the group keys it is counted in (`entryGroupKeys` in core),
   so a list sectioned like `groups` agrees with them. Every entry carries
   `billId` and `billName` when it paid a bill (`bill_payments.transaction_id`;
-  unmarking the payment clears them). `GET /v1/transactions/{id}` also
+  unmarking the payment clears them) and `withdrawalLinks`, the active
+  withdrawal links on it (below). `GET /v1/transactions/{id}` also
   returns `budget`: for each counted expense line, what its budget had left
   right after it (`leftAfter`), what its own budget paid and who covered the
   rest, for the period the entry's date falls in (`entryBudgetLines` in core,
@@ -475,7 +489,10 @@ tag}` or `{kind: "buffer"}`, and `amounts: [{from, amount}]` in the default
 currency; a bundle with a Buffer replaces the one a new ledger has, so its
 start and amounts are the bundle's. `coverOrder` lists `"free"` and
 `{budget: name}`, and `coverOverrides: [{transaction, covers: [{source,
-amount}]}]` names the `ref` of a spending entry. Budget and cover names are
+amount}]}]` names the `ref` of a spending entry. `withdrawalLinks:
+[{withdrawal, expense, amount}]` name the `ref`s of a transfer and an
+expense; core checks each link after the entries and bill payments are in
+(ADR 0038), and an export writes only links that count. Budget and cover names are
 those of budgets in use. Pools, budgets and the cover are refused on a ledger
 that already has any of its own (`ledger_not_empty`).
 Unknown fields are refused. Other apps' exports are converted to this

@@ -508,6 +508,7 @@ describe('migration 0005_reconciliations', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     insertReconciliation('r1');
@@ -611,6 +612,7 @@ describe('migration 0006_bill_prices', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(
@@ -709,6 +711,7 @@ describe('migration 0007_pools', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(pools()).toEqual([
@@ -873,6 +876,7 @@ describe('migration 0008_budgets', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(
@@ -1045,6 +1049,7 @@ describe('migration 0009_budget_cover', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1120,6 +1125,7 @@ describe('migration 0010_category_style', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1215,6 +1221,7 @@ describe('migration 0012_ious', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1374,6 +1381,7 @@ describe('migration 0011_income_categories', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1460,6 +1468,7 @@ describe('migration 0013_reminders', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1684,6 +1693,7 @@ describe('migration 0015_entry_replacements', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1773,6 +1783,7 @@ describe('migration 0016_buffer_currency', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(
@@ -1866,6 +1877,7 @@ describe('migration 0018_entry_client', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(sql('SELECT id, client FROM transactions').all()).toEqual([
@@ -1954,6 +1966,7 @@ describe('migration 0020_pool_account_style_credit', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(
@@ -2060,6 +2073,7 @@ describe('migration 0021_account_subtype_min_payment', () => {
       '0021_account_subtype_min_payment',
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(
@@ -2129,6 +2143,7 @@ describe('migration 0022_income_class', () => {
     expect(migrateFrom(migrationsUpTo('0023'))).toEqual([
       '0022_income_class',
       '0023_expense_funding',
+      '0024_withdrawal_links',
     ]);
 
     expect(classOf('u1', 'Interest')).toEqual(['passive']);
@@ -2206,5 +2221,92 @@ describe('migration 0023_expense_funding', () => {
     expect(() =>
       sql("UPDATE transactions SET funding = 'outside' WHERE id = 't1'").run(),
     ).toThrow();
+  });
+});
+
+describe('migration 0024_withdrawal_links', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+  const count = () =>
+    sql('SELECT count(*) FROM withdrawal_links').pluck().get();
+  const insertLink = (
+    id: string,
+    fields: {
+      withdrawal?: string;
+      expense?: string;
+      amount?: number;
+      currency?: string;
+      user?: string;
+    } = {},
+  ) =>
+    sql(
+      `INSERT INTO withdrawal_links
+         (id, user_id, withdrawal_id, expense_id, amount_minor, currency, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      fields.user ?? 'u1',
+      fields.withdrawal ?? 't1',
+      fields.expense ?? 't2',
+      fields.amount ?? 30_000,
+      fields.currency ?? 'USD',
+      at,
+    );
+
+  it('applies over a ledger that already has entries', () => {
+    migrateFrom(migrationsUpTo('0021'));
+    insertUser('u1');
+    insertTransaction('t1', 'u1');
+    insertTransaction('t2', 'u1');
+
+    migrateFrom(repoMigrations);
+
+    expect(count()).toBe(0);
+    insertLink('l1');
+    expect(
+      sql('SELECT removed_at FROM withdrawal_links WHERE id = ?')
+        .pluck()
+        .get('l1'),
+    ).toBeNull();
+    // Entries stay append-only; a link is a setting beside them.
+    expect(() =>
+      sql("UPDATE transactions SET note = 'x' WHERE id = 't1'").run(),
+    ).toThrow();
+  });
+
+  it('keeps a removed link as a row', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertTransaction('t1', 'u1');
+    insertTransaction('t2', 'u1');
+    insertLink('l1');
+    sql('UPDATE withdrawal_links SET removed_at = ? WHERE id = ?').run(
+      at,
+      'l1',
+    );
+    expect(count()).toBe(1);
+  });
+
+  it('refuses a link that is not positive, has no currency, or joins an entry to itself', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertTransaction('t1', 'u1');
+    insertTransaction('t2', 'u1');
+    expect(() => insertLink('l1', { amount: 0 })).toThrow();
+    expect(() => insertLink('l2', { amount: -5 })).toThrow();
+    expect(() => insertLink('l3', { currency: 'usd' })).toThrow();
+    expect(() => insertLink('l4', { expense: 't1' })).toThrow();
+  });
+
+  it('keeps a link in one user and drops it with the user', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertUser('u2');
+    insertTransaction('t1', 'u1');
+    insertTransaction('t2', 'u1');
+    // Entries of another user cannot be linked.
+    expect(() => insertLink('l1', { user: 'u2' })).toThrow();
+    insertLink('l2');
+    sql("DELETE FROM users WHERE id = 'u1'").run();
+    expect(count()).toBe(0);
   });
 });

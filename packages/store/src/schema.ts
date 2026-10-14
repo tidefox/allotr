@@ -377,6 +377,17 @@ export interface Verifications {
   value: string;
 }
 
+export interface WithdrawalLinks {
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  expense_id: string;
+  id: string;
+  removed_at: string | null;
+  user_id: string;
+  withdrawal_id: string;
+}
+
 export interface DB {
   accounts: Accounts;
   auth_accounts: AuthAccounts;
@@ -411,4 +422,5 @@ export interface DB {
   user_settings: UserSettings;
   users: Users;
   verifications: Verifications;
+  withdrawal_links: WithdrawalLinks;
 }

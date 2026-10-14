@@ -198,6 +198,7 @@ describe('linkCandidates', () => {
     tagIds: [],
     billId: null,
     billName: null,
+    withdrawalLinks: [],
     ...more,
   });
 

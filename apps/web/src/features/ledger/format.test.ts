@@ -48,6 +48,7 @@ function entry(
     tagIds: [],
     billId: null,
     billName: null,
+    withdrawalLinks: [],
   };
 }
 

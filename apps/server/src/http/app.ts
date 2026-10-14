@@ -36,6 +36,7 @@ import { registerTagRoutes } from './routes/tags.ts';
 import { registerTodayRoutes } from './routes/today.ts';
 import { registerTransactionRoutes } from './routes/transactions.ts';
 import { registerUserRoutes } from './routes/user.ts';
+import { registerWithdrawalLinkRoutes } from './routes/withdrawal-links.ts';
 import { registerWebApp } from './web.ts';
 
 export type { AppDeps } from './env.ts';
@@ -118,6 +119,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerCategoryRoutes(app, deps);
   registerTagRoutes(app, deps);
   registerTransactionRoutes(app, deps);
+  registerWithdrawalLinkRoutes(app, deps);
   registerTodayRoutes(app, deps);
   registerCycleRoutes(app, deps);
   registerReportRoutes(app, deps);

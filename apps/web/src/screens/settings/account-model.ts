@@ -45,6 +45,7 @@ export const importCountKeys = [
   'pools',
   'budgets',
   'coverOverrides',
+  'withdrawalLinks',
 ] as const satisfies readonly (keyof ImportResult)[];
 
 /** The counts the server reported that are not zero, in display order. */
