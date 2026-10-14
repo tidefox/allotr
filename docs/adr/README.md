@@ -50,3 +50,4 @@ kept in `docs/drafts/`, which git ignores.
 - [0035 Event schema versioning and read-only on version skew](0035-event-schema-versioning.md)
 - [0036 Encryption of local-mode data](0036-local-data-encryption.md)
 - [0037 In-process runtime: restating "the server is the only writer" and ADR 0030](0037-in-process-runtime.md)
+- [0038 Savings withdrawals linked to the purchase they paid for](0038-withdrawal-links.md)

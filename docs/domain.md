@@ -92,6 +92,7 @@ the user owes them, sit in the `Receivables` and `Payables` system accounts
 | Transfer between two on-budget accounts | None |
 | Transfer on-budget → off-budget (saving) | Lowers it |
 | Transfer off-budget → on-budget (savings withdrawal) | Raises it; flagged |
+| Savings withdrawal linked to a purchase ([Withdrawal links](#withdrawal-links)) | The linked part: none, as if savings paid the purchase |
 | Income into an on-budget account | Per the extra-income policy |
 | Split bill: paid $90, your share $30, $60 owed to you | Spending is $30; the whole $90 leaves the counted accounts, so the day's start drops by $60 and $30 is spent. The $60 sits in Receivables |
 | Lend $50 | Lowers the day's start by $50 (like saving it); not spending |
@@ -676,6 +677,43 @@ restore and revert.
 - The transactions list and its totals follow the entries shown and do not
   read the flag.
 
+## Withdrawal links
+
+A *withdrawal link* ties part of a savings withdrawal (a transfer from an
+off-budget into an on-budget account) to an expense it paid for, so the
+ledger can mirror a bank that shows a transfer in and a purchase while
+only the part the user paid themselves counts against the budget
+([ADR 0038](adr/0038-withdrawal-links.md)). It stores the two entries and
+an amount with its currency, and never changes their postings.
+
+- **Rule.** Everything built on the budget (the daily number,
+  `spent_today`, `cycle_spent`, pace, budgets and cover, the cycle
+  allocation, the calendar, the weekly review, the savings rate and the
+  savings-withdrawal policy) reads the linked amount as if the expense had
+  paid it straight from the savings account the withdrawal came from, and
+  the withdrawal had not moved it. Balances, net worth, account history,
+  reconciliation, exports and import matching read the real postings.
+- Example: $300 moved from savings and a $340 purchase on the same day,
+  linked for $300. The start of the day does not rise, `spent_today` gets
+  $40, and the balances are the bank's.
+- Withdrawal first, purchase later: the linked amount is held out of
+  `available` until the purchase, like a reserved bill. Purchase first:
+  the linked amount is not taken out of `available` until the withdrawal.
+- The linked part is not a savings withdrawal: it is not flagged, does not
+  lower the cycle's savings, and the tracked-debt policy ignores it.
+  Category totals still show the whole expense.
+- **Valid when** the withdrawal is a transfer in effect that leaves an
+  off-budget account and enters an on-budget one on its date; the expense
+  is in effect, paid from an on-budget account, `own` funding and not
+  linked to a bill payment; the amount is positive and in the currency of
+  both sides; and the links on each entry add up to no more than the
+  withdrawal moved in or the expense's on-budget side. Links are
+  many-to-many and the dates may come in either order.
+- Links can be added and removed at any time. Undoing either entry takes
+  the link out of every figure; restoring brings it back while it is still
+  valid. An edit carries the link to the replacement while it is still
+  valid and drops it otherwise, with a notice.
+
 ## Cycle allocation
 
 How the open cycle's on-budget money divides, for the Today view's
@@ -871,6 +909,8 @@ allocations(id, cycle_id, kind, amount_minor, currency)
 bills(id, user_id, name, amount_minor, currency, price_minor, price_currency,
       account_id, category_id, cadence, due_day, active)
 bill_payments(id, user_id, bill_id, due_on, paid_on, transaction_id, recorded)
+withdrawal_links(id, user_id, withdrawal_id, expense_id, amount_minor,
+                 currency, created_at, removed_at)  -- a setting, not the ledger
 recurring(id, user_id, template, schedule, mode, next_due)
 goals(id, user_id, name, pool_id | account_id, target_minor, currency,
       target_on, archived)   -- progress is derived, never stored
