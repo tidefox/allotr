@@ -2,6 +2,7 @@ import {
   accountId,
   categoryId,
   chartOf,
+  deterministicId,
   poolId,
   restore,
   systemAccountsNeeded,
@@ -199,8 +200,24 @@ async function readLedger(
   );
 }
 
+/** The id of a user's ledger (ADR 0034), from which seeded ids derive. */
+export async function ledgerIdOf(db: Db, userId: string): Promise<string> {
+  const row = await db
+    .selectFrom('users')
+    .select('ledger_id')
+    .where('id', '=', userId)
+    .executeTakeFirstOrThrow();
+  return row.ledger_id;
+}
+
+// System accounts take `deterministicId(ledgerId, 'system-account:<role>:
+// <currency>')`, so devices that create one on their own agree on its id (the
+// key scheme is permanent, see seed.ts). Accounts created before ADR 0034
+// keep their random ids. A preview in memory has no ledger id and uses
+// random ones: it is never recorded.
 function plannedSystemAccounts(
   userId: string,
+  ledgerId: string | null,
   chart: Chart,
   currencies: Iterable<CurrencyCode>,
   now: Date,
@@ -209,7 +226,10 @@ function plannedSystemAccounts(
   const at = now.toISOString();
   const rows = systemAccountsNeeded(chart, currencies, roles).map(
     ({ role, currency }) => ({
-      id: newId(),
+      id:
+        ledgerId === null
+          ? newId()
+          : deterministicId(ledgerId, `system-account:${role}:${currency}`),
       user_id: userId,
       name: `${systemAccountNames[role]}:${currency}`,
       kind: systemAccountKinds[role],
@@ -241,7 +261,7 @@ export function withSystemAccounts(
   now: Date,
   roles?: readonly SystemRole[],
 ): Chart {
-  return plannedSystemAccounts('', chart, currencies, now, roles).chart;
+  return plannedSystemAccounts('', null, chart, currencies, now, roles).chart;
 }
 
 /**
@@ -256,8 +276,15 @@ export async function ensureSystemAccounts(
   now: Date,
   roles?: readonly SystemRole[],
 ): Promise<Chart> {
-  const planned = plannedSystemAccounts(userId, chart, currencies, now, roles);
-  if (planned.rows.length === 0) return chart;
+  if (systemAccountsNeeded(chart, currencies, roles).length === 0) return chart;
+  const planned = plannedSystemAccounts(
+    userId,
+    await ledgerIdOf(db, userId),
+    chart,
+    currencies,
+    now,
+    roles,
+  );
   await db.insertInto('accounts').values(planned.rows).execute();
   return planned.chart;
 }

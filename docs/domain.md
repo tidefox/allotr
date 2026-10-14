@@ -155,6 +155,21 @@ come later.
   concurrent runs on several devices produce the same id and dedupe
   ([ADR 0034](adr/0034-ledger-identity.md)). It is synchronous and uses no
   Node API.
+- **Ledger id and seeding.** Every user has one ledger, with a `ledger_id`
+  (a UUID, unique, on `users`); existing users were given a random v4 one by
+  migration 0024. A new user is seeded by `seedLedger` in `packages/store`,
+  in code rather than SQL triggers, with the starter categories, the Budget
+  and Savings pools and the Buffer with its first amount. Server mode runs
+  it once the user row is committed (Better Auth creates the user and its
+  hook then seeds, removing the user if seeding fails). Every seeded id is
+  `deterministicId(ledgerId, key)`, so two devices seeding one ledger agree.
+  The keys are permanent, since changing one changes the id:
+  `starter-category:<parent name or empty>/<name>`, `pool:budget`,
+  `pool:savings`, `budget:buffer`,
+  `budget-amount:budget:buffer:<effective_on>` and
+  `system-account:<role>:<currency>`. Rows seeded before this keep their
+  random ids, as do system accounts created before it. Seeding skips rows
+  that already exist.
 
 ## Pools
 
@@ -819,7 +834,8 @@ Logical model; the SQL schema lives in `migrations/`.
   for past days are corrected as well.
 - A merged category keeps its row with `merged_into_id` set, so committed
   transactions never change.
-- New users get the starter categories as ordinary rows: Food (Groceries,
+- New users get the starter categories as ordinary rows, seeded in code
+  (see Events, "Ledger id and seeding"): Food (Groceries,
   Eating out), Transport, Housing (Rent, Utilities), Bills and
   subscriptions, Health, Shopping, Fun, Other; Paycheck (the paycheck
   category), Other income, Interest and Tax refund. Users from before
@@ -827,7 +843,7 @@ Logical model; the SQL schema lives in `migrations/`.
   a category of that name.
 
 ```
-users(id, name, locale, tz, default_currency, created_at)
+users(id, name, locale, tz, default_currency, ledger_id, created_at)
 api_tokens(id, user_id, name, scopes[], hash, last_used_at)
 identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|

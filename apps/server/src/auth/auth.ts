@@ -4,7 +4,7 @@ import { twoFactor } from 'better-auth/plugins';
 import { MAX_PASSWORD_LENGTH } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { Config } from '../config.ts';
-import type { DB } from '@allotr/store';
+import { seedLedger, type DB } from '@allotr/store';
 import type { Logger } from '../logger.ts';
 import { readSettings } from '../settings.ts';
 import type { AuthLimits } from './limits.ts';
@@ -81,6 +81,47 @@ export function createAuth({ db, config, limits, logger, now }: AuthDeps) {
           input: false,
           defaultValue: 'user',
           required: false,
+        },
+        // Never typed by a client and never sent back to one.
+        ledgerId: {
+          fieldName: 'ledger_id',
+          type: 'string',
+          input: false,
+          returned: false,
+          required: false,
+        },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: (user) =>
+            Promise.resolve({
+              data: { ...user, ledgerId: globalThis.crypto.randomUUID() },
+            }),
+          // Better Auth runs this once the user row is committed, so the
+          // seed is a second transaction. If it fails, the user is removed
+          // rather than left without a ledger; the sign-up fails.
+          after: async (user) => {
+            try {
+              await db.transaction().execute(async (trx) => {
+                const row = await trx
+                  .selectFrom('users')
+                  .select(['ledger_id', 'default_currency', 'created_at'])
+                  .where('id', '=', user.id)
+                  .executeTakeFirstOrThrow();
+                await seedLedger(trx, {
+                  userId: user.id,
+                  ledgerId: row.ledger_id,
+                  createdAt: row.created_at,
+                  defaultCurrency: row.default_currency,
+                });
+              });
+            } catch (error) {
+              await db.deleteFrom('users').where('id', '=', user.id).execute();
+              throw error;
+            }
+          },
         },
       },
     },
