@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useEmbed } from '@/lib/embed.tsx';
 import { readShortcutsEnabled, shortcutAction } from '@/lib/shortcuts';
 import { navItems, settingsItem, subTabs } from '../nav-items.ts';
 import { focusCommandLine } from './command/store.ts';
@@ -31,8 +32,13 @@ export function adjacentSubTab(pathname: string, step: -1 | 1): string | null {
 export function useShortcuts() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  // Embedded: listen on the view's own element, so keys pressed elsewhere in
+  // the host page (and retargeted events from a shadow root) are not ours.
+  const keyTarget = useEmbed().keyTarget;
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
+    const listenOn = keyTarget ?? window;
+    const onKeyDown = (event: Event) => {
+      if (!(event instanceof KeyboardEvent)) return;
       const el = event.target instanceof HTMLElement ? event.target : null;
       const action = shortcutAction(
         {
@@ -93,9 +99,9 @@ export function useShortcuts() {
           return;
       }
     };
-    window.addEventListener('keydown', onKeyDown);
+    listenOn.addEventListener('keydown', onKeyDown);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      listenOn.removeEventListener('keydown', onKeyDown);
     };
-  }, [navigate, pathname]);
+  }, [navigate, pathname, keyTarget]);
 }

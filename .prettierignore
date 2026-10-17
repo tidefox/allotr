@@ -1,5 +1,6 @@
 pnpm-lock.yaml
 docs/drafts/
+spikes/
 # Hand-formatted prose and GitHub config keep their existing layout.
 *.md
 .github/

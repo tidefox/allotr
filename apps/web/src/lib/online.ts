@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { hasApiTransport } from './embed.tsx';
 
 // Whether the device says it has a connection. `navigator.onLine` can be
 // true without a working network, so a failed request still counts as
@@ -6,6 +7,8 @@ import { useSyncExternalStore } from 'react';
 
 /** True only when the browser reports it is offline (Node has no onLine). */
 export function isOffline(): boolean {
+  // Embedded with an in-process API there is no network to lose.
+  if (hasApiTransport()) return false;
   const status: { onLine?: boolean } = navigator;
   return status.onLine === false;
 }

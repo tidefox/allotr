@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { useEmbed } from './embed.tsx';
 
 // Preferences kept on this device only (the configurable-defaults rule):
 // motion, haptics, celebrations, density and key hints. public/theme-init.js applies
@@ -120,11 +121,12 @@ function prefersReducedMotion(): boolean {
 export function useDevicePref<P extends DevicePref>(
   pref: P,
 ): [DevicePrefValue<P>, (value: DevicePrefValue<P>) => void] {
+  const embed = useEmbed();
   const [value, setValue] = useState(() => readPref(pref));
   function set(next: DevicePrefValue<P>) {
     writePref(pref, next);
     setValue(next);
-    applyPrefs(document, {
+    applyPrefs(embed.themeTarget ?? document, {
       motion: pref === 'motion' ? (next as MotionPref) : readPref('motion'),
       density:
         pref === 'density'

@@ -22,6 +22,7 @@ import {
   saveAppearance,
   themesQuery,
 } from '@/lib/appearance.ts';
+import { useEmbed } from '@/lib/embed.tsx';
 import { sessionQuery } from '@/lib/session.ts';
 import {
   applyScheme,
@@ -69,6 +70,7 @@ function deviceStorage(): Storage | undefined {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const embed = useEmbed();
   const [deviceMode, setDeviceMode] = useState(() =>
     readCachedMode(deviceStorage()),
   );
@@ -104,18 +106,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const storage = deviceStorage();
     cacheMode(storage, mode);
     cacheRoles(storage, roles);
-    const media = window.matchMedia(darkQuery);
+    // Embedded (Obsidian spike): the host page supplies "prefers dark" and
+    // the element that carries the theme attributes.
+    const media = embed.colorScheme ?? {
+      prefersDark: () => window.matchMedia(darkQuery).matches,
+      subscribe: (onChange: () => void) => {
+        const query = window.matchMedia(darkQuery);
+        query.addEventListener('change', onChange);
+        return () => {
+          query.removeEventListener('change', onChange);
+        };
+      },
+    };
     const apply = () => {
-      const scheme = resolveScheme(mode, media.matches);
-      applyScheme(document, scheme, roles[scheme]);
+      const scheme = resolveScheme(mode, media.prefersDark());
+      applyScheme(embed.themeTarget ?? document, scheme, roles[scheme]);
     };
     apply();
     if (mode !== 'system') return;
-    media.addEventListener('change', apply);
-    return () => {
-      media.removeEventListener('change', apply);
-    };
-  }, [mode, roles]);
+    return media.subscribe(apply);
+  }, [mode, roles, embed]);
 
   const saves = useRef(0);
 

@@ -18,6 +18,8 @@ export default tseslint.config(
       '**/test-results/',
       '**/playwright-report/',
       'docs/drafts/',
+      // Spikes are throwaway code with their own build; not linted.
+      'spikes/',
     ],
   },
   eslint.configs.recommended,

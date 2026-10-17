@@ -144,7 +144,7 @@ function defaultCanvas(scheme: ColorScheme): string {
  * and the browser's UI colour.
  */
 export function applyScheme(
-  doc: Document,
+  doc: Pick<Document, 'documentElement' | 'querySelectorAll'>,
   scheme: ColorScheme,
   roles?: RoleColors,
 ): void {
