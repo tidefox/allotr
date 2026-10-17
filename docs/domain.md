@@ -125,6 +125,37 @@ differ.
   time instead. Untimed entries go anywhere. When entry times are turned
   off, existing times are still shown and kept.
 
+## Events
+
+Every change to a ledger is an event, and the ledger is the fold of its
+events ([ADR 0032](adr/0032-local-mode-event-log.md),
+[ADR 0033](adr/0033-event-model-merge.md)). This section covers the parts
+that are in `packages/core` and `packages/shared`; reducers and event types
+come later.
+
+- **Envelope.** `ledgerId`, `eventId`, `author`, `seq` (gapless per author,
+  from 1), `hlc`, `schema` (the payload version, ADR 0035), `enc` (reserved,
+  always null), `type` and `payload`. The Zod schema is
+  `eventEnvelopeSchema` in `packages/shared`; payloads are checked by their
+  event type's own schema.
+- **Hybrid logical clock.** A reading is the time in ms, a counter and the
+  node (the author id). `tick` gives the reading for a local event and
+  `receive` the reading after a remote one; both take `now` as input and
+  never read the clock, so a reading is always after everything its device
+  has seen, even when device clocks disagree or go backwards. It is encoded
+  as `<12 hex ms>-<4 hex counter>-<node>`, fixed-width, so strings compare
+  with plain `<` in clock order (never `localeCompare`). `receive` refuses a
+  remote reading more than `maxDriftMs` ahead of `now` (default one hour)
+  with `hlc.drift`, so a clock set to the wrong year cannot drag every later
+  reading after it.
+- **Order.** The fold orders events by (`hlc`, `author`, `seq`);
+  `compareEvents` is that total order.
+- **Deterministic ids.** Writes no person typed use
+  `uuidv5(ledgerId, "<job>:<key>:<period>")` (RFC 4122, SHA-1), so
+  concurrent runs on several devices produce the same id and dedupe
+  ([ADR 0034](adr/0034-ledger-identity.md)). It is synchronous and uses no
+  Node API.
+
 ## Pools
 
 A pool (ADR 0021) is a named group of accounts. It has a kind, `spending`
