@@ -163,7 +163,7 @@ export class Runtime {
       info: () => undefined,
       debug: () => undefined,
       warn: () => undefined,
-      error: (...args: unknown[]) => options.log?.(`server error: ${args.map(String).join(' ')}`),
+      error: (...args: unknown[]) => options.log?.(`server error: ${args.map(describeLogArg).join(' ')}`),
       child: () => logger,
     };
     this.app = createApp({
@@ -360,3 +360,12 @@ function authStub() {
 }
 
 export { sha256Hex };
+
+function describeLogArg(arg: unknown): string {
+  if (arg instanceof Error) return arg.stack ?? arg.message;
+  if (typeof arg === 'object' && arg !== null) {
+    const err = (arg as { err?: unknown }).err;
+    if (err instanceof Error) return err.stack ?? err.message;
+  }
+  return String(arg);
+}

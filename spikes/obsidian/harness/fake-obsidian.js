@@ -139,7 +139,21 @@
 
   const app = {
     viewCreators: new Map(),
-    vault: { getName: () => params.get('vault') || 'Test Vault' },
+    vault: {
+      getName: () => params.get('vault') || 'Test Vault',
+      // Files live in memory; the harness adds them with harness.addFile.
+      files: new Map(),
+      getFiles() { return [...this.files.values()].map((f) => f.file); },
+      async read(file) { return this.files.get(file.path).data; },
+      async create(path, data) {
+        if (this.files.has(path)) throw new Error('File already exists.');
+        const t = Date.now();
+        const file = { path, name: path.split('/').pop(), extension: path.split('.').pop(), stat: { ctime: t, mtime: t, size: data.length } };
+        this.files.set(path, { file, data });
+        return file;
+      },
+      getAbstractFileByPath(path) { return this.files.get(path)?.file ?? null; },
+    },
     loadLocalStorage: (k) => localStorage.getItem('fake-obsidian:' + k),
     saveLocalStorage: (k, v) => (v === null ? localStorage.removeItem('fake-obsidian:' + k) : localStorage.setItem('fake-obsidian:' + k, v)),
   };
@@ -174,6 +188,8 @@
       state.plugins = state.plugins.filter((p) => p !== plugin);
     },
     runCommand: async (name) => { const c = state.commands.get(name); if (!c) throw new Error('no command ' + name); await c.callback(); },
+    addFile: (path, data) => app.vault.create(path, data),
+    readFile: (path) => app.vault.files.get(path)?.data ?? null,
     clickRibbon: () => state.ribbon[0] && state.ribbon[0].el.click(),
   };
 })();

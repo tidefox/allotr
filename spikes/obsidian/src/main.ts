@@ -1,16 +1,27 @@
-import { addIcon, ItemView, Plugin, type WorkspaceLeaf } from 'obsidian';
+import { addIcon, ItemView, Plugin, type TFile, type WorkspaceLeaf } from 'obsidian';
 import { setApiTransport } from '../../../apps/web/src/lib/embed.tsx';
 import { indexedDbBlobStore } from './blob-store.ts';
 import { DiagnosticsModal } from './diagnostics-modal.ts';
 import type { SeedResult } from './diagnostics.ts';
 import type { LayoutSnapshot } from './layout.ts';
 import { installHeadStyles, removeHeadStyles } from './head-styles.ts';
+import {
+  BundlePickerModal,
+  countsLine,
+  exportBundle,
+  freePath,
+  importIntoFresh,
+  ledgerSize,
+  notice,
+  ReplaceConfirmModal,
+  stamp,
+} from './migrate.ts';
 import { mountAllotr, type Mounted } from './mount.tsx';
 import { Runtime } from './runtime.ts';
 
 export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
-const PLUGIN_VERSION = '0.0.1-spike.2';
+const PLUGIN_VERSION = '0.0.1-spike.3';
 
 declare const __BUNDLE_NOTE__: string;
 
@@ -98,6 +109,16 @@ export default class AllotrPlugin extends Plugin {
         }).open();
       },
     });
+    this.addCommand({
+      id: 'import-bundle',
+      name: 'Import Allotr export from vault',
+      callback: () => new BundlePickerModal(this.app, (file) => void this.importFile(file)).open(),
+    });
+    this.addCommand({
+      id: 'export-bundle',
+      name: 'Export Allotr data to vault',
+      callback: () => void this.exportToVault('Allotr export'),
+    });
     // Best-effort save when the page goes to the background or closes.
     const flush = () => void this.runtime?.flush();
     this.registerDomEvent(document, 'visibilitychange', () => {
@@ -155,6 +176,59 @@ export default class AllotrPlugin extends Plugin {
       }
     })();
     return this.runtimePromise;
+  }
+
+  /** Writes the ledger as a JSON bundle to the vault root; returns its path. */
+  async exportToVault(stem: string): Promise<string | null> {
+    try {
+      const runtime = await this.getRuntime();
+      const path = freePath(this.app, `${stem} ${stamp()}`);
+      await this.app.vault.create(path, await exportBundle(runtime));
+      notice(`Allotr data saved to ${path}`);
+      return path;
+    } catch (error) {
+      notice(`Allotr export failed: ${String(error)}`);
+      return null;
+    }
+  }
+
+  async importFile(file: TFile): Promise<void> {
+    try {
+      const text = await this.app.vault.read(file);
+      const runtime = await this.getRuntime();
+      const size = await ledgerSize(runtime);
+      if (size.accounts === 0 && size.entries === 0) await this.replaceWith(text, file.path);
+      else
+        new ReplaceConfirmModal(this.app, size, () => {
+          void (async () => {
+            const backup = await this.exportToVault('Allotr backup');
+            if (backup !== null) await this.replaceWith(text, file.path);
+          })();
+        }).open();
+    } catch (error) {
+      notice(`Allotr import failed: ${String(error)}`);
+    }
+  }
+
+  /** Imports into a fresh database; only on success does it replace this device's data. */
+  private async replaceWith(text: string, name: string): Promise<void> {
+    notice(`Importing ${name}…`, 4000);
+    const outcome = await importIntoFresh(text, (m) => console.warn('[allotr]', m));
+    if (!outcome.ok) {
+      notice(`Allotr import refused, nothing changed:\n${outcome.message}`, 20000);
+      return;
+    }
+    const reopen = this.views.size > 0;
+    for (const view of [...this.views]) view.leaf.detach();
+    const old = await this.getRuntime();
+    await old.close();
+    this.runtime = null;
+    this.runtimePromise = null;
+    setApiTransport(undefined);
+    await indexedDbBlobStore(this.vaultKey()).save(outcome.bytes);
+    await this.getRuntime();
+    notice(`Allotr import done: ${countsLine(outcome.counts)}`, 12000);
+    if (reopen) await this.openView();
   }
 
   async openView(): Promise<void> {

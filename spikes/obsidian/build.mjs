@@ -96,7 +96,7 @@ const overrides = {
   randomUUID: () => globalThis.crypto.randomUUID ? globalThis.crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, (c) => (c ^ (globalThis.crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)),
   STATUS_CODES: ${JSON.stringify(STATUS)},
 };
-module.exports = new Proxy({}, {
+module.exports = new Proxy({ ...overrides }, {
   get: (_t, key) => key === '__esModule' ? false : key === 'default' ? module.exports : ${name === 'node:crypto' ? '(key in overrides ? overrides[key] : unavailable(key))' : name === 'node:http' ? '(key in overrides ? overrides[key] : unavailable(key))' : 'unavailable(key)'},
 });`;
 
@@ -188,7 +188,7 @@ cpSync(mainJs, join(out, 'main.js'));
 writeFileSync(
   join(out, 'manifest.json'),
   JSON.stringify({
-    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.2', minAppVersion: '1.5.0',
+    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.3', minAppVersion: '1.5.0',
     description: 'Spike S1: the Allotr budget app running inside Obsidian. Not for real data.',
     author: 'Allotr contributors', isDesktopOnly: false,
   }, null, 2) + '\n',

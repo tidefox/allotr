@@ -8,7 +8,17 @@ declare module 'obsidian' {
   };
   export function addIcon(id: string, svg: string): void;
   export class Notice { constructor(message: string, duration?: number); }
-  export interface Vault { getName(): string; }
+  export interface TFile {
+    path: string; name: string; extension: string;
+    stat: { ctime: number; mtime: number; size: number };
+  }
+  export interface Vault {
+    getName(): string;
+    getFiles(): TFile[];
+    read(file: TFile): Promise<string>;
+    create(path: string, data: string): Promise<TFile>;
+    getAbstractFileByPath(path: string): unknown;
+  }
   export interface Workspace {
     getLeavesOfType(type: string): WorkspaceLeaf[];
     getLeaf(newLeaf?: boolean | 'tab' | 'split' | 'window'): WorkspaceLeaf;
@@ -18,8 +28,9 @@ declare module 'obsidian' {
   export class WorkspaceLeaf {
     view: View;
     setViewState(state: { type: string; active?: boolean }): Promise<void>;
+    detach(): void;
   }
-  export class View { app: App; containerEl: HTMLElement; constructor(leaf: WorkspaceLeaf); }
+  export class View { app: App; leaf: WorkspaceLeaf; containerEl: HTMLElement; constructor(leaf: WorkspaceLeaf); }
   export class ItemView extends View {
     contentEl: HTMLElement;
     getIcon(): string;
