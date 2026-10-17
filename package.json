@@ -22,10 +22,10 @@
     "eslint": "10.12.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react-hooks": "7.1.1",
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "turbo": "2.11.7",
     "typescript": "catalog:",
-    "typescript-eslint": "8.71.0",
+    "typescript-eslint": "8.71.1",
     "vitest": "catalog:"
   }
 }
