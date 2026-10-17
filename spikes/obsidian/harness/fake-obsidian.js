@@ -108,6 +108,7 @@
       this.manifest = manifest;
       this._domEvents = [];
     }
+    registerInterval(id) { this._intervals = this._intervals || []; this._intervals.push(id); return id; }
     registerView(type, creator) { this.app.viewCreators.set(type, creator); }
     addRibbonIcon(icon, title, cb) {
       const b = document.createElement('button');
@@ -130,6 +131,8 @@
     _unregister() {
       for (const [el, type, cb] of this._domEvents) el.removeEventListener(type, cb);
       this._domEvents = [];
+      for (const id of this._intervals || []) clearInterval(id);
+      this._intervals = [];
       for (const r of state.ribbon) r.el.remove();
       state.ribbon = [];
       for (const [name] of [...state.commands]) if (name.startsWith(this.manifest.name + ':')) state.commands.delete(name);
@@ -153,6 +156,33 @@
         return file;
       },
       getAbstractFileByPath(path) { return this.files.get(path)?.file ?? null; },
+      // Obsidian's DataAdapter, over the same in-memory files; folders are a set.
+      folders: new Set(),
+      adapter: {
+        exists: async (path) => app.vault.files.has(path) || app.vault.folders.has(path),
+        read: async (path) => {
+          if (!app.vault.files.has(path)) throw new Error('ENOENT: ' + path);
+          return app.vault.files.get(path).data;
+        },
+        write: async (path, data) => {
+          const dir = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+          if (dir && !app.vault.folders.has(dir)) throw new Error('ENOENT: folder ' + dir);
+          if (window.harness.failWrites) throw new Error('disk full (simulated)');
+          const t = Date.now();
+          const existing = app.vault.files.get(path);
+          const file = existing ? existing.file : { path, name: path.split('/').pop(), extension: path.split('.').pop(), stat: { ctime: t, mtime: t, size: 0 } };
+          file.stat.mtime = t; file.stat.size = data.length;
+          app.vault.files.set(path, { file, data });
+          window.harness.writes.push(path);
+        },
+        mkdir: async (path) => { app.vault.folders.add(path); },
+        remove: async (path) => { app.vault.files.delete(path); },
+        list: async (path) => ({
+          files: [...app.vault.files.keys()].filter((p) => p.startsWith(path + '/') && !p.slice(path.length + 1).includes('/')),
+          folders: [],
+        }),
+        stat: async (path) => { const f = app.vault.files.get(path); return f ? { ...f.file.stat } : null; },
+      },
     },
     loadLocalStorage: (k) => localStorage.getItem('fake-obsidian:' + k),
     saveLocalStorage: (k, v) => (v === null ? localStorage.removeItem('fake-obsidian:' + k) : localStorage.setItem('fake-obsidian:' + k, v)),
@@ -166,7 +196,7 @@
   const obsidianModule = { apiVersion: '1.9.99-fake', Plugin, ItemView, View, WorkspaceLeaf, Modal, Notice, Platform, addIcon() {} };
 
   window.harness = {
-    state, app, Platform,
+    state, app, Platform, writes: [], failWrites: false,
     // Evaluates a CommonJS bundle the way Obsidian does, handing it the fake module.
     async loadPlugin(code) {
       const module = { exports: {} };

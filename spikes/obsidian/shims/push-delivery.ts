@@ -6,5 +6,7 @@ export type PushMessage = unknown;
 export type PushSender = unknown;
 export type Delivery = unknown;
 export const createSender = unavailable;
-export const pushToUser = unavailable;
+// The scheduler's reminder job calls this after recording a reminder: nothing is sent.
+export const pushToUser = (): Promise<{ sent: number; removed: number; failed: number }> =>
+  Promise.resolve({ sent: 0, removed: 0, failed: 0 });
 export const addSubscription = unavailable;

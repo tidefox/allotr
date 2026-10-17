@@ -234,6 +234,20 @@ export class Runtime {
     }
   };
 
+  /** Runs work that touches the database outside the API (a save waits for it), then saves. */
+  async exclusive<T>(work: () => Promise<T>, changed: (result: T) => boolean = () => true): Promise<T> {
+    if (this.closed) throw new TypeError('Allotr runtime is closed');
+    this.inflight++;
+    let result: T;
+    try {
+      result = await work();
+    } finally {
+      this.inflight--;
+    }
+    if (changed(result)) this.markDirty();
+    return result;
+  }
+
   onSaved(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

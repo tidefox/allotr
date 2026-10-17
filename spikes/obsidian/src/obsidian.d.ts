@@ -12,7 +12,17 @@ declare module 'obsidian' {
     path: string; name: string; extension: string;
     stat: { ctime: number; mtime: number; size: number };
   }
+  export interface DataAdapter {
+    exists(path: string): Promise<boolean>;
+    read(path: string): Promise<string>;
+    write(path: string, data: string): Promise<void>;
+    mkdir(path: string): Promise<void>;
+    remove(path: string): Promise<void>;
+    list(path: string): Promise<{ files: string[]; folders: string[] }>;
+    stat(path: string): Promise<{ mtime: number; ctime: number; size: number } | null>;
+  }
   export interface Vault {
+    adapter: DataAdapter;
     getName(): string;
     getFiles(): TFile[];
     read(file: TFile): Promise<string>;
@@ -46,6 +56,7 @@ declare module 'obsidian' {
     app: App;
     onload(): Promise<void> | void;
     onunload(): void;
+    registerInterval(id: number): number;
     registerView(type: string, creator: (leaf: WorkspaceLeaf) => View): void;
     addRibbonIcon(icon: string, title: string, callback: (evt: MouseEvent) => void): HTMLElement;
     addCommand(command: { id: string; name: string; callback?: () => void }): void;
