@@ -96,8 +96,20 @@
       modal.appendChild(this.contentEl);
       this.containerEl.appendChild(modal);
     }
-    open() { document.body.appendChild(this.containerEl); this.onOpen(); }
-    close() { this.onClose(); this.containerEl.remove(); }
+    open() {
+      document.body.appendChild(this.containerEl);
+      // Obsidian closes a modal on Escape.
+      this._esc = (e) => { if (e.key === 'Escape') this.close(); };
+      document.addEventListener('keydown', this._esc);
+      this.onOpen();
+    }
+    close() {
+      if (this._esc) document.removeEventListener('keydown', this._esc);
+      this._esc = null;
+      if (!this.containerEl.isConnected) return;
+      this.onClose();
+      this.containerEl.remove();
+    }
     onOpen() {}
     onClose() {}
   }
@@ -175,11 +187,30 @@
           app.vault.files.set(path, { file, data });
           window.harness.writes.push(path);
         },
-        mkdir: async (path) => { app.vault.folders.add(path); },
+        // Strict on purpose: the real adapter's rename may refuse an existing target.
+        rename: async (from, to) => {
+          const entry = app.vault.files.get(from);
+          if (!entry) throw new Error('ENOENT: ' + from);
+          if (app.vault.files.has(to)) throw new Error('EEXIST: ' + to);
+          const dir = to.includes('/') ? to.slice(0, to.lastIndexOf('/')) : '';
+          if (dir && !app.vault.folders.has(dir)) throw new Error('ENOENT: folder ' + dir);
+          app.vault.files.delete(from);
+          entry.file.path = to; entry.file.name = to.split('/').pop(); entry.file.extension = to.split('.').pop();
+          app.vault.files.set(to, entry);
+          window.harness.renames.push([from, to]);
+          // A file counts as written when it lands under its real name.
+          window.harness.writes.push(to);
+        },
+        // Like a plain mkdir: the parent must exist.
+        mkdir: async (path) => {
+          const parent = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+          if (parent && !app.vault.folders.has(parent)) throw new Error('ENOENT: folder ' + parent);
+          app.vault.folders.add(path);
+        },
         remove: async (path) => { app.vault.files.delete(path); },
         list: async (path) => ({
           files: [...app.vault.files.keys()].filter((p) => p.startsWith(path + '/') && !p.slice(path.length + 1).includes('/')),
-          folders: [],
+          folders: [...app.vault.folders].filter((p) => p.startsWith(path + '/') && !p.slice(path.length + 1).includes('/')),
         }),
         stat: async (path) => { const f = app.vault.files.get(path); return f ? { ...f.file.stat } : null; },
       },
@@ -196,7 +227,7 @@
   const obsidianModule = { apiVersion: '1.9.99-fake', Plugin, ItemView, View, WorkspaceLeaf, Modal, Notice, Platform, addIcon() {} };
 
   window.harness = {
-    state, app, Platform, writes: [], failWrites: false,
+    state, app, Platform, writes: [], renames: [], failWrites: false,
     // Evaluates a CommonJS bundle the way Obsidian does, handing it the fake module.
     async loadPlugin(code) {
       const module = { exports: {} };
@@ -219,6 +250,15 @@
     },
     runCommand: async (name) => { const c = state.commands.get(name); if (!c) throw new Error('no command ' + name); await c.callback(); },
     addFile: (path, data) => app.vault.create(path, data),
+    // Stand-in for a sync tool: copies every file under a prefix out of, or into, this vault.
+    dumpFiles: (prefix) => [...app.vault.files.entries()].filter(([p]) => p.startsWith(prefix)).map(([p, v]) => ({ path: p, data: v.data, mtime: v.file.stat.mtime })),
+    loadFiles: (list) => {
+      for (const { path, data, mtime } of list) {
+        const parts = path.split('/');
+        for (let i = 1; i < parts.length; i++) app.vault.folders.add(parts.slice(0, i).join('/'));
+        app.vault.files.set(path, { file: { path, name: parts.at(-1), extension: path.split('.').pop(), stat: { ctime: mtime, mtime, size: data.length } }, data });
+      }
+    },
     readFile: (path) => app.vault.files.get(path)?.data ?? null,
     clickRibbon: () => state.ribbon[0] && state.ribbon[0].el.click(),
   };

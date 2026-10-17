@@ -1,4 +1,4 @@
-// Vault backups, restore on start, pruning and the scheduler, with made-up data.
+// Per-device vault snapshots, restore on start, pruning, atomic writes and the scheduler, with made-up data.
 //   node harness/backup.mjs [chromium|webkit|all]
 import { engines, newHarnessPage, startPlugin } from './lib.mjs';
 
@@ -22,11 +22,13 @@ const bundle = {
   bills: [],
 };
 
-const LATEST = 'Allotr/allotr-latest.json';
-const today = () => {
+const LEGACY = 'Allotr/allotr-latest.json';
+const deviceId = (page) => page.evaluate(() => window.harness.app.loadLocalStorage('allotr-spike-vault-id'));
+const latestOf = (id) => `Allotr/devices/${id}/latest.json`;
+const today = (id) => {
   const d = new Date();
   const p = (n) => String(n).padStart(2, '0');
-  return `Allotr/backups/allotr-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`;
+  return `Allotr/devices/${id}/backups/allotr-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`;
 };
 const read = (page, path) => page.evaluate((p) => window.harness.readFile(p), path);
 const files = (page, prefix) =>
@@ -49,17 +51,20 @@ const waitWritten = (page, path, since) =>
   page.waitForFunction(([p, n]) => window.harness.writes.slice(n).includes(p), [path, since], { timeout: 40000 });
 const writesCount = (page) => page.evaluate(() => window.harness.writes.length);
 
-/** Stops the plugin, deletes the database and forgets the vault id: a device with cleared storage. */
-async function clearDevice(page) {
-  await page.evaluate(async () => {
+/**
+ * Stops the plugin and deletes the database. By default the device id is forgotten too
+ * (a new device on the same vault); `keepId` keeps it (the browser evicted the database).
+ */
+async function clearDevice(page, { keepId = false } = {}) {
+  await page.evaluate(async (keepId) => {
     await window.harness.unloadPlugin(window.plugin);
     await new Promise((r) => setTimeout(r, 500));
     await new Promise((resolve) => {
       const req = indexedDB.deleteDatabase('allotr-spike');
       req.onsuccess = req.onerror = req.onblocked = () => resolve();
     });
-    window.harness.app.saveLocalStorage('allotr-spike-vault-id', null);
-  });
+    if (!keepId) window.harness.app.saveLocalStorage('allotr-spike-vault-id', null);
+  }, keepId);
 }
 
 async function run(engine, browser) {
@@ -67,6 +72,8 @@ async function run(engine, browser) {
   const { context, page } = await newHarnessPage(browser, { query: `?vault=backup-${Date.now()}` });
   await startPlugin(page);
   await page.evaluate(() => window.plugin.getRuntime());
+  const id = await deviceId(page);
+  const LATEST = latestOf(id);
 
   // 1. A write produces the latest file and today's dated copy.
   let w = await writesCount(page);
@@ -75,9 +82,14 @@ async function run(engine, browser) {
   await waitWritten(page, LATEST, w);
   const ledger = await exported(page);
   const latest = await read(page, LATEST);
+  const side = JSON.parse((await read(page, `Allotr/devices/${id}/device.json`)) ?? 'null');
+  c('sidecar names the device and the hash', side !== null && side.id === id && side.accounts === 1 && side.entries === 1 && /^[0-9a-f]{64}$/.test(side.sha256), JSON.stringify(side));
   c('latest backup written', latest !== null && JSON.parse(latest).accounts.length === 1);
   c('latest backup equals the export', latest === JSON.stringify(ledger) || JSON.stringify(JSON.parse(latest)) === JSON.stringify(ledger));
-  c("today's dated copy written", (await read(page, today())) === latest, today());
+  c("today's dated copy written", (await read(page, today(id))) === latest, today(id));
+  c('every write went through a temp file', (await page.evaluate(() => window.harness.renames.length)) >= 3);
+  c('no temp file is left behind', (await files(page, 'Allotr/')).every((p) => !p.endsWith('.tmp')));
+  c('the shared legacy file is not written', (await read(page, LEGACY)) === null);
 
   // 2. Unchanged: another save does not rewrite.
   w = await writesCount(page);
@@ -86,22 +98,22 @@ async function run(engine, browser) {
   c('unchanged bundle is not rewritten', (await writesCount(page)) === w);
 
   // 3. Pruning keeps the newest 30 dated copies.
-  await page.evaluate(() => {
+  await page.evaluate((id) => {
     for (let i = 1; i <= 33; i++) {
       const day = String(i).padStart(2, '0');
-      const path = `Allotr/backups/allotr-2020-${i <= 28 ? '01' : '02'}-${i <= 28 ? day : String(i - 28).padStart(2, '0')}.json`;
+      const path = `Allotr/devices/${id}/backups/allotr-2020-${i <= 28 ? '01' : '02'}-${i <= 28 ? day : String(i - 28).padStart(2, '0')}.json`;
       window.harness.app.vault.files.set(path, { file: { path, name: path, extension: 'json', stat: { ctime: 1, mtime: 1, size: 2 } }, data: '{}' });
     }
-  });
+  }, id);
   w = await writesCount(page);
   r = await post(page, '/v1/accounts', { name: 'Jar', currency: 'EUR', openingBalance: { amountMinor: 500, currency: 'EUR' } });
   c('second change accepted', r.status < 300, r.text.slice(0, 200));
   await waitWritten(page, LATEST, w);
   await page.waitForTimeout(500);
-  const dated = (await files(page, 'Allotr/backups/')).filter((p) => /allotr-\d{4}-\d{2}-\d{2}\.json$/.test(p));
+  const dated = (await files(page, `Allotr/devices/${id}/backups/`)).filter((p) => /allotr-\d{4}-\d{2}-\d{2}\.json$/.test(p));
   c('30 dated copies kept', dated.length === 30, String(dated.length));
-  c("today's copy survives pruning", dated.includes(today()));
-  c('oldest copies removed', !dated.includes('Allotr/backups/allotr-2020-01-01.json'));
+  c("today's copy survives pruning", dated.includes(today(id)));
+  c('oldest copies removed', !dated.includes(`Allotr/devices/${id}/backups/allotr-2020-01-01.json`));
   const newest = JSON.parse(await read(page, LATEST));
   c('latest has both accounts', newest.accounts.length === 2);
 
@@ -113,9 +125,9 @@ async function run(engine, browser) {
   });
   c('scheduler tick records a reminder', /weekly_review/.test(reminders), reminders.slice(0, 160));
 
-  // 5. Cleared storage: the restore modal appears; "Not now" leaves the ledger empty.
+  // 5. Database evicted (same device id): the restore modal appears; "Not now" leaves the ledger empty.
   await page.evaluate(() => window.harness.state.notices.length);
-  await clearDevice(page);
+  await clearDevice(page, { keepId: true });
   await startPlugin(page);
   await page.evaluate(() => window.plugin.getRuntime());
   await page.locator('.allotr-restore-text').waitFor();
@@ -131,11 +143,11 @@ async function run(engine, browser) {
   w = await writesCount(page);
   await post(page, '/v1/import', { ...bundle, accounts: [{ name: 'Fresh', currency: 'EUR', openingBalance: { amountMinor: 100, currency: 'EUR' } }], transactions: [] });
   await waitWritten(page, LATEST, w);
-  const kept = await read(page, 'Allotr/backups/allotr-before-new-data.json');
+  const kept = await read(page, `Allotr/devices/${id}/backups/allotr-before-new-data.json`);
   c('declined backup kept aside before overwrite', kept !== null && JSON.parse(kept).accounts.length === 2);
 
-  // 7. Cleared again: Restore brings the data back (here the latest is the "Fresh" ledger).
-  await page.evaluate((t) => window.harness.app.vault.adapter.write('Allotr/allotr-latest.json', t), JSON.stringify(newest));
+  // 7. A new device on the vault, offered the legacy shared file (newest): Restore brings the data back.
+  await page.evaluate(([path, t]) => window.harness.app.vault.adapter.write(path, t), [LEGACY, JSON.stringify(newest)]);
   await clearDevice(page);
   await startPlugin(page);
   await page.evaluate(() => window.plugin.getRuntime());

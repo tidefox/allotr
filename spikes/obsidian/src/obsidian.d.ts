@@ -18,6 +18,7 @@ declare module 'obsidian' {
     write(path: string, data: string): Promise<void>;
     mkdir(path: string): Promise<void>;
     remove(path: string): Promise<void>;
+    rename(path: string, newPath: string): Promise<void>;
     list(path: string): Promise<{ files: string[]; folders: string[] }>;
     stat(path: string): Promise<{ mtime: number; ctime: number; size: number } | null>;
   }
