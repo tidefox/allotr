@@ -16,14 +16,27 @@ import {
   ReplaceConfirmModal,
   stamp,
 } from './migrate.ts';
-import { readLatest, RestoreModal, VaultBackup } from './backup.ts';
+import {
+  defaultDeviceName,
+  DivergenceModal,
+  dismiss,
+  readBest,
+  readSnapshots,
+  RestoreModal,
+  VaultBackup,
+  type DeviceIdentity,
+  type Snapshot,
+} from './backup.ts';
+import { localGet, localSet } from './local-store.ts';
+import { ExportOutsideModal } from './share-export.ts';
+import { sha256Hex } from './sha256.ts';
 import { runReminders } from '../../../apps/server/src/reminders.ts';
 import { mountAllotr, type Mounted } from './mount.tsx';
 import { Runtime } from './runtime.ts';
 
 export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
-const PLUGIN_VERSION = '0.0.1-spike.4';
+const PLUGIN_VERSION = '0.0.1-spike.6';
 
 declare const __BUNDLE_NOTE__: string;
 
@@ -92,6 +105,7 @@ export default class AllotrPlugin extends Plugin {
   private backup!: VaultBackup;
   private restoreOffered = false;
   private tickRunning = false;
+  private divergenceOpen = false;
 
   override async onload(): Promise<void> {
     installHeadStyles(document);
@@ -125,13 +139,23 @@ export default class AllotrPlugin extends Plugin {
       callback: () => void this.exportToVault('Allotr export'),
     });
     this.addCommand({
+      id: 'export-outside-vault',
+      name: 'Export Allotr data outside the vault',
+      callback: () => void this.exportOutside(),
+    });
+    this.addCommand({
+      id: 'check-devices',
+      name: 'Check other devices for newer Allotr data',
+      callback: () => void this.checkDevices(true),
+    });
+    this.addCommand({
       id: 'restore-backup',
       name: 'Restore Allotr data from vault backup',
       callback: () => void this.restoreFromBackup(),
     });
-    this.backup = new VaultBackup(this.app);
+    this.backup = new VaultBackup(this.app, () => this.device());
     // The server's scheduler (reminders) every 15 minutes while the plugin is loaded.
-    this.registerInterval(window.setInterval(() => void this.schedulerTick(), 15 * 60 * 1000));
+    this.registerInterval(window.setInterval(() => void this.periodic(), 15 * 60 * 1000));
     // Best-effort save when the page goes to the background or closes; the
     // vault backup follows the save.
     const flush = () => {
@@ -160,24 +184,25 @@ export default class AllotrPlugin extends Plugin {
     })();
   }
 
-  /** The vault's key: its name plus a random id kept in Obsidian's local storage. */
-  private vaultKey(): string {
+  /** This device's id: random, kept in Obsidian's local storage so it never syncs with the vault. */
+  private deviceId(): string {
     const storageKey = 'allotr-spike-vault-id';
-    const app = this.app as unknown as {
-      loadLocalStorage?: (key: string) => string | null;
-      saveLocalStorage?: (key: string, value: string | null) => void;
-    };
-    const read = (): string | null =>
-      typeof app.loadLocalStorage === 'function'
-        ? app.loadLocalStorage(storageKey)
-        : window.localStorage.getItem(storageKey);
-    let id = read();
+    let id = localGet(this.app, storageKey);
     if (id === null || id === '') {
       id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
-      if (typeof app.saveLocalStorage === 'function') app.saveLocalStorage(storageKey, id);
-      else window.localStorage.setItem(storageKey, id);
+      localSet(this.app, storageKey, id);
     }
-    this.key = `${this.app.vault.getName()}:${id}`;
+    return id;
+  }
+
+  private device(): DeviceIdentity {
+    const id = this.deviceId();
+    return { id, name: defaultDeviceName(id) };
+  }
+
+  /** The vault's key: its name plus the device id. */
+  private vaultKey(): string {
+    this.key = `${this.app.vault.getName()}:${this.deviceId()}`;
     return this.key;
   }
 
@@ -185,6 +210,8 @@ export default class AllotrPlugin extends Plugin {
   getRuntime(): Promise<Runtime> {
     this.runtimePromise ??= (async () => {
       try {
+        // Before anything can save: when this device last wrote is what newer data elsewhere is judged against.
+        await this.backup.loadOwn();
         const runtime = await Runtime.open({
           store: indexedDbBlobStore(this.vaultKey()),
           log: (m) => console.warn('[allotr]', m),
@@ -202,27 +229,83 @@ export default class AllotrPlugin extends Plugin {
     return this.runtimePromise;
   }
 
-  /** Scheduler run and, for an empty ledger, the offer to restore from the vault. */
+  /**
+   * For an empty ledger, the offer to restore from the vault; otherwise the
+   * check for newer data on another device, then the scheduler run (which may
+   * save, so it comes last).
+   */
   private async afterOpen(runtime: Runtime): Promise<void> {
     try {
       const size = await ledgerSize(runtime);
       if (size.accounts === 0 && size.entries === 0) {
         if (this.restoreOffered) return;
-        const info = await readLatest(this.app);
+        const info = await readBest(this.app);
         if (info === null || runtime !== this.runtime) return;
         this.restoreOffered = true;
         new RestoreModal(
           this.app,
           info,
-          () => void this.replaceWith(info.text, 'the vault backup'),
+          () =>
+            void (async () => {
+              // Restoring takes the newest snapshot on purpose; the older ones are not news afterwards.
+              dismiss(this.app, await readSnapshots(this.app));
+              await this.replaceWith(info.text, 'the vault backup', info);
+            })(),
           () => this.backup.keepOldLatest(),
         ).open();
         return;
       }
+      await this.checkDevices(false);
       await this.schedulerTick();
     } catch (error) {
       console.warn('[allotr] start-up check failed', error);
     }
+  }
+
+  /**
+   * Warns when another device saved data this one has not seen. Until the user
+   * decides, this device writes nothing to the vault, so it cannot bury the
+   * other device's data or make the warning disappear by saving first.
+   */
+  async checkDevices(manual: boolean): Promise<void> {
+    const runtime = this.runtime;
+    if (runtime === null || this.divergenceOpen) return;
+    const found = await this.backup.newerElsewhere(runtime);
+    if (runtime !== this.runtime || this.divergenceOpen) return;
+    if (found === null) {
+      if (this.backup.isHeld) this.backup.hold(false);
+      if (manual) notice('No other device has changes this device has not seen.');
+      return;
+    }
+    const { other, mine } = found;
+    this.backup.hold(true);
+    this.divergenceOpen = true;
+    new DivergenceModal(this.app, other, mine, {
+      replace: () => void this.importText(other.text, other.name, other),
+      keep: () => {
+        dismiss(this.app, [other]);
+        this.backup.hold(false);
+      },
+      saveBoth: async () => {
+        await this.exportToVault('Allotr mine');
+        const path = freePath(this.app, `Allotr ${other.name} ${stamp()}`);
+        await this.app.vault.create(path, other.text);
+        notice(`Allotr saved ${other.name}'s data to ${path}`);
+      },
+      closed: () => {
+        this.divergenceOpen = false;
+      },
+    }).open();
+  }
+
+  /** Every 15 minutes: look again for changes from other devices (an undecided warning comes back), then the scheduler. */
+  private async periodic(): Promise<void> {
+    try {
+      await this.checkDevices(false);
+    } catch (error) {
+      console.warn('[allotr] device check failed', error);
+    }
+    await this.schedulerTick();
   }
 
   /**
@@ -248,12 +331,12 @@ export default class AllotrPlugin extends Plugin {
 
   /** The "Restore from vault backup" command: with confirm and backup when the ledger has data. */
   async restoreFromBackup(): Promise<void> {
-    const info = await readLatest(this.app);
+    const info = await readBest(this.app);
     if (info === null) {
-      notice('No Allotr backup found in the vault (Allotr/allotr-latest.json).');
+      notice('No Allotr backup found in the vault (Allotr/devices).');
       return;
     }
-    await this.importText(info.text, 'the vault backup');
+    await this.importText(info.text, `the vault backup from ${info.name}`, info);
   }
 
   /** Writes the ledger as a JSON bundle to the vault root; returns its path. */
@@ -270,6 +353,24 @@ export default class AllotrPlugin extends Plugin {
     }
   }
 
+  /** Builds the export, then asks for the tap that shares it (see share-export.ts). */
+  async exportOutside(): Promise<void> {
+    try {
+      const runtime = await this.getRuntime();
+      const text = await exportBundle(runtime);
+      const size = await ledgerSize(runtime);
+      new ExportOutsideModal(
+        this.app,
+        text,
+        `allotr-export-${stamp().replace(' ', '-')}.json`,
+        `${size.accounts} accounts, ${size.entries} entries`,
+        (message) => notice(message, 15000),
+      ).open();
+    } catch (error) {
+      notice(`Allotr export failed: ${String(error)}`);
+    }
+  }
+
   async importFile(file: TFile): Promise<void> {
     try {
       await this.importText(await this.app.vault.read(file), file.path);
@@ -278,16 +379,16 @@ export default class AllotrPlugin extends Plugin {
     }
   }
 
-  private async importText(text: string, name: string): Promise<void> {
+  private async importText(text: string, name: string, from?: Snapshot): Promise<void> {
     try {
       const runtime = await this.getRuntime();
       const size = await ledgerSize(runtime);
-      if (size.accounts === 0 && size.entries === 0) await this.replaceWith(text, name);
+      if (size.accounts === 0 && size.entries === 0) await this.replaceWith(text, name, from);
       else
         new ReplaceConfirmModal(this.app, size, () => {
           void (async () => {
             const backup = await this.exportToVault('Allotr backup');
-            if (backup !== null) await this.replaceWith(text, name);
+            if (backup !== null) await this.replaceWith(text, name, from);
           })();
         }).open();
     } catch (error) {
@@ -296,7 +397,7 @@ export default class AllotrPlugin extends Plugin {
   }
 
   /** Imports into a fresh database; only on success does it replace this device's data. */
-  private async replaceWith(text: string, name: string): Promise<void> {
+  private async replaceWith(text: string, name: string, from?: Snapshot): Promise<void> {
     notice(`Importing ${name}…`, 4000);
     const outcome = await importIntoFresh(text, (m) => console.warn('[allotr]', m));
     if (!outcome.ok) {
@@ -314,7 +415,11 @@ export default class AllotrPlugin extends Plugin {
     this.runtimePromise = null;
     setApiTransport(undefined);
     await indexedDbBlobStore(this.vaultKey()).save(outcome.bytes);
-    await this.getRuntime();
+    // Before the new runtime starts its start-up check: that snapshot is what this device now holds.
+    if (from !== undefined) this.backup.replacedBy(from);
+    const fresh = await this.getRuntime();
+    if (from !== undefined) this.backup.derivedHash(sha256Hex(await exportBundle(fresh)));
+    this.backup.hold(false);
     this.backup.schedule();
     notice(`Allotr import done: ${countsLine(outcome.counts)}`, 12000);
     if (reopen) await this.openView();

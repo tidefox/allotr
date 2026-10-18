@@ -1,7 +1,7 @@
 // The in-process Allotr server: sql.js database, migrations, the ledger
 // cache, and the real Hono app answering `fetch(Request)` with no network.
 import { payeeKey } from '@allotr/core';
-import { withLedgerCache, type DB } from '@allotr/store';
+import { seedLedger, withLedgerCache, type DB } from '@allotr/store';
 import { Kysely, SqliteDialect } from 'kysely';
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js';
 import sqlJsFactory from 'sql.js/dist/sql-wasm-browser.js';
@@ -338,21 +338,61 @@ export class Runtime {
   }
 }
 
+/**
+ * The local user and their starter data, as sign-up does on the server: the
+ * user and the ledger seed share a transaction. `seedLedger` uses ids derived
+ * from the ledger id and skips rows that exist, so it can run again safely.
+ * An existing user with no categories at all (created by an earlier build that
+ * did not seed) is seeded too; one that has categories is left alone, since
+ * starter rows the user deleted must not come back.
+ */
 async function ensureLocalUser(db: Kysely<DB>): Promise<void> {
-  const row = await db.selectFrom('users').select('id').where('id', '=', LOCAL_USER.id).executeTakeFirst();
-  if (row !== undefined) return;
   const at = new Date().toISOString();
-  await db
-    .insertInto('users')
-    .values({
-      id: LOCAL_USER.id,
-      name: LOCAL_USER.name,
-      email: LOCAL_USER.email,
-      role: 'admin',
-      created_at: at,
-      updated_at: at,
-    })
-    .execute();
+  await db.transaction().execute(async (trx) => {
+    let row = await trx
+      .selectFrom('users')
+      .select(['ledger_id', 'created_at', 'default_currency'])
+      .where('id', '=', LOCAL_USER.id)
+      .executeTakeFirst();
+    if (row === undefined) {
+      await trx
+        .insertInto('users')
+        .values({
+          id: LOCAL_USER.id,
+          name: LOCAL_USER.name,
+          email: LOCAL_USER.email,
+          role: 'admin',
+          ledger_id: globalThis.crypto.randomUUID(),
+          created_at: at,
+          updated_at: at,
+        })
+        .execute();
+      row = await trx
+        .selectFrom('users')
+        .select(['ledger_id', 'created_at', 'default_currency'])
+        .where('id', '=', LOCAL_USER.id)
+        .executeTakeFirstOrThrow();
+    } else {
+      const seeded = await trx
+        .selectFrom('categories')
+        .select('id')
+        .where('user_id', '=', LOCAL_USER.id)
+        .limit(1)
+        .executeTakeFirst();
+      if (seeded !== undefined) return;
+      if (row.ledger_id === '') {
+        const ledgerId = globalThis.crypto.randomUUID();
+        await trx.updateTable('users').set({ ledger_id: ledgerId }).where('id', '=', LOCAL_USER.id).execute();
+        row = { ...row, ledger_id: ledgerId };
+      }
+    }
+    await seedLedger(trx, {
+      userId: LOCAL_USER.id,
+      ledgerId: row.ledger_id,
+      createdAt: row.created_at,
+      defaultCurrency: row.default_currency,
+    });
+  });
 }
 
 /** One implicit local user: every request is signed in as them. */
