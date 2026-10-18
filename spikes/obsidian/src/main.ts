@@ -36,7 +36,7 @@ import { Runtime } from './runtime.ts';
 
 export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
-const PLUGIN_VERSION = '0.0.1-spike.6';
+const PLUGIN_VERSION = '0.0.1-spike.7';
 
 declare const __BUNDLE_NOTE__: string;
 
