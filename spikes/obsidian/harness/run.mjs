@@ -59,6 +59,7 @@ async function scenario(engine, browser, { tag, viewport, platform, seed, nodeLi
       rootTheme: document.documentElement.dataset.theme ?? null,
       rootStyleAttr: document.documentElement.getAttribute('style'),
       bg: wrapper && getComputedStyle(wrapper).backgroundColor,
+      fontSize: wrapper && getComputedStyle(wrapper).fontSize,
       seamFound: Boolean(seam),
       containerType: cs && cs.containerType,
       fontOk: document.fonts.check('12px "Allotr Geist Mono Variable"'),
@@ -71,6 +72,8 @@ async function scenario(engine, browser, { tag, viewport, platform, seed, nodeLi
   c('theme attributes stay off the page <html>', facts.rootTheme === null && facts.rootStyleAttr === null, `theme=${facts.rootTheme} style=${facts.rootStyleAttr}`);
   c('wrapper carries data-theme', facts.wrapperTheme === 'light', facts.wrapperTheme);
   c('borders resolve (@property hoisted)', facts.seamFound);
+  // The body text size (--fs-base, 13 px), not the 16 px root size.
+  c('wrapper text size is the body size', facts.fontSize === '13px', facts.fontSize);
   c('container queries on the frame', facts.containerType === 'inline-size', facts.containerType);
   c('font faces in document.head load', facts.fontOk, facts.fontFaces);
   await shot('01-setup');

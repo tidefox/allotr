@@ -54,6 +54,13 @@ css = css.replace(/@property\s+--[a-z0-9-]+\{[^}]*\}/g, '');
 // wrapper `.ar` plays all three (it carries data-theme etc.), and `:host`
 // keeps the inherited defaults. Viewport units become the leaf's size.
 const before = css.length;
+// `html{font-size:100%}` is unlayered while `body{font-size:var(--fs-base)}`
+// sits in @layer base, so on the shared `.ar` the 16 px root size would win
+// and every element without its own text size would grow. The root size is
+// what `:host{all:initial}` already gives; drop it.
+const rootSize = /(^|[},])(html\{[^}]*?)font-size:100%;?/;
+if (!rootSize.test(css)) throw new Error('html{font-size:100%} not found; check the .ar font size');
+css = css.replace(rootSize, '$1$2');
 css = css
   .replaceAll('html,:host{', ':host,.ar{')
   .replaceAll(':root,:host{', '.ar,:host{')
@@ -188,7 +195,7 @@ cpSync(mainJs, join(out, 'main.js'));
 writeFileSync(
   join(out, 'manifest.json'),
   JSON.stringify({
-    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.4', minAppVersion: '1.5.0',
+    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.7', minAppVersion: '1.5.0',
     description: 'Spike S1: the Allotr budget app running inside Obsidian. Not for real data.',
     author: 'Allotr contributors', isDesktopOnly: false,
   }, null, 2) + '\n',
