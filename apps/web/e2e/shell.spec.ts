@@ -135,6 +135,21 @@ test('the shell lines up (docs/ui.md §10)', async ({ page, baseURL }, info) => 
   const viewport = page.viewportSize();
   if (viewport === null) throw new Error('no viewport');
 
+  // Text without its own size (the strip) follows the per-width base.
+  const sizes = await page.evaluate(() => {
+    const strip = document.querySelector('[data-slot=strip]');
+    if (strip === null) throw new Error('no strip');
+    return {
+      strip: getComputedStyle(strip).fontSize,
+      base: getComputedStyle(strip).getPropertyValue('--fs-base').trim(),
+      rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+    };
+  });
+  expect(parseFloat(sizes.strip)).toBeCloseTo(
+    parseFloat(sizes.base) * sizes.rem,
+    1,
+  );
+
   if (viewport.width < 600) {
     const nav = await box(page, '[data-slot=nav]');
     expect(Math.round(nav.y + nav.height)).toBe(viewport.height);

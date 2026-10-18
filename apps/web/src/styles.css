@@ -219,6 +219,10 @@ html::-webkit-scrollbar {
 }
 .scale {
   display: contents;
+  /* Text without its own size inherits the per-width base, not the one
+     <body> resolved from the desktop tokens. */
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
 }
 @container frame (width >= 1000px) {
   .scale {
