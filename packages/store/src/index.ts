@@ -9,6 +9,7 @@ export * from './client.ts';
 export * from './cycles.ts';
 export * from './domain-errors.ts';
 export * from './entry-order.ts';
+export * from './events.ts';
 export * from './export-beancount.ts';
 export * from './export-bundle.ts';
 export * from './export-csv.ts';

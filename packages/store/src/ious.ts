@@ -514,7 +514,7 @@ export async function convertToIou(
       'api',
       now,
     );
-    await recordReplacement(trx, userId, id, created.id);
+    await recordReplacement(trx, userId, id, created.id, reversalId, now);
     return { reversalId, ...created };
   });
   return {

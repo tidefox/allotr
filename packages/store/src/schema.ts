@@ -124,6 +124,19 @@ export interface CoverOverrides {
   user_id: string;
 }
 
+export interface Events {
+  author: string;
+  enc: string | null;
+  event_id: string;
+  hlc: string;
+  ledger_id: string;
+  payload: string;
+  schema: number;
+  seq: number;
+  type: string;
+  user_id: string;
+}
+
 export interface FxRateEntries {
   rate_id: string;
   transaction_id: string;
@@ -397,6 +410,7 @@ export interface DB {
   budgets: Budgets;
   categories: Categories;
   cover_overrides: CoverOverrides;
+  events: Events;
   fx_rate_entries: FxRateEntries;
   fx_rates: FxRates;
   goals: Goals;

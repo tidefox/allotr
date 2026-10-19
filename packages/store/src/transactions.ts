@@ -26,7 +26,7 @@ import type {
   TransactionView,
   Funding,
 } from '@allotr/shared';
-import { isRank } from '@allotr/shared';
+import { factEventTypes, isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from './schema.ts';
 import { decodeBase64Url, encodeBase64Url } from './base64url.ts';
@@ -37,6 +37,7 @@ import {
   restoreIouRows,
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
+import { appendFactEvent } from './events.ts';
 import { carryWithdrawalLinks, linkViewsByEntry } from './withdrawal-links.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { aggregateGroups, aggregateTotals } from './transaction-totals.ts';
@@ -893,6 +894,13 @@ export async function storeTransaction(
       })),
     )
     .execute();
+  await appendFactEvent(
+    db,
+    userId,
+    factEventTypes.tagged,
+    { transactionId: transaction.id, tagIds: [...tagIds] },
+    new Date(transaction.createdAt),
+  );
 }
 
 /** Builds and stores an entry inside the caller's database transaction. */
@@ -1090,6 +1098,8 @@ export async function recordReplacement(
   userId: string,
   originalId: string,
   replacementId: string,
+  reversalId: string,
+  now: Date,
 ): Promise<void> {
   await db
     .insertInto('transaction_replacements')
@@ -1099,6 +1109,13 @@ export async function recordReplacement(
       user_id: userId,
     })
     .execute();
+  await appendFactEvent(
+    db,
+    userId,
+    factEventTypes.replaced,
+    { originalId, replacementId, reversalId },
+    now,
+  );
 }
 
 type EditedTransaction = {
@@ -1145,7 +1162,14 @@ export async function editTransaction(
         transactionId(id),
         funding,
       );
-      await recordReplacement(trx, userId, id, replacement.id);
+      await recordReplacement(
+        trx,
+        userId,
+        id,
+        replacement.id,
+        reversal.id,
+        now,
+      );
       const notices = await carryWithdrawalLinks(
         trx,
         userId,
@@ -1216,7 +1240,14 @@ export async function revertTransaction(
         transactionId(current.id),
         version.funding,
       );
-      await recordReplacement(trx, userId, current.id, copy.id);
+      await recordReplacement(
+        trx,
+        userId,
+        current.id,
+        copy.id,
+        reversal.id,
+        now,
+      );
       const notices = await carryWithdrawalLinks(
         trx,
         userId,
