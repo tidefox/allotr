@@ -28,6 +28,7 @@ export const LEGACY_ID = 'legacy';
 export const KEEP_DATED = 30;
 const DATED_RE = /allotr-\d{4}-\d{2}-\d{2}\.json$/;
 const DISMISSED_KEY = 'allotr-dismissed-divergence';
+const HELD_KEY = 'allotr-held-states';
 
 export interface DeviceIdentity {
   id: string;
@@ -255,6 +256,27 @@ function dismissedSet(app: App): Set<string> {
   }
 }
 
+/**
+ * Hashes of the states this device has held (written to the vault, imported, or
+ * checked), kept outside the vault. A snapshot built from one of them is older
+ * than this device's data, however much this device has changed since, so it
+ * is not news. This needs nothing from the other device but its own snapshot.
+ */
+function heldSet(app: App): Set<string> {
+  try {
+    return new Set(JSON.parse(localGet(app, HELD_KEY) ?? '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function remember(app: App, ...hashes: string[]): void {
+  const held = heldSet(app);
+  const fresh = hashes.filter((h) => !held.has(h));
+  if (fresh.length === 0) return;
+  localSet(app, HELD_KEY, JSON.stringify([...held, ...fresh].slice(-200)));
+}
+
 /** "Keep mine" / "I have seen these": this device is not asked about these snapshots again. */
 export function dismiss(app: App, snapshots: Snapshot[]): void {
   const all = [...dismissedSet(app), ...snapshots.map((s) => `${s.deviceId}:${s.sha256}`)].slice(-200);
@@ -294,6 +316,7 @@ export class VaultBackup {
     const side = await readSidecar(this.app, this.identity().id);
     this.sidecar = side;
     this.basedOn = side?.basedOn;
+    if (side !== null) remember(this.app, side.sha256);
   }
 
   attach(runtime: Runtime): void {
@@ -328,6 +351,7 @@ export class VaultBackup {
   replacedBy(from: Snapshot): void {
     this.basedOn = { device: from.deviceId, sha256: from.sha256 };
     this.basedOnDirty = true;
+    remember(this.app, from.sha256);
   }
 
   /** The hash of this device's own export right after it replaced its data (see `Sidecar.basedOn`). */
@@ -335,6 +359,7 @@ export class VaultBackup {
     if (this.basedOn === undefined) return;
     this.basedOn = { ...this.basedOn, selfSha256 };
     this.basedOnDirty = true;
+    remember(this.app, selfSha256);
   }
 
   schedule(): void {
@@ -382,13 +407,16 @@ export class VaultBackup {
     const mine = await ledgerSize(runtime);
     const myHash = sha256Hex(await exportBundle(runtime));
     this.myHash = myHash;
+    remember(this.app, myHash);
+    const held = heldSet(this.app);
     const dismissed = dismissedSet(this.app);
     const candidates = (await readSnapshots(this.app)).filter(
       (s) =>
         s.deviceId !== me &&
         s.sha256 !== myHash &&
         s.sha256 !== this.basedOn?.sha256 &&
-        !(s.basedOn?.sha256 === myHash && s.basedOn.selfSha256 === s.sha256) &&
+        !held.has(s.sha256) &&
+        !(s.basedOn !== undefined && held.has(s.basedOn.sha256) && s.basedOn.selfSha256 === s.sha256) &&
         !dismissed.has(`${s.deviceId}:${s.sha256}`),
     );
     const newest = candidates.reduce<Snapshot | null>((best, s) => (best === null || s.savedAt > best.savedAt ? s : best), null);
@@ -415,6 +443,7 @@ export class VaultBackup {
     if (hash !== this.lastHash) {
       await atomicWrite(this.app, latestPath(self.id), text);
       this.lastHash = hash;
+      remember(this.app, hash);
       wrote = true;
     }
     if (this.lastDated !== `${dated}\n${hash}`) {

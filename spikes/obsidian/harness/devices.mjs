@@ -334,6 +334,17 @@ async function run(engine, browser) {
   await restart(B2.page);
   c('B is not warned about A after A only took B\'s data', (await modals(B2.page)) === 0);
 
+  // B keeps working after A took its data: A's snapshot is now older than B's, and is not news.
+  w = await writesCount(B2.page);
+  await post(B2.page, '/v1/accounts', { name: 'Phone extra', currency: 'EUR', openingBalance: { amountMinor: 10, currency: 'EUR' } });
+  await waitWritten(B2.page, `Allotr/devices/${idB2}/device.json`, w);
+  await sync(A2.page, B2.page);
+  await restart(B2.page);
+  c('B is not warned about an older snapshot built from its own earlier data', (await modals(B2.page)) === 0);
+  await B2.page.evaluate(() => window.plugin.periodic());
+  await B2.page.waitForTimeout(500);
+  c('nor by the periodic check', (await modals(B2.page)) === 0);
+
   // The share sheet: on a desktop the export downloads; on a phone it never falls back to a download.
   const downloadPromise = A.page.waitForEvent('download', { timeout: 15000 }).catch(() => null);
   await A.page.evaluate(() => window.harness.runCommand('Allotr: Export Allotr data outside the vault'));
