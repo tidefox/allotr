@@ -184,10 +184,7 @@
       "type": "transaction.tagged",
       "payload": {
         "transactionId": "tx-1",
-        "tagIds": [
-          "tag-b",
-          "tag-a"
-        ]
+        "tagIds": ["tag-b", "tag-a"]
       }
     },
     {
