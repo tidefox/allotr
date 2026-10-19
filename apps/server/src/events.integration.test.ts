@@ -214,6 +214,18 @@ describe('events beside the fact tables', () => {
     );
     await created(h.alice, `/v1/transactions/${undone.id}/reverse`);
     await created(h.alice, `/v1/transactions/${undone.id}/restore`);
+    // Splitting a logged expense with people is a reversal plus a replacement.
+    const dinner = await created(
+      h.alice,
+      '/v1/transactions',
+      spend(9000, { note: 'Dinner' }),
+    );
+    const split = await h.alice.post(
+      `/v1/ious/from/${dinner.id}`,
+      { people: [{ person: 'Sam Example', amount: usd(3000) }] },
+      { 'idempotency-key': 'split-dinner' },
+    );
+    expect(split.status, JSON.stringify(split.body)).toBe(201);
     const chat = await h.alice.post('/v1/transactions', spend(310), {
       'x-allotr-client': 'chat',
     });

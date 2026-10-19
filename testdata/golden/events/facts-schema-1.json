@@ -1,0 +1,492 @@
+{
+  "description": "Schema 1 fact events (ADR 0035). Listed out of order with one repeat; folding gives the rows below.",
+  "events": [
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000007",
+      "author": "phone",
+      "seq": 2,
+      "hlc": "000000000fa0-0000-phone",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.recorded",
+      "payload": {
+        "id": "tx-5",
+        "kind": "budget_switch",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-13T08:00:00.000Z",
+        "source": "system",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": "acc-card",
+        "switchBudgetGroup": "off",
+        "postings": []
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000004",
+      "author": "server",
+      "seq": 4,
+      "hlc": "0000000007d1-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.recorded",
+      "payload": {
+        "id": "tx-3",
+        "kind": "expense",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-11T08:00:00.000Z",
+        "source": "api",
+        "client": null,
+        "categoryId": "cat-food",
+        "note": "weekly shop",
+        "funding": "outside",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null,
+        "postings": [
+          {
+            "id": "p-5",
+            "accountId": "acc-card",
+            "amountMinor": -5000,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-6",
+            "accountId": "acc-expenses",
+            "amountMinor": 5000,
+            "currency": "USD",
+            "categoryId": "cat-food"
+          }
+        ]
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000001",
+      "author": "server",
+      "seq": 1,
+      "hlc": "0000000003e8-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.recorded",
+      "payload": {
+        "id": "tx-1",
+        "kind": "expense",
+        "occurredOn": "2026-03-10",
+        "occurredTime": "09:30",
+        "createdAt": "2026-03-10T08:00:00.000Z",
+        "source": "api",
+        "client": "web",
+        "categoryId": "cat-food",
+        "note": "weekly shop",
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": "key-1",
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null,
+        "postings": [
+          {
+            "id": "p-1",
+            "accountId": "acc-card",
+            "amountMinor": -4250,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-2",
+            "accountId": "acc-expenses",
+            "amountMinor": 4250,
+            "currency": "USD",
+            "categoryId": "cat-food"
+          }
+        ]
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000005",
+      "author": "server",
+      "seq": 5,
+      "hlc": "0000000007d2-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.replaced",
+      "payload": {
+        "originalId": "tx-1",
+        "replacementId": "tx-3",
+        "reversalId": "tx-2"
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000003",
+      "author": "server",
+      "seq": 3,
+      "hlc": "0000000007d0-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.reversed",
+      "payload": {
+        "id": "tx-2",
+        "kind": "reversal",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-11T08:00:00.000Z",
+        "source": "api",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": "tx-1",
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null,
+        "postings": [
+          {
+            "id": "p-3",
+            "accountId": "acc-card",
+            "amountMinor": 4250,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-4",
+            "accountId": "acc-expenses",
+            "amountMinor": -4250,
+            "currency": "USD",
+            "categoryId": "cat-food"
+          }
+        ]
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000002",
+      "author": "server",
+      "seq": 2,
+      "hlc": "0000000003e9-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.tagged",
+      "payload": {
+        "transactionId": "tx-1",
+        "tagIds": [
+          "tag-b",
+          "tag-a"
+        ]
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000006",
+      "author": "phone",
+      "seq": 1,
+      "hlc": "000000000bb8-0000-phone",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.recorded",
+      "payload": {
+        "id": "tx-4",
+        "kind": "transfer",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-12T08:00:00.000Z",
+        "source": "import",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": "0.92",
+        "switchAccountId": null,
+        "switchBudgetGroup": null,
+        "postings": [
+          {
+            "id": "p-7",
+            "accountId": "acc-card",
+            "amountMinor": -10000,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-8",
+            "accountId": "acc-euro",
+            "amountMinor": 9200,
+            "currency": "EUR",
+            "categoryId": null
+          },
+          {
+            "id": "p-9",
+            "accountId": "acc-conv-usd",
+            "amountMinor": 10000,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-10",
+            "accountId": "acc-conv-eur",
+            "amountMinor": -9200,
+            "currency": "EUR",
+            "categoryId": null
+          }
+        ]
+      }
+    },
+    {
+      "ledgerId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "eventId": "00000000-0000-4000-8000-000000000004",
+      "author": "server",
+      "seq": 4,
+      "hlc": "0000000007d1-0000-server",
+      "schema": 1,
+      "enc": null,
+      "type": "transaction.recorded",
+      "payload": {
+        "id": "tx-3",
+        "kind": "expense",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-11T08:00:00.000Z",
+        "source": "api",
+        "client": null,
+        "categoryId": "cat-food",
+        "note": "weekly shop",
+        "funding": "outside",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null,
+        "postings": [
+          {
+            "id": "p-5",
+            "accountId": "acc-card",
+            "amountMinor": -5000,
+            "currency": "USD",
+            "categoryId": null
+          },
+          {
+            "id": "p-6",
+            "accountId": "acc-expenses",
+            "amountMinor": 5000,
+            "currency": "USD",
+            "categoryId": "cat-food"
+          }
+        ]
+      }
+    }
+  ],
+  "expected": {
+    "transactions": [
+      {
+        "id": "tx-1",
+        "kind": "expense",
+        "occurredOn": "2026-03-10",
+        "occurredTime": "09:30",
+        "createdAt": "2026-03-10T08:00:00.000Z",
+        "source": "api",
+        "client": "web",
+        "categoryId": "cat-food",
+        "note": "weekly shop",
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": "key-1",
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null
+      },
+      {
+        "id": "tx-2",
+        "kind": "reversal",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-11T08:00:00.000Z",
+        "source": "api",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": "tx-1",
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null
+      },
+      {
+        "id": "tx-3",
+        "kind": "expense",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-11T08:00:00.000Z",
+        "source": "api",
+        "client": null,
+        "categoryId": "cat-food",
+        "note": "weekly shop",
+        "funding": "outside",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": null,
+        "switchBudgetGroup": null
+      },
+      {
+        "id": "tx-4",
+        "kind": "transfer",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-12T08:00:00.000Z",
+        "source": "import",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": "0.92",
+        "switchAccountId": null,
+        "switchBudgetGroup": null
+      },
+      {
+        "id": "tx-5",
+        "kind": "budget_switch",
+        "occurredOn": "2026-03-10",
+        "occurredTime": null,
+        "createdAt": "2026-03-13T08:00:00.000Z",
+        "source": "system",
+        "client": null,
+        "categoryId": null,
+        "note": null,
+        "funding": "own",
+        "reversesId": null,
+        "idempotencyKey": null,
+        "impliedRate": null,
+        "switchAccountId": "acc-card",
+        "switchBudgetGroup": "off"
+      }
+    ],
+    "postings": [
+      {
+        "id": "p-1",
+        "accountId": "acc-card",
+        "amountMinor": -4250,
+        "currency": "USD",
+        "categoryId": null,
+        "transactionId": "tx-1",
+        "position": 0
+      },
+      {
+        "id": "p-2",
+        "accountId": "acc-expenses",
+        "amountMinor": 4250,
+        "currency": "USD",
+        "categoryId": "cat-food",
+        "transactionId": "tx-1",
+        "position": 1
+      },
+      {
+        "id": "p-3",
+        "accountId": "acc-card",
+        "amountMinor": 4250,
+        "currency": "USD",
+        "categoryId": null,
+        "transactionId": "tx-2",
+        "position": 0
+      },
+      {
+        "id": "p-4",
+        "accountId": "acc-expenses",
+        "amountMinor": -4250,
+        "currency": "USD",
+        "categoryId": "cat-food",
+        "transactionId": "tx-2",
+        "position": 1
+      },
+      {
+        "id": "p-5",
+        "accountId": "acc-card",
+        "amountMinor": -5000,
+        "currency": "USD",
+        "categoryId": null,
+        "transactionId": "tx-3",
+        "position": 0
+      },
+      {
+        "id": "p-6",
+        "accountId": "acc-expenses",
+        "amountMinor": 5000,
+        "currency": "USD",
+        "categoryId": "cat-food",
+        "transactionId": "tx-3",
+        "position": 1
+      },
+      {
+        "id": "p-7",
+        "accountId": "acc-card",
+        "amountMinor": -10000,
+        "currency": "USD",
+        "categoryId": null,
+        "transactionId": "tx-4",
+        "position": 0
+      },
+      {
+        "id": "p-8",
+        "accountId": "acc-euro",
+        "amountMinor": 9200,
+        "currency": "EUR",
+        "categoryId": null,
+        "transactionId": "tx-4",
+        "position": 1
+      },
+      {
+        "id": "p-9",
+        "accountId": "acc-conv-usd",
+        "amountMinor": 10000,
+        "currency": "USD",
+        "categoryId": null,
+        "transactionId": "tx-4",
+        "position": 2
+      },
+      {
+        "id": "p-10",
+        "accountId": "acc-conv-eur",
+        "amountMinor": -9200,
+        "currency": "EUR",
+        "categoryId": null,
+        "transactionId": "tx-4",
+        "position": 3
+      }
+    ],
+    "tags": [
+      {
+        "transactionId": "tx-1",
+        "tagId": "tag-a"
+      },
+      {
+        "transactionId": "tx-1",
+        "tagId": "tag-b"
+      }
+    ],
+    "replacements": [
+      {
+        "originalId": "tx-1",
+        "replacementId": "tx-3"
+      }
+    ],
+    "held": []
+  }
+}

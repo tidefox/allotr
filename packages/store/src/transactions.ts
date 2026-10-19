@@ -37,7 +37,7 @@ import {
   restoreIouRows,
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
-import { appendFactEvent } from './events.ts';
+import { appendFactEvent, atomically } from './events.ts';
 import { carryWithdrawalLinks, linkViewsByEntry } from './withdrawal-links.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { aggregateGroups, aggregateTotals } from './transaction-totals.ts';
@@ -884,23 +884,26 @@ export async function storeTransaction(
     );
   }
   if (tagIds.length === 0) return;
-  await db
-    .insertInto('transaction_tags')
-    .values(
-      tagIds.map((tagId) => ({
-        user_id: userId,
-        transaction_id: transaction.id,
-        tag_id: tagId,
-      })),
-    )
-    .execute();
-  await appendFactEvent(
-    db,
-    userId,
-    factEventTypes.tagged,
-    { transactionId: transaction.id, tagIds: [...tagIds] },
-    new Date(transaction.createdAt),
-  );
+  // Rows and event commit together, even if `db` is not yet in a transaction.
+  await atomically(db, async (trx) => {
+    await trx
+      .insertInto('transaction_tags')
+      .values(
+        tagIds.map((tagId) => ({
+          user_id: userId,
+          transaction_id: transaction.id,
+          tag_id: tagId,
+        })),
+      )
+      .execute();
+    await appendFactEvent(
+      trx,
+      userId,
+      factEventTypes.tagged,
+      { transactionId: transaction.id, tagIds: [...tagIds] },
+      new Date(transaction.createdAt),
+    );
+  });
 }
 
 /** Builds and stores an entry inside the caller's database transaction. */
@@ -1101,21 +1104,23 @@ export async function recordReplacement(
   reversalId: string,
   now: Date,
 ): Promise<void> {
-  await db
-    .insertInto('transaction_replacements')
-    .values({
-      replacement_id: replacementId,
-      original_id: originalId,
-      user_id: userId,
-    })
-    .execute();
-  await appendFactEvent(
-    db,
-    userId,
-    factEventTypes.replaced,
-    { originalId, replacementId, reversalId },
-    now,
-  );
+  await atomically(db, async (trx) => {
+    await trx
+      .insertInto('transaction_replacements')
+      .values({
+        replacement_id: replacementId,
+        original_id: originalId,
+        user_id: userId,
+      })
+      .execute();
+    await appendFactEvent(
+      trx,
+      userId,
+      factEventTypes.replaced,
+      { originalId, replacementId, reversalId },
+      now,
+    );
+  });
 }
 
 type EditedTransaction = {

@@ -153,8 +153,9 @@ append-only facts are events so far; configuration entities follow.
   `compareEvents` is that total order.
 - **Fact events.** Four types carry the facts of the ledger, each with the
   full payload and a `schema` of 1 (`packages/shared` `fact-events.ts`).
-  Field names are the column names in camelCase, and every amount is an
-  integer in minor units with its currency.
+  Field names are the column names in camelCase (`impliedRate` is
+  `fx_rate_implied`), and every amount is an integer in minor units with its
+  currency.
   - `transaction.recorded`: an entry that is not a reversal, with every
     `transactions` column (`kind`, `occurredOn`, `occurredTime`, `createdAt`,
     `source`, `client`, `categoryId`, `note`, `funding`, `idempotencyKey`,
