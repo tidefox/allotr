@@ -26,7 +26,7 @@ import type {
   TransactionView,
   Funding,
 } from '@allotr/shared';
-import { isRank } from '@allotr/shared';
+import { factEventTypes, isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from './schema.ts';
 import { decodeBase64Url, encodeBase64Url } from './base64url.ts';
@@ -37,6 +37,7 @@ import {
   restoreIouRows,
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
+import { appendFactEvent, atomically } from './events.ts';
 import { carryWithdrawalLinks, linkViewsByEntry } from './withdrawal-links.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { aggregateGroups, aggregateTotals } from './transaction-totals.ts';
@@ -883,16 +884,26 @@ export async function storeTransaction(
     );
   }
   if (tagIds.length === 0) return;
-  await db
-    .insertInto('transaction_tags')
-    .values(
-      tagIds.map((tagId) => ({
-        user_id: userId,
-        transaction_id: transaction.id,
-        tag_id: tagId,
-      })),
-    )
-    .execute();
+  // Rows and event commit together, even if `db` is not yet in a transaction.
+  await atomically(db, async (trx) => {
+    await trx
+      .insertInto('transaction_tags')
+      .values(
+        tagIds.map((tagId) => ({
+          user_id: userId,
+          transaction_id: transaction.id,
+          tag_id: tagId,
+        })),
+      )
+      .execute();
+    await appendFactEvent(
+      trx,
+      userId,
+      factEventTypes.tagged,
+      { transactionId: transaction.id, tagIds: [...tagIds] },
+      new Date(transaction.createdAt),
+    );
+  });
 }
 
 /** Builds and stores an entry inside the caller's database transaction. */
@@ -1090,15 +1101,26 @@ export async function recordReplacement(
   userId: string,
   originalId: string,
   replacementId: string,
+  reversalId: string,
+  now: Date,
 ): Promise<void> {
-  await db
-    .insertInto('transaction_replacements')
-    .values({
-      replacement_id: replacementId,
-      original_id: originalId,
-      user_id: userId,
-    })
-    .execute();
+  await atomically(db, async (trx) => {
+    await trx
+      .insertInto('transaction_replacements')
+      .values({
+        replacement_id: replacementId,
+        original_id: originalId,
+        user_id: userId,
+      })
+      .execute();
+    await appendFactEvent(
+      trx,
+      userId,
+      factEventTypes.replaced,
+      { originalId, replacementId, reversalId },
+      now,
+    );
+  });
 }
 
 type EditedTransaction = {
@@ -1145,7 +1167,14 @@ export async function editTransaction(
         transactionId(id),
         funding,
       );
-      await recordReplacement(trx, userId, id, replacement.id);
+      await recordReplacement(
+        trx,
+        userId,
+        id,
+        replacement.id,
+        reversal.id,
+        now,
+      );
       const notices = await carryWithdrawalLinks(
         trx,
         userId,
@@ -1216,7 +1245,14 @@ export async function revertTransaction(
         transactionId(current.id),
         version.funding,
       );
-      await recordReplacement(trx, userId, current.id, copy.id);
+      await recordReplacement(
+        trx,
+        userId,
+        current.id,
+        copy.id,
+        reversal.id,
+        now,
+      );
       const notices = await carryWithdrawalLinks(
         trx,
         userId,

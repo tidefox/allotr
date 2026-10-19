@@ -16,3 +16,14 @@ export {
 } from './hlc.ts';
 export { deterministicId } from './ids.ts';
 export type { EventEnvelope } from '@allotr/shared';
+export {
+  foldFacts,
+  FactError,
+  type FactErrorCode,
+  type FactState,
+  type HeldReversal,
+  type PostingFact,
+  type ReplacementFact,
+  type TagFact,
+  type TransactionFact,
+} from './facts.ts';

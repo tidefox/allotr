@@ -39,7 +39,11 @@ being built): the store, the API and the web UI run in-process inside a notes
 app's webview with no server. Each device appends events to its own files in
 the user's vault, the files sync with whatever tool the user already has, and a
 WASM SQLite database is a disposable cache of the fold. Server mode moves to
-the same event model, so both modes share one write path.
+the same event model, so both modes share one write path. So far the
+append-only facts (entries with postings, reversals, replacements and entry
+tags) are logged in the `events` table by `packages/store` in the same
+database transaction as their rows, and `foldFacts` in `packages/core` rebuilds
+those rows from the log; the server still reads the rows, not the fold.
 
 ## 2. Components
 

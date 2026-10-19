@@ -21,6 +21,7 @@ import {
 } from '@allotr/core';
 import {
   currencyCode,
+  factEventTypes,
   localDate,
   localDateIn,
   localTime,
@@ -35,6 +36,7 @@ import type { Kysely, Transaction as KyselyTransaction } from 'kysely';
 import type { DB } from './schema.ts';
 import { currentClient } from './client.ts';
 import { placeNewEntry } from './entry-order.ts';
+import { appendFactEvent, atomically } from './events.ts';
 import { newId } from './ids.ts';
 import { cachedLoad } from './ledger-cache.ts';
 
@@ -308,6 +310,27 @@ export async function appendTransaction(
   transaction: Transaction,
   options: AppendOptions,
 ): Promise<void> {
+  await atomically(db, (trx) =>
+    appendTransactionRows(trx, userId, transaction, options),
+  );
+}
+
+async function appendTransactionRows(
+  db: Db,
+  userId: string,
+  transaction: Transaction,
+  options: AppendOptions,
+): Promise<void> {
+  const client = options.source === 'api' ? currentClient() : null;
+  const funding =
+    transaction.kind === 'expense' ? (options.funding ?? 'own') : 'own';
+  const postings = transaction.postings.map((posting) => ({
+    id: newId(),
+    accountId: posting.accountId,
+    amountMinor: posting.amount.amountMinor,
+    currency: posting.amount.currency,
+    categoryId: posting.categoryId,
+  }));
   await db
     .insertInto('transactions')
     .values({
@@ -318,11 +341,10 @@ export async function appendTransaction(
       occurred_time: transaction.occurredTime,
       created_at: transaction.createdAt,
       source: options.source,
-      client: options.source === 'api' ? currentClient() : null,
+      client,
       category_id: transaction.categoryId,
       note: transaction.note,
-      funding:
-        transaction.kind === 'expense' ? (options.funding ?? 'own') : 'own',
+      funding,
       reverses_id: transaction.reversesId,
       idempotency_key: options.idempotencyKey ?? null,
       fx_rate_implied: transaction.impliedRate,
@@ -337,22 +359,50 @@ export async function appendTransaction(
     new Date(transaction.createdAt),
     options.placeAfter ?? transaction.reversesId ?? undefined,
   );
-  if (transaction.postings.length === 0) return;
-  await db
-    .insertInto('postings')
-    .values(
-      transaction.postings.map((posting, position) => ({
-        id: newId(),
-        user_id: userId,
-        transaction_id: transaction.id,
-        account_id: posting.accountId,
-        amount_minor: posting.amount.amountMinor,
-        currency: posting.amount.currency,
-        category_id: posting.categoryId,
-        position,
-      })),
-    )
-    .execute();
+  if (postings.length > 0) {
+    await db
+      .insertInto('postings')
+      .values(
+        postings.map((posting, position) => ({
+          id: posting.id,
+          user_id: userId,
+          transaction_id: transaction.id,
+          account_id: posting.accountId,
+          amount_minor: posting.amountMinor,
+          currency: posting.currency,
+          category_id: posting.categoryId,
+          position,
+        })),
+      )
+      .execute();
+  }
+  // The full fact, postings included, in the same database transaction.
+  await appendFactEvent(
+    db,
+    userId,
+    transaction.reversesId === null
+      ? factEventTypes.recorded
+      : factEventTypes.reversed,
+    {
+      id: transaction.id,
+      kind: transaction.kind,
+      occurredOn: transaction.occurredOn,
+      occurredTime: transaction.occurredTime,
+      createdAt: transaction.createdAt,
+      source: options.source,
+      client,
+      categoryId: transaction.categoryId,
+      note: transaction.note,
+      funding,
+      reversesId: transaction.reversesId,
+      idempotencyKey: options.idempotencyKey ?? null,
+      impliedRate: transaction.impliedRate,
+      switchAccountId: transaction.budgetSwitch?.accountId ?? null,
+      switchBudgetGroup: transaction.budgetSwitch?.budgetGroup ?? null,
+      postings,
+    },
+    new Date(transaction.createdAt),
+  );
 }
 
 /** The user's local calendar day at `now` (code-style rule "Dates and time"). */

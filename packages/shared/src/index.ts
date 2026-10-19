@@ -77,3 +77,4 @@ export * from './bundle.ts';
 export * from './theme/index.ts';
 export * from './uuid.ts';
 export * from './event.ts';
+export * from './fact-events.ts';

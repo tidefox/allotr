@@ -131,8 +131,8 @@ differ.
 Every change to a ledger is an event, and the ledger is the fold of its
 events ([ADR 0032](adr/0032-local-mode-event-log.md),
 [ADR 0033](adr/0033-event-model-merge.md)). This section covers the parts
-that are in `packages/core` and `packages/shared`; reducers and event types
-come later.
+that are in `packages/core`, `packages/shared` and `packages/store`. Only the
+append-only facts are events so far; configuration entities follow.
 
 - **Envelope.** `ledgerId`, `eventId`, `author`, `seq` (gapless per author,
   from 1), `hlc`, `schema` (the payload version, ADR 0035), `enc` (reserved,
@@ -151,6 +151,49 @@ come later.
   reading after it.
 - **Order.** The fold orders events by (`hlc`, `author`, `seq`);
   `compareEvents` is that total order.
+- **Fact events.** Four types carry the facts of the ledger, each with the
+  full payload and a `schema` of 1 (`packages/shared` `fact-events.ts`).
+  Field names are the column names in camelCase (`impliedRate` is
+  `fx_rate_implied`), and every amount is an integer in minor units with its
+  currency.
+  - `transaction.recorded`: an entry that is not a reversal, with every
+    `transactions` column (`kind`, `occurredOn`, `occurredTime`, `createdAt`,
+    `source`, `client`, `categoryId`, `note`, `funding`, `idempotencyKey`,
+    `impliedRate`, `switchAccountId`, `switchBudgetGroup`) and its `postings`
+    in order: `id`, `accountId`, `amountMinor`, `currency`, `categoryId`. A
+    posting's `position` is its index. Postings are stored as written and
+    never recomputed.
+  - `transaction.reversed`: the same payload for a `reversal` entry, whose
+    `reversesId` says what it undoes. It is its own type so the merge rule
+    below finds it.
+  - `transaction.replaced`: `originalId`, `replacementId` and the
+    `reversalId` written in the same edit (not a column; it lets a merge
+    hold the replacement back with its reversal).
+  - `transaction.tagged`: the `tagIds` an entry was created with.
+  - Left out because they are derived: `user_id` (the ledger id names the
+    owner), a posting's `position` (its index) and every figure computed
+    from postings. The entry's place within its day (`transaction_ranks`), cover
+    overrides, implied-rate links, IOU, bill-payment and withdrawal-link rows
+    are other entities and have no events yet.
+- **Folding facts.** `foldFacts` in `packages/core` is a pure function of a
+  set of events. It deduplicates by `eventId` (the earliest in the order
+  stands for the rest), applies events in the total order, and returns the
+  rows of `transactions`, `postings`, `transaction_tags` and
+  `transaction_replacements`. A second event for one entry id loses to the
+  first, an entry is replaced at most once, and tags or replacements of an
+  entry that is not in the set wait until it arrives. Of two reversals of
+  one entry the lowest in the order wins; the other and the replacement
+  recorded with it are held back and returned as `held` for the conflict
+  inbox. An event with a newer `schema`, or a payload that does not fit its
+  type, throws `FactError`.
+- **The event log in server mode.** Table `events` (migration 0026) holds
+  the envelope plus `user_id`, with unique keys on `event_id` and on
+  (`ledger_id`, `author`, `seq`). Each write path appends its event in the
+  same database transaction as the rows: `appendTransaction` (every entry,
+  whatever creates it: API, reconcile, import, opening balances, IOUs),
+  the tag insert of a new entry and `recordReplacement`. Entries written
+  before migration 0026 have no events, so the log is complete only for later
+  writes. Events are append-only like the rows.
 - **Deterministic ids.** Writes no person typed use
   `uuidv5(ledgerId, "<job>:<key>:<period>")` (RFC 4122, SHA-1), so
   concurrent runs on several devices produce the same id and dedupe
@@ -934,6 +977,8 @@ transaction_ranks(transaction_id, user_id, occurred_on, sort_rank,
                                  # changes after an entry is committed
 transaction_replacements(replacement_id, original_id, user_id)
                                  # which entry an edit replaced; append-only
+events(event_id, user_id, ledger_id, author, seq, hlc, schema, enc, type,
+       payload)                  # the event log; append-only (ADR 0033)
 postings(id, user_id, transaction_id, account_id, amount_minor, currency,
          category_id, position)
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)
