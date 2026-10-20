@@ -529,6 +529,32 @@ async function quiet(engine, browser) {
   await A.context.close();
   await B.context.close();
 
+  // An explicit restore wins: C takes D's edit, restores the earlier local copy, D edits on top of the
+  // state C overrode, and C keeps the restored data instead of silently reverting.
+  const C = await device(browser, `qc-${stamp}`);
+  const idC = await deviceId(C.page);
+  const D = await device(browser, `qd-${stamp}`);
+  const idD = await deviceId(D.page);
+  w = await writesCount(C.page);
+  await post(C.page, '/v1/import', bundle(['Ledger']));
+  await waitWritten(C.page, `${own(idC)}device.json`, w);
+  await sync(C.page, D.page, own(idC));
+  await waitAccounts(D.page, 1);
+  await addAccount(D.page, idD, 'D jar');
+  await sync(D.page, C.page, own(idD));
+  await waitAccounts(C.page, 2);
+  await C.page.evaluate(() => window.harness.runCommand('Allotr: Restore an earlier Allotr copy from this device'));
+  await C.page.locator('.allotr-safety-copy').first().click();
+  await C.page.locator('.allotr-confirm-replace').click();
+  await waitNames(C.page, (names) => names.length === 1 && names[0] === 'Ledger', 'the restored state');
+  await addAccount(D.page, idD, 'D two');
+  await sync(D.page, C.page, own(idD));
+  await C.page.waitForTimeout(7000);
+  c('a restored state is not silently reverted by the next edit elsewhere', JSON.stringify(await runningNames(C.page)) === '["Ledger"]', JSON.stringify(await runningNames(C.page)));
+  await C.page.keyboard.press('Escape');
+  await C.context.close();
+  await D.context.close();
+
   // Retention: ten simulated days leave seven dated copies; stale leftovers of this device go, other devices' files stay.
   const H = await device(browser, `qh-${stamp}`);
   const idH = await deviceId(H.page);

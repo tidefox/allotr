@@ -49,6 +49,7 @@ const DATED_RE = /allotr-\d{4}-\d{2}-\d{2}\.json$/;
 const DISMISSED_KEY = 'allotr-dismissed-divergence';
 const HELD_KEY = 'allotr-held-states';
 const HELD_LIMIT = 400;
+const KEPT_KEY = 'allotr-kept-over-states';
 
 export interface DeviceIdentity {
   id: string;
@@ -305,6 +306,19 @@ function heldSet(app: App): Set<string> {
   }
 }
 
+/** Hashes of snapshots this device chose to override ("Keep mine", an explicit restore or import). */
+function keptSet(app: App): Set<string> {
+  try {
+    return new Set(JSON.parse(localGet(app, KEPT_KEY) ?? '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function markKept(app: App, ...hashes: string[]): void {
+  localSet(app, KEPT_KEY, JSON.stringify([...new Set([...keptSet(app), ...hashes])].slice(-HELD_LIMIT)));
+}
+
 function remember(app: App, ...hashes: string[]): void {
   const held = heldSet(app);
   const fresh = hashes.filter((h) => !held.has(h));
@@ -441,6 +455,16 @@ export class VaultBackup {
   keepMine(other: Snapshot): void {
     this.addAncestors(other.sha256);
     remember(this.app, other.sha256);
+    markKept(this.app, other.sha256);
+  }
+
+  /** After data that did not come from a snapshot replaced this device's: it wins over every snapshot there is now. */
+  keepOver(others: Snapshot[]): void {
+    for (const other of others) {
+      this.addAncestors(other.sha256, ...other.ancestors);
+      remember(this.app, other.sha256);
+      markKept(this.app, other.sha256);
+    }
   }
 
   private addAncestors(...hashes: string[]): void {
@@ -516,7 +540,13 @@ export class VaultBackup {
     const heads = headsOf(ready);
     const [newest] = heads;
     if (newest === undefined) return { kind: 'none' };
-    const forward = heads.length === 1 && newest.trusted && [...mineIds].some((id) => newest.ancestors.includes(id));
+    // Newest first: this device's state must come after (be newer than) anything it chose to override, or the
+    // snapshot was built on top of the data that was overridden and the two really differ.
+    const kept = keptSet(this.app);
+    const mineAt = [...mineIds].map((id) => newest.ancestors.indexOf(id)).filter((i) => i >= 0);
+    const keptAt = newest.ancestors.flatMap((h, i) => (kept.has(h) ? [i] : []));
+    const forward =
+      heads.length === 1 && newest.trusted && mineAt.length > 0 && (keptAt.length === 0 || Math.min(...mineAt) < Math.min(...keptAt));
     return forward ? { kind: 'forward', other: newest, myHash } : { kind: 'conflict', other: newest, mine };
   }
 

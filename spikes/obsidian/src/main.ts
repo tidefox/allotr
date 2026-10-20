@@ -503,23 +503,27 @@ export default class AllotrPlugin extends Plugin {
         return 'refused';
       }
       const old = await this.getRuntime();
+      // Nothing can change the data after this: the views go first, then the last save,
+      // then the look at what is about to be discarded, which is kept as a copy.
+      const reopen = this.views.size > 0;
+      for (const view of [...this.views]) view.leaf.detach();
       await old.flush();
       await this.backup.flushPending();
-      // Last look before anything is discarded: the data being replaced is kept first.
       const current = await exportBundle(old);
-      if (opts.expect !== undefined && sha256Hex(current) !== opts.expect) return 'changed';
+      if (opts.expect !== undefined && sha256Hex(current) !== opts.expect) {
+        if (reopen) await this.openView();
+        return 'changed';
+      }
       const size = await ledgerSize(old);
       if (size.accounts > 0 || size.entries > 0) {
         try {
           await saveSafetyCopy(this.vaultKey(), { reason: `before taking ${name}`, ...size, text: current });
         } catch (error) {
           notice(`Allotr import stopped, nothing changed: this device's data could not be kept as a copy first (${String(error)})`, 20000);
+          if (reopen) await this.openView();
           return 'refused';
         }
       }
-      const reopen = this.views.size > 0;
-      for (const view of [...this.views]) view.leaf.detach();
-      await old.flush();
       this.backup.detach();
       await old.close();
       this.runtime = null;
@@ -530,6 +534,13 @@ export default class AllotrPlugin extends Plugin {
       if (from !== undefined) this.backup.replacedBy(from);
       const fresh = await this.getRuntime();
       if (from !== undefined) this.backup.derivedHash(sha256Hex(await exportBundle(fresh)));
+      // Data that does not come from a snapshot is the user's explicit choice: it wins over what
+      // the other devices hold now, so they fast-forward to it instead of this device reverting.
+      if (from === undefined) {
+        const others = (await readSnapshots(this.app)).filter((snap) => snap.deviceId !== this.device().id);
+        dismiss(this.app, others);
+        this.backup.keepOver(others);
+      }
       this.backup.hold(false);
       this.backup.schedule();
       if (opts.quiet === true) console.info(`[allotr] took over ${name}: ${countsLine(outcome.counts)}`);
