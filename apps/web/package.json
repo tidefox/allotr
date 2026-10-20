@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc && tsc -p src/sw",
     "test": "vitest run",
-    "e2e": "node scripts/generate-tokens.ts && node scripts/generate-icons.ts && vite build && playwright test && playwright test -c playwright.components.config.ts",
+    "e2e": "pnpm run e2e:app && pnpm run e2e:components",
+    "e2e:app": "pnpm run build && playwright test",
     "e2e:components": "playwright test -c playwright.components.config.ts",
     "icons": "node scripts/generate-icons.ts",
     "icons:check": "node scripts/generate-icons.ts --check"
