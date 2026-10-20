@@ -12,13 +12,11 @@ import { EmbedContext, type EmbedHost } from '../../../apps/web/src/lib/embed.ts
 import { createQueryClient } from '../../../apps/web/src/lib/query-client.ts';
 import { sessionQuery } from '../../../apps/web/src/lib/session.ts';
 import { createAppRouter } from '../../../apps/web/src/router.tsx';
-import { trackBottomInset, type LayoutController, type LayoutSnapshot } from './layout.ts';
+import { trackBottomInset, trackStatusBar, type LayoutController, type LayoutSnapshot } from './layout.ts';
 import type { Runtime } from './runtime.ts';
 
 // Must run before any overlay renders.
 enableShadowDOM();
-
-export const BANNER_TEXT = 'Spike build: data stays on this device and is not synced yet.';
 
 // Layout glue around the app: the host fills the leaf, the wrapper carries the
 // theme attributes (`:root` in the app CSS is rewritten to `.ar`), and the app
@@ -28,7 +26,8 @@ const EMBED_CSS = `
 .ar { position: relative; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
 /* Mobile: keep the frame above Obsidian's floating navbar (layout.ts sets the inset on the host). */
 .ar-mobile { padding-bottom: max(var(--allotr-bottom-inset, 0px), env(safe-area-inset-bottom, 0px)); }
-.ar-banner { flex: none; padding: 4px 12px; font-size: 0.6875rem; line-height: 1.3; background: var(--warning-container); color: var(--on-primary-container); border-bottom: 1px solid var(--outline-variant); }
+/* Desktop: Obsidian's status bar floats over the bottom-right corner. The app's status line grows to its height and keeps its content to the left of it (layout.ts). */
+.ar [data-slot="status"] { height: max(var(--h-status), var(--allotr-statusbar-h, 0px)); padding-right: var(--allotr-statusbar-w, 0px); box-sizing: border-box; }
 .ar-app { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; contain: layout paint; }
 .ar-root { position: absolute; inset: 0; overflow: hidden; }
 .ar-portals { position: absolute; inset: 0; pointer-events: none; z-index: 1000; }
@@ -86,9 +85,6 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   style.textContent = appCss + EMBED_CSS;
   const wrapper = doc.createElement('div');
   wrapper.className = Platform.isMobile ? 'ar ar-mobile' : 'ar';
-  const banner = doc.createElement('div');
-  banner.className = 'ar-banner';
-  banner.textContent = BANNER_TEXT;
   const appArea = doc.createElement('div');
   appArea.className = 'ar-app';
   const rootEl = doc.createElement('div');
@@ -97,7 +93,7 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   const portals = doc.createElement('div');
   portals.className = 'ar-portals';
   appArea.append(rootEl, portals);
-  wrapper.append(banner, appArea);
+  wrapper.append(appArea);
   shadow.append(style, wrapper);
 
   // The pre-paint work theme-init.js does on a normal page.
@@ -140,6 +136,7 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
   topLayer.observe(portals, { childList: true });
 
   const layout: LayoutController = trackBottomInset(host);
+  const stopStatusBar = trackStatusBar(host);
 
   const queryClient = sharedQueryClient(runtime);
   const router = createAppRouter(queryClient, createMemoryHistory({ initialEntries: ['/'] }));
@@ -162,6 +159,7 @@ export function mountAllotr(container: HTMLElement, runtime: Runtime): Mounted {
     layout: () => layout.snapshot(),
     unmount() {
       layout.dispose();
+      stopStatusBar();
       root.unmount();
       topLayer.disconnect();
       for (const name of keyEvents) host.removeEventListener(name, keyGuard);
