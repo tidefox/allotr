@@ -1,5 +1,6 @@
 // Per-device vault snapshots, restore on start, pruning, atomic writes and the scheduler, with made-up data.
 //   node harness/backup.mjs [chromium|webkit|all]
+import { createHash } from 'node:crypto';
 import { engines, newHarnessPage, startPlugin } from './lib.mjs';
 
 const which = process.argv[2] ?? 'chromium';
@@ -97,7 +98,7 @@ async function run(engine, browser) {
   await page.waitForTimeout(13000);
   c('unchanged bundle is not rewritten', (await writesCount(page)) === w);
 
-  // 3. Pruning keeps the newest 30 dated copies.
+  // 3. Pruning keeps the newest 7 dated copies.
   await page.evaluate((id) => {
     for (let i = 1; i <= 33; i++) {
       const day = String(i).padStart(2, '0');
@@ -111,7 +112,7 @@ async function run(engine, browser) {
   await waitWritten(page, LATEST, w);
   await page.waitForTimeout(500);
   const dated = (await files(page, `Allotr/devices/${id}/backups/`)).filter((p) => /allotr-\d{4}-\d{2}-\d{2}\.json$/.test(p));
-  c('30 dated copies kept', dated.length === 30, String(dated.length));
+  c('7 dated copies kept', dated.length === 7, String(dated.length));
   c("today's copy survives pruning", dated.includes(today(id)));
   c('oldest copies removed', !dated.includes(`Allotr/devices/${id}/backups/allotr-2020-01-01.json`));
   const newest = JSON.parse(await read(page, LATEST));
@@ -125,8 +126,26 @@ async function run(engine, browser) {
   });
   c('scheduler tick records a reminder', /weekly_review/.test(reminders), reminders.slice(0, 160));
 
-  // 5. Database evicted (same device id): the restore modal appears; "Not now" leaves the ledger empty.
-  await page.evaluate(() => window.harness.state.notices.length);
+  // 5a. Database evicted (same device id) with one snapshot in the vault: it comes back without a question.
+  await clearDevice(page, { keepId: true });
+  await startPlugin(page);
+  await page.evaluate(() => window.plugin.getRuntime());
+  for (let i = 0; i < 60 && (await exported(page)).accounts.length !== 2; i++) await page.waitForTimeout(400);
+  c('one snapshot is restored without a dialog', (await exported(page)).accounts.length === 2 && (await page.locator('.allotr-restore-text').count()) === 0);
+
+  // 5. Database evicted (same device id) while another device's unrelated snapshot is also in the vault:
+  // the restore modal appears; "Not now" leaves the ledger empty.
+  const otherText = JSON.stringify({ ...bundle, accounts: [{ name: 'Elsewhere', currency: 'EUR', openingBalance: { amountMinor: 1, currency: 'EUR' } }], transactions: [] });
+  await page.evaluate(
+    ([t, sha]) => {
+      const side = { format: 'allotr.device', id: 'other', name: 'Other 0001', savedAt: 1000, sha256: sha, accounts: 1, entries: 0, ancestors: [] };
+      window.harness.loadFiles([
+        { path: 'Allotr/devices/other/latest.json', data: t, mtime: 1000 },
+        { path: 'Allotr/devices/other/device.json', data: JSON.stringify(side), mtime: 1000 },
+      ], false);
+    },
+    [otherText, createHash('sha256').update(otherText).digest('hex')],
+  );
   await clearDevice(page, { keepId: true });
   await startPlugin(page);
   await page.evaluate(() => window.plugin.getRuntime());
@@ -157,12 +176,17 @@ async function run(engine, browser) {
   c('Restore brings the data back', after.accounts.length === 2 && after.transactions.length === 1, `${after.accounts.length} accounts`);
   c('no backup file made of the empty ledger', (await files(page, 'Allotr backup')).length === 0 && (await files(page, 'Allotr export')).length === 0);
 
-  // 8. Command with data: asks first, backs up, restores.
+  // 8. Command with data: asks first, keeps a copy on the device (not in the vault), restores.
+  const notices8 = await page.evaluate(() => window.harness.state.notices.length);
   await page.evaluate(() => window.harness.runCommand('Allotr: Restore Allotr data from vault backup'));
   await page.locator('.allotr-confirm-replace').waitFor();
   await page.locator('.allotr-confirm-replace').click();
-  await page.waitForFunction(() => window.harness.app.vault.getFiles().some((f) => f.path.startsWith('Allotr backup')), null, { timeout: 30000 });
-  c('restore command with data makes a backup first', true);
+  await page.waitForFunction((n) => window.harness.state.notices.slice(n).some((m) => /import done/.test(m)), notices8, { timeout: 30000 });
+  c('restore command with data writes no backup file to the vault root', (await files(page, 'Allotr backup')).length === 0);
+  await page.evaluate(() => window.harness.runCommand('Allotr: Restore an earlier Allotr copy from this device'));
+  await page.locator('.allotr-safety-copy').first().waitFor();
+  c('and keeps a copy of the replaced data on the device', (await page.locator('.allotr-safety-copy').count()) >= 1);
+  await page.keyboard.press('Escape');
 
   // 9. A failing disk: one notice, no crash.
   await page.waitForTimeout(500);

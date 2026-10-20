@@ -96,11 +96,14 @@ async function run(engine, browser) {
   await page.locator('.allotr-confirm-replace').click();
   notes = await waitNotice(page, n, 'import done|refused|failed');
   const backups = await page.evaluate(() => window.harness.app.vault.getFiles().map((f) => f.path).filter((p) => p.startsWith('Allotr backup')));
-  c('backup written before replacing', backups.length >= 1, backups.join(', '));
+  c('no backup file is written to the vault root', backups.length === 0, backups.join(', '));
+  await page.evaluate(() => window.harness.runCommand('Allotr: Restore an earlier Allotr copy from this device'));
+  await page.locator('.allotr-safety-copy').first().waitFor();
+  const copies = await page.locator('.allotr-safety-copy').allTextContents();
+  c('a copy of the old data is kept on the device', copies.length === 1 && /1 accounts/.test(copies[0]), copies.join(' | '));
+  await page.keyboard.press('Escape');
   ledger = await exported(page);
   c('replaced, not merged', ledger.accounts?.length === 1 && ledger.bills?.length === 1, `${ledger.accounts?.length} accounts`);
-  const backup = JSON.parse(await page.evaluate((p) => window.harness.readFile(p), backups[0]));
-  c('backup is a bundle of the old data', backup.format === 'allotr.bundle' && backup.accounts.length === 1);
 
   // 4. Export command, and the round trip.
   await page.evaluate(() => window.harness.runCommand('Allotr: Export Allotr data to vault'));
