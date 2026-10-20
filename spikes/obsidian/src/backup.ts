@@ -6,11 +6,25 @@
 // writers for one file:
 //
 //   Allotr/devices/<id>/latest.json      the newest bundle (a plain export)
-//   Allotr/devices/<id>/device.json      who wrote it, when, and its hash
-//   Allotr/devices/<id>/backups/         one dated copy per day (newest 30)
+//   Allotr/devices/<id>/device.json      who wrote it, when, its hash, and the
+//                                        hashes of the states it descends from
+//   Allotr/devices/<id>/backups/         one dated copy per day (newest 7)
 //
 // `Allotr/allotr-latest.json` is the single shared file of earlier builds. It
 // is still read (as a device called "legacy") but never written or deleted.
+//
+// Another device's snapshot is sorted into one of three cases (`classify`):
+//   - this device already has it: nothing happens;
+//   - it was built from exactly what this device holds (this device's hash is
+//     among its ancestors, a fast-forward): this device adopts it silently,
+//     after keeping a copy of its own data on the device (safety-copies.ts);
+//   - both sides changed since a common state: a conflict. The user is asked
+//     once per snapshot, and until they decide this device does not write to
+//     the vault. "Keep mine" lists the other snapshot among this device's
+//     ancestors, so the other device fast-forwards to this one instead of
+//     asking the same question.
+// A snapshot that looks half-delivered (the sidecar and the file disagree, or
+// only a fallback copy is readable) is left for the next check.
 //
 // Files are written to `<name>.tmp`, read back, then renamed, so a save that is
 // cut short (the app suspended mid-write) leaves the previous file intact.
@@ -25,10 +39,16 @@ export const DEVICES_DIR = `${BACKUP_DIR}/devices`;
 /** The single shared file written by builds before per-device snapshots. */
 export const LEGACY_PATH = `${BACKUP_DIR}/allotr-latest.json`;
 export const LEGACY_ID = 'legacy';
-export const KEEP_DATED = 30;
+export const KEEP_DATED = 7;
+/** Own leftovers of an interrupted write are removed after this long. */
+const STALE_TMP_MS = 60 * 60 * 1000;
+/** The copy kept when a restore was declined is removed after this long. */
+const STALE_DECLINED_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_ANCESTORS = 200;
 const DATED_RE = /allotr-\d{4}-\d{2}-\d{2}\.json$/;
 const DISMISSED_KEY = 'allotr-dismissed-divergence';
 const HELD_KEY = 'allotr-held-states';
+const HELD_LIMIT = 400;
 
 export interface DeviceIdentity {
   id: string;
@@ -78,6 +98,12 @@ export interface Sidecar {
   accounts: number;
   entries: number;
   /**
+   * Hashes of the states this snapshot descends from, newest first (at most
+   * 200). Another device whose current hash is in this list holds nothing this
+   * snapshot does not already contain. Absent in files from earlier builds.
+   */
+  ancestors?: string[];
+  /**
    * Set after this device replaced its data with another device's snapshot:
    * that snapshot's hash, and the hash of this device's own export of it, so
    * the other device can tell this one holds nothing it has not seen.
@@ -98,6 +124,10 @@ export interface Snapshot {
   date: string;
   /** Read from a dated copy because the latest file was missing or damaged. */
   recovered: boolean;
+  /** The newest file, and the sidecar describes exactly it: safe to act on. False for half-delivered or fallback reads. */
+  trusted: boolean;
+  /** Hashes this snapshot descends from (from the sidecar, only when it matches the file). */
+  ancestors: string[];
   basedOn?: Sidecar['basedOn'];
 }
 
@@ -194,6 +224,7 @@ async function readDevice(app: App, id: string): Promise<Snapshot | null> {
     // two were delivered out of step, the file's own modified time is used.
     const matches = side !== null && side.sha256 === sha256;
     const savedAt = matches ? side.savedAt : found.mtime;
+    const isLatest = path === latestPath(id);
     return {
       deviceId: id,
       name: side?.name ?? `Device ${id.slice(0, 4)}`,
@@ -202,7 +233,9 @@ async function readDevice(app: App, id: string): Promise<Snapshot | null> {
       ...counts,
       text: found.text,
       date: localStamp(new Date(savedAt)),
-      recovered: path !== latestPath(id),
+      recovered: !isLatest,
+      trusted: isLatest && matches,
+      ancestors: matches ? (side.ancestors ?? []) : [],
       ...(matches && side.basedOn !== undefined ? { basedOn: side.basedOn } : {}),
     };
   }
@@ -237,6 +270,8 @@ export async function readSnapshots(app: App): Promise<Snapshot[]> {
       text: legacy.text,
       date: localStamp(new Date(legacy.mtime)),
       recovered: false,
+      trusted: false,
+      ancestors: [],
     });
   }
   return found;
@@ -274,7 +309,7 @@ function remember(app: App, ...hashes: string[]): void {
   const held = heldSet(app);
   const fresh = hashes.filter((h) => !held.has(h));
   if (fresh.length === 0) return;
-  localSet(app, HELD_KEY, JSON.stringify([...held, ...fresh].slice(-200)));
+  localSet(app, HELD_KEY, JSON.stringify([...held, ...fresh].slice(-HELD_LIMIT)));
 }
 
 /** "Keep mine" / "I have seen these": this device is not asked about these snapshots again. */
@@ -282,6 +317,31 @@ export function dismiss(app: App, snapshots: Snapshot[]): void {
   const all = [...dismissedSet(app), ...snapshots.map((s) => `${s.deviceId}:${s.sha256}`)].slice(-200);
   localSet(app, DISMISSED_KEY, JSON.stringify(all));
 }
+
+/** Every hash a snapshot is known to descend from: its ancestors and the snapshot it replaced itself from. */
+function ancestryOf(s: Snapshot): Set<string> {
+  const all = new Set(s.ancestors);
+  if (s.basedOn !== undefined) all.add(s.basedOn.sha256);
+  return all;
+}
+
+/**
+ * The snapshots that nothing else descends from, one per distinct content,
+ * newest first. A lone head means every other snapshot is already in its
+ * history, so taking it loses nothing.
+ */
+export function headsOf(snapshots: Snapshot[]): Snapshot[] {
+  const newestFirst = [...snapshots].sort((a, b) => b.savedAt - a.savedAt);
+  const distinct = newestFirst.filter((s, i) => newestFirst.findIndex((o) => o.sha256 === s.sha256) === i);
+  return distinct.filter((s) => !distinct.some((o) => o !== s && ancestryOf(o).has(s.sha256)));
+}
+
+/** What `classify` found out about the other devices. */
+export type Verdict =
+  | { kind: 'none' }
+  /** One snapshot built from exactly what this device holds: adopt it without asking. `myHash` is what that was judged against. */
+  | { kind: 'forward'; other: Snapshot; myHash: string }
+  | { kind: 'conflict'; other: Snapshot; mine: { accounts: number; entries: number } };
 
 export class VaultBackup {
   private runtime: Runtime | null = null;
@@ -298,6 +358,9 @@ export class VaultBackup {
   private sidecar: Sidecar | null = null;
   private basedOn: Sidecar['basedOn'];
   private basedOnDirty = false;
+  /** Hashes of the states this device's data descends from, newest first; written to the sidecar. */
+  private ancestors: string[] = [];
+  private ancestorsDirty = false;
   private loaded = false;
   /** The hash of this device's data at the last check. */
   myHash = '';
@@ -316,7 +379,11 @@ export class VaultBackup {
     const side = await readSidecar(this.app, this.identity().id);
     this.sidecar = side;
     this.basedOn = side?.basedOn;
-    if (side !== null) remember(this.app, side.sha256);
+    this.ancestors = [
+      ...(side?.ancestors ?? []),
+      ...(side?.basedOn === undefined ? [] : [side.basedOn.sha256, side.basedOn.selfSha256 ?? '']),
+    ].filter((h) => h !== '');
+    if (side !== null) remember(this.app, side.sha256, ...this.ancestors);
   }
 
   attach(runtime: Runtime): void {
@@ -347,11 +414,18 @@ export class VaultBackup {
     return this.held;
   }
 
-  /** After this device replaced its data with `from`: the next write records where it came from. */
+  /**
+   * After this device replaced its data with `from`: the next write records
+   * where it came from. From now on this device descends from that snapshot,
+   * from everything that snapshot descends from, and from the data it just
+   * replaced, so the other devices see its next snapshot as a continuation.
+   */
   replacedBy(from: Snapshot): void {
     this.basedOn = { device: from.deviceId, sha256: from.sha256 };
     this.basedOnDirty = true;
-    remember(this.app, from.sha256);
+    const before = [this.myHash, this.sidecar?.sha256 ?? ''];
+    this.addAncestors(from.sha256, ...from.ancestors, ...before);
+    remember(this.app, from.sha256, ...from.ancestors);
   }
 
   /** The hash of this device's own export right after it replaced its data (see `Sidecar.basedOn`). */
@@ -359,7 +433,20 @@ export class VaultBackup {
     if (this.basedOn === undefined) return;
     this.basedOn = { ...this.basedOn, selfSha256 };
     this.basedOnDirty = true;
+    this.addAncestors(selfSha256);
     remember(this.app, selfSha256);
+  }
+
+  /** "Keep mine": this device's next write lists `other` as a state it descends from, so that device can fast-forward to this one. */
+  keepMine(other: Snapshot): void {
+    this.addAncestors(other.sha256);
+    remember(this.app, other.sha256);
+  }
+
+  private addAncestors(...hashes: string[]): void {
+    const merged = [...new Set([...hashes.filter((h) => h !== ''), ...this.ancestors])].slice(0, MAX_ANCESTORS);
+    this.ancestorsDirty = true;
+    this.ancestors = merged;
   }
 
   schedule(): void {
@@ -395,32 +482,42 @@ export class VaultBackup {
   }
 
   /**
-   * The snapshot of another device with changes this one has not seen, or null.
-   * Not a matter of time (a device that stays open, or a file delivered late,
-   * would hide real differences): a snapshot counts unless it is the same as
-   * what this device holds, is the one this device was replaced from, was built
-   * from exactly what this device holds, or was dismissed here. The newest one
-   * is returned.
+   * Sorts the other devices' snapshots (see the top of this file). Not a matter
+   * of time (a device that stays open, or a file delivered late, would hide
+   * real differences): a snapshot is not news when it is the same as what this
+   * device holds, is the one this device was replaced from, was built from
+   * exactly what this device holds, or was dismissed here. Of the rest, only
+   * the heads count (a snapshot that another one descends from is history).
    */
-  async newerElsewhere(runtime: Runtime): Promise<{ other: Snapshot; mine: { accounts: number; entries: number } } | null> {
+  async classify(runtime: Runtime): Promise<Verdict> {
     const me = this.identity().id;
     const mine = await ledgerSize(runtime);
     const myHash = sha256Hex(await exportBundle(runtime));
     this.myHash = myHash;
     remember(this.app, myHash);
+    // Right after taking another snapshot this device's own export of it differs
+    // from the source file, so the source's hash stands for the same data.
+    const mineIds = new Set([myHash]);
+    if (this.basedOn?.selfSha256 === myHash) mineIds.add(this.basedOn.sha256);
     const held = heldSet(this.app);
     const dismissed = dismissedSet(this.app);
     const candidates = (await readSnapshots(this.app)).filter(
       (s) =>
         s.deviceId !== me &&
-        s.sha256 !== myHash &&
+        !mineIds.has(s.sha256) &&
         s.sha256 !== this.basedOn?.sha256 &&
         !held.has(s.sha256) &&
         !(s.basedOn !== undefined && held.has(s.basedOn.sha256) && s.basedOn.selfSha256 === s.sha256) &&
         !dismissed.has(`${s.deviceId}:${s.sha256}`),
     );
-    const newest = candidates.reduce<Snapshot | null>((best, s) => (best === null || s.savedAt > best.savedAt ? s : best), null);
-    return newest === null ? null : { other: newest, mine };
+    // A half-delivered file is not a disagreement; look again at the next check.
+    const ready = candidates.filter((s) => s.trusted || s.deviceId === LEGACY_ID);
+    if (ready.length < candidates.length) console.info('[allotr] a snapshot is not fully delivered yet; looking again later');
+    const heads = headsOf(ready);
+    const [newest] = heads;
+    if (newest === undefined) return { kind: 'none' };
+    const forward = heads.length === 1 && newest.trusted && [...mineIds].some((id) => newest.ancestors.includes(id));
+    return forward ? { kind: 'forward', other: newest, myHash } : { kind: 'conflict', other: newest, mine };
   }
 
   private async write(runtime: Runtime): Promise<void> {
@@ -440,6 +537,8 @@ export class VaultBackup {
       this.preserveOld = false;
     }
     let wrote = false;
+    // The state the last sidecar described is now history.
+    if (this.sidecar !== null && this.sidecar.sha256 !== hash) this.addAncestors(this.sidecar.sha256);
     if (hash !== this.lastHash) {
       await atomicWrite(this.app, latestPath(self.id), text);
       this.lastHash = hash;
@@ -451,7 +550,7 @@ export class VaultBackup {
       this.lastDated = `${dated}\n${hash}`;
       await this.prune(self.id);
     }
-    if (wrote || this.sidecar?.sha256 !== hash || this.basedOnDirty) {
+    if (wrote || this.sidecar?.sha256 !== hash || this.basedOnDirty || this.ancestorsDirty || this.sidecar?.ancestors === undefined) {
       const side: Sidecar = {
         format: 'allotr.device',
         id: self.id,
@@ -459,19 +558,33 @@ export class VaultBackup {
         savedAt: wrote || this.sidecar === null ? Date.now() : this.sidecar.savedAt,
         sha256: hash,
         ...(parseBundle(text) ?? { accounts: size.accounts, entries: size.entries }),
+        ancestors: this.ancestors.filter((h) => h !== hash),
         ...(this.basedOn === undefined ? {} : { basedOn: this.basedOn }),
       };
       await atomicWrite(this.app, sidecarPath(self.id), JSON.stringify(side));
       this.sidecar = side;
       this.basedOnDirty = false;
+      this.ancestorsDirty = false;
     }
   }
 
+  /** Keeps the newest dated copies, and removes this device's own stale leftovers. Never touches another device's folder. */
   private async prune(id: string): Promise<void> {
     const { adapter } = this.app.vault;
     const listing = await adapter.list(datedDir(id));
     const dated = listing.files.filter((f) => DATED_RE.test(f)).sort();
     for (const path of dated.slice(0, Math.max(0, dated.length - KEEP_DATED))) await adapter.remove(path);
+    const now = Date.now();
+    const age = async (path: string): Promise<number> => now - ((await adapter.stat(path))?.mtime ?? now);
+    // Readers fall back to a finished `latest.json.tmp` when `latest.json` is
+    // missing, so that one is kept until it is not needed.
+    const folder = (await adapter.list(deviceDir(id))).files;
+    for (const path of [...listing.files, ...folder].filter((f) => f.endsWith('.tmp'))) {
+      const needed = path === `${latestPath(id)}.tmp` && !(await adapter.exists(latestPath(id)));
+      if (!needed && (await age(path)) > STALE_TMP_MS) await adapter.remove(path);
+    }
+    if ((await adapter.exists(declinedPath(id))) && (await age(declinedPath(id))) > STALE_DECLINED_MS)
+      await adapter.remove(declinedPath(id));
   }
 }
 
@@ -522,7 +635,7 @@ export class RestoreModal extends Modal {
   }
 }
 
-/** Shown on start when another device has written data this device has not seen. */
+/** A real conflict: this device and another both changed since they last agreed. Asked once per snapshot. */
 export class DivergenceModal extends Modal {
   constructor(
     app: App,
@@ -537,17 +650,17 @@ export class DivergenceModal extends Modal {
     const el = this.contentEl;
     el.replaceChildren();
     const title = document.createElement('h3');
-    title.textContent = 'Another device has Allotr changes this one has not seen';
+    title.textContent = 'Both this device and another have changed Allotr';
     const body = document.createElement('p');
     body.className = 'allotr-divergence-text';
     const { other, mine } = this;
     body.textContent =
       `${other.name} last saved ${other.accounts} accounts and ${other.entries} entries at ${other.date}. ` +
       `This device has ${mine.accounts} accounts and ${mine.entries} entries. ` +
-      'The two are not merged: pick one. Until you do, this device does not write to the vault.';
+      'The two are not merged: pick one. "Use theirs" first keeps a copy of this device\'s data here. Until you decide, this device does not write to the vault.';
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap';
-    const both = button('Save both copies', 'allotr-divergence-both', () => {
+    const both = button('Keep both as files', 'allotr-divergence-both', () => {
       both.disabled = true;
       void this.actions.saveBoth().then(() => {
         both.textContent = 'Saved both to the vault root';
@@ -559,7 +672,7 @@ export class DivergenceModal extends Modal {
         this.close();
         this.actions.keep();
       }),
-      button('Replace mine', 'mod-cta allotr-divergence-replace', () => {
+      button('Use theirs', 'mod-cta allotr-divergence-replace', () => {
         this.close();
         this.actions.replace();
       }),

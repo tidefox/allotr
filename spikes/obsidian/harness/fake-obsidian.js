@@ -136,6 +136,8 @@
       const name = this.manifest.name + ': ' + c.name;
       state.commands.set(name, c);
     }
+    // Like Obsidian's: the reference is handed back to the vault when the plugin unloads.
+    registerEvent(ref) { this._events = this._events || []; this._events.push(ref); }
     registerDomEvent(el, type, cb) {
       el.addEventListener(type, cb);
       this._domEvents.push([el, type, cb]);
@@ -143,6 +145,8 @@
     _unregister() {
       for (const [el, type, cb] of this._domEvents) el.removeEventListener(type, cb);
       this._domEvents = [];
+      for (const ref of this._events || []) app.vault.offref(ref);
+      this._events = [];
       for (const id of this._intervals || []) clearInterval(id);
       this._intervals = [];
       for (const r of state.ribbon) r.el.remove();
@@ -156,6 +160,12 @@
     viewCreators: new Map(),
     vault: {
       getName: () => params.get('vault') || 'Test Vault',
+      // Vault events ('create', 'modify'), as Obsidian fires them when a file appears or changes
+      // (including files a sync tool delivers). Adapter writes made by the plugin itself fire none.
+      listeners: [],
+      on(name, cb) { const ref = { name, cb }; this.listeners.push(ref); return ref; },
+      offref(ref) { this.listeners = this.listeners.filter((r) => r !== ref); },
+      trigger(name, file) { for (const r of [...this.listeners]) if (r.name === name) r.cb(file); },
       // Files live in memory; the harness adds them with harness.addFile.
       files: new Map(),
       getFiles() { return [...this.files.values()].map((f) => f.file); },
@@ -252,11 +262,15 @@
     addFile: (path, data) => app.vault.create(path, data),
     // Stand-in for a sync tool: copies every file under a prefix out of, or into, this vault.
     dumpFiles: (prefix) => [...app.vault.files.entries()].filter(([p]) => p.startsWith(prefix)).map(([p, v]) => ({ path: p, data: v.data, mtime: v.file.stat.mtime })),
-    loadFiles: (list) => {
+    // Fires 'create' or 'modify' for each file unless `events` is false (a sync tool that delivers without telling Obsidian).
+    loadFiles: (list, events = true) => {
       for (const { path, data, mtime } of list) {
         const parts = path.split('/');
         for (let i = 1; i < parts.length; i++) app.vault.folders.add(parts.slice(0, i).join('/'));
-        app.vault.files.set(path, { file: { path, name: parts.at(-1), extension: path.split('.').pop(), stat: { ctime: mtime, mtime, size: data.length } }, data });
+        const existed = app.vault.files.has(path);
+        const file = { path, name: parts.at(-1), extension: path.split('.').pop(), stat: { ctime: mtime, mtime, size: data.length } };
+        app.vault.files.set(path, { file, data });
+        if (events) app.vault.trigger(existed ? 'modify' : 'create', file);
       }
     },
     readFile: (path) => app.vault.files.get(path)?.data ?? null,

@@ -159,7 +159,7 @@ export class ReplaceConfirmModal extends Modal {
     const title = document.createElement('h3');
     title.textContent = 'Replace the Allotr data on this device?';
     const body = document.createElement('p');
-    body.textContent = `This device already has ${this.size.accounts} accounts and ${this.size.entries} entries. They will be saved to a backup file in the vault, then replaced by the export. Nothing is merged.`;
+    body.textContent = `This device already has ${this.size.accounts} accounts and ${this.size.entries} entries. A copy is kept on this device first (the command "Restore an earlier Allotr copy from this device" puts it back), then they are replaced. Nothing is merged.`;
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
     const cancel = document.createElement('button');
@@ -167,7 +167,7 @@ export class ReplaceConfirmModal extends Modal {
     cancel.addEventListener('click', () => this.close());
     const replace = document.createElement('button');
     replace.className = 'mod-warning allotr-confirm-replace';
-    replace.textContent = 'Back up and replace';
+    replace.textContent = 'Keep a copy and replace';
     replace.addEventListener('click', () => {
       this.close();
       this.onConfirm();

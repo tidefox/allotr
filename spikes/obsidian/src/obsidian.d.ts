@@ -29,7 +29,9 @@ declare module 'obsidian' {
     read(file: TFile): Promise<string>;
     create(path: string, data: string): Promise<TFile>;
     getAbstractFileByPath(path: string): unknown;
+    on(name: 'create' | 'modify', callback: (file: { path: string }) => void): EventRef;
   }
+  export interface EventRef { readonly __eventRef?: never }
   export interface Workspace {
     getLeavesOfType(type: string): WorkspaceLeaf[];
     getLeaf(newLeaf?: boolean | 'tab' | 'split' | 'window'): WorkspaceLeaf;
@@ -58,6 +60,7 @@ declare module 'obsidian' {
     onload(): Promise<void> | void;
     onunload(): void;
     registerInterval(id: number): number;
+    registerEvent(ref: EventRef): void;
     registerView(type: string, creator: (leaf: WorkspaceLeaf) => View): void;
     addRibbonIcon(icon: string, title: string, callback: (evt: MouseEvent) => void): HTMLElement;
     addCommand(command: { id: string; name: string; callback?: () => void }): void;

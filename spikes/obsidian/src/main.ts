@@ -17,9 +17,11 @@ import {
   stamp,
 } from './migrate.ts';
 import {
+  DEVICES_DIR,
   defaultDeviceName,
   DivergenceModal,
   dismiss,
+  headsOf,
   readBest,
   readSnapshots,
   RestoreModal,
@@ -28,6 +30,7 @@ import {
   type Snapshot,
 } from './backup.ts';
 import { localGet, localSet } from './local-store.ts';
+import { listSafetyCopies, SafetyCopyModal, saveSafetyCopy, type SafetyCopy } from './safety-copies.ts';
 import { ExportOutsideModal } from './share-export.ts';
 import { sha256Hex } from './sha256.ts';
 import { runReminders } from '../../../apps/server/src/reminders.ts';
@@ -36,7 +39,9 @@ import { Runtime } from './runtime.ts';
 
 export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
-const PLUGIN_VERSION = '0.0.1-spike.8';
+/** A change to another device's files is checked this long after the last one, so a sync that delivers several files is read once. */
+const WATCH_DEBOUNCE_MS = 3000;
+const PLUGIN_VERSION = '0.0.1-spike.9';
 
 declare const __BUNDLE_NOTE__: string;
 
@@ -106,6 +111,12 @@ export default class AllotrPlugin extends Plugin {
   private restoreOffered = false;
   private tickRunning = false;
   private divergenceOpen = false;
+  /** Set while a snapshot is being taken over; checks and imports wait for it. */
+  private replacing = false;
+  private checkRun: Promise<void> | null = null;
+  /** Conflicts the dialog was already shown for in this session; the periodic check does not show them again. */
+  private readonly asked = new Set<string>();
+  private watchTimer: ReturnType<typeof setTimeout> | undefined;
 
   override async onload(): Promise<void> {
     installHeadStyles(document);
@@ -149,6 +160,11 @@ export default class AllotrPlugin extends Plugin {
       callback: () => void this.checkDevices(true),
     });
     this.addCommand({
+      id: 'restore-local-copy',
+      name: 'Restore an earlier Allotr copy from this device',
+      callback: () => void this.restoreFromLocalCopy(),
+    });
+    this.addCommand({
       id: 'restore-backup',
       name: 'Restore Allotr data from vault backup',
       callback: () => void this.restoreFromBackup(),
@@ -165,9 +181,25 @@ export default class AllotrPlugin extends Plugin {
       if (document.visibilityState === 'hidden') flush();
     });
     this.registerDomEvent(window, 'pagehide', flush);
+    // A sync tool delivering another device's files shows up without waiting for the 15 minutes.
+    const watch = (file: { path: string }) => this.watchVault(file.path);
+    this.registerEvent(this.app.vault.on('create', watch));
+    this.registerEvent(this.app.vault.on('modify', watch));
+  }
+
+  /** Another device's snapshot files changed: check once the changes have settled. */
+  private watchVault(path: string): void {
+    if (!path.startsWith(`${DEVICES_DIR}/`)) return;
+    const [id, file] = path.slice(DEVICES_DIR.length + 1).split('/');
+    if (id === undefined || id === this.deviceId() || (file !== 'device.json' && file !== 'latest.json')) return;
+    clearTimeout(this.watchTimer);
+    this.watchTimer = setTimeout(() => {
+      this.checkDevices(false).catch((error: unknown) => console.warn('[allotr] device check failed', error));
+    }, WATCH_DEBOUNCE_MS);
   }
 
   override onunload(): void {
+    clearTimeout(this.watchTimer);
     for (const view of [...this.views]) view.teardown();
     const runtime = this.runtime;
     this.runtime = null;
@@ -230,31 +262,13 @@ export default class AllotrPlugin extends Plugin {
   }
 
   /**
-   * For an empty ledger, the offer to restore from the vault; otherwise the
-   * check for newer data on another device, then the scheduler run (which may
-   * save, so it comes last).
+   * For an empty ledger, the restore from the vault; otherwise the check for
+   * newer data on another device, then the scheduler run (which may save, so
+   * it comes last).
    */
   private async afterOpen(runtime: Runtime): Promise<void> {
     try {
-      const size = await ledgerSize(runtime);
-      if (size.accounts === 0 && size.entries === 0) {
-        if (this.restoreOffered) return;
-        const info = await readBest(this.app);
-        if (info === null || runtime !== this.runtime) return;
-        this.restoreOffered = true;
-        new RestoreModal(
-          this.app,
-          info,
-          () =>
-            void (async () => {
-              // Restoring takes the newest snapshot on purpose; the older ones are not news afterwards.
-              dismiss(this.app, await readSnapshots(this.app));
-              await this.replaceWith(info.text, 'the vault backup', info);
-            })(),
-          () => this.backup.keepOldLatest(),
-        ).open();
-        return;
-      }
+      if (await this.restoreIfEmpty(runtime)) return;
       await this.checkDevices(false);
       await this.schedulerTick();
     } catch (error) {
@@ -263,42 +277,104 @@ export default class AllotrPlugin extends Plugin {
   }
 
   /**
-   * Warns when another device saved data this one has not seen. Until the user
-   * decides, this device writes nothing to the vault, so it cannot bury the
-   * other device's data or make the warning disappear by saving first.
+   * An empty ledger takes the vault's data. When one snapshot holds all the
+   * others in its history there is nothing to choose and it is taken without
+   * a question; otherwise the user is offered the newest. Returns true when
+   * the ledger is empty (whether or not anything was found).
+   */
+  private async restoreIfEmpty(runtime: Runtime): Promise<boolean> {
+    const size = await ledgerSize(runtime);
+    if (size.accounts !== 0 || size.entries !== 0) return false;
+    if (this.restoreOffered) return true;
+    const heads = headsOf(await readSnapshots(this.app));
+    const [info] = heads;
+    if (info === undefined || runtime !== this.runtime) return true;
+    this.restoreOffered = true;
+    if (heads.length === 1 && info.trusted) {
+      await this.replaceWith(info.text, info.name, info, { quiet: true });
+      return true;
+    }
+    new RestoreModal(
+      this.app,
+      info,
+      () =>
+        void (async () => {
+          // Restoring takes the newest snapshot on purpose; the older ones are not news afterwards.
+          dismiss(this.app, await readSnapshots(this.app));
+          await this.replaceWith(info.text, 'the vault backup', info);
+        })(),
+      () => this.backup.keepOldLatest(),
+    ).open();
+    return true;
+  }
+
+  /**
+   * Looks at the other devices' snapshots. One built from exactly what this
+   * device holds is taken over silently; one from a device that changed
+   * independently is a conflict, which the user is asked about once (the
+   * "Check other devices" command asks again). Until the user decides, this
+   * device writes nothing to the vault, so it cannot bury the other device's
+   * data or make the question disappear by saving first.
    */
   async checkDevices(manual: boolean): Promise<void> {
+    while (this.checkRun !== null) await this.checkRun;
+    const run = (async () => {
+      // Taking a snapshot over can find that this device changed meanwhile: look again, a few times at most.
+      for (let round = 0; round < 3; round++) if (!(await this.checkOnce(manual))) break;
+    })();
+    this.checkRun = run;
+    try {
+      await run;
+    } finally {
+      this.checkRun = null;
+    }
+  }
+
+  /** One pass of `checkDevices`; true when this device changed under it and the pass should be repeated. */
+  private async checkOnce(manual: boolean): Promise<boolean> {
     const runtime = this.runtime;
-    if (runtime === null || this.divergenceOpen) return;
-    const found = await this.backup.newerElsewhere(runtime);
-    if (runtime !== this.runtime || this.divergenceOpen) return;
-    if (found === null) {
+    if (runtime === null || this.divergenceOpen || this.replacing) return false;
+    if (await this.restoreIfEmpty(runtime)) return false;
+    const verdict = await this.backup.classify(runtime);
+    if (runtime !== this.runtime || this.divergenceOpen || this.replacing) return false;
+    if (verdict.kind === 'none') {
       if (this.backup.isHeld) this.backup.hold(false);
       if (manual) notice('No other device has changes this device has not seen.');
-      return;
+      return false;
     }
-    const { other, mine } = found;
+    const { other } = verdict;
+    if (verdict.kind === 'forward') {
+      const result = await this.replaceWith(other.text, other.name, other, { quiet: true, expect: verdict.myHash });
+      if (result === 'done' && manual) notice(`Allotr took over the newer data from ${other.name}.`);
+      return result === 'changed';
+    }
+    const { mine } = verdict;
     this.backup.hold(true);
+    const key = `${other.deviceId}:${other.sha256}`;
+    if (!manual && this.asked.has(key)) return false;
+    this.asked.add(key);
     this.divergenceOpen = true;
     new DivergenceModal(this.app, other, mine, {
-      replace: () => void this.importText(other.text, other.name, other),
+      replace: () => void this.replaceWith(other.text, other.name, other, { quiet: true }),
       keep: () => {
         dismiss(this.app, [other]);
+        this.backup.keepMine(other);
         this.backup.hold(false);
       },
       saveBoth: async () => {
-        await this.exportToVault('Allotr mine');
+        await this.exportToVault('Allotr mine', false);
         const path = freePath(this.app, `Allotr ${other.name} ${stamp()}`);
         await this.app.vault.create(path, other.text);
-        notice(`Allotr saved ${other.name}'s data to ${path}`);
+        notice(`Allotr saved both copies to the vault root; ${other.name}'s is ${path}`);
       },
       closed: () => {
         this.divergenceOpen = false;
       },
     }).open();
+    return false;
   }
 
-  /** Every 15 minutes: look again for changes from other devices (an undecided warning comes back), then the scheduler. */
+  /** Every 15 minutes: look again for changes from other devices (a conflict already asked about stays held, quietly), then the scheduler. */
   private async periodic(): Promise<void> {
     try {
       await this.checkDevices(false);
@@ -339,13 +415,23 @@ export default class AllotrPlugin extends Plugin {
     await this.importText(info.text, `the vault backup from ${info.name}`, info);
   }
 
-  /** Writes the ledger as a JSON bundle to the vault root; returns its path. */
-  async exportToVault(stem: string): Promise<string | null> {
+  /** The "Restore an earlier copy from this device" command: the copies kept before data was replaced. */
+  async restoreFromLocalCopy(): Promise<void> {
+    try {
+      const copies = await listSafetyCopies(this.vaultKey());
+      new SafetyCopyModal(this.app, copies, (copy: SafetyCopy) => void this.importText(copy.text, `the copy from ${stamp(new Date(copy.savedAt))}`)).open();
+    } catch (error) {
+      notice(`Allotr could not list the copies on this device: ${String(error)}`);
+    }
+  }
+
+  /** Writes the ledger as a JSON bundle to the vault root; returns its path. Only for what the user asked to be exported. */
+  async exportToVault(stem: string, announce = true): Promise<string | null> {
     try {
       const runtime = await this.getRuntime();
       const path = freePath(this.app, `${stem} ${stamp()}`);
       await this.app.vault.create(path, await exportBundle(runtime));
-      notice(`Allotr data saved to ${path}`);
+      if (announce) notice(`Allotr data saved to ${path}`);
       return path;
     } catch (error) {
       notice(`Allotr export failed: ${String(error)}`);
@@ -385,44 +471,74 @@ export default class AllotrPlugin extends Plugin {
       const size = await ledgerSize(runtime);
       if (size.accounts === 0 && size.entries === 0) await this.replaceWith(text, name, from);
       else
-        new ReplaceConfirmModal(this.app, size, () => {
-          void (async () => {
-            const backup = await this.exportToVault('Allotr backup');
-            if (backup !== null) await this.replaceWith(text, name, from);
-          })();
-        }).open();
+        new ReplaceConfirmModal(this.app, size, () => void this.replaceWith(text, name, from)).open();
     } catch (error) {
       notice(`Allotr import failed: ${String(error)}`);
     }
   }
 
-  /** Imports into a fresh database; only on success does it replace this device's data. */
-  private async replaceWith(text: string, name: string, from?: Snapshot): Promise<void> {
-    notice(`Importing ${name}…`, 4000);
-    const outcome = await importIntoFresh(text, (m) => console.warn('[allotr]', m));
-    if (!outcome.ok) {
-      notice(`Allotr import refused, nothing changed:\n${outcome.message}`, 20000);
-      return;
+  /**
+   * Imports into a fresh database; only on success does it replace this
+   * device's data, and only after a copy of that data is kept on the device
+   * (safety-copies.ts). `quiet` is for taking over another device's snapshot,
+   * which says nothing when it works. With `expect`, nothing is replaced if this
+   * device's data is no longer the one the caller judged ('changed').
+   */
+  private async replaceWith(
+    text: string,
+    name: string,
+    from?: Snapshot,
+    opts: { quiet?: boolean; expect?: string } = {},
+  ): Promise<'done' | 'refused' | 'changed' | 'busy'> {
+    if (this.replacing) {
+      if (opts.quiet !== true) notice('Allotr is already importing. Try again in a moment.');
+      return 'busy';
     }
-    const reopen = this.views.size > 0;
-    for (const view of [...this.views]) view.leaf.detach();
-    const old = await this.getRuntime();
-    await old.flush();
-    await this.backup.flushPending();
-    this.backup.detach();
-    await old.close();
-    this.runtime = null;
-    this.runtimePromise = null;
-    setApiTransport(undefined);
-    await indexedDbBlobStore(this.vaultKey()).save(outcome.bytes);
-    // Before the new runtime starts its start-up check: that snapshot is what this device now holds.
-    if (from !== undefined) this.backup.replacedBy(from);
-    const fresh = await this.getRuntime();
-    if (from !== undefined) this.backup.derivedHash(sha256Hex(await exportBundle(fresh)));
-    this.backup.hold(false);
-    this.backup.schedule();
-    notice(`Allotr import done: ${countsLine(outcome.counts)}`, 12000);
-    if (reopen) await this.openView();
+    this.replacing = true;
+    try {
+      console.info(`[allotr] importing ${name}`);
+      const outcome = await importIntoFresh(text, (m) => console.warn('[allotr]', m));
+      if (!outcome.ok) {
+        notice(`Allotr import refused, nothing changed:\n${outcome.message}`, 20000);
+        return 'refused';
+      }
+      const old = await this.getRuntime();
+      await old.flush();
+      await this.backup.flushPending();
+      // Last look before anything is discarded: the data being replaced is kept first.
+      const current = await exportBundle(old);
+      if (opts.expect !== undefined && sha256Hex(current) !== opts.expect) return 'changed';
+      const size = await ledgerSize(old);
+      if (size.accounts > 0 || size.entries > 0) {
+        try {
+          await saveSafetyCopy(this.vaultKey(), { reason: `before taking ${name}`, ...size, text: current });
+        } catch (error) {
+          notice(`Allotr import stopped, nothing changed: this device's data could not be kept as a copy first (${String(error)})`, 20000);
+          return 'refused';
+        }
+      }
+      const reopen = this.views.size > 0;
+      for (const view of [...this.views]) view.leaf.detach();
+      await old.flush();
+      this.backup.detach();
+      await old.close();
+      this.runtime = null;
+      this.runtimePromise = null;
+      setApiTransport(undefined);
+      await indexedDbBlobStore(this.vaultKey()).save(outcome.bytes);
+      // Before the new runtime starts its start-up check: that snapshot is what this device now holds.
+      if (from !== undefined) this.backup.replacedBy(from);
+      const fresh = await this.getRuntime();
+      if (from !== undefined) this.backup.derivedHash(sha256Hex(await exportBundle(fresh)));
+      this.backup.hold(false);
+      this.backup.schedule();
+      if (opts.quiet === true) console.info(`[allotr] took over ${name}: ${countsLine(outcome.counts)}`);
+      else notice(`Allotr import done: ${countsLine(outcome.counts)}`, 12000);
+      if (reopen) await this.openView();
+      return 'done';
+    } finally {
+      this.replacing = false;
+    }
   }
 
   async openView(): Promise<void> {
