@@ -114,7 +114,10 @@ export function Chart({
     xDomain ??
     domainOf(
       points.map((p) => p.x),
-      xTicks.map((t) => t.value),
+      [
+        ...xTicks.map((t) => t.value),
+        ...(reference ? [reference.from.x, reference.to.x] : []),
+      ],
     );
   const y =
     yDomain ??

@@ -239,3 +239,75 @@ export function formatLayout(layouts: readonly LayoutSnapshot[]): string[] {
   lines.push('');
   return lines;
 }
+
+/**
+ * Desktop: Obsidian's status bar floats over the bottom-right corner of the
+ * view. Publishes how much of the view's bottom edge it covers as
+ * `--allotr-statusbar-h` (height) and `--allotr-statusbar-w` (width) on the
+ * host; the embed CSS makes the app's own status line at least that tall and
+ * keeps its content left of the bar, so nothing important sits behind it.
+ */
+export function trackStatusBar(host: HTMLElement): () => void {
+  const doc = host.ownerDocument;
+  const win = doc.defaultView ?? window;
+  if (Platform.isMobile) return () => undefined;
+  let frame = 0;
+  let observed: Element | null = null;
+  const resizeObserver = new ResizeObserver(() => schedule());
+  resizeObserver.observe(host);
+
+  function measure(): void {
+    frame = 0;
+    const bar = doc.querySelector<HTMLElement>('.status-bar');
+    if (bar !== observed) {
+      if (observed !== null) resizeObserver.unobserve(observed);
+      observed = bar;
+      if (bar !== null) resizeObserver.observe(bar);
+    }
+    const view = host.getBoundingClientRect();
+    const rect = bar?.getBoundingClientRect();
+    let height = 0;
+    let width = 0;
+    if (rect !== undefined && rect.width > 0 && rect.height > 0 && win.getComputedStyle(bar as Element).display !== 'none') {
+      const overlapsX = rect.right > view.left && rect.left < view.right;
+      const overlapsY = rect.bottom > view.top && rect.top < view.bottom;
+      if (overlapsX && overlapsY) {
+        height = Math.ceil(Math.max(0, view.bottom - rect.top));
+        width = Math.ceil(Math.max(0, Math.min(rect.right, view.right) - Math.max(rect.left, view.left)));
+        // The bar's own right margin keeps it off the edge; cover that too.
+        width += Math.max(0, Math.ceil(view.right - rect.right));
+      }
+    }
+    host.style.setProperty('--allotr-statusbar-h', `${height}px`);
+    host.style.setProperty('--allotr-statusbar-w', `${width}px`);
+  }
+
+  function schedule(): void {
+    if (frame !== 0) return;
+    frame = win.requestAnimationFrame(measure);
+  }
+
+  // Its width follows the open file (backlinks, word count), so watch the text.
+  const mutationObserver = new MutationObserver(schedule);
+  const watch = () => {
+    mutationObserver.disconnect();
+    const bar = doc.querySelector('.status-bar');
+    if (bar !== null) mutationObserver.observe(bar, { childList: true, subtree: true, characterData: true, attributes: true });
+    schedule();
+  };
+  const bodyObserver = new MutationObserver(watch);
+  bodyObserver.observe(doc.body, { childList: true, attributes: true, attributeFilter: ['class'] });
+  win.addEventListener('resize', schedule);
+  // Moving between files changes the bar without any signal on the view.
+  const timer = win.setInterval(schedule, 1000);
+  watch();
+
+  return () => {
+    if (frame !== 0) win.cancelAnimationFrame(frame);
+    win.clearInterval(timer);
+    resizeObserver.disconnect();
+    mutationObserver.disconnect();
+    bodyObserver.disconnect();
+    win.removeEventListener('resize', schedule);
+  };
+}
