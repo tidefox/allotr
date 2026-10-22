@@ -78,7 +78,13 @@ describe('shipped palette themes', () => {
 
   it('credits every third-party family', () => {
     for (const family of THEME_FAMILIES) {
-      const ours = ['allotr-classic', 'high-contrast', 'paper', 'harbour'];
+      const ours = [
+        'allotr-classic',
+        'high-contrast',
+        'paper',
+        'harbour',
+        'neutral',
+      ];
       if (ours.includes(family.id)) expect(family.credit).toBeUndefined();
       else expect(family.credit, family.id).toBeDefined();
     }

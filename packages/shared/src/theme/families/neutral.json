@@ -1,0 +1,122 @@
+[
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Neutral Light",
+    "family": "neutral",
+    "scheme": "light",
+    "palette": {
+      "neutrals": {
+        "mantle": "#ececec",
+        "base": "#f5f5f5",
+        "surface0": "#e8e8e8",
+        "surface1": "#dcdcdc",
+        "surface2": "#cfcfcf",
+        "overlay0": "#a8a8a8",
+        "overlay1": "#8a8a8a",
+        "subtext0": "#5c5c5c",
+        "text": "#1f1f1f"
+      },
+      "accents": {
+        "red": "#c4423f",
+        "orange": "#b8601a",
+        "yellow": "#8f6b00",
+        "green": "#3b7d4a",
+        "cyan": "#1f7f8a",
+        "blue": "#3569b5",
+        "purple": "#7a52b3",
+        "pink": "#b8467f"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "blue": "blue",
+        "purple": "purple",
+        "pink": "pink"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Neutral Dark",
+    "family": "neutral",
+    "scheme": "dark",
+    "palette": {
+      "neutrals": {
+        "mantle": "#161616",
+        "base": "#1c1c1c",
+        "surface0": "#262626",
+        "surface1": "#303030",
+        "surface2": "#3a3a3a",
+        "overlay0": "#5a5a5a",
+        "overlay1": "#7a7a7a",
+        "subtext0": "#b0b0b0",
+        "text": "#e6e6e6"
+      },
+      "accents": {
+        "red": "#e06c6c",
+        "orange": "#e0955a",
+        "yellow": "#d6b85a",
+        "green": "#7fbf8a",
+        "cyan": "#5fb8c4",
+        "blue": "#6c9be0",
+        "purple": "#a98be0",
+        "pink": "#de7fb0"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "blue": "blue",
+        "purple": "purple",
+        "pink": "pink"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Neutral Black",
+    "family": "neutral",
+    "scheme": "dark",
+    "palette": {
+      "neutrals": {
+        "mantle": "#000000",
+        "base": "#000000",
+        "surface0": "#121212",
+        "surface1": "#1c1c1c",
+        "surface2": "#262626",
+        "overlay0": "#555555",
+        "overlay1": "#777777",
+        "subtext0": "#b0b0b0",
+        "text": "#e8e8e8"
+      },
+      "accents": {
+        "red": "#e06c6c",
+        "orange": "#e0955a",
+        "yellow": "#d6b85a",
+        "green": "#7fbf8a",
+        "cyan": "#5fb8c4",
+        "blue": "#6c9be0",
+        "purple": "#a98be0",
+        "pink": "#de7fb0"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "blue": "blue",
+        "purple": "purple",
+        "pink": "pink"
+      }
+    }
+  }
+]
