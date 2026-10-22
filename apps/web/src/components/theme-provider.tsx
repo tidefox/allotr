@@ -1,5 +1,6 @@
 import {
   DEFAULT_APPEARANCE,
+  type Accent,
   type Appearance,
   type AppearanceBody,
   type CustomThemeView,
@@ -22,6 +23,7 @@ import {
   saveAppearance,
   themesQuery,
 } from '@/lib/appearance.ts';
+import { readPref, writePref } from '@/lib/device-prefs.ts';
 import { useEmbed } from '@/lib/embed.tsx';
 import { sessionQuery } from '@/lib/session.ts';
 import {
@@ -43,6 +45,12 @@ import {
 type ThemeState = Readonly<{
   mode: ThemeMode;
   setMode: (mode: ThemeMode) => void;
+  /**
+   * The accent picked on this device: `auto`, a hue of the palette or a
+   * hex. A theme that sets its own `primary` keeps it.
+   */
+  accent: Accent;
+  setAccent: (accent: Accent) => void;
   /** The account's settings; the defaults while signed out or loading. */
   appearance: Appearance;
   /** Picks the theme for a scheme; ignored while signed out. */
@@ -74,6 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [deviceMode, setDeviceMode] = useState(() =>
     readCachedMode(deviceStorage()),
   );
+  const [accent, setAccentState] = useState<Accent>(() => readPref('accent'));
   const [deviceRoles] = useState(() => readCachedRoles(deviceStorage()));
   const { data: session } = useQuery(sessionQuery);
   const userId = session?.user.id;
@@ -94,9 +103,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const roles = useMemo(
     () =>
       signedIn && stored && customThemes
-        ? slotRoles(stored, customPalettes)
+        ? slotRoles(stored, customPalettes, accent)
         : deviceRoles,
-    [signedIn, stored, customThemes, customPalettes, deviceRoles],
+    [signedIn, stored, customThemes, customPalettes, accent, deviceRoles],
   );
   // The user whose last save failed, so the message goes with the account.
   const [failedFor, setFailedFor] = useState<string | null>(null);
@@ -166,11 +175,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     save({ mode: next });
   }
 
+  function setAccent(next: Accent) {
+    writePref('accent', next);
+    setAccentState(next);
+  }
+
   return (
     <ThemeContext
       value={{
         mode,
         setMode,
+        accent,
+        setAccent,
         appearance,
         setSlot,
         setSlots,

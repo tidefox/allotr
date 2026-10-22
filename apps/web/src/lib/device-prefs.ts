@@ -1,3 +1,4 @@
+import { accentSchema } from '@allotr/shared';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useEmbed } from './embed.tsx';
@@ -29,6 +30,11 @@ export const DEVICE_PREFS = {
     key: 'allotr.density',
     schema: z.enum(['comfortable', 'compact']),
     fallback: 'compact',
+  },
+  accent: {
+    key: 'allotr.accent',
+    schema: accentSchema,
+    fallback: 'auto',
   },
   hints: {
     key: 'allotr.hints',

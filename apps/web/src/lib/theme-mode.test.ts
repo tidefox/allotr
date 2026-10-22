@@ -114,6 +114,21 @@ describe('slotRoles', () => {
     expect(mine.resolved.roles.canvas).toBe(mocha.palette.neutrals.crust);
   });
 
+  it('paints the default slots too once an accent is picked', () => {
+    const roles = slotRoles(DEFAULT_APPEARANCE, [], 'red');
+    expect(Object.keys(roles)).toEqual(['light', 'dark']);
+  });
+
+  it('applies an accent to a palette without its own', () => {
+    const nord = findPaletteTheme('nord', []);
+    const roles = slotRoles(
+      { ...DEFAULT_APPEARANCE, dark: 'nord' },
+      [],
+      'blue',
+    );
+    expect(roles.dark?.primary).not.toBe(nord?.resolved.roles.primary);
+  });
+
   it('reads the earlier built-in ids as Allotr Classic', () => {
     const roles = slotRoles({ ...DEFAULT_APPEARANCE, light: 'light' }, []);
     expect(roles.light?.canvas).toBe('#f3f5f2');
