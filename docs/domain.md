@@ -649,7 +649,8 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   their last day), overridable at any time. From payday
   on, until a paycheck arrives, the cycle extends day by day; the day after
   payday it shows "payday overdue".
-- A paycheck up to three days before payday opens the next cycle early; one
+- A paycheck up to three days before payday opens the next cycle early, and
+  that cycle runs to the payday after the one it came early for; one
   earlier in the cycle adds to it. Undoing a paycheck merges its cycle back.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.

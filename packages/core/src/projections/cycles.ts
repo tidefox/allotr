@@ -64,10 +64,13 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
       date >= addDays(open.payday, -EARLY_PAYCHECK_DAYS)
     ) {
       cycles.push({ ...open, closedOn: date });
+      // An early paycheck is the one due on payday, so the new cycle runs
+      // to the payday after that, not to the payday it came early for.
+      const after = date > open.payday ? date : open.payday;
       open = {
         openedOn: date,
         openedBy: paycheck.id,
-        payday: nextPayday(paydayRule, paydayDay, date),
+        payday: nextPayday(paydayRule, paydayDay, after),
         closedOn: null,
       };
     }

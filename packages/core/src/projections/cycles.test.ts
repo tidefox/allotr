@@ -88,7 +88,25 @@ describe('cyclesOf', () => {
     expect(cycles[1]).toMatchObject({
       openedOn: '2026-03-29',
       openedBy: early.id,
-      payday: '2026-04-01',
+      payday: '2026-05-01',
+    });
+  });
+
+  it('runs a cycle opened the day before payday to the following payday', () => {
+    const ledger = [paycheck('2026-03-01', 150000), paycheck('2026-03-31', 1)];
+    const cycles = cyclesOf(viewFrom('2026-03-01', ledger), day('2026-03-31'));
+    expect(cycles[1]).toMatchObject({
+      openedOn: '2026-03-31',
+      payday: '2026-05-01',
+    });
+  });
+
+  it('predicts the payday from a late paycheck', () => {
+    const ledger = [paycheck('2026-03-01', 150000), paycheck('2026-04-03', 1)];
+    const cycles = cyclesOf(viewFrom('2026-03-01', ledger), day('2026-04-03'));
+    expect(cycles[1]).toMatchObject({
+      openedOn: '2026-04-03',
+      payday: '2026-05-01',
     });
   });
 
