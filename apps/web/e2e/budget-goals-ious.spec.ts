@@ -140,8 +140,17 @@ test('the payday plan and weekly review open as sheets', async ({
     })
     .toBe(true);
   await page.goto('/');
-  await page
-    .getByRole('region', { name: t('dashboardTiles.needsAttention.title') })
+  const attention = page.getByRole('region', {
+    name: t('dashboardTiles.needsAttention.title'),
+  });
+  // On a phone the tile starts folded: open it by its toggle.
+  const toggle = attention.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.toggle'),
+  });
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click();
+  }
+  await attention
     .locator('.row-grid')
     .filter({ hasText: t('dashboardTiles.needsAttention.tagReview') })
     .getByRole('button', {

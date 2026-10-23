@@ -24,9 +24,10 @@ async function apiSignIn(page: Page, origin: string) {
   });
 }
 
+// "Needs attention" is left out: it only shows while there is something to
+// attend to (its own tests below).
 const titles = [
   'thisCycle',
-  'needsAttention',
   'todaysEntries',
   'allocation',
   'budgets',
@@ -220,11 +221,7 @@ test('a pool is switched in and out of the daily number by keyboard', async ({
   await expectAccessible(page);
 });
 
-test('every unread reminder is marked read at once, by keyboard', async ({
-  page,
-  baseURL,
-}) => {
-  await apiSignIn(page, baseURL ?? '');
+async function waitForReminder(page: Page) {
   // The scheduler records the weekly review within a second or two.
   await expect
     .poll(async () => {
@@ -232,11 +229,71 @@ test('every unread reminder is marked read at once, by keyboard', async ({
       return ((await response.json()) as { unread: number }).unread;
     })
     .toBeGreaterThan(0);
+}
+
+test('needs attention folds by keyboard and the choice is kept', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await waitForReminder(page);
 
   await page.goto('/');
   const tile = page.getByRole('region', {
     name: t('dashboardTiles.needsAttention.title'),
   });
+  const toggle = tile.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.toggle'),
+  });
+  const markAll = tile.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.markAllRead'),
+  });
+  // Folded under 600 px of frame, open from there, until a choice is made.
+  const phone = (page.viewportSize()?.width ?? 0) < 600;
+  await expect(toggle).toHaveAttribute('aria-expanded', String(!phone));
+  await expect(markAll).toBeVisible({ visible: !phone });
+  await expectAccessible(page);
+
+  // Folded, only the title bar stays: the count, the tag and the item.
+  await toggle.focus();
+  if (!phone) await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(markAll).toBeHidden();
+  await expect(
+    tile.getByText(new RegExp(t('dashboardTiles.needsAttention.tagReview'))),
+  ).toBeVisible();
+  await expectAccessible(page);
+
+  // Open again, then the choice survives a reload.
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(markAll).toBeVisible();
+  await page.reload();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(markAll).toBeVisible();
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await page.reload();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('every unread reminder is marked read at once, by keyboard', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL ?? '');
+  await waitForReminder(page);
+
+  await page.goto('/');
+  const tile = page.getByRole('region', {
+    name: t('dashboardTiles.needsAttention.title'),
+  });
+  const toggle = tile.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.toggle'),
+  });
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click();
+  }
   const markAll = tile.getByRole('button', {
     name: t('dashboardTiles.needsAttention.markAllRead'),
   });
@@ -248,5 +305,7 @@ test('every unread reminder is marked read at once, by keyboard', async ({
   await expect(markAll).toBeHidden();
   const after = await page.request.get('/v1/reminders');
   expect(((await after.json()) as { unread: number }).unread).toBe(0);
+  // With nothing left to attend to the tile is gone, not an empty state.
+  await expect(tile).toHaveCount(0);
   await expectAccessible(page);
 });

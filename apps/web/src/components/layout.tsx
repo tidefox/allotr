@@ -153,6 +153,8 @@ export type TileProps = {
   rows?: 1 | 2;
   className?: string;
   bodyClassName?: string;
+  /** Only the title bar shows; the body is not rendered. */
+  folded?: boolean;
   children?: ReactNode;
 };
 
@@ -167,6 +169,7 @@ export function Tile({
   rows = 1,
   className,
   bodyClassName,
+  folded = false,
   children,
 }: TileProps) {
   const id = useId();
@@ -187,9 +190,11 @@ export function Tile({
         actions={actions}
         primary={primary}
       />
-      <div className={cn('flex-1 px-3 pt-2 pb-2.5', bodyClassName)}>
-        {children}
-      </div>
+      {folded ? null : (
+        <div className={cn('flex-1 px-3 pt-2 pb-2.5', bodyClassName)}>
+          {children}
+        </div>
+      )}
     </section>
   );
 }

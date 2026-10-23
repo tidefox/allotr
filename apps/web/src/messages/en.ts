@@ -333,8 +333,8 @@ export const en = {
     },
     needsAttention: {
       title: 'needs attention',
-      empty: 'Nothing needs you right now.',
-      emptyHint: 'Overdue bills, IOUs and reviews show up here.',
+      toggle: 'Items needing attention',
+      folded: '{count} · {tag} · {text}',
       tagPayday: 'payday',
       tagToday: 'today',
       tagLate: '{days}d late',
