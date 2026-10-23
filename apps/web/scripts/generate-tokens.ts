@@ -8,6 +8,7 @@ import {
 } from '@allotr/shared';
 import {
   EASE_EXIT,
+  EASE_SHEET,
   FADE_MS,
   linearEasing,
   SPRING_TOKENS,
@@ -57,6 +58,8 @@ export function tokensCss(): string {
     }),
     `  --ease-exit: ${EASE_EXIT.easing};`,
     `  --dur-exit: ${String(EASE_EXIT.ms)}ms;`,
+    `  --ease-sheet: ${EASE_SHEET.easing};`,
+    `  --dur-sheet: ${String(EASE_SHEET.ms)}ms;`,
     `  --dur-fade: ${String(FADE_MS)}ms;`,
     '}',
     '',
@@ -65,6 +68,7 @@ export function tokensCss(): string {
     "  :root:not([data-motion='full']) {",
     ...durations.map((line) => `  ${line}`),
     '    --dur-exit: 0ms;',
+    '    --dur-sheet: 0ms;',
     '  }',
     '}',
     '',
@@ -72,6 +76,7 @@ export function tokensCss(): string {
     ":root[data-motion='off'] {",
     ...durations,
     '  --dur-exit: 0ms;',
+    '  --dur-sheet: 0ms;',
     '}',
     '',
     ":root[data-motion='off'] {",

@@ -20,6 +20,11 @@ export const SPRING_TOKENS = Object.keys(SPRINGS) as SpringToken[];
 
 /** Exits and dismissals: quick, accelerating away. */
 export const EASE_EXIT = { easing: 'cubic-bezier(0.3, 0, 1, 1)', ms: 200 };
+/**
+ * Sheets: the slide and the dim behind it share one ease-in-out curve and
+ * duration, on the way in and on the way out, so they read as one move.
+ */
+export const EASE_SHEET = { easing: 'cubic-bezier(0.65, 0, 0.35, 1)', ms: 300 };
 /** The crossfade that stands in for motion when motion is reduced. */
 export const FADE_MS = 120;
 

@@ -73,7 +73,11 @@ family file: a blue `primary` and `ring`, `base` text on the accent, yellow
 default role map.
 
 Do not use translucency (`opacity` or alpha) for surfaces. Use opacity only
-on an item while it is being dragged.
+on an item while it is being dragged. The one exception that looks like
+translucency is the dim behind a sheet: a `backdrop-filter: brightness()` on
+the sheet's overlay (0.5 on dark themes, 0.65 on light ones). It is a filter
+on what is behind, not a surface with an alpha, so no surface or text colour
+changes.
 
 ### 2.2 Type
 
@@ -232,7 +236,7 @@ column setting, 4 from 1500.
 | **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative` and `positive` colour the label and border; muted text has an `outline` border; `warning` colours the border and keeps a `text` label. |
 | **Chip** | A filter chip: a muted kind, the value and a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
-| **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
+| **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. The page behind is dimmed (§2.1). The panel slides and the dim fades on the same ease-in-out curve and duration (`--ease-sheet` `cubic-bezier(0.65, 0, 0.35, 1)`, `--dur-sheet` 300 ms), on the way in and on the way out. Clicking the dimmed area closes it. |
 | **Bar** | Exact width on a `card` track, filled `primary` or a category's series colour. A 1 px `text` tick at even pace (days elapsed ÷ period length) reaching 3 px past the track above and below. Over budget fills `negative`. |
 | **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
 | **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
@@ -274,8 +278,9 @@ column setting, 4 from 1500.
   blank tile.
 - **Focus** is a 2 px `ring` inset outline on every interactive element.
 - **Motion** (ADR 0028): instant tab switches. Press and toggle feedback and
-  sheet or menu entry on `snappy`. Reduced motion turns these into short
-  crossfades or nothing.
+  menu entry on `snappy`. Sheets slide and dim on `--ease-sheet` /
+  `--dur-sheet`, in and out. Reduced motion turns these into short
+  crossfades or nothing (`--dur-sheet` becomes 0).
 - **Keyboard map.** `1`–`5` destinations (in tab order), `[` `]` sub-tabs,
   `/` command line, `,` Settings, `f` filter (Transactions), `Esc` closes.
   Menus use arrow keys, Enter, → / ←.

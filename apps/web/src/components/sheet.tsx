@@ -5,8 +5,12 @@ import { cn } from '@/lib/utils';
 
 /**
  * A bottom sheet on `chrome` with a 2 px `primary` top edge, up to 84 % of
- * the height (docs/ui.md §4). The scrim is the page itself: no alpha, so
- * the overlay only dims nothing and relies on the sheet's edge.
+ * the height (docs/ui.md §4). The page behind is dimmed by a
+ * `backdrop-filter: brightness()` on the overlay (docs/ui.md §2.1): a filter
+ * on what is behind, never a translucent surface. The slide and the dim
+ * share one ease-in-out token pair (`--ease-sheet`, `--dur-sheet`) on enter
+ * and on exit; React Aria keeps the overlay mounted while `data-exiting`
+ * animations run.
  */
 export function Sheet({
   isOpen,
@@ -28,13 +32,13 @@ export function Sheet({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       isDismissable
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="sheet-overlay fixed inset-0 z-50 flex items-end justify-center"
     >
-      <Modal className="w-full max-w-[34rem]">
+      <Modal className="sheet-panel w-full max-w-[34rem]">
         <Dialog
           aria-label={title ?? 'Sheet'}
           className={cn(
-            'enter-sheet flex max-h-[84dvh] flex-col border-t-2 border-t-primary bg-chrome text-text outline-none',
+            'flex max-h-[84dvh] flex-col border-t-2 border-t-primary bg-chrome text-text outline-none',
             className,
           )}
         >
