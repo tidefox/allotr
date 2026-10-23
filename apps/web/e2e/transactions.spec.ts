@@ -174,6 +174,8 @@ test('search finds a note, and a selected row is kept in the URL', async ({
   await expect(entries.getByText('Cinema night')).toBeVisible();
   await expect(page).toHaveURL(/q=cinema/);
 
+  // From 1000 px the first entry is open already (the address was replaced).
+  const before = page.url();
   await entries
     .getByRole('button', { name: /^(?!Drag).*Cinema night/ })
     .click();
@@ -181,11 +183,12 @@ test('search finds a note, and a selected row is kept in the URL', async ({
   await expect(
     entries.getByRole('button', { name: /^(?!Drag).*Cinema night/ }),
   ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).not.toHaveURL(before);
   await expectAccessible(page);
 
   // Back leaves the selection first, then the search.
   await page.goBack();
-  await expect(page).not.toHaveURL(/entry=/);
+  await expect(page).toHaveURL(before);
 });
 
 test('moving within a day is off while a filter hides entries', async ({
@@ -352,4 +355,123 @@ test('a bill payment carries a bill tag, and a split shows under each category',
     ).toBeVisible();
   }
   await expectAccessible(page);
+});
+
+// From 1000 px the list and its detail share the content height: the first
+// entry is open, and only the list body scrolls. Below it nothing selects.
+test('the first entry opens, and the list scrolls and loads alone', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await apiSignIn(page, origin);
+  const wide = (page.viewportSize()?.width ?? 0) >= 1000;
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string }[];
+  };
+  const everyday = accounts.accounts.find((a) => a.name === 'Everyday');
+  const today = (await (await page.request.get('/v1/today')).json()) as {
+    available: { currency: string };
+  };
+  const category = await post(page, origin, '/v1/categories', {
+    name: 'Bulk buys',
+    kind: 'expense',
+  });
+  // More than one page of 50, so the end of the list loads another.
+  for (let n = 1; n <= 60; n += 1) {
+    await post(page, origin, '/v1/transactions', {
+      kind: 'expense',
+      accountId: everyday?.id,
+      amount: { amountMinor: 100 + n, currency: today.available.currency },
+      categoryId: category.id,
+      note: `Bulk ${String(n)}`,
+    });
+  }
+
+  // Arrive by a link inside the app, so Back can show whether the first
+  // entry replaced the address or added one.
+  if (wide) {
+    await page.goto('/accounts');
+    await page
+      .getByRole('link', { name: t('nav.transactions') })
+      .first()
+      .click();
+  } else {
+    await page.goto('/transactions');
+  }
+  const scroller = page.getByRole('region', {
+    name: t('transactions.list.scroll'),
+  });
+  if (!wide) {
+    // Below 1000 px a selection opens a sheet, so nothing is selected.
+    await expect(list(page)).toBeVisible();
+    await expect(page).not.toHaveURL(/entry=/);
+    await expect(scroller).toHaveCount(0);
+    return;
+  }
+  await expect(page).toHaveURL(/entry=/);
+  const detail = page.getByRole('region', {
+    name: t('transactionDetail.title'),
+    exact: true,
+  });
+  await expect(detail).toBeVisible();
+  const content = page.getByRole('region', { name: t('shell.content') });
+  const overflow = (region: typeof content) =>
+    region.evaluate((el) => el.scrollHeight - el.clientHeight);
+  // The page has nothing to scroll; the list does.
+  expect(await overflow(content)).toBeLessThanOrEqual(0);
+  await expect(scroller).toBeVisible();
+  expect(await overflow(scroller)).toBeGreaterThan(0);
+
+  const listTitle = list(page).getByRole('heading', {
+    name: t('transactions.list.title'),
+  });
+  const titleBefore = await listTitle.boundingBox();
+  const detailBefore = await detail.boundingBox();
+  const rows = scroller.getByText(/^Bulk \d+$/);
+  const loaded = await rows.count();
+
+  // A day header stays at the top of the list while its rows scroll past.
+  await scroller.evaluate((el) => {
+    el.scrollTop = 600;
+  });
+  const top = (await scroller.boundingBox())?.y ?? 0;
+  const stuck = await scroller
+    .getByRole('heading', { level: 3 })
+    .evaluateAll(
+      (els, edge) =>
+        els.filter((el) => Math.abs(el.getBoundingClientRect().y - edge) < 2)
+          .length,
+      top,
+    );
+  expect(stuck).toBe(1);
+
+  // Keyboard: focus the list region and page down to the end.
+  await scroller.focus();
+  await page.keyboard.press('End');
+  await expect
+    .poll(() => scroller.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  // The end of the list loads the next page.
+  await expect.poll(() => rows.count()).toBeGreaterThan(loaded);
+  expect(await rows.count()).toBeLessThanOrEqual(60);
+  // The page, the list title and the detail did not move.
+  expect(await overflow(content)).toBeLessThanOrEqual(0);
+  expect(await listTitle.boundingBox()).toEqual(titleBefore);
+  expect(await detail.boundingBox()).toEqual(detailBefore);
+  await expectAccessible(page);
+
+  // Back skips the replaced address and returns to the screen before it.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/accounts/);
+
+  // An entry far down the list opens scrolled into view.
+  const first = (await (
+    await page.request.get('/v1/transactions?limit=50&undone=hide')
+  ).json()) as { transactions: { id: string }[] };
+  const far = first.transactions[40];
+  await page.goto(`/transactions?entry=${far?.id ?? ''}`);
+  const open = scroller.locator('[data-selected]').first();
+  await expect(open).toBeInViewport();
+  expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });

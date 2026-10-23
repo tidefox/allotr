@@ -1,6 +1,7 @@
 // The Transactions detail pane and its sheets (docs/ui.md §6). Kept in its
 // own file and spread into `en` so the list side can grow its own block.
 export const transactionDetail = {
+  scroll: 'Entry detail',
   title: 'entry',
   failed: 'This entry could not be loaded.',
   retry: 'retry',

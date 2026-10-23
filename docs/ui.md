@@ -225,7 +225,7 @@ column setting, 4 from 1500.
 | Component | Spec |
 |---|---|
 | **Tile** (`pane`) | `canvas` background. A title bar on `chrome`: a muted icon, the title (semibold) and a muted subtitle on one truncated line, actions on the right. The body starts 8 px below it and is padded 0 12 10. Focused or primary tiles get a 3 px `primary` inset on the title bar and a `primary` title. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. A tile spans 1 or 2 columns, `w3` (3 columns from 1500 px, the full width below) or the full width, and 1 or 2 rows (`h2`, from two columns). |
-| **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000), the list alone below; `even` shares the width 1.6 : 1 from 1000 and stacks both below. |
+| **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000), the list alone below; `even` shares the width 1.6 : 1 from 1000 and stacks both below. `fill` (Accounts, Transactions, IOUs) makes the pair fill the content height from 1000 px, and a tile with `scroll` keeps its title bar fixed while its body scrolls in an overlay scrollbar (a focusable, named region); below 1000 px both are inert and the page scrolls. |
 | **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
 | **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`. |
 | **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
@@ -264,6 +264,23 @@ column setting, 4 from 1500.
   then time.
 - **List + detail.** Selecting a row updates the detail pane (≥ 1000) or opens
   a sheet (< 1000). The selection is in the URL (`?entry=`, `?account=`).
+  - From 1000 px the first row is selected when nothing is: the first
+    account (not a pool header), the first entry of the first day, the first
+    person. The URL is replaced, so Back does not stop on the unselected
+    address. Below 1000 px nothing is selected for you, because a selection
+    opens a sheet.
+  - It happens once per list: the screen opening, or a new sub-tab, period,
+    sort or filter that leaves nothing selected. A selection that is cleared
+    afterwards stays cleared (there is no Esc to clear one; a deleted entry
+    leaves the "pick" placeholder), and a selection already in the URL, or
+    kept across a filter change, is never replaced.
+  - From 1000 px the screen fills the content height and the page does not
+    scroll. What sits above the pair (the account stats, the chip bar) stays
+    put. The list's title bar stays and only its body scrolls (day headers
+    stay sticky in it); the detail pane stays and, if it is taller than the
+    pane, only its body scrolls.
+  - A selection change (the first row, the keyboard, a link from another
+    screen) scrolls the open row into view in the list, nearest edge.
 - **Filters.** A filter menu with type (radio), category tree (checkbox, where
   a parent sets all its children) and accounts (checkbox). Active filters
   show as chips and in the button's count badge. Period, group by and sort
@@ -468,7 +485,7 @@ settings, so no ledger read is made that the server would refuse.
 | pools | Two columns from 720. One tile per pool (the pool's icon, else its kind's; `on-budget` / `off-budget`, the primary edge when it counts; `[rename]` opens a name sheet; `[style]` opens a sheet with the colour and icon pickers, Auto first; `[+ account]`): a `counts toward daily` checkbox and the balance, a "left of" bar in the pool's series colour with "X left of Y this cycle" for on-budget pools, and its accounts as tree rows (kind icon, name, sparkline, balance; a row opens the account) · a `new pool` tile with `[+ pool]` (name and spending or savings) · "how the daily number works" (full width): a short paragraph and the dashboard's formula line |
 | bills | Stacked full-width tiles: bills this cycle (the cycle's dates; timeline, then a summary line: set aside, paid, next with its `3d` tag; `[+ bill]`) · upcoming (count of bills; what is still set aside; rows of date, bill icon, name, account, amount, a `3d` / `today` / `2d late` tag) · paid this cycle (the paid total; the same rows with `✓ paid` and `[⋮]` › Show payment) · not due this cycle, when a bill has no date in it |
 | goals | One tile per goal (flag icon, `[⋮]` › Archive): the saved figure with "of $X · N%" (the server's `progressBp`, rounded down; the bar's width is the ratio of saved to target), a bar in the goal's series colour, where it is held and its date and the server's `monthlyNeeded` ("by apr 2027 · $136.00/mo" / "no date"), and the chart from today to the target (y from zero); an odd last goal fills the row at two columns. `[+ goal]` sits in the title strip, and in the empty state. The weekly review opens from its "needs attention" item; the payday plan from the budgets sub-tab |
-| ious | People (`[+ lend]` `[+ borrow]`): a summary line (owed to you, you owe, `net` signed from the server's `totals.net`), then tall rows with an icon, the name and a muted `owes you` / `you owe` / `even`, one status tag (`9d late`, the next due date, `settled`) and the server's per-person figure (`personOpen`; `N open` when IOUs run both ways) · person (from 1000 px; a sheet below): what they owe or you owe, then the history (each loan and its payments) with `[✓ repay]` `[due date]` `[write off]` `[delete entry]` per IOU; "no person selected" until one is picked |
+| ious | People (`[+ lend]` `[+ borrow]`): a summary line (owed to you, you owe, `net` signed from the server's `totals.net`), then tall rows with an icon, the name and a muted `owes you` / `you owe` / `even`, one status tag (`9d late`, the next due date, `settled`) and the server's per-person figure (`personOpen`; `N open` when IOUs run both ways) · person (from 1000 px; a sheet below): what they owe or you owe, then the history (each loan and its payments) with `[✓ repay]` `[due date]` `[write off]` `[delete entry]` per IOU; the first person is open from 1000 px, and pressing the open person keeps it open (below 1000 px it closes the sheet) |
 | cover order | Side by side 1.6 : 1 from 1000 px, stacked below. Cover order (primary edge): a short paragraph, then numbered rows (icon, name, what it has: free money, `set aside $X` for set-aside budgets, `$X left` otherwise) with `[↑]` `[↓]`; rows also drag · "what happens next": a paragraph and a try-it form (budget, account, amount) that previews where an overspend would take money from **(server preview: `/v1/budgets/cover-preview`)** |
 
 ### Reports `/reports/…`

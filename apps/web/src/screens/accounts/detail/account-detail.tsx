@@ -99,6 +99,7 @@ function DetailFrame({
       primary
       className="h-full"
       bodyClassName="flex flex-col"
+      scroll={t('accountDetail.scroll')}
     >
       {children}
     </Tile>

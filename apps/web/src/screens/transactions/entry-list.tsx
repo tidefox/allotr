@@ -11,6 +11,7 @@ import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { IconFilter3Line, IconMoneyDollarCircleLine } from '@/generated/icons';
+import { useRevealSelected } from '@/lib/auto-select';
 import { seriesNumber } from '@/lib/category-style';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
@@ -97,7 +98,7 @@ function EntryRow({
 }) {
   return (
     <Row
-      className="cv-row"
+      className="cv-row scroll-mt-10"
       columns={columns}
       selected={selected}
       onPress={() => {
@@ -160,7 +161,7 @@ function MovableDay({
           key={row.id}
           id={row.id}
           textValue={row.payee}
-          className="press relative block cursor-pointer outline-none data-[dragging]:bg-card data-[drop-target]:bg-card"
+          className="press relative block scroll-mt-10 cursor-pointer outline-none data-[dragging]:bg-card data-[drop-target]:bg-card"
         >
           <Button
             slot="drag"
@@ -252,6 +253,8 @@ export function EntryList({
   onMove: (move: Move) => void;
 }) {
   const sentinel = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useRevealSelected(root, selectedId);
   useEffect(() => {
     const el = sentinel.current;
     if (el === null || !hasMore || typeof IntersectionObserver === 'undefined')
@@ -267,7 +270,7 @@ export function EntryList({
 
   const empty = sections.every((s) => s.rows.length === 0);
   return (
-    <div>
+    <div ref={root}>
       {summary.length === 0 ? null : (
         <p className="flex flex-wrap gap-x-[1.125rem] gap-y-1 px-3 pt-0.5 pb-1.5 text-small text-text-muted">
           {summary.map((part) => {

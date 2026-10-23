@@ -23,10 +23,14 @@ async function signIn(page: Page, origin: string) {
   });
 }
 
+// From 1000 px the first account is open beside the list, with its own
+// actions of the same name: the list comes first in the page.
 function actionsOf(page: Page, name: string) {
-  return page.getByRole('button', {
-    name: t('accountsScreen.list.actionsOf', { name }),
-  });
+  return page
+    .getByRole('button', {
+      name: t('accountsScreen.list.actionsOf', { name }),
+    })
+    .first();
 }
 
 function rowOf(page: Page, name: string) {
@@ -407,4 +411,48 @@ test('+ account can add a credit account with a limit and a due day', async ({
   ).toBeVisible();
   await expect(page.getByText('$45.00')).toBeVisible();
   await expect(page.getByText(/travel rewards/)).toBeVisible();
+});
+
+// From 1000 px the first account is open beside the list, and the list
+// scrolls on its own; below it a selection opens a sheet, so none is made.
+test('the first account opens, and a selection is not put back when cleared', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  const wide = (page.viewportSize()?.width ?? 0) >= 1000;
+  await page.goto('/accounts');
+  await expect(page.getByText('Travel card').first()).toBeVisible();
+  if (!wide) {
+    await expect(page).not.toHaveURL(/account=/);
+    await expect(
+      page.getByRole('region', { name: t('accountsScreen.list.scroll') }),
+    ).toHaveCount(0);
+    return;
+  }
+  await expect(page).toHaveURL(/account=/);
+  const detail = page.getByRole('region', { name: t('accountDetail.scroll') });
+  await expect(detail).toBeVisible();
+  // The page has nothing to scroll: the list and the detail own it.
+  const overflow = await page
+    .getByRole('region', { name: t('shell.content') })
+    .evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await expectAccessible(page);
+
+  // Choosing another account by keyboard moves the selection.
+  const before = page.url();
+  const other = page
+    .getByRole('button', { name: 'Nest egg', exact: true })
+    .first();
+  await other.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).not.toHaveURL(before);
+  await expect(other).toHaveAttribute('aria-current', 'true');
+
+  // Esc does not clear a selection or pick one again: the address is stable.
+  const chosen = page.url();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  expect(page.url()).toBe(chosen);
 });

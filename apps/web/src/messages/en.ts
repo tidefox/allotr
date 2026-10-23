@@ -162,6 +162,7 @@ export const en = {
     },
     list: {
       title: 'entries',
+      scroll: 'Entry list',
       failed: 'Could not load entries.',
       retry: 'retry',
       empty: 'no entries yet',

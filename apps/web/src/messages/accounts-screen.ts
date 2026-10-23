@@ -39,6 +39,7 @@ export const accountsScreen = {
   },
   list: {
     title: 'accounts',
+    scroll: 'Account list',
     accounts: {
       one: '{count} account',
       other: '{count} accounts',

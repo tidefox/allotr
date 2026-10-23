@@ -60,10 +60,18 @@ export function Row({
     selected && '[&>.row-grid]:pl-[calc(0.75rem-3px)]',
     className,
   );
-  if (onPress === undefined) return <div className={classes}>{body}</div>;
+  // `data-selected` lets a list find the open row to scroll it into view.
+  const mark = selected || undefined;
+  if (onPress === undefined)
+    return (
+      <div className={classes} data-selected={mark}>
+        {body}
+      </div>
+    );
   return (
     <button
       type="button"
+      data-selected={mark}
       aria-pressed={selected}
       onClick={onPress}
       className={cn(classes, 'press')}

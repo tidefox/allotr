@@ -2,7 +2,8 @@ import type { ComponentType, ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { IconProps } from '@/generated/icons';
-import { FrameWidthContext } from './use-frame-width.ts';
+import { OverlayScrollbar } from './overlay-scrollbar.tsx';
+import { FrameWidthContext, useFrameWidth } from './use-frame-width.ts';
 
 // Tiles run edge to edge (docs/ui.md §4). Seams come from each tile's own
 // right and bottom 1 px border and the grid's top and left one, so adjacent
@@ -96,18 +97,26 @@ export function Stack({
  * A list and its detail side by side from 1000 px; the list alone below.
  * `even` (the locked design's `split even`) shares the width 1.6 : 1 and
  * keeps both, one above the other, below 1000 px.
+ *
+ * `fill` makes the pair fill the height its parent gives it from 1000 px
+ * (the parent needs a definite height, as the app's content region has),
+ * so the tiles inside scroll their own bodies (`Tile` `scroll`) and the
+ * page does not. Below 1000 px nothing changes: the list flows with the page.
  */
 export function Split({
   list,
   detail,
   even = false,
+  fill = false,
   className,
 }: {
   list: ReactNode;
   detail: ReactNode;
   even?: boolean;
+  fill?: boolean;
   className?: string;
 }) {
+  const pane = fill && 'wide:flex wide:min-h-0 wide:flex-col';
   return (
     <div
       className={cn(
@@ -115,11 +124,14 @@ export function Split({
         even
           ? 'wide:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
           : 'wide:grid-cols-[minmax(0,1fr)_25rem]',
+        fill && 'wide:h-full wide:min-h-0 wide:grid-rows-[minmax(0,1fr)]',
         className,
       )}
     >
-      <div className="min-w-0">{list}</div>
-      <div className={cn('min-w-0', !even && 'narrow:hidden')}>{detail}</div>
+      <div className={cn('min-w-0', pane)}>{list}</div>
+      <div className={cn('min-w-0', !even && 'narrow:hidden', pane)}>
+        {detail}
+      </div>
     </div>
   );
 }
@@ -155,6 +167,13 @@ export type TileProps = {
   bodyClassName?: string;
   /** Only the title bar shows; the body is not rendered. */
   folded?: boolean;
+  /**
+   * From 1000 px the body scrolls inside the tile, in an `OverlayScrollbar`
+   * with this accessible name, and the title bar stays put. The tile then
+   * needs a height from its parent (`Split` `fill`). Below 1000 px the body
+   * flows and the page scrolls.
+   */
+  scroll?: string;
   children?: ReactNode;
 };
 
@@ -170,14 +189,23 @@ export function Tile({
   className,
   bodyClassName,
   folded = false,
+  scroll,
   children,
 }: TileProps) {
   const id = useId();
+  const width = useFrameWidth();
+  const scrolls = scroll !== undefined && width >= 1000;
+  const body = (
+    <div className={cn('flex-1 px-3 pt-2 pb-2.5', bodyClassName)}>
+      {children}
+    </div>
+  );
   return (
     <section
       aria-labelledby={id}
       className={cn(
         'flex min-w-0 flex-col border-r border-b bg-canvas',
+        scrolls && 'min-h-0',
         tileSpanClass(span, rows),
         className,
       )}
@@ -190,10 +218,13 @@ export function Tile({
         actions={actions}
         primary={primary}
       />
-      {folded ? null : (
-        <div className={cn('flex-1 px-3 pt-2 pb-2.5', bodyClassName)}>
-          {children}
-        </div>
+      {folded ? null : scrolls ? (
+        <OverlayScrollbar label={scroll} className="flex-1">
+          {/* min-h-full lets a body that `grow`s fill a short pane. */}
+          <div className="flex min-h-full flex-col">{body}</div>
+        </OverlayScrollbar>
+      ) : (
+        body
       )}
     </section>
   );

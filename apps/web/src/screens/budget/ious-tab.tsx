@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Amount } from '@/components/amount';
 import { formatSigned } from '@/lib/format-money';
 import { SkeletonTile } from '@/components/bars';
@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/states';
 import { useFrameWidth } from '@/components/use-frame-width';
 import { IconAddLine, IconHandCoinLine } from '@/generated/icons';
 import { formatTerminalDate } from '@/features/today/format';
+import { useAutoSelectFirst, useRevealSelected } from '@/lib/auto-select';
 import { allIousQuery } from '@/lib/ious';
 import { t } from '@/messages/t';
 import { PersonDetail } from './iou-detail.tsx';
@@ -128,6 +129,21 @@ export function IousTab() {
   const person =
     selected === null ? undefined : people?.find((p) => p.key === selected);
 
+  // From 1000 px the first person is open by default; the choice is local
+  // state, so there is no address to replace. Clicking the open person
+  // closes the detail below 1000 px and keeps it open beside the list.
+  const select = useCallback((key: string) => {
+    setSelected(key);
+  }, []);
+  useAutoSelectFirst({
+    selected: selected ?? undefined,
+    first: people?.[0]?.key,
+    context: 'people',
+    select,
+  });
+  const listRoot = useRef<HTMLDivElement>(null);
+  useRevealSelected(listRoot, selected ?? undefined);
+
   let body;
   if (ious.isError) {
     body = (
@@ -172,16 +188,18 @@ export function IousTab() {
             },
           ]}
         />
-        {people.map((p) => (
-          <PersonRow
-            key={p.key}
-            person={p}
-            selected={p.key === selected}
-            onSelect={() => {
-              setSelected(p.key === selected ? null : p.key);
-            }}
-          />
-        ))}
+        <div ref={listRoot}>
+          {people.map((p) => (
+            <PersonRow
+              key={p.key}
+              person={p}
+              selected={p.key === selected}
+              onSelect={() => {
+                setSelected(wide || p.key !== selected ? p.key : null);
+              }}
+            />
+          ))}
+        </div>
       </>
     );
   }
@@ -194,13 +212,15 @@ export function IousTab() {
   return (
     <>
       <Split
+        fill
         className="min-h-full"
         list={
           <Tile
             title={t('budgetGoalsIous.ious.title')}
             icon={IconHandCoinLine}
-            className="h-full"
+            className="h-full wide:min-h-0 wide:flex-1"
             bodyClassName="px-0 pt-0 pb-0"
+            scroll={t('budgetGoalsIous.ious.scroll')}
             actions={
               <>
                 <BracketButton
@@ -233,7 +253,8 @@ export function IousTab() {
               title={person?.name ?? t('budgetGoalsIous.ious.detailTitle')}
               icon={IconHandCoinLine}
               primary={person !== undefined}
-              className="h-full"
+              className="h-full wide:min-h-0 wide:flex-1"
+              scroll={t('budgetGoalsIous.ious.detailScroll')}
             >
               {detail ?? (
                 <p className="font-sans text-text-muted">

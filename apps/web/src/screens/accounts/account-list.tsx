@@ -21,6 +21,7 @@ import {
   IconWallet3Line,
   type IconProps,
 } from '@/generated/icons';
+import { useRevealSelected } from '@/lib/auto-select';
 import { accountHistoryQuery } from '@/lib/ledger';
 import { formatMoney } from '@/lib/format-money';
 import { glyph } from '@/lib/pool-style';
@@ -345,6 +346,8 @@ export function AccountList({
   onAdd: () => void;
 }) {
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+  const root = useRef<HTMLDivElement>(null);
+  useRevealSelected(root, selectedId);
   const toggle = (id: string) => {
     setFolded((prev) => {
       const next = new Set(prev);
@@ -354,7 +357,7 @@ export function AccountList({
     });
   };
   return (
-    <div>
+    <div ref={root}>
       {groups.map((group) => {
         const open = !folded.has(group.id);
         const name = groupName(group);
