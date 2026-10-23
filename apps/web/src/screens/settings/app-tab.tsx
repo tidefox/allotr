@@ -5,6 +5,8 @@ import {
   THEME_MODES,
   type CustomThemeView,
   type PaletteTheme,
+  type ThemeMode,
+  type ThemeScheme,
 } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type SyntheticEvent } from 'react';
@@ -41,6 +43,7 @@ import {
   KvRow,
   Swatches,
 } from './app-parts.tsx';
+import { AccentRow } from './accent-row.tsx';
 import { NotificationsTile } from './notifications-tile.tsx';
 import { PlannedTag } from './setting-parts.tsx';
 import { useThemeImport } from './use-theme-import.ts';
@@ -55,6 +58,13 @@ function deviceStorage(): Storage | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** The scheme on screen: the mode, or the device's while on system. */
+function shownScheme(mode: ThemeMode): ThemeScheme {
+  if (mode !== 'system') return mode;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  return dark ? 'dark' : 'light';
 }
 
 function downloadTheme(theme: CustomThemeView) {
@@ -221,7 +231,8 @@ function PaletteTile({
   customThemes: readonly CustomThemeView[] | undefined;
   customPalettes: readonly PaletteTheme[];
 }) {
-  const { mode, setMode, appearance, setSlot, saveError } = useTheme();
+  const { mode, setMode, accent, setAccent, appearance, setSlot, saveError } =
+    useTheme();
   const session = useQuery(sessionQuery).data;
   const custom = customThemes ?? [];
   const full = custom.length >= CUSTOM_THEME_LIMIT;
@@ -284,6 +295,13 @@ function PaletteTile({
             />
           </KvRow>
         </KvList>
+        <AccentRow
+          accent={accent}
+          onChange={setAccent}
+          appearance={appearance}
+          customPalettes={customPalettes}
+          scheme={shownScheme(mode)}
+        />
       </div>
       <div role="group" aria-label={t('settingsApp.palette.list')}>
         {themes.map((theme) => (

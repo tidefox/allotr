@@ -25,7 +25,9 @@ async function signIn(page: Page, origin: string) {
 
 async function noSmallTargets(scope: Locator) {
   const small = await scope
-    .locator('a, button, [role=button], input:not([type=checkbox])')
+    .locator(
+      'a, button, [role=button], input:not([type=checkbox]):not([type=radio])',
+    )
     .evaluateAll((els) =>
       els
         .map((el) => el.getBoundingClientRect())
@@ -217,6 +219,55 @@ test('a theme file is imported into the editor, and a bad file says why', async 
   await expect(page).toHaveURL(/\/settings\/app$/);
   await expect(page.getByText('Imported Dusk', { exact: true })).toBeVisible();
   await noSmallTargets(page.locator('main'));
+  await expectAccessible(page);
+});
+
+test('an accent is picked, typed as hex, and kept on this device', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await signIn(page, origin);
+  await page.goto('/settings/app');
+  await page
+    .getByRole('radio', { name: t('settingsApp.palette.modes.dark') })
+    .click();
+  const primary = () =>
+    page.evaluate(() =>
+      document.documentElement.style.getPropertyValue('--primary'),
+    );
+  // The default palette sets its own accent, so the choice is shown but off.
+  await expect(
+    page.getByText(t('settingsApp.palette.accent.own')),
+  ).toBeVisible();
+
+  // Nord has none: the accent applies to it.
+  await page.getByRole('button', { name: 'Nord dark', exact: true }).click();
+  await expect(
+    page.getByText(t('settingsApp.palette.accent.hint')),
+  ).toBeVisible();
+  const before = await primary();
+  await page
+    .getByRole('radio', {
+      name: t('settingsApp.palette.accent.hue', {
+        hue: t('settingsApp.palette.accent.hues.blue'),
+      }),
+    })
+    .click({ force: true });
+  await expect.poll(primary).not.toBe(before);
+  const blue = await primary();
+
+  await page
+    .getByRole('textbox', { name: t('settingsApp.palette.accent.hex') })
+    .fill('#ff00aa');
+  await expect.poll(primary).not.toBe(blue);
+
+  // Painted again after a reload, before the app starts.
+  const custom = await primary();
+  await page.reload();
+  expect(await primary()).toBe(custom);
+  await noSmallTargets(page.locator('main'));
+  await noSidewaysScroll(page);
   await expectAccessible(page);
 });
 

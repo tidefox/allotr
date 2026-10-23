@@ -1,4 +1,5 @@
 import {
+  accentRoles,
   DEFAULT_PALETTE_THEME_ID,
   findPaletteTheme,
   hexColorSchema,
@@ -8,6 +9,7 @@ import {
   THEME_SCHEMES,
   themeModeSchema,
   toThemeFileV2,
+  type Accent,
   type Appearance,
   type CustomThemeView,
   type PaletteTheme,
@@ -81,16 +83,21 @@ const slotRolesSchema = z.object({
   dark: roleColorsSchema.optional(),
 });
 
-/** The role colours for each slot of the appearance. */
+/**
+ * The role colours for each slot of the appearance. A slot on its default
+ * theme has none unless an accent is picked: then the accent decides the
+ * colours of every slot, except where the theme sets its own `primary`.
+ */
 export function slotRoles(
   appearance: Appearance,
   custom: readonly PaletteTheme[],
+  accent: Accent = 'auto',
 ): SlotRoles {
   const roles: SlotRoles = {};
   for (const scheme of THEME_SCHEMES) {
     const theme = slotPaletteTheme(appearance[scheme], scheme, custom);
-    if (theme.id !== DEFAULT_PALETTE_THEME_ID[scheme])
-      roles[scheme] = theme.resolved.roles;
+    if (theme.id !== DEFAULT_PALETTE_THEME_ID[scheme] || accent !== 'auto')
+      roles[scheme] = accentRoles(theme, accent);
   }
   return roles;
 }

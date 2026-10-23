@@ -508,11 +508,20 @@ native controls.
 mockup's row (fold, icon, name with `N sub`, `budget $X` or `rolls up`,
 `[+ sub]`, `[⋮]`); income and transfer trees follow under their own heading
 with their own `[+ category]`. `app` is two columns: the palette list (a
+mode toggle, an accent picker, then a
 radio row and a swatch strip per palette, your own palettes with edit,
 download and delete, `[import]` and `[editor]` in the title) beside a stack of
 `tabs`, `top bar` and `layouts` tiles (planned, a one-line note) and
 `interface` (a `kv` list: density and motion as segmented toggles, key hints
 and shortcuts as checks), then notifications.
+
+The **accent** is a device preference: `theme` (the palette's own), one of
+the palette's eight hues as a swatch, or a typed `#rrggbb`. It moves
+`primary`, its container, the dashboard figure and the focus ring, and the
+resolver fits contrast as for any palette. A palette that sets its own
+`primary` (Catppuccin and the Allotr palettes) keeps it; the picker is then
+shown disabled with a note. The choice is cached with the role colours so
+`theme-init.js` paints it before first paint.
 
 ## 7. Category icon map
 

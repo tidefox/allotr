@@ -321,6 +321,8 @@ const FAMILY_NAMES: Readonly<Record<string, string>> = {
   dracula: 'Dracula',
   'tokyo-night': 'Tokyo Night',
   'rose-pine': 'Rosé Pine',
+  nightfox: 'Nightfox',
+  neutral: 'Neutral',
   'allotr-classic': 'Allotr Classic',
   'high-contrast': 'High contrast',
   paper: 'Paper',

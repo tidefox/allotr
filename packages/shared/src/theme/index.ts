@@ -41,6 +41,13 @@ export {
   type PartialPalette,
 } from './palette.ts';
 export {
+  accentRoles,
+  accentSchema,
+  DEFAULT_ACCENT,
+  themeSetsAccent,
+  type Accent,
+} from './accent.ts';
+export {
   DEFAULT_ROLE_MAP,
   ROLE_SPECS,
   roleEntrySchema,

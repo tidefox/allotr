@@ -1,6 +1,8 @@
 import catppuccin from './catppuccin.json' with { type: 'json' };
 import dracula from './dracula.json' with { type: 'json' };
 import gruvbox from './gruvbox.json' with { type: 'json' };
+import neutral from './neutral.json' with { type: 'json' };
+import nightfox from './nightfox.json' with { type: 'json' };
 import nord from './nord.json' with { type: 'json' };
 import rosePine from './rose-pine.json' with { type: 'json' };
 import solarized from './solarized.json' with { type: 'json' };
@@ -44,6 +46,13 @@ import tokyoNight from './tokyo-night.json' with { type: 'json' };
 //   base base, surface0 surface, surface1 overlay; both: overlay1 muted,
 //   subtext0 subtle, text text. Hues: red love, orange and yellow gold,
 //   cyan foam, blue pine, purple iris, pink rose; green is derived.
+// Nightfox (lua/nightfox/palette/<flavour>.lua): mantle bg0, base bg1,
+//   surface0–2 bg2–4, overlay1 comment, subtext0 fg2, text fg1; accents
+//   are the base shade of each named colour. Hue: purple magenta. Carbonfox
+//   computes its neutrals from bg #161616 and fg #f2f4f8 (HSV value shifts
+//   and a 0.4 blend for the comment); the results are written out here.
+// Neutral: ours, no upstream. Greys with no hue in the neutral ramp and
+//   muted accents, so colour appears only where it carries meaning.
 
 /** Family id → its theme files, in picker order. */
 export const FAMILY_FILES: Readonly<Record<string, readonly unknown[]>> = {
@@ -54,4 +63,6 @@ export const FAMILY_FILES: Readonly<Record<string, readonly unknown[]>> = {
   dracula,
   'tokyo-night': tokyoNight,
   'rose-pine': rosePine,
+  nightfox,
+  neutral,
 };
