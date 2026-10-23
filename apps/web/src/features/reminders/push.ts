@@ -2,6 +2,7 @@ import {
   pushSubscriptionBodySchema,
   type PushSubscriptionBody,
 } from '@allotr/shared';
+import { hasApiTransport } from '@/lib/embed.tsx';
 
 // Web Push in the browser (ADR 0024). Off until the user turns it on for
 // this device; nothing here runs before that.
@@ -44,6 +45,8 @@ export function pushSupport(env: {
 }
 
 export function currentSupport(): PushSupport {
+  // Embedded in a notes app the server runs in-process and has no push key.
+  if (hasApiTransport()) return { state: 'unsupported' };
   return pushSupport({
     hasWorker: 'serviceWorker' in navigator,
     hasPush: 'PushManager' in window,
