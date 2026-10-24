@@ -11,6 +11,7 @@ export function Bar({
   value,
   pace,
   over = false,
+  near = false,
   label,
   className,
   fillClassName,
@@ -20,6 +21,8 @@ export function Bar({
   pace?: number | undefined;
   /** Over budget fills with `negative`. */
   over?: boolean;
+  /** Nearly used up (see `isNearLimit`): fills with `warning`, a mark, not text. */
+  near?: boolean;
   label: string;
   className?: string;
   /** The fill: `primary` by default, or a series (a category's colour). */
@@ -38,7 +41,11 @@ export function Bar({
       <div
         className={cn(
           'h-full',
-          over ? 'bg-negative' : (fillClassName ?? 'bg-primary'),
+          over
+            ? 'bg-negative'
+            : near
+              ? 'bg-warning'
+              : (fillClassName ?? 'bg-primary'),
         )}
         style={{ width: percent(fraction) }}
       />

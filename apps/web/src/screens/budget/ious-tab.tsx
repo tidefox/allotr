@@ -82,7 +82,7 @@ function PersonRow({
           className="size-4 text-text-muted"
         />,
         <span key="name" className="font-sans">
-          {person.name}{' '}
+          <span data-name="">{person.name}</span>{' '}
           <span className="text-text-muted">{direction(person)}</span>
         </span>,
         <StatusTag key="tag" person={person} />,

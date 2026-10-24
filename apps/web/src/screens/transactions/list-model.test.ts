@@ -9,6 +9,7 @@ import {
   entryCategoryLabel,
   groupTotal,
   sections,
+  signTone,
   summaryParts,
   txRows,
 } from './list-model.ts';
@@ -198,6 +199,16 @@ describe('totals', () => {
   });
 });
 
+describe('signTone', () => {
+  it('reads the sign of a server figure', () => {
+    expect([signTone(5), signTone(-5), signTone(0)]).toEqual([
+      'positive',
+      'negative',
+      null,
+    ]);
+  });
+});
+
 describe('sections', () => {
   const base = {
     transactions: entries,
@@ -226,6 +237,23 @@ describe('sections', () => {
       'thu mar 12 · today',
       'wed mar 11',
     ]);
+  });
+
+  it('splits today from the date and tones each day by its net', () => {
+    const days = sections({ ...base, group: 'day', today: '2026-03-12' });
+    expect(days.map((d) => [d.heading, d.today, d.totalTone])).toEqual([
+      ['thu mar 12', true, 'negative'],
+      ['wed mar 11', false, 'negative'],
+    ]);
+    const income = sections({
+      ...base,
+      group: 'day',
+      dayTotals: [
+        { date: '2026-03-12', net: usd(900), missingRates: [] },
+        { date: '2026-03-11', net: usd(0), missingRates: [] },
+      ] as unknown as TransactionListView['dayTotals'],
+    });
+    expect(income.map((d) => d.totalTone)).toEqual(['positive', null]);
   });
 
   it('groups by category with the server group figures', () => {

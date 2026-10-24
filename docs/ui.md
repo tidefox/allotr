@@ -45,14 +45,15 @@ The interface uses only existing roles, so the theme format does not change.
 |---|---|
 | Tile and content background | `canvas` |
 | Title bars, top bar, sidebar, status line, menus, sheets | `chrome` |
-| Hover, selected row, bar tracks, raised controls | `card` |
+| Hover, bar tracks, raised controls | `card` |
+| Selected row | `card-raised` (`card` is the seam colour in the dark themes) |
 | Seams between tiles and rows (1 px) | `outline-variant` |
 | Strong lines: axes, chart borders, control borders, decorative glyphs (tree lines, `[ ]` brackets) | `outline` |
 | Primary text | `text` |
 | Secondary text, labels, axis labels, units | `text-muted` |
 | Accent: selection fill, links, bracket-button labels, focus ring, primary action | `primary` (+ `on-primary` for text on it), `ring` |
 | Money in / out / transfer | `positive` / `negative` / `text` (text); `success` / `danger` / `info` (fills and marks) |
-| Warnings, bills set aside (borders, marks and fills, never text) | `warning` |
+| Warnings, bills set aside (borders, marks and fills, never text); a budget bar at 90 % used or more | `warning` |
 | Left-today edge and figure | `positive` (`hero-tight` / `hero-over` when tight or over) |
 | Category, pool and chart series colours | `series-1` … `series-8` |
 | Calendar heat | `negative` mixed into `canvas` at 0–55 % (an opaque mix, never transparency) |
@@ -161,6 +162,9 @@ column setting, 4 from 1500.
     bar. Its figure and left edge are `positive`, and it sits on `canvas`.
   - **On-budget total:** "left of" the cycle's on-budget start, with bills
     set aside and free money in the sub-line.
+  - **Headlines are never cut.** A secondary part (the allowance, `bills`,
+    `free`) is dropped whole when it does not fit beside its headline, the
+    last first, and the item's `title` keeps every value.
   - **Pools:** a grid of cells, each with the pool's own icon (else one for
     its kind, spending or savings) in its colour (the stored one, else the
     series at its place among the open pools), name, balance, a ● if it counts toward
@@ -179,6 +183,10 @@ column setting, 4 from 1500.
     `fri oct 09 · week 41 · payday fri oct 23`. The layout button comes
     with the dashboard layout editor (ADR 0029, later).
   - On phones the label is hidden and a gear opens Settings.
+  - Sub-tabs scroll sideways when they do not fit. The open tab is scrolled
+    into view (a tap, `[` / `]`, a link), clear of the edges. While tabs are
+    hidden past an edge an opaque `‹` or `›` cell on `chrome` says so; it is
+    decorative and uses no alpha fade.
 - **Command line.**
   - Sits on `canvas`. `›` prompt and an input for the grammar
     ([grammar.md](grammar.md)).
@@ -226,9 +234,9 @@ column setting, 4 from 1500.
 |---|---|
 | **Tile** (`pane`) | `canvas` background. A title bar on `chrome`: a muted icon, the title (semibold) and a muted subtitle on one truncated line, actions on the right. The body starts 8 px below it and is padded 0 12 10. Focused or primary tiles get a 3 px `primary` inset on the title bar and a `primary` title. Seams come from each tile's own 1 px outline, so empty grid cells show `canvas`. A tile spans 1 or 2 columns, `w3` (3 columns from 1500 px, the full width below) or the full width, and 1 or 2 rows (`h2`, from two columns). |
 | **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000), the list alone below; `even` shares the width 1.6 : 1 from 1000 and stacks both below. `fill` (Accounts, Transactions, IOUs) makes the pair fill the content height from 1000 px, and a tile with `scroll` keeps its title bar fixed while its body scrolls in an overlay scrollbar (a focusable, named region); below 1000 px both are inert and the page scrolls. |
-| **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
+| **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card-raised` fill plus a 3 px `primary` inset and a semibold name. Hierarchy: names in `text`; secondary cells (time, category, account, reconcile status) in `text-muted`; amounts medium weight, tabular. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
 | **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the server's `parents` totals (never summed in the browser). React Aria `Tree`. |
-| **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
+| **Amount** | Number font, tabular, medium weight. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
 | **Bracket button** | `[pay]`, with no space inside the brackets, in the surrounding text size. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. Links (`[all]`, `[history]`) use the same face. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
 | **Menu button** | Bordered (`ddb`, 28 px): muted label, value, ▾; with no value the label shows alone (`sort ▾`). Opens a menu. The strip variant is a full-height `hbtn` (icon, value or label, ▾ unless left out, an optional filled count); the bracket variant is `[⋮]`, named by its label. |
@@ -237,13 +245,13 @@ column setting, 4 from 1500.
 | **Chip** | A filter chip: a muted kind, the value and a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
 | **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. The page behind is dimmed (§2.1). The panel slides and the dim fades on the same ease-in-out curve and duration (`--ease-sheet` `cubic-bezier(0.65, 0, 0.35, 1)`, `--dur-sheet` 300 ms), on the way in and on the way out. Clicking the dimmed area closes it. A sheet that its screen drops while it is open (most are mounted only while open) leaves an inert copy of itself that plays the same exit, so every sheet slides out. |
-| **Bar** | Exact width on a `card` track, filled `primary` or a category's series colour. A 1 px `text` tick at even pace (days elapsed ÷ period length) reaching 3 px past the track above and below. Over budget fills `negative`. |
+| **Bar** | Exact width on a `card` track, filled `primary` or a category's series colour. A 1 px `text` tick at even pace (days elapsed ÷ period length) reaching 3 px past the track above and below. Over budget fills `negative`; at 90 % used or more (not over) it fills `warning`, a mark, never text. |
 | **"Left of" bar** | 2–4 px, showing what remains. Used in the top bar, stats, pools and bills. |
 | **Share bar** | Stacked flex segments with 1 px gaps. Used for pools, categories and IOUs. |
 | **Allocation** | Stacked bar of the cycle's on-budget money: bills paid · to savings · spent · other · bills set aside · free to spend. "Other" is what the other parts do not explain (money lent, conversions) and may be negative; like any negative part it has an empty share. A 22 px bar; a `text` bracket under the last two reads "on-budget left $X of $Y". Below, a legend strip of seamed cells running to the tile edges (`minmax(130px, 1fr)` columns, 3 on phone): swatch, label, amount (17 px semibold, free money in `positive`) and share. Fills: bills paid `outline`, savings and spent series colours, set aside `reserved`, free `success`. |
-| **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge and a larger figure: `positive` (the figure in `positive` too) or `primary`. |
+| **Stats** | 4 tiles (2 × 2 on phone): label with icon, figure, sub-line, optional "left of" bar. The primary stat gets a 3 px edge and a larger figure: `positive` (the figure in `positive` too) or `primary`. A stat can be hidden on a phone or given a full row there, so the list is not pushed down. |
 | **Key figures** | One line of up to 4 label-over-figure pairs, each as wide as its content (gap 26 px) and truncated with "…". |
-| **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. One line ending in "…" on phone. |
+| **Formula line** | The daily number as a sum: `on-budget $1,240.00 − bills $412.00 = free $828.00 ÷ 15 days = $55.20/day`. On a phone one row: the working ends in "…" and the daily number after it is never cut. |
 | **Chart** | A y-axis label column, then a plot with 1 px gridlines, then x labels. SVG marks in a 0–100 viewBox with `preserveAspectRatio="none"` and `vector-effect: non-scaling-stroke`. Lines use monotone cubic interpolation. An area fill mixes the series colour into `canvas` at 16 % (opaque). The end point is a square marker with an HTML value label. An optional dashed reference line (even pace), which can end in a marker and label like a series, and a dotted `outline` "today" line. End labels sit right of a point in the left 70 % and above-left further right. A legend line below names the marks (solid, dashed, tick). A chart takes a design height (×0.75 on phone, ×1.75 at ≥ 1000 and ×2 at ≥ 1400 px) and can grow to fill its tile. |
 | **Columns** | Bar columns with value labels above, x labels below, and a 1 px baseline. |
 | **Sparkline** | 20–28 px tall, monotone line, no axes. |
@@ -261,7 +269,8 @@ column setting, 4 from 1500.
   the detail pane or sheet, with icons.
 - **Truncation.** Names, labels and subtitles end in "…". Amounts never
   truncate. Columns drop instead, in this order: account, then category,
-  then time.
+  then time. A status tag (`25d late`) outranks the account and the category,
+  and on a phone the category follows the payee as a muted suffix.
 - **List + detail.** Selecting a row updates the detail pane (≥ 1000) or opens
   a sheet (< 1000). The selection is in the URL (`?entry=`, `?account=`).
   - From 1000 px the first row is selected when nothing is: the first
@@ -281,6 +290,22 @@ column setting, 4 from 1500.
     pane, only its body scrolls.
   - A selection change (the first row, the keyboard, a link from another
     screen) scrolls the open row into view in the list, nearest edge.
+- **Order.** What comes first is what the user acts on or holds most.
+  - Sections and tiles: the daily number first, then what needs attention,
+    today's entries, budgets and the week ahead; the cycle's allocation and
+    the slower figures after. On a phone the Budget screen puts the budgets
+    before the allocation.
+  - Rows: an order the user set (category `position`, the cover order, drag
+    and drop) is kept. An order that is only the creation order is
+    re-sorted by significance: accounts in a pool by balance, the largest
+    first (credit by what is owed, the most first; balances in different
+    currencies stay in their own runs); budgets as daily, then set-aside,
+    then the Buffer, each in the user's category order; needs attention by
+    urgency. Pools, goals, bills, IOU people and Reports lists keep the
+    server's order.
+  - Columns: the figure to act on comes last and heaviest. A budget row
+    shows `left` on every width and `spent` before it from 600 px; a phone
+    transaction row is icon, payee with a muted category, amount.
 - **Filters.** A filter menu with type (radio), category tree (checkbox, where
   a parent sets all its children) and accounts (checkbox). Active filters
   show as chips and in the button's count badge. Period, group by and sort
@@ -318,8 +343,10 @@ change (§8).
 ### Dashboard `/`
 
 Default tiles, in order: this cycle (2 × 2) · needs attention · today's
-entries · cycle allocation (`w3`) · budgets · next 7 days · pools ·
-emergency fund · net worth (2 wide). While a user is held to two-factor
+entries · budgets · next 7 days · cycle allocation (`w3`) · pools ·
+emergency fund · net worth (2 wide). This cycle stays first at every width;
+on a phone its chart is lower and the formula line is one row that never
+cuts the daily number. While a user is held to two-factor
 enrolment no tile mounts: the screen shows a note and a link to the account
 settings, so no ledger read is made that the server would refuse.
 
@@ -327,9 +354,9 @@ settings, so no ledger read is made that the server would refuse.
 |---|---|---|
 | this cycle (2 × 2) | Key figures (spent day-to-day, which leaves bills out; even pace; `under pace` / `over pace` with the server's `paceDiff` as an unsigned amount (`on pace` at zero); days over of days so far), a spent-vs-even-pace chart (nice y ticks, weekly x ticks with today, a dotted today line, end labels on both lines) with its legend line, and the formula line built from server figures only: on-budget − bills (− owed) = free (− set aside) ÷ days = daily, then `cover used $X budget ← source` for each of the first two (budget, source) pairs the server lists (`+N more cover` for the rest); `[history]` opens Reports › cycles | `/v1/today` (`paceDiff`), `/v1/cycles/{openedOn}/days`, `/v1/budgets` (`coverUsed`) |
 | needs attention | Tag (`today` / `Nd late` for a due bill, `payday`, `rate`, `review`, `iou`), text, `[action]` (the weekly review's `[open]` opens its sheet), `[⋮]`; `[mark all read]` in the title bar while a reminder is unread. Items run most urgent first: bills by days late (the latest first), bills due today, payday, missing rates, then reminders. With no items the tile is not rendered. A fold toggle (the tree row's chevron, `aria-expanded`) at the right of the title bar keeps only the bar: the count, then the most urgent item's tag and text, truncated. Folded by default under 600 px and open from 600 px; a choice made with the toggle is remembered on this device (`allotr.attention`) | `/v1/today` attention items, `/v1/reminders` |
-| today's entries | Time, category icon, payee with its category muted, amount; the title bar shows the count and `spentToday` | `/v1/transactions?on=today`, `/v1/today` |
+| today's entries | Time, category icon, payee then ` · ` and its category in a smaller muted type (an entry with neither is named by its kind), amount with its arrow; an IOU lent or repaid is a transfer with one own side, so it shows its direction and amount like any entry; the title bar shows the count and `spentToday` | `/v1/transactions?on=today`, `/v1/today` |
 | cycle allocation (`w3`) | Allocation component: a 22 px bar, the on-budget-left bracket, and a legend strip of seamed cells (swatch, label, amount, share); `other` shows only when it is not zero. The title bar shows `paycheck $X + carried $Y`; `[plan next payday]` opens the payday plan sheet | `/v1/today` `allocation` (`paycheck` and `carried`, which add up to `start`; six parts: paid bills, savings, spent, set aside, free, other; each part's `shareBp`, its share of `start` in basis points, is what the legend prints; bar widths are a ratio of two server figures) |
-| budgets | A compact, borderless category tree: fold handle or tree line, icon, name (`set aside` muted on set-aside budgets), a bar in the category colour with the period's even-pace tick (none on set-aside budgets), spent (muted), left (a budget past what it had shows its `overflow` with a minus sign; phones drop this column); parent rows are bold throughout; a pace legend line; `[all]` | `/v1/budgets` (`parents`: totals per parent category; `period` for the pace tick) |
+| budgets | A compact, borderless category tree: fold handle or tree line, icon, name (`set aside` muted on set-aside budgets), a bar in the category colour with the period's even-pace tick (none on set-aside budgets), spent (muted; from 600 px), left (semibold, and the only figure on a phone; a budget past what it had shows its `overflow` with a minus sign); parent rows are bold throughout; a budget bar at 90 % used or more fills `warning`; a pace legend line; `[all]` | `/v1/budgets` (`parents`: totals per parent category; `period` for the pace tick) |
 | next 7 days | Every day from today, `sat 10` style; days with nothing show `·`; bill, IOU and payday rows with an icon and amount; `[calendar]` opens Reports › calendar | `/v1/reports/calendar` |
 | pools | Pool rows (the pool's icon, else its kind's, in its colour; name, a `daily` checkbox, balance; bold when the pool counts), then a share bar; the title bar shows on-budget; `[manage]` | `/v1/pools` (`shareBp` per pool), `/v1/today` `onBudget` |
 | emergency fund | Figure, `of target · share`, bar, then covers, this cycle and at this rate (`full in N cycles`) | `/v1/insights/emergency-fund` (`addedThisCycle`, `cyclesToTarget`) |
@@ -337,7 +364,9 @@ settings, so no ledger read is made that the server would refuse.
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
-- Stats, each with an icon and a lower-case label: net worth (primary; the
+- Stats (on a phone only net worth and credit owed share the first row;
+  savings is hidden, and reconcile shows on a row of its own only when an
+  account needs a look), each with an icon and a lower-case label: net worth (primary; the
   server's `change` over the open cycle below it, as on the dashboard) ·
   savings & invest (the off-budget total; the number of savings accounts) ·
   credit owed (`totals.creditOwed` on `/v1/accounts`, signed and in
@@ -368,10 +397,12 @@ settings, so no ledger read is made that the server would refuse.
 - The list tile's title bar has `[+ account]`, which opens a sheet with the
   name, currency, whether it counts toward today (on budget) or is savings
   (off budget) and an optional opening balance. The new account opens.
+- Accounts in a pool run by balance, the largest first; credit accounts by
+  what is owed, the most first.
 - Each account row: kind icon (or the account's own icon; muted, or in the
   account's own colour when it has one), name, sparkline in the account's or
   pool's colour (`negative` below zero; the last 30 days, fetched when the row scrolls
-  into view; from 600 px), `✓ oct 05` reconciled date (from 1000 px),
+  into view; from 600 px), `✓ oct 05` reconciled date, or a muted `unreconciled` tag when never (from 1000 px),
   balance (`negative` below zero), `[⋮]` (reconcile, transfer from here,
   rename, move to another pool, archive). The open account is
   `?account=ID`; it shows beside the list from 1000 px and in a sheet named
@@ -412,16 +443,18 @@ settings, so no ledger read is made that the server would refuse.
   bordered menus in its title bar. A summary line (`totals`: count, spent,
   income in `positive`, net; values bold, one block per currency, no
   separators, wrapping on phones), then day headers (lower-case
-  `fri oct 09`, `· today` on the user's today, the day total from
-  `dayTotals` over exactly the filtered accounts; sticky, a `line2` rule
+  `fri oct 09` semibold in `text`, `· today` in `primary` on the user's
+  today, the day total from `dayTotals` over exactly the filtered accounts
+  in its tone (`negative` or `positive` by sign); sticky, a `line2` rule
   under each), or groups by category (`groups`, with each row's `groupKeys`
   saying which groups it is counted in, so a split shows under each of its
   categories), or none.
 - Rows (30 px, 38 px on phones; seams between rows only): time (from 600 px),
   category icon, payee (with a `bill` tag from `billId` / `billName`),
   muted `parent ›` category (from 600 px, 16ch below 1000 px and 18ch from
-  there), account (from 1000 px), amount with its arrow, right-aligned. The
-  selected row has the `card` fill and a 3 px `primary` edge.
+  there; on a phone it follows the payee as a muted ` · ` suffix), muted
+  account (from 1000 px), amount with its arrow, right-aligned. The selected
+  row has the `card-raised` fill, a 3 px `primary` edge and a semibold payee.
 - The sort menu sends `sort=date-desc|date-asc|amount-desc|amount-asc`; it is in
   the URL (`?sort=`, default left out). By amount the list is flat (no day
   headers or totals) and same-day reordering is off, as it is for `date-asc`.
@@ -481,9 +514,9 @@ settings, so no ledger read is made that the server would refuse.
 
 | Sub-tab | Content |
 |---|---|
-| budgets | Allocation (full width) · budgets (2 wide): the dashboard's budget rows with separators and an action column (`[+ sub]` on a parent header, `[⋮]` on a budget), a `total` row with the server's `totals` spent and left (phones drop left) and the server's totals below in muted rows (daily budgets left, held, spent outside any budget, free), and the pace legend; `[+ budget]` and `[plan next period]` (the payday plan) in the title bar · cover this period: one row per source that covered an entry (`/v1/budgets/covers`), then the first three in the cover order with what each has left |
+| budgets | Allocation (full width; on a phone after the budgets, which would otherwise be pushed below it) · budgets (2 wide): the dashboard's budget rows with separators and an action column (`[+ sub]` on a parent header, `[⋮]` on a budget; daily budgets, then set-aside ones, then the Buffer), a `total` row with the server's `totals` spent and left (phones drop spent) and the server's totals below in muted rows (daily budgets left, held, spent outside any budget, free), and the pace legend; `[+ budget]` and `[plan next period]` (the payday plan) in the title bar · cover this period: one row per source that covered an entry (`/v1/budgets/covers`), then the first three in the cover order with what each has left |
 | pools | Two columns from 720. One tile per pool (the pool's icon, else its kind's; `on-budget` / `off-budget`, the primary edge when it counts; `[rename]` opens a name sheet; `[style]` opens a sheet with the colour and icon pickers, Auto first; `[+ account]`): a `counts toward daily` checkbox and the balance, a "left of" bar in the pool's series colour with "X left of Y this cycle" for on-budget pools, and its accounts as tree rows (kind icon, name, sparkline, balance; a row opens the account) · a `new pool` tile with `[+ pool]` (name and spending or savings) · "how the daily number works" (full width): a short paragraph and the dashboard's formula line |
-| bills | Stacked full-width tiles: bills this cycle (the cycle's dates; timeline, then a summary line: set aside, paid, next with its `3d` tag; `[+ bill]`) · upcoming (count of bills; what is still set aside; rows of date, bill icon, name, account, amount, a `3d` / `today` / `2d late` tag) · paid this cycle (the paid total; the same rows with `✓ paid` and `[⋮]` › Show payment) · not due this cycle, when a bill has no date in it |
+| bills | Stacked full-width tiles: bills this cycle (the cycle's dates; timeline, then a summary line: set aside, paid, next with its `3d` tag; `[+ bill]`) · upcoming (count of bills; what is still set aside; rows of date, bill icon, name, account (from 600 px), amount, a `3d` / `today` / `2d late` tag, which a phone keeps; the summary line's `next` reads late when that bill is) · paid this cycle (the paid total; the same rows with `✓ paid` and `[⋮]` › Show payment) · not due this cycle, when a bill has no date in it |
 | goals | One tile per goal (flag icon, `[⋮]` › Archive): the saved figure with "of $X · N%" (the server's `progressBp`, rounded down; the bar's width is the ratio of saved to target), a bar in the goal's series colour, where it is held and its date and the server's `monthlyNeeded` ("by apr 2027 · $136.00/mo" / "no date"), and the chart from today to the target (y from zero); an odd last goal fills the row at two columns. `[+ goal]` sits in the title strip, and in the empty state. The weekly review opens from its "needs attention" item; the payday plan from the budgets sub-tab |
 | ious | People (`[+ lend]` `[+ borrow]`): a summary line (owed to you, you owe, `net` signed from the server's `totals.net`), then tall rows with an icon, the name and a muted `owes you` / `you owe` / `even`, one status tag (`9d late`, the next due date, `settled`) and the server's per-person figure (`personOpen`; `N open` when IOUs run both ways) · person (from 1000 px; a sheet below): what they owe or you owe, then the history (each loan and its payments) with `[✓ repay]` `[due date]` `[write off]` `[delete entry]` per IOU; the first person is open from 1000 px, and pressing the open person keeps it open (below 1000 px it closes the sheet) |
 | cover order | Side by side 1.6 : 1 from 1000 px, stacked below. Cover order (primary edge): a short paragraph, then numbered rows (icon, name, what it has: free money, `set aside $X` for set-aside budgets, `$X left` otherwise) with `[↑]` `[↓]`; rows also drag · "what happens next": a paragraph and a try-it form (budget, account, amount) that previews where an overspend would take money from **(server preview: `/v1/budgets/cover-preview`)** |
@@ -517,7 +550,8 @@ hints; notifications: opt in to Web Push on this device, off until asked,
 with a test; tabs, top bar and layouts **(planned)**) · account (sign-in, two-factor,
 sessions, invites) · data (export, import, delete account).
 
-Every sub-tab opens with one full-width tile (`money`, `categories`,
+Value rows are capped at 45rem so a value stays near its label on a wide
+screen. Every sub-tab opens with one full-width tile (`money`, `categories`,
 `policies`, `data`, `account`) of one-line value rows: a muted label, the
 value on the right and a faint `▾`. The whole row is the control and opens a
 menu (choices; the explanation is the menu's first line) or a form sheet. A

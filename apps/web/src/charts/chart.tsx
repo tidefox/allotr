@@ -371,8 +371,13 @@ export function ChartLegend({
         className,
       )}
     >
-      {items.map((item) => (
-        <span key={item.label} className="inline-flex items-center">
+      {items.map((item, index) => (
+        // Two marks can share a name, so the place is part of the key: with
+        // a bare label React keeps a stale twin when the names change.
+        <span
+          key={`${String(index)}-${item.label}`}
+          className="inline-flex items-center"
+        >
           {item.mark === 'none' ? null : (
             <span
               aria-hidden="true"

@@ -64,7 +64,20 @@ function takenCategories(budgets: readonly BudgetView[]): Set<string> {
   );
 }
 
-/** The tree in display order: categories by position, then tag and Buffer budgets. */
+/**
+ * Daily budgets come first, then set-aside ones, then the Buffer. The order
+ * a user sets (category `position`) is kept inside each of the three.
+ */
+export function tierOf(budgets: readonly BudgetView[]): 0 | 1 | 2 {
+  if (budgets.length > 0 && budgets.every((b) => b.target.kind === 'buffer'))
+    return 2;
+  return budgets.every((b) => b.mode === 'set-aside') ? 1 : 0;
+}
+
+/**
+ * The tree in display order: daily budgets (categories by position, then
+ * tags), then set-aside budgets, then the Buffer.
+ */
 export function budgetTree(
   budgets: readonly BudgetView[],
   categories: readonly CategoryView[],
@@ -149,7 +162,26 @@ export function budgetTree(
   for (const budget of others) {
     entries.push(make(budget.id, 'flat', budget.id, budget.name, budget, null));
   }
-  return entries;
+  return inTiers(entries);
+}
+
+/**
+ * Re-sorts the tree's blocks (a parent with its children, or one flat row)
+ * by tier. The sort is stable, so each tier keeps the order built above.
+ */
+function inTiers(entries: readonly TreeEntry[]): readonly TreeEntry[] {
+  const blocks: TreeEntry[][] = [];
+  for (const entry of entries) {
+    const last = blocks.at(-1);
+    if (last !== undefined && last[0]?.group === entry.group) last.push(entry);
+    else blocks.push([entry]);
+  }
+  const tier = (block: readonly TreeEntry[]) =>
+    tierOf(block.flatMap((e) => (e.budget === null ? [] : [e.budget])));
+  return blocks
+    .map((block, index) => ({ block, index, tier: tier(block) }))
+    .sort((a, b) => a.tier - b.tier || a.index - b.index)
+    .flatMap(({ block }) => block);
 }
 
 /** The entries to show, leaving out children of folded parents. */

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Amount } from '@/components/amount';
 import { Bar, seriesBg, type SeriesColor } from '@/components/bars';
+import { isNearLimit } from '@/components/bars-math';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon } from '@/components/states';
@@ -13,14 +14,18 @@ import type { BudgetRow } from '@/screens/dashboard/tiles/budgets';
 // line, icon, name, bar with the even-pace tick, spent, left and, on the
 // sub-tab, an action. Every figure is the server's.
 
-/** Lead, icon, name, bar, spent, left; phones drop the left column. */
+/**
+ * Lead, icon, name, bar, spent, left. Left is the figure to act on, so a
+ * phone keeps it and drops spent; spent comes back from 600 px, in front of
+ * left.
+ */
 export const budgetLineColumns: readonly RowColumn[] = [
   { width: '1.5rem' },
   { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
   { width: 'minmax(2.25rem, 2.4fr)' },
-  { width: '9ch' },
   { width: '9ch', from: 'medium' },
+  { width: '9ch' },
 ];
 
 export function BudgetLine({
@@ -74,7 +79,7 @@ export function BudgetLine({
       <CategoryIcon key="i" name={row.icon} color={row.colour} />
     ),
     <span key="n" className="font-sans">
-      {row.name}
+      <span data-name="">{row.name}</span>
       {row.setAside ? (
         <span className="font-normal text-text-muted"> {setAsideLabel}</span>
       ) : null}
@@ -85,6 +90,7 @@ export function BudgetLine({
       <Bar
         value={row.fraction}
         over={row.over}
+        near={!row.over && isNearLimit(row.fraction)}
         pace={row.setAside ? undefined : pace}
         fillClassName={seriesBg[`series-${String(row.colour)}` as SeriesColor]}
         label={barLabel}
@@ -99,9 +105,13 @@ export function BudgetLine({
     >
       <Amount amount={row.spent} />
     </span>,
+    // The figure to act on: heavier than spent.
     <span
       key="l"
-      className={cn('block text-right', overLeft && 'text-negative')}
+      className={cn(
+        'block text-right font-semibold',
+        overLeft && 'text-negative',
+      )}
     >
       <Amount amount={row.left} />
     </span>,

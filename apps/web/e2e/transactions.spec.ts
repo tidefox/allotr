@@ -276,16 +276,16 @@ test('the sort menu orders by amount as a flat list, by keyboard', async ({
   await expect(page).toHaveURL(/sort=amount-asc/);
   // Flat: no day headers, and the smallest entry comes first.
   await expect(entries.getByRole('heading', { level: 3 })).toHaveCount(0);
-  const payees = entries.locator('.truncate.font-sans');
+  const payees = entries.locator('.truncate.font-sans [data-name]');
   await expect(payees.first()).toHaveText('Corner cafe');
   // The opening balances are the largest entries.
   await expect(payees.last()).toHaveText('Opening balance');
   await expectAccessible(page);
 
   await page.goto('/transactions?sort=amount-desc');
-  await expect(entries.locator('.truncate.font-sans').first()).not.toHaveText(
-    'Corner cafe',
-  );
+  await expect(
+    entries.locator('.truncate.font-sans [data-name]').first(),
+  ).not.toHaveText('Corner cafe');
   // An unknown value falls back to the default order with its day headers.
   await page.goto('/transactions?sort=size');
   await expect(

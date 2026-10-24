@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from 'react';
 import type { AccountView, Money } from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { Bar, seriesBg, seriesText } from '@/components/bars';
-import { BracketButton } from '@/components/buttons';
+import { BracketButton, Tag } from '@/components/buttons';
 import { Glyph } from '@/components/glyph';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { TreeRow } from '@/components/row';
@@ -53,7 +53,7 @@ const columns: readonly RowColumn[] = [
     at: { wide: 'minmax(3.75rem, 10rem)' },
     from: 'medium',
   },
-  { width: '9ch', from: 'wide' },
+  { width: '13ch', from: 'wide' },
   { width: '12ch' },
   // The mockup's 26 px track lets `[+]` overflow it; auto fits it instead.
   { width: 'auto' },
@@ -120,7 +120,7 @@ function Balance({ amount }: { amount: Money }) {
   return (
     <span
       className={cn(
-        'block text-right',
+        'block text-right font-medium',
         amount.amountMinor < 0 && 'text-negative',
       )}
     >
@@ -198,7 +198,9 @@ function AccountRow({
                 : seriesText[account.colour],
             )}
           />
-          <span className="min-w-0 truncate font-sans">{account.name}</span>
+          <span data-name="" className="min-w-0 truncate font-sans">
+            {account.name}
+          </span>
         </button>,
         <Trend
           key="trend"
@@ -210,7 +212,8 @@ function AccountRow({
           className="flex min-w-0 items-center gap-1 font-sans text-text-muted"
         >
           {account.lastReconciledOn === null ? (
-            t('accountsScreen.list.notReconciled')
+            // Never reconciled: a muted tag that says so, not a bare "not yet".
+            <Tag>{t('accountsScreen.list.notReconciled')}</Tag>
           ) : (
             <>
               <IconCheckLine aria-hidden="true" className="size-4 shrink-0" />

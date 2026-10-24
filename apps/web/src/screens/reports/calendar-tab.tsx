@@ -32,7 +32,10 @@ import {
 } from '@/lib/ledger';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
-import { dashboardEntries } from '../dashboard/tiles/todays-entries-model.ts';
+import {
+  dashboardEntries,
+  entryAmountKind,
+} from '../dashboard/tiles/todays-entries-model.ts';
 import {
   dayItems,
   defaultPick,
@@ -290,7 +293,7 @@ export function CalendarTab() {
                       row.style === null
                         ? undefined
                         : seriesNumber(row.style.colour);
-                    const name = row.payee ?? t('reportsCalendar.day.untitled');
+                    const name = row.payee;
                     return (
                       <Row
                         key={row.id}
@@ -323,13 +326,7 @@ export function CalendarTab() {
                             <span key="a" className="block text-right">
                               <Amount
                                 amount={row.amount}
-                                kind={
-                                  row.kind === 'transfer'
-                                    ? 'transfer'
-                                    : row.amount.amountMinor < 0
-                                      ? 'expense'
-                                      : 'income'
-                                }
+                                kind={entryAmountKind(row)}
                                 locale={locale}
                               />
                             </span>

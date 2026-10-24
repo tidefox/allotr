@@ -59,7 +59,8 @@ export function Amount({
     <span
       className={cn(
         'whitespace-nowrap font-num tabular-nums',
-        kind === 'plain' ? '' : toneClass[tone],
+        // Money in a row is medium weight; a plain figure keeps its caller's.
+        kind === 'plain' ? '' : cn('font-medium', toneClass[tone]),
         className,
       )}
     >

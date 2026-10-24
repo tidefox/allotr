@@ -56,7 +56,16 @@ function rowCells(row: TxRow) {
       />
     ),
     <span key="payee" className="flex min-w-0 items-center gap-1.5">
-      <span className="truncate font-sans">{row.payee}</span>
+      <span className="truncate font-sans">
+        <span data-name="">{row.payee}</span>
+        {row.category === null ? null : (
+          // The category column is gone on a phone: keep it as a muted tail.
+          <span className="hidden text-text-muted compact:inline">
+            {' · '}
+            {row.category}
+          </span>
+        )}
+      </span>
       {row.bill === null ? null : (
         <Tag className="shrink-0">{t('transactions.list.billTag')}</Tag>
       )}
@@ -76,7 +85,7 @@ function rowCells(row: TxRow) {
         </>
       )}
     </span>,
-    <span key="account" className="font-sans text-text">
+    <span key="account" className="font-sans text-text-muted">
       {row.account}
     </span>,
     row.amount === null ? null : (
@@ -324,10 +333,24 @@ export function EntryList({
             {section.title === null ? null : (
               <h3 className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-canvas px-3 pt-2.5 pb-1 text-small text-text-muted">
                 <span className="min-w-0 flex-1 truncate font-semibold text-text">
-                  {section.title}
+                  {section.heading ?? section.title}
+                  {section.today === true ? (
+                    <span className="font-normal text-primary">
+                      {' · '}
+                      {t('transactions.list.todayMark')}
+                    </span>
+                  ) : null}
                 </span>
                 {section.total === null ? null : (
-                  <span className="num shrink-0">{section.total}</span>
+                  <span
+                    className={cn(
+                      'num shrink-0',
+                      section.totalTone === 'negative' && 'text-negative',
+                      section.totalTone === 'positive' && 'text-positive',
+                    )}
+                  >
+                    {section.total}
+                  </span>
                 )}
               </h3>
             )}

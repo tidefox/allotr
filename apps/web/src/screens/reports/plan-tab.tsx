@@ -55,15 +55,16 @@ export function PlanTab() {
   );
 }
 
-// Lead, icon, name, bar, spent, left; phones drop the left column and
-// narrow the bar (the budget rows of the locked design, without actions).
+// Lead, icon, name, bar, spent, left; phones drop the spent column and
+// narrow the bar, as left is the figure to act on (the budget rows of the
+// locked design, without actions).
 const budgetColumns: readonly RowColumn[] = [
   { width: '1.5rem' },
   { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
   { width: 'minmax(3.75rem, 2.4fr)', at: { compact: 'minmax(2.25rem, 1fr)' } },
-  { width: '9ch' },
   { width: '9ch', from: 'medium' },
+  { width: '9ch' },
 ];
 
 function BudgetTile() {

@@ -5,7 +5,7 @@ import {
   type TodayView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { billsView } from './bills-model.ts';
+import { billsView, dueStatus } from './bills-model.ts';
 
 const labels = { payday: 'Payday', unknown: 'Bill' };
 const usd = (minor: number) => money(minor, 'USD');
@@ -105,5 +105,28 @@ describe('billsView', () => {
     );
     expect(view.upcoming[0]?.name).toBe('');
     expect(view.timeline.events[0]?.label).toBe('Bill');
+  });
+});
+
+describe('dueStatus', () => {
+  const today = localDate('2026-10-23');
+
+  it('names a bill past its date late, not due today', () => {
+    expect(dueStatus(localDate('2026-09-28'), today)).toEqual({
+      state: 'late',
+      days: 25,
+    });
+    expect(dueStatus(localDate('2026-10-22'), today)).toEqual({
+      state: 'late',
+      days: 1,
+    });
+  });
+
+  it('knows today and the days still ahead', () => {
+    expect(dueStatus(today, today)).toEqual({ state: 'today', days: 0 });
+    expect(dueStatus(localDate('2026-10-26'), today)).toEqual({
+      state: 'in',
+      days: 3,
+    });
   });
 });

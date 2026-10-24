@@ -22,7 +22,6 @@ export const reportsCalendar = {
   day: {
     nothing: 'no entries',
     entry: 'Entry',
-    untitled: 'Entry',
     bill: 'bill',
     billPaid: 'bill, paid',
     payday: 'payday',

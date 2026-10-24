@@ -151,6 +151,25 @@ test('the dashboard shows every tile with seeded data', async ({
   await expect(
     worth.getByText(t('dashboardTiles.netWorth.subtitleDays', { days: 7 })),
   ).toBeVisible();
+
+  // Tiles run in the order the user acts on them: the daily number, what
+  // was logged today, budgets and the week ahead, then the allocation.
+  const order = await page
+    .getByRole('region', { name: t('shell.content') })
+    .getByRole('heading', { level: 2 })
+    .allInnerTexts();
+  const place = (key: (typeof titles)[number]) =>
+    order.indexOf(t(`dashboardTiles.${key}.title`));
+  const placed = [
+    'thisCycle',
+    'todaysEntries',
+    'budgets',
+    'nextDays',
+    'allocation',
+    'pools',
+  ].map((key) => place(key as (typeof titles)[number]));
+  expect(placed.every((index) => index >= 0)).toBe(true);
+  expect(placed).toEqual([...placed].sort((a, b) => a - b));
   await expectAccessible(page);
 });
 
@@ -307,5 +326,38 @@ test('every unread reminder is marked read at once, by keyboard', async ({
   expect(((await after.json()) as { unread: number }).unread).toBe(0);
   // With nothing left to attend to the tile is gone, not an empty state.
   await expect(tile).toHaveCount(0);
+  await expectAccessible(page);
+});
+
+// An IOU lent is a transfer with one own side. Today's entries drew it as a
+// move with no amount, where the ledger shows money out; both must agree.
+test('an IOU lent shows its direction and amount in today’s entries', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL ?? '';
+  await apiSignIn(page, origin);
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string; balance: { currency: string } }[];
+  };
+  const everyday = accounts.accounts.find((a) => a.name === 'Everyday');
+  await post(page, origin, '/v1/ious', {
+    direction: 'owed-to-me',
+    accountId: everyday?.id,
+    people: [
+      {
+        person: 'Alex',
+        amount: { amountMinor: 5_000, currency: everyday?.balance.currency },
+      },
+    ],
+  });
+
+  await page.goto('/');
+  const entries = page.getByRole('region', {
+    name: t('dashboardTiles.todaysEntries.title'),
+  });
+  await expect(entries.getByText(/\$50\.00/)).toBeVisible();
+  // Money went out of an account: no "moved between accounts" arrow.
+  await expect(entries).not.toContainText('↔');
   await expectAccessible(page);
 });

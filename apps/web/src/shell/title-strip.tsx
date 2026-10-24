@@ -14,6 +14,7 @@ import {
 } from '../nav-items.ts';
 import { IconSettings3Line } from '@/generated/icons';
 import { screenIcons } from './icons.ts';
+import { SubTabs } from './sub-tabs.tsx';
 import { isoWeek } from './summary-math.ts';
 
 const locale = 'en';
@@ -69,34 +70,21 @@ export function TitleStrip() {
         <h1 className="truncate compact:sr-only">{t(label[screen])}</h1>
       </div>
       {hasSubTabs(screen) ? (
-        <nav
-          aria-label={t('shell.tabs.label')}
-          className="scroll flex min-w-0 flex-1 items-stretch"
-        >
-          {subTabs[screen].map((sub) => {
+        <SubTabs
+          items={subTabs[screen].map((sub) => {
             const to = subTabPath(screen, sub);
-            const active =
-              pathname === to ||
-              (screen === 'accounts' &&
-                sub === 'all' &&
-                pathname === '/accounts');
-            return (
-              <Link
-                key={sub}
-                to={to}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'press flex min-w-hit shrink-0 items-center border-r px-3 whitespace-nowrap',
-                  active
-                    ? 'bg-primary font-semibold text-on-primary hover:bg-primary'
-                    : 'text-text-muted hover:text-text',
-                )}
-              >
-                {t(`shell.tabs.${sub}`)}
-              </Link>
-            );
+            return {
+              key: sub,
+              label: t(`shell.tabs.${sub}`),
+              to,
+              active:
+                pathname === to ||
+                (screen === 'accounts' &&
+                  sub === 'all' &&
+                  pathname === '/accounts'),
+            };
           })}
-        </nav>
+        />
       ) : screen === 'dashboard' ? (
         <StripContext />
       ) : null}

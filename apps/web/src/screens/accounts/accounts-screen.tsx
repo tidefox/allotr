@@ -200,6 +200,7 @@ export function AccountsScreen() {
           <Amount amount={accounts.data.totals.off.amount} locale={locale} />
         ),
         sub: t('accountsScreen.stats.savingsSub', { count: saving }),
+        phone: 'hide',
       },
       {
         label: t('accountsScreen.stats.credit'),
@@ -245,6 +246,8 @@ export function AccountsScreen() {
       {
         label: t('accountsScreen.stats.reconcile'),
         icon: IconCheckLine,
+        // On a phone only when an account needs a look, on a row of its own.
+        phone: looks.length === 0 ? 'hide' : 'wide',
         figure: (
           <>
             {looks.length}{' '}

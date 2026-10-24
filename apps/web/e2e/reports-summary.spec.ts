@@ -232,6 +232,16 @@ test('the trends tab shows lines, comparison and totals', async ({
   await expect(versus.getByText('Leisure')).toBeVisible();
   // Each row names the server's average across the periods.
   await expect(versus.getByText(/avg \$/).first()).toBeVisible();
+  // The legend names each drawn line once, and never "No category" for a
+  // category that has a name (it once did, before the names had loaded).
+  const lines = page.getByRole('region', {
+    name: t('reportsSummary.trends.linesTitle'),
+  });
+  const legend = lines.locator('p').filter({ hasText: 'left out of scale' });
+  await expect(legend.getByText('Leisure', { exact: true })).toHaveCount(1);
+  await expect(
+    legend.getByText(t('reportsSummary.categories.none')),
+  ).toHaveCount(0);
   // Household dwarfs the rest, so it is named under the chart instead.
   await expect(
     page.getByText(/Household \(.*\) left out of scale/),

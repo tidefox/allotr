@@ -18,9 +18,17 @@ export type Stat = Readonly<{
   tone?: 'positive' | 'primary' | 'neutral';
   /** The figure in `negative` (an amount owed) or `positive` (income). */
   figureTone?: 'negative' | 'positive';
+  /**
+   * On a phone: `hide` drops the tile, `wide` gives it a full row. A phone
+   * would otherwise spend a third of its screen on stats before the list.
+   */
+  phone?: 'hide' | 'wide';
 }>;
 
-/** Four stat tiles: 2 × 2 on compact, in a row from medium. */
+/**
+ * Up to four stat tiles: two to a row on compact (a tile can be hidden or
+ * given a row of its own there), all in a row from medium.
+ */
 export function Stats({
   stats,
   className,
@@ -36,13 +44,18 @@ export function Stats({
       )}
     >
       {stats.map(
-        ({ label, icon: Icon, figure, sub, bar, tone, figureTone }, index) => {
+        (
+          { label, icon: Icon, figure, sub, bar, tone, figureTone, phone },
+          index,
+        ) => {
           const highlight = index === 0 && tone !== 'neutral';
           return (
             <div
               key={label}
               className={cn(
                 'flex min-w-0 flex-col justify-center border-r border-b px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
+                phone === 'hide' && 'compact:hidden',
+                phone === 'wide' && 'compact:col-span-2',
                 highlight && 'border-l-[3px]',
                 highlight &&
                   (tone === 'positive'

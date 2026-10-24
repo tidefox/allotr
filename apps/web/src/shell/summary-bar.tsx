@@ -62,6 +62,39 @@ function Sub({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * A headline and extras on one line. The headline is never cut: an extra
+ * that does not fit beside it wraps out of the clipped line and is dropped
+ * whole, not shown half, the last one first. Their full values are in the
+ * item's `title`.
+ */
+function Fit({
+  head,
+  extras,
+  className,
+}: {
+  head: ReactNode;
+  extras: readonly ReactNode[];
+  /** The line's height; the wrapped extra falls below it and is clipped. */
+  className: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex min-w-0 flex-wrap items-baseline gap-x-[3px] overflow-hidden',
+        className,
+      )}
+    >
+      <span className="whitespace-nowrap">{head}</span>
+      {extras.map((extra, index) => (
+        <span key={index} className="whitespace-nowrap">
+          {extra}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 const poolIcon: Record<PoolKind, ComponentType<IconProps>> = {
   spending: IconWallet3Line,
   savings: IconSafe2Line,
@@ -181,26 +214,34 @@ export function SummaryBar() {
         <>
           <Link
             to="/"
+            title={t('shell.summary.leftTodayTitle', {
+              left: formatMoney(data.leftToday, 'symbol', locale),
+              allowance: formatMoney(data.todayAllowance, 'symbol', locale),
+            })}
             className={cn(
               item,
               'border-l-[3px] border-l-positive bg-canvas medium:flex-[1.3_1_0%]',
             )}
           >
             <Label icon={IconSunLine}>{t('shell.summary.leftToday')}</Label>
-            <span
+            <Fit
               className={cn(
-                'truncate text-hero leading-[1.2] font-semibold tracking-[-0.01em] wide:leading-[1.1]',
+                'max-h-[1.2em] text-hero leading-[1.2] font-semibold tracking-[-0.01em] wide:max-h-[1.1em] wide:leading-[1.1]',
                 data.leftToday.amountMinor < 0
                   ? 'text-negative'
                   : 'text-positive',
               )}
-            >
-              <Amount amount={data.leftToday} />
-              <small className="ml-[3px] text-[0.6em] font-normal tracking-normal text-text-muted">
-                {'/ '}
-                {formatMoney(data.todayAllowance, 'symbol', locale)}
-              </small>
-            </span>
+              head={<Amount amount={data.leftToday} />}
+              extras={[
+                <small
+                  key="allowance"
+                  className="text-[0.6em] font-normal tracking-normal text-text-muted"
+                >
+                  {'/ '}
+                  {formatMoney(data.todayAllowance, 'symbol', locale)}
+                </small>,
+              ]}
+            />
             <Sub>
               {t('shell.summary.spent', {
                 amount: formatMoney(data.spentToday, 'symbol', locale),
@@ -222,19 +263,31 @@ export function SummaryBar() {
           <Link
             to="/accounts/$sub"
             params={{ sub: 'on-budget' }}
+            title={t('shell.summary.onBudgetSub', {
+              start: formatMoney(data.allocation.start, 'symbol', locale),
+              reserved: formatMoney(data.reservedBills, 'symbol', locale),
+              free: formatMoney(data.available, 'symbol', locale),
+            })}
             className={item}
           >
             <Label icon={IconWallet3Line}>{t('shell.summary.onBudget')}</Label>
             <span className="truncate text-pulse leading-[1.2] font-semibold">
               <Amount amount={data.onBudget} />
             </span>
-            <Sub>
-              {t('shell.summary.onBudgetSub', {
+            <Fit
+              className="max-h-[1.45em] text-tiny leading-[1.45] text-text-muted"
+              head={t('shell.summary.onBudgetLeft', {
                 start: formatMoney(data.allocation.start, 'symbol', locale),
-                reserved: formatMoney(data.reservedBills, 'symbol', locale),
-                free: formatMoney(data.available, 'symbol', locale),
               })}
-            </Sub>
+              extras={[
+                t('shell.summary.onBudgetBills', {
+                  reserved: formatMoney(data.reservedBills, 'symbol', locale),
+                }),
+                t('shell.summary.onBudgetFree', {
+                  free: formatMoney(data.available, 'symbol', locale),
+                }),
+              ]}
+            />
             <LeftBar
               fraction={barFraction(
                 data.onBudget.amountMinor,

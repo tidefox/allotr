@@ -59,7 +59,7 @@ export const accountsScreen = {
     empty: 'no accounts here',
     emptyHint: 'Accounts you add show up in their pool.',
     fold: 'Show or hide the accounts in {name}',
-    notReconciled: 'not yet',
+    notReconciled: 'unreconciled',
     reconciled: 'reconciled',
     sparkline: '{name}, balance over 30 days',
     actionsOf: 'Actions for {name}',

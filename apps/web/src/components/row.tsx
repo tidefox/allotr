@@ -56,8 +56,11 @@ export function Row({
   );
   const classes = cn(
     'block w-full border-b',
-    selected && 'border-l-[3px] border-l-primary bg-card',
+    // `card` is the seam colour in the dark themes, so a selected row
+    // steps up to `card-raised` and the name (`data-name`) gets heavier.
+    selected && 'border-l-[3px] border-l-primary bg-card-raised',
     selected && '[&>.row-grid]:pl-[calc(0.75rem-3px)]',
+    selected && '[&_[data-name]]:font-semibold',
     className,
   );
   // `data-selected` lets a list find the open row to scroll it into view.

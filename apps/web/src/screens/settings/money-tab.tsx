@@ -427,9 +427,10 @@ function RatesTile({
           {t('settingsMoney.common.loading')}
         </p>
       ) : rates.length === 0 ? (
+        // The tile's own title bar already says "exchange rates".
         <EmptyState
-          title={t('settingsMoney.rates.title')}
-          hint={t('settingsMoney.rates.none')}
+          title={t('settingsMoney.rates.none')}
+          hint={t('settingsMoney.rates.noneHint')}
         />
       ) : (
         <div role="list" aria-label={t('settingsMoney.rates.listLabel')}>
