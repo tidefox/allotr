@@ -249,7 +249,7 @@ export function SummaryBar() {
             })}
             className={cn(
               item,
-              'border-l-[3px] border-l-positive bg-canvas medium:flex-[1.3_1_0%]',
+              'edge bg-canvas [--edge:var(--positive)] medium:flex-[1.3_1_0%]',
             )}
           >
             <Label icon={IconSunLine}>{t('shell.summary.leftToday')}</Label>

@@ -51,11 +51,8 @@ export function Stats({
                 'flex min-w-0 flex-col justify-center border-r border-b px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
                 phone === 'hide' && 'compact:hidden',
                 phone === 'wide' && 'compact:col-span-2',
-                highlight && 'border-l-[3px]',
-                highlight &&
-                  (tone === 'positive'
-                    ? 'border-l-positive'
-                    : 'border-l-primary'),
+                highlight && 'edge',
+                highlight && tone === 'positive' && '[--edge:var(--positive)]',
               )}
             >
               <div className="flex items-center gap-1.5 text-[0.7188rem] leading-[1.45] text-text-muted">

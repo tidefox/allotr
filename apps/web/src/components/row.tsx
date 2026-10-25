@@ -66,8 +66,7 @@ export function Row({
     'block w-full border-b',
     // `card` is the seam colour in the dark themes, so a selected row
     // steps up to `card-raised` and the name (`data-name`) gets heavier.
-    selected && 'border-l-[3px] border-l-primary bg-card-raised',
-    selected && '[&>.row-grid]:pl-[calc(0.75rem-3px)]',
+    selected && 'edge bg-card-raised',
     selected && '[&_[data-name]]:font-semibold',
     className,
   );

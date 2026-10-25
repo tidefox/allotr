@@ -251,7 +251,7 @@ export function TitleBar({
     <header
       className={cn(
         'flex h-bar min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b bg-chrome pr-1.5 pl-3 text-title',
-        primary && 'border-l-[3px] border-l-primary pl-[calc(0.75rem-3px)]',
+        primary && 'edge',
       )}
     >
       <div className="min-w-0 truncate whitespace-nowrap">
