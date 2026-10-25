@@ -5,7 +5,7 @@ import {
   type TransactionView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { dashboardEntries } from './todays-entries-model.ts';
+import { dashboardEntries, entryAmountKind } from './todays-entries-model.ts';
 
 // Made-up accounts, categories and entries.
 const usd = (amountMinor: number) => money(amountMinor, 'USD');
@@ -71,5 +71,82 @@ describe('dashboardEntries', () => {
       categories,
     );
     expect(row).toMatchObject({ payee: 'Market', category: null });
+  });
+});
+
+describe('an entry with no note and no category', () => {
+  it('is named by its kind, as the ledger names it', () => {
+    const [row] = dashboardEntries([entry({})], accounts, categories);
+    expect(row).toMatchObject({ payee: 'Expense', category: null });
+  });
+});
+
+describe('entryAmountKind', () => {
+  const lent = entry({
+    kind: 'transfer',
+    postings: [
+      {
+        accountId: 'a-everyday',
+        systemRole: null,
+        amount: usd(-13400),
+        categoryId: null,
+      },
+      {
+        accountId: 'sys-receivables',
+        systemRole: 'receivables',
+        amount: usd(13400),
+        categoryId: null,
+      },
+    ],
+  });
+  const moved = entry({
+    kind: 'transfer',
+    postings: [
+      {
+        accountId: 'a-everyday',
+        systemRole: null,
+        amount: usd(-5000),
+        categoryId: null,
+      },
+      {
+        accountId: 'a-savings',
+        systemRole: null,
+        amount: usd(5000),
+        categoryId: null,
+      },
+    ],
+  });
+  const received = entry({
+    kind: 'transfer',
+    postings: [
+      {
+        accountId: 'a-everyday',
+        systemRole: null,
+        amount: usd(12000),
+        categoryId: null,
+      },
+      {
+        accountId: 'sys-receivables',
+        systemRole: 'receivables',
+        amount: usd(-12000),
+        categoryId: null,
+      },
+    ],
+  });
+
+  it('draws a move between own accounts as a transfer', () => {
+    const [row] = dashboardEntries([moved], accounts, categories);
+    expect(row).toBeDefined();
+    if (row === undefined) return;
+    expect(entryAmountKind(row)).toBe('transfer');
+    expect(row.amount).toEqual(usd(5000));
+  });
+
+  it('draws a lent or repaid IOU by its direction, with its amount', () => {
+    const rows = dashboardEntries([lent, received], accounts, categories);
+    expect(rows.map((r) => [entryAmountKind(r), r.amount])).toEqual([
+      ['expense', usd(-13400)],
+      ['income', usd(12000)],
+    ]);
   });
 });

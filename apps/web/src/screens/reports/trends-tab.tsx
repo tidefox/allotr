@@ -89,7 +89,10 @@ export function TrendsTab() {
     );
   }
   const series = summary.data?.series;
-  if (!ready || series === undefined) {
+  // Names come from the category list: drawn before it arrives, every line
+  // would read "No category" for a moment. A failed list falls back to that.
+  const waiting = categories.data === undefined && !categories.isError;
+  if (!ready || series === undefined || waiting) {
     return (
       <Shell>
         <SkeletonTile span={2} rows={5} />

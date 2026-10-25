@@ -41,6 +41,13 @@ export const DEVICE_PREFS = {
     schema: z.enum(['on', 'off']),
     fallback: 'on',
   },
+  // The dashboard's "needs attention" tile: `auto` follows the width
+  // (folded under 600 px), a choice made with its toggle sticks.
+  attention: {
+    key: 'allotr.attention',
+    schema: z.enum(['auto', 'open', 'folded']),
+    fallback: 'auto',
+  },
 } as const;
 
 export type DevicePref = keyof typeof DEVICE_PREFS;

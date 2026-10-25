@@ -288,6 +288,57 @@ html::-webkit-scrollbar {
 @utility enter-sheet {
   animation: enter-sheet var(--dur-snappy) var(--ease-snappy);
 }
+
+/*
+ * Sheets (docs/ui.md §2.1, §4): the overlay dims the page with a backdrop
+ * filter (no alpha, no opacity) while the panel slides. Both use the one
+ * ease-in-out pair and run on enter and on exit, so React Aria keeps the
+ * overlay mounted until `data-exiting` finishes. Reduced motion zeroes
+ * `--dur-sheet`; the dim itself stays.
+ */
+:root {
+  --sheet-dim: 0.5;
+}
+:root[data-theme='light'] {
+  --sheet-dim: 0.65;
+}
+@utility sheet-overlay {
+  backdrop-filter: brightness(var(--sheet-dim));
+  &[data-entering] {
+    animation: sheet-dim-in var(--dur-sheet) var(--ease-sheet);
+  }
+  &[data-exiting] {
+    animation: sheet-dim-out var(--dur-sheet) var(--ease-sheet) forwards;
+  }
+}
+@utility sheet-panel {
+  &[data-entering] {
+    animation: sheet-in var(--dur-sheet) var(--ease-sheet);
+  }
+  &[data-exiting] {
+    animation: sheet-out var(--dur-sheet) var(--ease-sheet) forwards;
+  }
+}
+@keyframes sheet-dim-in {
+  from {
+    backdrop-filter: brightness(1);
+  }
+}
+@keyframes sheet-dim-out {
+  to {
+    backdrop-filter: brightness(1);
+  }
+}
+@keyframes sheet-in {
+  from {
+    translate: 0 100%;
+  }
+}
+@keyframes sheet-out {
+  to {
+    translate: 0 100%;
+  }
+}
 @keyframes enter-pop {
   from {
     translate: 0 -0.25rem;

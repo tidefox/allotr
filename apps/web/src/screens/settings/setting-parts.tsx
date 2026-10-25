@@ -65,7 +65,7 @@ export function SettingRow({
   control?: ReactNode;
 }) {
   return (
-    <div title={hint}>
+    <div title={hint} className="max-w-[45rem]">
       <Row
         columns={settingColumns}
         cells={[
@@ -332,7 +332,7 @@ export function FormRow({
 /** A row for a setting that is planned (ADR 0029): no control, tagged. */
 export function PlannedRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid min-h-row w-full grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3">
+    <div className="grid min-h-row w-full max-w-[45rem] grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3">
       <span className="min-w-0 truncate text-text-muted">
         {label}
         <PlannedTag />

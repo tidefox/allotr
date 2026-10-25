@@ -5,7 +5,7 @@ import {
   type ReminderView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { attentionItems } from './needs-attention-model.ts';
+import { attentionFolded, attentionItems } from './needs-attention-model.ts';
 
 const base = {
   today: localDate('2026-03-10'),
@@ -33,7 +33,7 @@ describe('attentionItems', () => {
     expect(attentionItems(base, [])).toEqual([]);
   });
 
-  it('orders payday, bills, rates, then reminders', () => {
+  it('orders bills, payday, rates, then reminders', () => {
     const items = attentionItems(
       {
         ...base,
@@ -52,12 +52,42 @@ describe('attentionItems', () => {
       [reminder('r1', 'iou_overdue')],
     );
     expect(items.map((i) => i.kind)).toEqual([
-      'payday-overdue',
       'bill-due',
+      'payday-overdue',
       'missing-rate',
       'reminder',
     ]);
-    expect(items[1]).toMatchObject({ today: true, name: 'Rent' });
+    expect(items[0]).toMatchObject({ today: true, name: 'Rent' });
+  });
+
+  it('puts the most days late first, then bills due today', () => {
+    const bill = (billId: string, dueOn: string) => ({
+      billId,
+      name: `Bill ${billId}`,
+      dueOn: localDate(dueOn),
+      amount: money(1000, 'USD'),
+      price: null,
+    });
+    const items = attentionItems(
+      {
+        ...base,
+        overdue: true,
+        billsDue: [
+          bill('today', '2026-03-10'),
+          bill('two', '2026-03-08'),
+          bill('five', '2026-03-05'),
+          bill('also-today', '2026-03-10'),
+        ],
+      },
+      [],
+    );
+    expect(items.map((i) => i.id)).toEqual([
+      'bill-five-2026-03-05',
+      'bill-two-2026-03-08',
+      'bill-today-2026-03-10',
+      'bill-also-today-2026-03-10',
+      'payday-overdue',
+    ]);
   });
 
   it('marks a bill from an earlier day as not due today', () => {
@@ -87,5 +117,19 @@ describe('attentionItems', () => {
     ]);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ reminderId: 'r3' });
+  });
+});
+
+describe('attentionFolded', () => {
+  it('follows the width until a choice is stored', () => {
+    expect(attentionFolded('auto', 390)).toBe(true);
+    expect(attentionFolded('auto', 599)).toBe(true);
+    expect(attentionFolded('auto', 600)).toBe(false);
+    expect(attentionFolded('auto', 1440)).toBe(false);
+  });
+
+  it('keeps a stored choice at any width', () => {
+    expect(attentionFolded('open', 390)).toBe(false);
+    expect(attentionFolded('folded', 1440)).toBe(true);
   });
 });

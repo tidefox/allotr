@@ -140,8 +140,17 @@ test('the payday plan and weekly review open as sheets', async ({
     })
     .toBe(true);
   await page.goto('/');
-  await page
-    .getByRole('region', { name: t('dashboardTiles.needsAttention.title') })
+  const attention = page.getByRole('region', {
+    name: t('dashboardTiles.needsAttention.title'),
+  });
+  // On a phone the tile starts folded: open it by its toggle.
+  const toggle = attention.getByRole('button', {
+    name: t('dashboardTiles.needsAttention.toggle'),
+  });
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click();
+  }
+  await attention
     .locator('.row-grid')
     .filter({ hasText: t('dashboardTiles.needsAttention.tagReview') })
     .getByRole('button', {
@@ -186,6 +195,13 @@ test('a goal can be archived', async ({ page, baseURL }) => {
     .click();
   await expect(page.getByRole('region', { name: 'Trip' })).toBeHidden();
 });
+
+/** A person's row in the people list (the open person's pane has buttons too). */
+function personRow(page: Page, name: RegExp) {
+  return page
+    .getByRole('region', { name: t('budgetGoalsIous.ious.title') })
+    .getByRole('button', { name });
+}
 
 function detail(page: Page, name: string) {
   return page
@@ -243,7 +259,8 @@ test('a repayment settles part of an IOU and can be deleted', async ({
 }) => {
   await signIn(page, baseURL ?? '');
   await page.goto('/budget/ious');
-  await page.getByRole('button', { name: /Alex/ }).click();
+  // From 1000 px the first person is open already; a tap opens the sheet.
+  await personRow(page, /Alex/).click();
   const pane = detail(page, 'Alex');
   await expect(pane).toBeVisible();
   await expectAccessible(page);
@@ -287,7 +304,7 @@ test('a due date can be set and an IOU written off', async ({
 }) => {
   await signIn(page, baseURL ?? '');
   await page.goto('/budget/ious');
-  await page.getByRole('button', { name: /Alex/ }).click();
+  await personRow(page, /Alex/).click();
   const pane = detail(page, 'Alex');
 
   await pane
@@ -517,4 +534,42 @@ test("an IOU's entry is deleted, unless a payment still stands", async ({
     .click();
   await expect(sheet).toBeHidden();
   await expect(page.getByRole('button', { name: /Eve/ })).toHaveCount(0);
+});
+
+test('the first person opens beside the list from 1000 px', async ({
+  page,
+  baseURL,
+}) => {
+  await signIn(page, baseURL ?? '');
+  const wide = (page.viewportSize()?.width ?? 0) >= 1000;
+  await page.goto('/budget/ious');
+  await expect(
+    page.getByRole('region', {
+      name: t('budgetGoalsIous.ious.title'),
+      exact: true,
+    }),
+  ).toBeVisible();
+  const pane = page.getByRole('region', {
+    name: t('budgetGoalsIous.ious.detailScroll'),
+  });
+  if (!wide) {
+    // A tap opens the sheet, so nothing is open yet.
+    await expect(pane).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    return;
+  }
+  await expect(pane).toBeVisible();
+  const overflow = await page
+    .getByRole('region', { name: t('shell.content') })
+    .evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  // Pressing the open person keeps it open: the detail is never empty.
+  const open = page
+    .getByRole('region', { name: t('budgetGoalsIous.ious.scroll') })
+    .locator('[data-selected]')
+    .first();
+  await open.focus();
+  await page.keyboard.press('Enter');
+  await expect(pane).toBeVisible();
+  await expectAccessible(page);
 });

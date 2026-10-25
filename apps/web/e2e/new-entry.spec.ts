@@ -370,3 +370,74 @@ test('payday opens its sheet', async ({ page }) => {
   ).toBeVisible();
   await page.keyboard.press('Escape');
 });
+
+test('a sheet dims the page and slides out as it closes', async ({ page }) => {
+  const dialog = await openForm(page, 'expense');
+  const overlay = page.locator('.sheet-overlay');
+  // (On a phone the menu sheet is still leaving as the form enters.)
+  await expect(overlay).toHaveCount(1);
+  // The dim is a filter on what is behind the sheet, not an alpha surface.
+  await expect(overlay).toHaveCSS('backdrop-filter', /^brightness\(0\.\d+\)$/);
+  await expectAccessible(page);
+
+  // Esc starts the exit: both parts keep playing the same ease-in-out
+  // animation until it ends, then the sheet is gone and focus is back.
+  await page.keyboard.press('Escape');
+  const exit = await page.evaluate(() => {
+    const el = document.querySelector('.sheet-overlay');
+    const panel = document.querySelector('.sheet-panel');
+    const look = (target: Element | null) => {
+      if (target === null) return null;
+      const style = getComputedStyle(target);
+      return {
+        name: style.animationName,
+        duration: style.animationDuration,
+        easing: style.animationTimingFunction,
+        playing: target.getAnimations().length,
+      };
+    };
+    return {
+      exiting: el?.hasAttribute('data-exiting') ?? false,
+      overlay: look(el),
+      panel: look(panel),
+    };
+  });
+  expect(exit.exiting).toBe(true);
+  expect(exit.overlay?.name).toBe('sheet-dim-out');
+  expect(exit.panel?.name).toBe('sheet-out');
+  expect(exit.overlay?.playing).toBeGreaterThan(0);
+  expect(exit.panel?.playing).toBeGreaterThan(0);
+  expect(exit.overlay?.easing).toBe('cubic-bezier(0.65, 0, 0.35, 1)');
+  expect(exit.panel?.easing).toBe(exit.overlay?.easing);
+  expect(exit.panel?.duration).toBe(exit.overlay?.duration);
+  await expect(overlay).toHaveCount(0);
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: t('shell.command.new') }),
+  ).toBeFocused();
+
+  // Clicking the dimmed page closes it too.
+  const again = await openForm(page, 'expense');
+  await page.mouse.click(4, 4);
+  await expect(again).toBeHidden();
+});
+
+test('reduced motion shortens the sheet motion to nothing', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const duration = await page.evaluate(() =>
+    getComputedStyle(document.documentElement)
+      .getPropertyValue('--dur-sheet')
+      .trim(),
+  );
+  expect(duration).toMatch(/^0(ms|s)$/);
+  const dialog = await openForm(page, 'expense');
+  // The dim stays; only the movement goes.
+  await expect(page.locator('.sheet-overlay')).toHaveCSS(
+    'backdrop-filter',
+    /^brightness\(/,
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+});

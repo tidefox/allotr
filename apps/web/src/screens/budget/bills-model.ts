@@ -119,3 +119,17 @@ export function billsView(
 export function cycleDayDate(opened: LocalDate, day: number): LocalDate {
   return addDays(opened, day);
 }
+
+/**
+ * Where a due date stands against today: `late` by a number of days, due
+ * `today`, or still `in` a number of days. Day counting only. A bill that is
+ * late is named late wherever it appears, not "today".
+ */
+export function dueStatus(
+  dueOn: LocalDate,
+  today: LocalDate,
+): Readonly<{ state: 'late' | 'today' | 'in'; days: number }> {
+  const days = daysBetween(today, dueOn);
+  if (days < 0) return { state: 'late', days: -days };
+  return days === 0 ? { state: 'today', days: 0 } : { state: 'in', days };
+}

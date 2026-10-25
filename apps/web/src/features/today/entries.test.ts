@@ -76,6 +76,7 @@ describe('entryRows', () => {
         note: 'Lunch',
         accounts: ['Everyday'],
         amount: usd(-1250),
+        moves: false,
         style: { colour: 'series-6', icon: 'utensils' },
       },
     ]);
@@ -99,7 +100,44 @@ describe('entryRows', () => {
       title: null,
       accounts: ['Everyday', 'Savings'],
       amount: usd(30000),
+      moves: true,
     });
+  });
+
+  it('signs a transfer with one own side, such as an IOU, as out or in', () => {
+    // Lending money moves it out of an account into a receivable.
+    const lent = entry({
+      id: 'e-lend',
+      kind: 'transfer',
+      postings: [
+        posting('a-everyday', -13400),
+        {
+          accountId: 'sys-receivables',
+          systemRole: 'receivables' as const,
+          amount: usd(13400),
+          categoryId: null,
+        },
+      ],
+    });
+    // A repayment moves it back in.
+    const repaid = entry({
+      id: 'e-repay',
+      kind: 'transfer',
+      postings: [
+        posting('a-everyday', 12000),
+        {
+          accountId: 'sys-receivables',
+          systemRole: 'receivables' as const,
+          amount: usd(-12000),
+          categoryId: null,
+        },
+      ],
+    });
+    const rows = entryRows([lent, repaid], accounts, categories);
+    expect(rows.map((r) => [r.moves, r.amount])).toEqual([
+      [false, usd(-13400)],
+      [false, usd(12000)],
+    ]);
   });
 
   it('leaves out a deleted entry, its undo and budget switches', () => {

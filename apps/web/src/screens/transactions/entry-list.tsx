@@ -11,6 +11,7 @@ import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { IconFilter3Line, IconMoneyDollarCircleLine } from '@/generated/icons';
+import { useRevealSelected } from '@/lib/auto-select';
 import { seriesNumber } from '@/lib/category-style';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
@@ -55,7 +56,16 @@ function rowCells(row: TxRow) {
       />
     ),
     <span key="payee" className="flex min-w-0 items-center gap-1.5">
-      <span className="truncate font-sans">{row.payee}</span>
+      <span className="truncate font-sans">
+        <span data-name="">{row.payee}</span>
+        {row.category === null ? null : (
+          // The category column is gone on a phone: keep it as a muted tail.
+          <span className="hidden text-text-muted compact:inline">
+            {' · '}
+            {row.category}
+          </span>
+        )}
+      </span>
       {row.bill === null ? null : (
         <Tag className="shrink-0">{t('transactions.list.billTag')}</Tag>
       )}
@@ -75,7 +85,7 @@ function rowCells(row: TxRow) {
         </>
       )}
     </span>,
-    <span key="account" className="font-sans text-text">
+    <span key="account" className="font-sans text-text-muted">
       {row.account}
     </span>,
     row.amount === null ? null : (
@@ -97,7 +107,7 @@ function EntryRow({
 }) {
   return (
     <Row
-      className="cv-row"
+      className="cv-row scroll-mt-10"
       columns={columns}
       selected={selected}
       onPress={() => {
@@ -160,7 +170,7 @@ function MovableDay({
           key={row.id}
           id={row.id}
           textValue={row.payee}
-          className="press relative block cursor-pointer outline-none data-[dragging]:bg-card data-[drop-target]:bg-card"
+          className="press relative block scroll-mt-10 cursor-pointer outline-none data-[dragging]:bg-card data-[drop-target]:bg-card"
         >
           <Button
             slot="drag"
@@ -252,6 +262,8 @@ export function EntryList({
   onMove: (move: Move) => void;
 }) {
   const sentinel = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useRevealSelected(root, selectedId);
   useEffect(() => {
     const el = sentinel.current;
     if (el === null || !hasMore || typeof IntersectionObserver === 'undefined')
@@ -267,7 +279,7 @@ export function EntryList({
 
   const empty = sections.every((s) => s.rows.length === 0);
   return (
-    <div>
+    <div ref={root}>
       {summary.length === 0 ? null : (
         <p className="flex flex-wrap gap-x-[1.125rem] gap-y-1 px-3 pt-0.5 pb-1.5 text-small text-text-muted">
           {summary.map((part) => {
@@ -321,10 +333,24 @@ export function EntryList({
             {section.title === null ? null : (
               <h3 className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-canvas px-3 pt-2.5 pb-1 text-small text-text-muted">
                 <span className="min-w-0 flex-1 truncate font-semibold text-text">
-                  {section.title}
+                  {section.heading ?? section.title}
+                  {section.today === true ? (
+                    <span className="font-normal text-primary">
+                      {' · '}
+                      {t('transactions.list.todayMark')}
+                    </span>
+                  ) : null}
                 </span>
                 {section.total === null ? null : (
-                  <span className="num shrink-0">{section.total}</span>
+                  <span
+                    className={cn(
+                      'num shrink-0',
+                      section.totalTone === 'negative' && 'text-negative',
+                      section.totalTone === 'positive' && 'text-positive',
+                    )}
+                  >
+                    {section.total}
+                  </span>
                 )}
               </h3>
             )}

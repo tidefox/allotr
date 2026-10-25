@@ -1,7 +1,7 @@
 import { daysBetween } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { AccountView } from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
@@ -22,6 +22,7 @@ import {
   IconSafe2Line,
 } from '@/generated/icons';
 import { poolsQuery } from '@/lib/budgets';
+import { useAutoSelectFirst } from '@/lib/auto-select';
 import { formatMoney } from '@/lib/format-money';
 import { accountsQuery, todayQuery } from '@/lib/ledger';
 import { netWorthQuery } from '@/lib/plan';
@@ -89,14 +90,17 @@ export function AccountsScreen() {
   const [open, setOpen] = useState<Open | null>(null);
   const [adding, setAdding] = useState(false);
 
-  const select = (account: string | undefined) => {
-    const search = account === undefined ? {} : { account };
-    void navigate(
-      filter === 'all'
-        ? { to: '/accounts', search }
-        : { to: '/accounts/$sub', params: { sub: filter }, search },
-    );
-  };
+  const select = useCallback(
+    (account: string | undefined, replace = false) => {
+      const search = account === undefined ? {} : { account };
+      void navigate(
+        filter === 'all'
+          ? { to: '/accounts', search, replace }
+          : { to: '/accounts/$sub', params: { sub: filter }, search, replace },
+      );
+    },
+    [navigate, filter],
+  );
 
   const list = accounts.data?.accounts;
   const creditOwed = accounts.data?.totals.creditOwed.amount ?? null;
@@ -125,6 +129,21 @@ export function AccountsScreen() {
           ),
     [list, pools.data, filter, creditOwed, creditTotals],
   );
+
+  // From 1000 px the first account is open by default (replacing the
+  // address, so Back skips it); a sub-tab starts its own list afresh.
+  const firstAccount = groups?.find((g) => g.accounts.length > 0)?.accounts[0];
+  useAutoSelectFirst({
+    selected,
+    first: firstAccount?.id,
+    context: filter,
+    select: useCallback(
+      (id: string) => {
+        select(id, true);
+      },
+      [select],
+    ),
+  });
 
   const stats = useMemo<Stat[] | undefined>(() => {
     if (accounts.data === undefined) return undefined;
@@ -181,6 +200,7 @@ export function AccountsScreen() {
           <Amount amount={accounts.data.totals.off.amount} locale={locale} />
         ),
         sub: t('accountsScreen.stats.savingsSub', { count: saving }),
+        phone: 'hide',
       },
       {
         label: t('accountsScreen.stats.credit'),
@@ -226,6 +246,8 @@ export function AccountsScreen() {
       {
         label: t('accountsScreen.stats.reconcile'),
         icon: IconCheckLine,
+        // On a phone only when an account needs a look, on a row of its own.
+        phone: looks.length === 0 ? 'hide' : 'wide',
         figure: (
           <>
             {looks.length}{' '}
@@ -314,9 +336,10 @@ export function AccountsScreen() {
 
   return (
     <>
-      <div className="flex min-h-full flex-col [&>:last-child]:flex-1">
+      <div className="flex min-h-full flex-col wide:h-full wide:min-h-0 [&>:last-child]:flex-1">
         {stats === undefined ? null : <Stats stats={stats} />}
         <Split
+          fill
           list={
             <Tile
               title={t('accountsScreen.list.title')}
@@ -337,8 +360,9 @@ export function AccountsScreen() {
                   {t('accountsScreen.add.action')}
                 </BracketButton>
               }
-              className="min-h-full"
+              className="min-h-full wide:min-h-0 wide:flex-1"
               bodyClassName="px-0 pb-0"
+              scroll={t('accountsScreen.list.scroll')}
             >
               {body}
             </Tile>
@@ -349,7 +373,7 @@ export function AccountsScreen() {
                   <Tile
                     title={t('accountsScreen.detail.title')}
                     icon={IconBankLine}
-                    className="h-full"
+                    className="h-full wide:min-h-0 wide:flex-1"
                   >
                     <EmptyState
                       title={t('accountsScreen.detail.pick')}

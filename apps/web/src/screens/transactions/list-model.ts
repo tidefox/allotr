@@ -52,6 +52,12 @@ export interface TxSection {
   title: string | null;
   /** The group's figure, formatted by the server's own numbers. */
   total: string | null;
+  /** The sign of a day's net, which colours its figure; null for none. */
+  totalTone: 'positive' | 'negative' | null;
+  /** Set on the user's own today, whose day header says so. */
+  today?: boolean;
+  /** A day's date without the `· today` mark; same as `title` otherwise. */
+  heading?: string | null;
   rows: TxRow[];
 }
 
@@ -178,6 +184,12 @@ export function summaryParts(totals: EntryTotals): SummaryPart[] {
 
 const UNCATEGORISED = '__none__';
 
+/** A day net's colour: the sign of a server figure, nothing is added. */
+export function signTone(amountMinor: number): 'positive' | 'negative' | null {
+  if (amountMinor > 0) return 'positive';
+  return amountMinor < 0 ? 'negative' : null;
+}
+
 /** A category group's own figure: what was spent, else what came in. */
 export function groupTotal(totals: EntryTotals): string | null {
   const spent = totals.byCurrency
@@ -208,7 +220,7 @@ export function sections(input: {
   const rows = txRows(transactions, accounts, categories);
   // Days mean nothing when the list runs by amount: one flat list.
   if (group === 'none' || (group === 'day' && !isDateSort(sort))) {
-    return [{ key: 'all', title: null, total: null, rows }];
+    return [{ key: 'all', title: null, total: null, totalTone: null, rows }];
   }
   if (group === 'day') {
     const net = new Map(input.dayTotals.map((d) => [d.date as string, d.net]));
@@ -229,6 +241,9 @@ export function sections(input: {
             ? t('transactions.list.today', { day: label })
             : label,
         total: dayNet === undefined ? null : formatSigned(dayNet),
+        totalTone: dayNet === undefined ? null : signTone(dayNet.amountMinor),
+        today: day === input.today,
+        heading: label,
         rows: [row],
       });
     });
@@ -258,6 +273,7 @@ export function sections(input: {
                 ? category.name
                 : `${parent.name} › ${category.name}`,
           total: server === undefined ? null : groupTotal(server),
+          totalTone: null,
           rows: [],
         };
         found.set(key, section);

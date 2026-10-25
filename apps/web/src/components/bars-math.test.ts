@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampFraction, percent } from './bars-math.ts';
+import { clampFraction, isNearLimit, percent } from './bars-math.ts';
 
 describe('clampFraction', () => {
   it.each([
@@ -21,5 +21,20 @@ describe('percent', () => {
     expect(percent(0.5)).toBe('50%');
     expect(percent(1 / 3)).toBe('33.33%');
     expect(percent(2)).toBe('100%');
+  });
+});
+
+describe('isNearLimit', () => {
+  it.each([
+    [0, false],
+    [0.5, false],
+    [0.89, false],
+    [0.9, true],
+    [0.97, true],
+    [1, true],
+    [2, true],
+    [Number.NaN, false],
+  ])('%s → %s', (input, expected) => {
+    expect(isNearLimit(input)).toBe(expected);
   });
 });

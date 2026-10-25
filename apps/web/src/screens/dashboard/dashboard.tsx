@@ -15,7 +15,10 @@ import { ThisCycleTile } from './tiles/this-cycle.tsx';
 import { TodaysEntriesTile } from './tiles/todays-entries.tsx';
 
 // The Dashboard (docs/ui.md §6): default tile order and sizes, no layout
-// editor yet. Every figure comes from the server.
+// editor yet. Every figure comes from the server. The order is by what the
+// user acts on: the daily number, what needs attention, what was logged
+// today, the budgets and the week ahead, then the cycle's allocation and
+// the slower figures.
 export function Dashboard() {
   // While a user is held to two-factor enrolment the server refuses ledger
   // reads, so no tile mounts (and queries) until the hold is over.
@@ -26,9 +29,9 @@ export function Dashboard() {
         <ThisCycleTile />
         <NeedsAttentionTile />
         <TodaysEntriesTile />
-        <CycleAllocationTile />
         <BudgetsTile />
         <NextSevenDaysTile />
+        <CycleAllocationTile />
         <PoolsTile />
         <EmergencyFundTile />
         <NetWorthTile />

@@ -70,6 +70,35 @@ export function inFilter(
   }
 }
 
+/**
+ * Accounts by what they hold, the largest first; with `owed`, the one that
+ * owes most first (a debt is a negative balance). Accounts have no stored
+ * order, so this is what the list shows. Balances in different currencies
+ * do not compare, so each currency keeps together, in the order it first
+ * appears. Ties keep the server's order.
+ */
+export function sortByBalance(
+  accounts: readonly AccountView[],
+  owed = false,
+): AccountView[] {
+  const currencies: string[] = [];
+  for (const a of accounts)
+    if (!currencies.includes(a.balance.currency))
+      currencies.push(a.balance.currency);
+  const sign = owed ? 1 : -1;
+  return accounts
+    .map((account, index) => ({ account, index }))
+    .sort(
+      (a, b) =>
+        currencies.indexOf(a.account.balance.currency) -
+          currencies.indexOf(b.account.balance.currency) ||
+        sign *
+          (a.account.balance.amountMinor - b.account.balance.amountMinor) ||
+        a.index - b.index,
+    )
+    .map(({ account }) => account);
+}
+
 /** Pools in the server's order, then credit, then accounts with no pool. */
 export function accountGroups(
   accounts: readonly AccountView[],
@@ -89,7 +118,7 @@ export function accountGroups(
   const open = pools.filter((p) => !p.archived);
   open.forEach((pool) => {
     known.add(pool.id);
-    const inPool = rest.filter((a) => a.poolId === pool.id);
+    const inPool = sortByBalance(rest.filter((a) => a.poolId === pool.id));
     if (inPool.length > 0) {
       groups.push({
         id: pool.id,
@@ -123,7 +152,7 @@ export function accountGroups(
       icon: null,
       counts: false,
       cycleFraction: null,
-      accounts: strays,
+      accounts: sortByBalance(strays),
     });
   }
   if (credit.length > 0) {
@@ -146,7 +175,7 @@ export function accountGroups(
             ),
       limit: creditTotals === null ? null : creditTotals.limit,
       available: creditTotals === null ? null : creditTotals.available,
-      accounts: credit,
+      accounts: sortByBalance(credit, true),
     });
   }
   return groups;

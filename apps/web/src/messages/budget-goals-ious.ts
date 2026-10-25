@@ -71,6 +71,8 @@ export const budgetGoalsIous = {
     overdueTag: '{count}d late',
     openMany: '{count} open',
     detailTitle: 'person',
+    scroll: 'People list',
+    detailScroll: 'Person detail',
     pickOne: 'no person selected',
     closeDetail: 'Close',
     dueOn: 'due {date}',

@@ -115,9 +115,13 @@ export const stripButtonClass =
 export const menuButtonClass =
   'press inline-flex min-h-7 min-w-hit max-w-full items-center gap-1.5 border border-outline bg-canvas pr-1.5 pl-2.5 text-small whitespace-nowrap';
 
-/** A settings row that is itself the control (`r click`): label, value, ▾. */
+/**
+ * A settings row that is itself the control (`r click`): label, value, ▾.
+ * Capped at a readable width, so on a wide screen the value stays next to
+ * its label instead of a thousand pixels away.
+ */
 export const settingRowClass =
-  'press grid min-h-row w-full grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3 text-left';
+  'press grid min-h-row w-full max-w-[45rem] grid-cols-[minmax(0,1fr)_auto_1.125rem] items-center gap-x-2.5 border-b px-3 text-left';
 
 /** The cells of a `settingRowClass` control. */
 export function SettingRowFace({

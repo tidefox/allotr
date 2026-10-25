@@ -6,6 +6,7 @@ import { Brackets, bracketClass } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { EmptyState } from '@/components/states';
 import { KeyFigures } from '@/components/stats';
+import { useFrameWidth } from '@/components/use-frame-width';
 import { Chart, ChartLegend } from '@/charts/chart';
 import { niceTicks } from '@/charts/math';
 import { formatDay, formatTerminalDate } from '@/features/today/format';
@@ -30,6 +31,8 @@ const money = (amount: Money) => formatMoney(amount, 'symbol', locale);
 // "This cycle" (docs/ui.md §6): key figures, spent against the even pace,
 // and the formula behind today's daily figure. All amounts are the server's.
 export function ThisCycleTile() {
+  // On a phone the tile is squashed so the rows after it stay in view.
+  const compact = useFrameWidth() < 600;
   const today = useQuery(todayQuery);
   const days = useQuery(cycleDaysQuery(today.data?.cycle.openedOn));
   // Only the formula line's cover note needs it: the tile works without.
@@ -149,7 +152,7 @@ export function ThisCycleTile() {
         <>
           <Chart
             className="p-0"
-            height={150}
+            height={compact ? 130 : 150}
             grow
             label={t('dashboardTiles.thisCycle.chartLabel')}
             series={[
@@ -208,6 +211,7 @@ export function ThisCycleTile() {
       <Formula
         figures={figures}
         daysLeft={daysLeft}
+        squash
         coverUsed={coverUsedItems(budgets.data?.budgets ?? [])}
       />
     </Tile>
@@ -223,12 +227,15 @@ export function Formula({
   figures,
   daysLeft,
   coverUsed = [],
+  squash = false,
   className,
 }: {
   figures: TodayView;
   daysLeft: number;
   /** What other sources covered this budget period; see `coverUsedItems`. */
   coverUsed?: readonly CoverUsedItem[];
+  /** On a phone, drop the cover notes so the line stays one short row. */
+  squash?: boolean;
   className?: string;
 }) {
   const f = (key: FormulaKey) => t(`dashboardTiles.thisCycle.formula.${key}`);
@@ -260,16 +267,20 @@ export function Formula({
   return (
     <p
       className={cn(
-        'mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 border-t pt-2 text-[0.75rem] text-text-muted compact:block compact:truncate compact:text-[0.6875rem] compact:[&>span]:mr-2.5',
+        'mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 border-t pt-2 text-[0.75rem] text-text-muted compact:mt-1.5 compact:flex-nowrap compact:gap-x-2 compact:pt-1.5 compact:text-[0.6875rem]',
         className,
       )}
     >
-      {terms}
-      <span>
-        {f('divide')} <b className="font-medium text-text">{daysLeft}</b>{' '}
-        {t('dashboardTiles.thisCycle.formula.days', { count: daysLeft })}
+      {/* One truncated row on a phone: the working may be cut, the daily
+          number after it never is. */}
+      <span className="contents compact:block compact:min-w-0 compact:flex-1 compact:truncate compact:[&>span]:mr-2.5">
+        {terms}
+        <span>
+          {f('divide')} <b className="font-medium text-text">{daysLeft}</b>{' '}
+          {t('dashboardTiles.thisCycle.formula.days', { count: daysLeft })}
+        </span>
       </span>
-      <span>
+      <span className="compact:shrink-0">
         {f('equals')}{' '}
         <b className="font-semibold text-positive">
           {money(figures.liveDaily)}
@@ -277,7 +288,10 @@ export function Formula({
         {f('perDay')}
       </span>
       {coverUsed.slice(0, COVER_NOTES).map((item) => (
-        <span key={`${item.budget}\u0000${item.source}`}>
+        <span
+          key={`${item.budget}\u0000${item.source}`}
+          className={cn(squash && 'compact:hidden')}
+        >
           {t('dashboardTiles.thisCycle.formula.coverUsed')}{' '}
           <b className="font-medium text-text">{money(item.amount)}</b>{' '}
           {t('dashboardTiles.thisCycle.formula.coverFrom', {
@@ -287,7 +301,7 @@ export function Formula({
         </span>
       ))}
       {coverUsed.length > COVER_NOTES ? (
-        <span>
+        <span className={cn(squash && 'compact:hidden')}>
           {t('dashboardTiles.thisCycle.formula.coverMore', {
             count: coverUsed.length - COVER_NOTES,
           })}

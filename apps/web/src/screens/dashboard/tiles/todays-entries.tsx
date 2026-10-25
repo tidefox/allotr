@@ -19,7 +19,7 @@ import {
 } from '@/lib/ledger';
 import { t } from '@/messages/t';
 import { TileFailed } from './tile-failed.tsx';
-import { dashboardEntries } from './todays-entries-model.ts';
+import { dashboardEntries, entryAmountKind } from './todays-entries-model.ts';
 
 const locale = 'en';
 
@@ -117,22 +117,19 @@ export function TodaysEntriesTile() {
                     />
                   ),
                   <span key="payee" className="font-sans">
-                    {row.payee ?? t('dashboardTiles.todaysEntries.untitled')}
+                    {row.payee}
                     {row.category === null ? null : (
-                      <span className="text-text-muted"> {row.category}</span>
+                      <span className="text-small text-text-muted">
+                        {' · '}
+                        {row.category}
+                      </span>
                     )}
                   </span>,
                   row.amount === null ? null : (
                     <Amount
                       key="amount"
                       amount={row.amount}
-                      kind={
-                        row.kind === 'transfer'
-                          ? 'transfer'
-                          : row.amount.amountMinor < 0
-                            ? 'expense'
-                            : 'income'
-                      }
+                      kind={entryAmountKind(row)}
                       locale={locale}
                     />
                   ),

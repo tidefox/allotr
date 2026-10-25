@@ -4,6 +4,7 @@ import {
   budgetTree,
   freeCategories,
   subCandidates,
+  tierOf,
   visibleEntries,
 } from './budgets-model.ts';
 
@@ -55,6 +56,70 @@ const categories = [
   category('dining', 'food', 2),
   category('fun', null, 2),
 ];
+
+const setAside = (id: string, categoryId: string): BudgetView => ({
+  ...budget(id, categoryId),
+  mode: 'set-aside',
+});
+const buffer = (id: string): BudgetView => ({
+  ...budget(id, ''),
+  mode: 'set-aside',
+  target: { kind: 'buffer' },
+});
+
+describe('tierOf', () => {
+  it('ranks daily, then set-aside, then the Buffer', () => {
+    expect([
+      tierOf([budget('a', 'fun')]),
+      tierOf([setAside('b', 'fun')]),
+      tierOf([buffer('c')]),
+      // A group with any daily budget in it stays daily.
+      tierOf([setAside('d', 'fun'), budget('e', 'dining')]),
+    ]).toEqual([0, 1, 2, 0]);
+  });
+});
+
+describe('budgetTree order', () => {
+  it('lists daily budgets first, set-aside next and the Buffer last', () => {
+    const all = [
+      category('food', null, 1),
+      category('holiday', null, 2),
+      category('fun', null, 3),
+      category('car', null, 4),
+    ];
+    // Created (and positioned) with a set-aside budget between daily ones.
+    const tree = budgetTree(
+      [
+        buffer('buf'),
+        budget('b-food', 'food'),
+        setAside('b-holiday', 'holiday'),
+        budget('b-fun', 'fun'),
+        setAside('b-car', 'car'),
+      ],
+      all,
+    );
+    // Each tier keeps the user's category order.
+    expect(tree.map((e) => e.key)).toEqual([
+      'food',
+      'fun',
+      'holiday',
+      'car',
+      'buf',
+    ]);
+  });
+
+  it('keeps a parent with its children as one block', () => {
+    const tree = budgetTree(
+      [
+        setAside('b-fun', 'fun'),
+        budget('b1', 'groceries'),
+        budget('b2', 'dining'),
+      ],
+      categories,
+    );
+    expect(tree.map((e) => e.key)).toEqual(['food', 'b1', 'b2', 'fun']);
+  });
+});
 
 describe('budgetTree', () => {
   it('nests subcategory budgets under a header with no figures', () => {

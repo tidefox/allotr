@@ -7,15 +7,25 @@ import { Tile } from '@/components/layout';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
-import { EmptyState } from '@/components/states';
-import { IconErrorWarningLine, IconMore2Line } from '@/generated/icons';
+import { useFrameWidth } from '@/components/use-frame-width';
+import {
+  IconArrowDownSLine,
+  IconArrowRightSLine,
+  IconErrorWarningLine,
+  IconMore2Line,
+} from '@/generated/icons';
+import { useDevicePref } from '@/lib/device-prefs';
 import { formatMoney } from '@/lib/format-money';
 import { todayQuery } from '@/lib/ledger';
 import { markRead, remindersQuery } from '@/lib/reminders';
 import { t } from '@/messages/t';
 import { openBudgetSheet } from '@/screens/budget/sheets/store';
 import { TileFailed } from './tile-failed.tsx';
-import { attentionItems, type AttentionItem } from './needs-attention-model.ts';
+import {
+  attentionFolded,
+  attentionItems,
+  type AttentionItem,
+} from './needs-attention-model.ts';
 
 const locale = 'en';
 const WEEKLY_REVIEW = '#weekly-review';
@@ -87,11 +97,16 @@ function present(item: AttentionItem, today: LocalDate): Presented {
 }
 
 // "Needs attention" (docs/ui.md §6): a tag, the text, an action and a ⋮ menu
-// per item, from today's figures and the unread reminders.
+// per item, from today's figures and the unread reminders. With nothing to
+// show it renders nothing. A fold toggle in the title bar keeps only the
+// bar (the count and the most urgent item); folded by default under 600 px,
+// and the choice is remembered on this device.
 export function NeedsAttentionTile() {
   const today = useQuery(todayQuery);
   const reminders = useQuery(remindersQuery);
   const router = useRouter();
+  const [fold, setFold] = useDevicePref('attention');
+  const width = useFrameWidth();
   const queryClient = useQueryClient();
   const read = useMutation({
     mutationFn: (id: string) => markRead([id]),
@@ -120,87 +135,113 @@ export function NeedsAttentionTile() {
   }
 
   const items = attentionItems(today.data, reminders.data.reminders);
+  const first = items[0];
+  if (first === undefined) return null;
+  const folded = attentionFolded(fold, width);
   const go = (href: string) => {
     if (href === WEEKLY_REVIEW) openBudgetSheet('weekly-review');
     else void router.navigate({ href });
   };
+  const lead = present(first, today.data.today);
+  const toggle = (
+    <button
+      type="button"
+      aria-label={t('dashboardTiles.needsAttention.toggle')}
+      aria-expanded={!folded}
+      onClick={() => {
+        setFold(folded ? 'open' : 'folded');
+      }}
+      className="press flex size-hit items-center justify-center text-text-muted"
+    >
+      {folded ? (
+        <IconArrowRightSLine className="size-4" />
+      ) : (
+        <IconArrowDownSLine className="size-4" />
+      )}
+    </button>
+  );
 
   return (
     <Tile
       title={title}
       icon={IconErrorWarningLine}
-      subtitle={items.length === 0 ? undefined : String(items.length)}
+      subtitle={
+        folded
+          ? t('dashboardTiles.needsAttention.folded', {
+              count: items.length,
+              tag: lead.tag,
+              text: lead.text,
+            })
+          : String(items.length)
+      }
+      folded={folded}
       actions={
-        items.some((item) => item.kind === 'reminder') ? (
-          <BracketButton
-            isDisabled={readAll.isPending}
-            onPress={() => {
-              readAll.mutate();
-            }}
-          >
-            {t('dashboardTiles.needsAttention.markAllRead')}
-          </BracketButton>
-        ) : undefined
+        <>
+          {!folded && items.some((item) => item.kind === 'reminder') ? (
+            <BracketButton
+              isDisabled={readAll.isPending}
+              onPress={() => {
+                readAll.mutate();
+              }}
+            >
+              {t('dashboardTiles.needsAttention.markAllRead')}
+            </BracketButton>
+          ) : null}
+          {toggle}
+        </>
       }
       bodyClassName="px-0 pb-0"
     >
-      {items.length === 0 ? (
-        <EmptyState
-          title={t('dashboardTiles.needsAttention.empty')}
-          hint={t('dashboardTiles.needsAttention.emptyHint')}
-        />
-      ) : (
-        <div>
-          {items.map((item) => {
-            const view = present(item, today.data.today);
-            return (
-              <Row
-                key={item.id}
-                columns={columns}
-                cells={[
-                  <Tag key="tag" tone={view.tone}>
-                    {view.tag}
-                  </Tag>,
-                  <span key="text" className="font-sans">
-                    {view.text}
-                  </span>,
-                  <BracketButton
-                    key="action"
-                    onPress={() => {
+      <div>
+        {items.map((item) => {
+          const view = present(item, today.data.today);
+          return (
+            <Row
+              key={item.id}
+              columns={columns}
+              cells={[
+                <Tag key="tag" tone={view.tone}>
+                  {view.tag}
+                </Tag>,
+                <span key="text" className="font-sans">
+                  {view.text}
+                </span>,
+                <BracketButton
+                  key="action"
+                  onPress={() => {
+                    go(view.href);
+                  }}
+                >
+                  {view.action}
+                </BracketButton>,
+                <MenuButton
+                  key="more"
+                  label={t('dashboardTiles.needsAttention.more')}
+                  icon={IconMore2Line}
+                  variant="bracket"
+                >
+                  <MenuItem
+                    id="open"
+                    label={view.action}
+                    onAction={() => {
                       go(view.href);
                     }}
-                  >
-                    {view.action}
-                  </BracketButton>,
-                  <MenuButton
-                    key="more"
-                    label={t('dashboardTiles.needsAttention.more')}
-                    icon={IconMore2Line}
-                    variant="bracket"
-                  >
+                  />
+                  {item.kind === 'reminder' ? (
                     <MenuItem
-                      id="open"
-                      label={view.action}
+                      id="read"
+                      label={t('dashboardTiles.needsAttention.markRead')}
                       onAction={() => {
-                        go(view.href);
+                        read.mutate(item.reminderId);
                       }}
                     />
-                    {item.kind === 'reminder' ? (
-                      <MenuItem
-                        id="read"
-                        label={t('dashboardTiles.needsAttention.markRead')}
-                        onAction={() => {
-                          read.mutate(item.reminderId);
-                        }}
-                      />
-                    ) : null}
-                  </MenuButton>,
-                ]}
-              />
-            );
-          })}
-        </div>
-      )}
+                  ) : null}
+                </MenuButton>,
+              ]}
+            />
+          );
+        })}
+      </div>
     </Tile>
   );
 }

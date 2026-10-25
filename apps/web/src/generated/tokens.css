@@ -101,6 +101,8 @@
   --dur-bouncy: 753ms;
   --ease-exit: cubic-bezier(0.3, 0, 1, 1);
   --dur-exit: 200ms;
+  --ease-sheet: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-sheet: 300ms;
   --dur-fade: 120ms;
 }
 
@@ -112,6 +114,7 @@
     --dur-gentle: 0ms;
     --dur-bouncy: 0ms;
     --dur-exit: 0ms;
+    --dur-sheet: 0ms;
   }
 }
 
@@ -122,6 +125,7 @@
   --dur-gentle: 0ms;
   --dur-bouncy: 0ms;
   --dur-exit: 0ms;
+  --dur-sheet: 0ms;
 }
 
 :root[data-motion='off'] {

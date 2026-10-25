@@ -16,6 +16,7 @@ import { MenuButton, MenuItem } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
+import { useFrameWidth } from '@/components/use-frame-width';
 import { ChartLegend } from '@/charts/chart';
 import {
   IconAddLine,
@@ -45,20 +46,20 @@ import { openBudgetSheet } from './sheets/store.ts';
 
 const locale = 'en';
 
-// Lead, icon, name, bar, spent, left, action. Phones drop the left column
-// and narrow the bar, as the locked design's budget rows do.
+// Lead, icon, name, bar, spent, left, action. Phones drop the spent column
+// (left is the figure to act on) and narrow the bar.
 const columns: readonly RowColumn[] = [
   { width: '1.5rem' },
   { width: '1.125rem' },
   { width: 'minmax(0, 1fr)' },
   { width: 'minmax(3.75rem, 2.4fr)', at: { compact: 'minmax(2.25rem, 1fr)' } },
-  { width: '9ch' },
   { width: '9ch', from: 'medium' },
+  { width: '9ch' },
   { width: '8ch' },
 ];
 
 // The server's totals under the tree: a label, then the figure under the
-// last money column (left on wider frames, spent on phones).
+// last money column (left, on every frame).
 const totalColumns: readonly RowColumn[] = [
   { width: 'minmax(0, 1fr)' },
   { width: '9ch' },
@@ -76,6 +77,9 @@ export function BudgetsTab() {
   const status = useQuery(budgetsQuery);
   const categories = useQuery(categoriesQuery);
   const [open, setOpen] = useState<Open | null>(null);
+  // On a phone the budgets come first: the allocation alone would fill the
+  // first screen. From 600 px it leads, as the cycle's overview.
+  const compact = useFrameWidth() < 600;
 
   if (status.isError) {
     return (
@@ -104,8 +108,9 @@ export function BudgetsTab() {
   return (
     <>
       <Grid className="min-h-full">
-        <CycleAllocationTile />
+        {compact ? null : <CycleAllocationTile />}
         <TreeTile data={data} categories={cats} onOpen={setOpen} />
+        {compact ? <CycleAllocationTile /> : null}
         <CoverTile data={data} categories={cats} />
       </Grid>
       {open === null ? null : 'sheet' in open ? (

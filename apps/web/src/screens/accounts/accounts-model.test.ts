@@ -7,6 +7,7 @@ import {
   ledgerCounts,
   movePools,
   needsReconcile,
+  sortByBalance,
 } from './accounts-model.ts';
 
 function account(patch: Partial<AccountView> & { id: string }): AccountView {
@@ -99,15 +100,71 @@ describe('accountColour', () => {
   });
 });
 
+describe('sortByBalance', () => {
+  const small = account({ id: 'small', balance: money(500, 'USD') });
+  const big = account({ id: 'big', balance: money(90000, 'USD') });
+  const mid = account({ id: 'mid', balance: money(20000, 'USD') });
+  const ids = (list: readonly AccountView[]) => list.map((a) => a.id);
+
+  it('puts the largest balance first', () => {
+    expect(ids(sortByBalance([small, big, mid]))).toEqual([
+      'big',
+      'mid',
+      'small',
+    ]);
+  });
+
+  it('puts the most owed first for credit', () => {
+    const light = account({ id: 'light', balance: money(-1000, 'USD') });
+    const heavy = account({ id: 'heavy', balance: money(-90000, 'USD') });
+    expect(ids(sortByBalance([light, heavy], true))).toEqual([
+      'heavy',
+      'light',
+    ]);
+  });
+
+  it('keeps ties in the server order and does not mutate its input', () => {
+    const a = account({ id: 'a', balance: money(100, 'USD') });
+    const b = account({ id: 'b', balance: money(100, 'USD') });
+    const input = [b, a];
+    expect(ids(sortByBalance(input))).toEqual(['b', 'a']);
+    expect(ids(input)).toEqual(['b', 'a']);
+  });
+
+  it('keeps each currency together instead of comparing across them', () => {
+    const eurSmall = account({ id: 'eur-small', balance: money(100, 'EUR') });
+    const eurBig = account({ id: 'eur-big', balance: money(100000, 'EUR') });
+    expect(ids(sortByBalance([small, eurSmall, big, eurBig]))).toEqual([
+      'big',
+      'small',
+      'eur-big',
+      'eur-small',
+    ]);
+  });
+});
+
 describe('accountGroups', () => {
   const all = [cash, bank, nest, card, old];
 
   it('lists pools in order, then credit, and drops archived accounts', () => {
     const groups = accountGroups(all, pools, 'all');
     expect(groups.map((g) => g.id)).toEqual(['p-budget', 'p-save', 'credit']);
+    // Equal balances keep the server's order.
     expect(groups[0]?.accounts.map((a) => a.id)).toEqual(['cash', 'bank']);
     expect(groups[0]?.balance).toEqual(money(50000, 'USD'));
     expect(groups[2]?.balance).toBeNull();
+  });
+
+  it('sorts the accounts of a pool by balance, credit by what is owed', () => {
+    const rich = account({ id: 'rich', balance: money(90000, 'USD') });
+    const deep = account({
+      id: 'deep',
+      kind: 'liability',
+      balance: money(-90000, 'USD'),
+    });
+    const groups = accountGroups([cash, rich, card, deep], pools, 'all');
+    expect(groups[0]?.accounts.map((a) => a.id)).toEqual(['rich', 'cash']);
+    expect(groups[1]?.accounts.map((a) => a.id)).toEqual(['deep', 'card']);
   });
 
   it('shows only the pools with accounts in the tab', () => {

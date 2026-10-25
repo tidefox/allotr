@@ -108,7 +108,8 @@ export const settingsMoney = {
     implied: 'implied',
     delete: 'delete',
     deleteLabel: 'Delete rate {label}, {day}',
-    none: 'No rates yet. Add one when an account uses another currency.',
+    none: 'No rates yet',
+    noneHint: 'Add one when an account uses another currency.',
     listLabel: 'Exchange rates, newest first',
     errors: {
       base: 'Choose a currency.',

@@ -8,6 +8,7 @@ import type {
 import type { SeriesColor } from '@/components/bars';
 import { poolLooks } from '@/lib/pool-style';
 import { barFraction } from '@/shell/summary-math';
+import { sortByBalance } from '../accounts/accounts-model.ts';
 
 // View model for the Budget · pools sub-tab. Every figure is the server's;
 // this only groups accounts under their pool and sizes the "left of" bar.
@@ -51,8 +52,10 @@ export function poolTiles(
       balance: pool.balance.amount,
       checked: pool.countsTowardDaily,
       fixed: pool.defaultFor === 'on',
-      accounts: accounts.filter(
-        (account) => !account.archived && account.poolId === pool.id,
+      accounts: sortByBalance(
+        accounts.filter(
+          (account) => !account.archived && account.poolId === pool.id,
+        ),
       ),
       cycle:
         pool.cycle === null

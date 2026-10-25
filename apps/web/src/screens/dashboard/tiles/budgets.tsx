@@ -5,6 +5,7 @@ import { SkeletonTile } from '@/components/bars';
 import { Brackets, bracketClass } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { EmptyState } from '@/components/states';
+import { useFrameWidth } from '@/components/use-frame-width';
 import { ChartLegend } from '@/charts/chart';
 import { IconPieChart2Line } from '@/generated/icons';
 import { budgetsQuery } from '@/lib/budgets';
@@ -17,6 +18,8 @@ import { budgetRows, periodPace } from './budgets.ts';
 export function BudgetsTile() {
   const budgets = useQuery(budgetsQuery);
   const categories = useQuery(categoriesQuery);
+  // A phone shows left only, so the subtitle names only that column.
+  const compact = useFrameWidth() < 600;
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
   const title = t('dashboardTiles.budgets.title');
   if (budgets.isError) {
@@ -49,7 +52,11 @@ export function BudgetsTile() {
     <Tile
       title={title}
       icon={IconPieChart2Line}
-      subtitle={t('dashboardTiles.budgets.subtitle')}
+      subtitle={t(
+        compact
+          ? 'dashboardTiles.budgets.subtitleCompact'
+          : 'dashboardTiles.budgets.subtitle',
+      )}
       actions={
         <Link
           to="/budget/$sub"

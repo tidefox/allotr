@@ -8,6 +8,7 @@ import { Sheet } from '@/components/sheet';
 import { EmptyState } from '@/components/states';
 import { useFrameWidth } from '@/components/use-frame-width';
 import { IconFileList3Line } from '@/generated/icons';
+import { useAutoSelectFirst } from '@/lib/auto-select';
 import {
   accountsQuery,
   allAccountsQuery,
@@ -60,9 +61,10 @@ export function TransactionsScreen() {
   const openCategories = useQuery(categoriesQuery);
 
   const change = useCallback(
-    (next: Partial<TransactionsView>) => {
+    (next: Partial<TransactionsView>, replace = false) => {
       void navigate({
         to: '/transactions',
+        replace,
         search: (prev) =>
           searchOf({
             ...viewOf(
@@ -189,6 +191,24 @@ export function TransactionsScreen() {
   const select = (entry: string | undefined) => {
     change({ entry });
   };
+  // From 1000 px the first entry is open by default (replacing the address,
+  // so Back skips it). The list context is everything that shapes the list,
+  // so a new filter, period or sort starts afresh; a cleared selection
+  // stays cleared within one.
+  const firstEntry = model?.find((section) => section.rows.length > 0)?.rows[0]
+    ?.id;
+  const context = JSON.stringify({ ...view, entry: undefined });
+  useAutoSelectFirst({
+    selected: view.entry,
+    first: firstEntry,
+    context,
+    select: useCallback(
+      (id: string) => {
+        change({ entry: id }, true);
+      },
+      [change],
+    ),
+  });
   const title = t('transactions.list.title');
   const failed =
     today.isError ||
@@ -291,7 +311,7 @@ export function TransactionsScreen() {
           onChange={change}
         />
       )}
-      <div className="flex min-h-full flex-col [&>:last-child]:flex-1">
+      <div className="flex min-h-full flex-col wide:h-full wide:min-h-0 [&>:last-child]:flex-1">
         <ChipBar
           chips={chips}
           onRemove={removeChip}
@@ -306,6 +326,7 @@ export function TransactionsScreen() {
           }}
         />
         <Split
+          fill
           className={chips.length === 0 ? '' : 'border-t-0'}
           list={
             <Tile
@@ -313,8 +334,9 @@ export function TransactionsScreen() {
               icon={IconFileList3Line}
               subtitle={t(`transactions.list.period.${view.period}`)}
               actions={<ListMenus view={view} onChange={change} />}
-              className="min-h-full"
+              className="min-h-full wide:min-h-0 wide:flex-1"
               bodyClassName="px-0 pb-0"
+              scroll={t('transactions.list.scroll')}
             >
               {dayMove.problem === null ? null : (
                 <p
@@ -336,7 +358,7 @@ export function TransactionsScreen() {
                   <Tile
                     title={t('transactions.list.detail')}
                     icon={IconFileList3Line}
-                    className="h-full"
+                    className="h-full wide:min-h-0 wide:flex-1"
                   >
                     <EmptyState
                       title={t('transactions.list.pick')}

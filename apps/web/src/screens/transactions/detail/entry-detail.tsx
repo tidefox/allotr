@@ -174,6 +174,7 @@ function DetailFrame({
       icon={icon}
       primary
       className="h-full"
+      scroll={t('transactionDetail.scroll')}
     >
       {children}
     </Tile>

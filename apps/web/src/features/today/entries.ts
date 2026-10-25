@@ -26,6 +26,12 @@ export interface EntryRow {
   accounts: string[];
   /** Signed from the user's side: money out is negative. */
   amount: Money | null;
+  /**
+   * Money moved between two of the user's own accounts, so the amount has
+   * no sign. A transfer with one own side (an IOU lent or repaid) is not a
+   * move: it is money out or in, like any entry.
+   */
+  moves: boolean;
   /** The category's colour and icon; null for a split or none. */
   style: CategoryStyle | null;
 }
@@ -54,6 +60,7 @@ export function entryRows(
     const out = own.find((p) => p.amount.amountMinor < 0);
     const into = own.find((p) => p.amount.amountMinor > 0);
     const ordered = [out, into].filter((p) => p !== undefined);
+    const moves = own.length > 1;
     const category = categoryTitle(entry, categoryName);
     return {
       id: entry.id,
@@ -61,14 +68,14 @@ export function entryRows(
       title: category ?? null,
       note: entry.note,
       accounts: ordered.map((p) => accountName.get(p.accountId) ?? ''),
-      // A transfer moves money between the user's own accounts: show
-      // what was sent, unsigned.
-      amount:
-        entry.kind === 'transfer'
-          ? out === undefined
-            ? null
-            : money(-out.amount.amountMinor, out.amount.currency)
-          : (ordered[0]?.amount ?? null),
+      // A move between the user's own accounts shows what was sent,
+      // unsigned. Any other entry is signed from the user's side.
+      moves,
+      amount: moves
+        ? out === undefined
+          ? null
+          : money(-out.amount.amountMinor, out.amount.currency)
+        : (ordered[0]?.amount ?? null),
       style: singleStyle(entry, styles),
     };
   });
