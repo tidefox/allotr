@@ -14,7 +14,7 @@
   "dependencies": {
     "@allotr/core": "workspace:*",
     "@allotr/shared": "workspace:*",
-    "kysely": "0.29.6",
+    "kysely": "0.29.7",
     "zod": "catalog:"
   },
   "devDependencies": {
