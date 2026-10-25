@@ -1,5 +1,6 @@
 import type { Money } from '@allotr/shared';
-import { ShareBar, fillBg, type FillColor } from '@/components/bars';
+import { useState } from 'react';
+import { ShareBar, dimFill, fillBg, type FillColor } from '@/components/bars';
 import { clampFraction } from '@/components/bars-math';
 import { shareText } from '@/lib/share-text';
 import { formatMoney, type CurrencyDisplay } from '@/lib/format-money';
@@ -49,6 +50,8 @@ export function Allocation({
   locale,
   className,
 }: AllocationProps) {
+  // The segment under the pointer, in the bar or in the list below it.
+  const [active, setActive] = useState<string | null>(null);
   const lead = segments.slice(0, -2);
   // One grid template for the bracket row, so it lines up with the bar's
   // segments; the widths are the server's fractions as `fr`.
@@ -57,7 +60,13 @@ export function Allocation({
     .join(' ');
   return (
     <div className={cn('grid', className)}>
-      <ShareBar segments={segments} label={label} className="h-[1.375rem]" />
+      <ShareBar
+        segments={segments}
+        label={label}
+        className="h-[1.375rem]"
+        activeId={active}
+        onActive={setActive}
+      />
       <div
         aria-hidden="true"
         className="mt-0.5 grid h-[7px] gap-px"
@@ -78,12 +87,29 @@ export function Allocation({
         {segments.map((s) => (
           <li
             key={s.id}
-            className="flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5"
+            className={cn(
+              'flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5',
+              // Text steps back toward `canvas` like the bar (no alpha).
+              active !== null &&
+                s.id !== active &&
+                '[&_*]:text-[color-mix(in_srgb,var(--text)_35%,var(--canvas))]',
+            )}
+            onPointerEnter={() => {
+              setActive(s.id);
+            }}
+            onPointerLeave={() => {
+              setActive(null);
+            }}
           >
             <span className="flex items-center gap-1.5 truncate text-tiny leading-[1.45] text-text-muted compact:text-[0.625rem]">
               <span
                 aria-hidden="true"
                 className={cn('size-[9px] shrink-0', fillBg[s.color])}
+                style={
+                  active !== null && s.id !== active
+                    ? dimFill(s.color)
+                    : undefined
+                }
               />
               <span className="truncate">{s.label}</span>
             </span>

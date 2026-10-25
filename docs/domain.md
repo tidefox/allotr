@@ -636,6 +636,18 @@ live_daily       = available(now) / days_left
   day), exactly the `pace` of today's row in `/v1/cycles/{openedOn}/days`,
   so the three figures on screen agree. `days` runs to payday, or through
   today while payday is overdue.
+- **Allowance change.** `allowanceChange` on `/v1/today` is today's
+  `todayAllowance` less the allowance the same projection gives for
+  yesterday (`dailyFiguresOn` at yesterday's date): positive means today's
+  number is higher. It is null on the first day of the ledger.
+- **Spending forecast.** Each row of `/v1/cycles/{openedOn}/days` carries
+  `forecast`: from today's row on, cumulative pace spending carried forward at
+  the recent daily rate, which is the pace spending of the last 7 full days
+  (fewer early in a cycle; today's partial day only on the cycle's first day)
+  divided by the days counted, rounded down and never below zero. Today's
+  row equals `cumulativeSpent` so the line starts on the real one; rows
+  before today are null. It reads only the user's own spending, not bills
+  still to come.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 

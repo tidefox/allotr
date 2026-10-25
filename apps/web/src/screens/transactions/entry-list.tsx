@@ -331,7 +331,9 @@ export function EntryList({
             className="[&>:last-child]:border-b-0 [&_[role=row]:last-child>:last-child]:border-b-0"
           >
             {section.title === null ? null : (
-              <h3 className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-canvas px-3 pt-2.5 pb-1 text-small text-text-muted">
+              <h3 // A `chrome` band, so a day reads apart from its rows.
+                className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-chrome px-3 py-1.5 text-small text-text-muted"
+              >
                 <span className="min-w-0 flex-1 truncate font-semibold text-text">
                   {section.heading ?? section.title}
                   {section.today === true ? (
@@ -342,15 +344,7 @@ export function EntryList({
                   ) : null}
                 </span>
                 {section.total === null ? null : (
-                  <span
-                    className={cn(
-                      'num shrink-0',
-                      section.totalTone === 'negative' && 'text-negative',
-                      section.totalTone === 'positive' && 'text-positive',
-                    )}
-                  >
-                    {section.total}
-                  </span>
+                  <span className="num shrink-0">{section.total}</span>
                 )}
               </h3>
             )}

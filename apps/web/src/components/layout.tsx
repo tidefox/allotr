@@ -6,8 +6,10 @@ import { OverlayScrollbar } from './overlay-scrollbar.tsx';
 import { FrameWidthContext, useFrameWidth } from './use-frame-width.ts';
 
 // Tiles run edge to edge (docs/ui.md §4). Seams come from each tile's own
-// right and bottom 1 px border and the grid's top and left one, so adjacent
-// tiles share a single line and an empty cell shows `canvas`.
+// right and bottom 1 px border; the top and left edges are the shell's (the
+// title strip's bottom border and the navigation's right one), so a grid adds
+// none of its own and the edge is one line, not two. An empty cell shows
+// `canvas`.
 
 /** The app frame: the container the responsive variants query. */
 export function Frame({
@@ -58,7 +60,7 @@ export function Grid({
   return (
     <div
       className={cn(
-        'grid grid-flow-dense auto-rows-auto border-t border-l bg-canvas',
+        'grid grid-flow-dense auto-rows-auto bg-canvas',
         columns === 'auto' &&
           'grid-cols-1 cols2:grid-cols-2 cols3:grid-cols-3 cols4:grid-cols-4',
         columns === 1 && 'grid-cols-1',
@@ -84,7 +86,7 @@ export function Stack({
   return (
     <div
       className={cn(
-        'flex flex-col border-t border-l bg-canvas [&>:last-child]:flex-1',
+        'flex flex-col bg-canvas [&>:last-child]:flex-1',
         className,
       )}
     >
@@ -120,7 +122,7 @@ export function Split({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 border-t border-l bg-canvas',
+        'grid grid-cols-1 bg-canvas',
         even
           ? 'wide:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]'
           : 'wide:grid-cols-[minmax(0,1fr)_25rem]',
@@ -249,7 +251,7 @@ export function TitleBar({
     <header
       className={cn(
         'flex h-bar min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b bg-chrome pr-1.5 pl-3 text-title',
-        primary && 'border-l-[3px] border-l-primary pl-[calc(0.75rem-3px)]',
+        primary && 'edge',
       )}
     >
       <div className="min-w-0 truncate whitespace-nowrap">

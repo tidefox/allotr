@@ -39,6 +39,7 @@ const day = (
   pace: usd(pace),
   availableEnd: cumulative === null ? null : usd(0),
   allowance: cumulative === null ? null : usd(0),
+  forecast: null,
 });
 
 describe('pace', () => {

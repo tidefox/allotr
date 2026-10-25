@@ -130,6 +130,16 @@ export const fillBg: Record<FillColor, string> = {
   success: 'bg-success',
 };
 
+/**
+ * A fill stepped back toward `canvas` (an opaque mix, never alpha), for the
+ * marks that are not the one under the pointer.
+ */
+export function dimFill(color: FillColor): { backgroundColor: string } {
+  return {
+    backgroundColor: `color-mix(in srgb, var(--${color}) 30%, var(--canvas))`,
+  };
+}
+
 /** Series colours for icons and marks (never text: they are fitted 3:1). */
 export const seriesText: Record<SeriesColor, string> = {
   'series-1': 'text-series-1',
@@ -156,10 +166,16 @@ export function ShareBar({
   segments,
   label,
   className,
+  activeId,
+  onActive,
 }: {
   segments: readonly ShareSegment[];
   label: string;
   className?: string;
+  /** The segment to keep at full colour (the rest step back), e.g. the one its legend item is under. */
+  activeId?: string | null;
+  /** Called with a segment's id as the pointer enters it, `null` as it leaves. */
+  onActive?: (id: string | null) => void;
 }) {
   const summary = segments
     .map(
@@ -181,7 +197,23 @@ export function ShareBar({
         <div
           key={s.id}
           className={cn('h-full min-w-px', fillBg[s.color])}
-          style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
+          style={{
+            flexGrow: clampFraction(s.fraction),
+            flexBasis: 0,
+            ...(activeId != null && s.id !== activeId ? dimFill(s.color) : {}),
+          }}
+          onPointerEnter={
+            onActive &&
+            (() => {
+              onActive(s.id);
+            })
+          }
+          onPointerLeave={
+            onActive &&
+            (() => {
+              onActive(null);
+            })
+          }
         />
       ))}
     </div>

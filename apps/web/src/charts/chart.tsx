@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties, type PointerEvent } from 'react';
 import { type SeriesColor } from '@/components/bars.tsx';
 import { cn } from '@/lib/utils';
 import {
@@ -58,6 +58,14 @@ export type ChartSeries = Readonly<{
   endLabel?: string;
   /** False leaves out the end marker (a plain history line). */
   marker?: boolean;
+  /** A dotted line, for a projection rather than a record. */
+  dashed?: boolean;
+  /**
+   * Text for the hover tooltip, one per point in `points` order. Hover snaps
+   * to the nearest real point and reads this label, never a value read off
+   * the smoothed curve between points. No labels, no hover for the series.
+   */
+  hoverLabels?: readonly string[];
 }>;
 
 export type ChartTick = Readonly<{ value: number; label: string }>;
@@ -140,6 +148,16 @@ export function Chart({
           y: toPercent(reference.to.y, y, 'y'),
           label: reference.endLabel,
         };
+  const [hover, setHover] = useState<{ series: string; index: number } | null>(
+    null,
+  );
+  const hovered = hoverTarget(series, hover, x, y);
+  const onMove = (event: PointerEvent<HTMLDivElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    if (box.width === 0) return;
+    const at = x[0] + ((event.clientX - box.left) / box.width) * (x[1] - x[0]);
+    setHover(nearestPoint(series, at));
+  };
   const plotHeight =
     height === undefined
       ? 'h-32 wide:h-56 @min-[1400px]/frame:h-64'
@@ -178,6 +196,11 @@ export function Chart({
           'relative min-w-0 border-b border-l border-outline',
           plotHeight,
         )}
+        onPointerMove={onMove}
+        onPointerDown={onMove}
+        onPointerLeave={() => {
+          setHover(null);
+        }}
       >
         {yTicks.map((t) => (
           <div
@@ -227,6 +250,7 @@ export function Chart({
                 fill="none"
                 className={seriesStroke[s.color]}
                 strokeWidth={2}
+                {...(s.dashed === true ? { strokeDasharray: '2 4' } : {})}
                 vectorEffect="non-scaling-stroke"
               />
             </g>
@@ -248,6 +272,22 @@ export function Chart({
             markClass="bg-text-muted"
             label={referenceEnd.label}
           />
+        )}
+        {hovered === null ? null : (
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-y-0 w-px bg-outline"
+              style={{ left: `${String(hovered.x)}%` }}
+            />
+            <EndMark
+              x={hovered.x}
+              y={hovered.y}
+              markClass={markerBg[hovered.color]}
+              label={hovered.label}
+              raised
+            />
+          </>
         )}
         {geometry.map(({ s, g }) =>
           g.end && s.marker !== false ? (
@@ -318,15 +358,18 @@ function EndMark({
   y,
   markClass,
   label,
+  raised = false,
 }: {
   x: number;
   y: number;
   markClass: string;
   label: string | undefined;
+  /** The hover tooltip: above the end labels, with an outline. */
+  raised?: boolean;
 }) {
   const at = { left: `${String(x)}%`, top: `${String(y)}%` };
   return (
-    <div aria-hidden="true">
+    <div aria-hidden="true" className={cn(raised && 'z-10')}>
       <span
         className={cn('absolute -mt-[3.5px] -ml-[3.5px] size-[7px]', markClass)}
         style={at}
@@ -335,6 +378,7 @@ function EndMark({
         <span
           className={cn(
             'absolute bg-canvas px-[3px] font-num text-tiny leading-[1.45] whitespace-nowrap text-text',
+            raised && 'border border-outline',
             x < 70
               ? 'translate-x-1.5 -translate-y-1/2'
               : '-translate-x-full -translate-y-[160%]',
@@ -346,6 +390,54 @@ function EndMark({
       )}
     </div>
   );
+}
+
+type HoverTarget = Readonly<{
+  x: number;
+  y: number;
+  color: ChartColor;
+  label: string;
+}>;
+
+/** The real point nearest `at` on x among series that have hover labels. */
+function nearestPoint(
+  series: readonly ChartSeries[],
+  at: number,
+): { series: string; index: number } | null {
+  let best: { series: string; index: number } | null = null;
+  let gap = Infinity;
+  for (const s of series) {
+    if (s.hoverLabels === undefined) continue;
+    s.points.forEach((p, index) => {
+      // Strictly nearer, so the first series wins a tie.
+      if (Math.abs(p.x - at) < gap) {
+        gap = Math.abs(p.x - at);
+        best = { series: s.id, index };
+      }
+    });
+  }
+  return best;
+}
+
+function hoverTarget(
+  series: readonly ChartSeries[],
+  hover: { series: string; index: number } | null,
+  x: Domain,
+  y: Domain,
+): HoverTarget | null {
+  if (hover === null) return null;
+  const s = series.find((candidate) => candidate.id === hover.series);
+  const point = s?.points[hover.index];
+  const label = s?.hoverLabels?.[hover.index];
+  if (s === undefined || point === undefined || label === undefined) {
+    return null;
+  }
+  return {
+    x: toPercent(point.x, x, 'x'),
+    y: toPercent(point.y, y, 'y'),
+    color: s.color,
+    label,
+  };
 }
 
 export type LegendItem = Readonly<{

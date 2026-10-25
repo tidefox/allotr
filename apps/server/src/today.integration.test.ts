@@ -23,6 +23,7 @@ type Today = {
   cycleSpent: Money;
   paceSpent: Money;
   paceDiff: Money;
+  allowanceChange: Money | null;
   allocation: {
     start: Money;
     paycheck: Money;
@@ -155,6 +156,8 @@ describe('today for a new user', () => {
       cycleSpent: usd(0),
       paceSpent: usd(0),
       paceDiff: usd(0),
+      // The first day has no yesterday to compare with.
+      allowanceChange: null,
       allocation: {
         start: usd(0),
         paycheck: usd(0),

@@ -927,6 +927,12 @@ export const todaySchema = z.object({
    * negative is over. The same pace as today's row of `/v1/cycles/.../days`.
    */
   paceDiff: moneySchema,
+  /**
+   * `todayAllowance` less yesterday's allowance (as of yesterday's start):
+   * positive means today's number is higher. Null on the first day of the
+   * ledger.
+   */
+  allowanceChange: moneySchema.nullable(),
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(
     z.object({
@@ -1178,6 +1184,11 @@ export const cycleDaySchema = z.object({
   availableEnd: moneySchema.nullable(),
   /** That day's allowance as of its start; null after today. */
   allowance: moneySchema.nullable(),
+  /**
+   * Cumulative pace spending if the last week's daily rate holds; null
+   * before today. Today's row equals `cumulativeSpent`.
+   */
+  forecast: moneySchema.nullable(),
 });
 export type CycleDayView = z.infer<typeof cycleDaySchema>;
 

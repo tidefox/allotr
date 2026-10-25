@@ -385,6 +385,10 @@ function History({
             points: chart.points,
             area: true,
             marker: false,
+            hoverLabels: points.map(
+              (p) =>
+                `${formatTerminalDate(p.date, locale)} · ${formatMoney(p.balance, 'symbol', locale)}`,
+            ),
           },
         ]}
         yTicks={chart.yTicks}

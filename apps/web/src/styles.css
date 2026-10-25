@@ -259,6 +259,24 @@ html::-webkit-scrollbar {
  * transform. Reduced motion zeroes the duration through the tokens.
  */
 @layer components {
+  /*
+   * A 3 px accent edge (`--edge`, `primary` by default). It is drawn inside
+   * the padding box rather than as `border-left`: next to a bottom border a
+   * left border is mitred, which slants the accent's ends.
+   */
+  .edge {
+    position: relative;
+  }
+  .edge::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 3px;
+    background-color: var(--edge, var(--primary));
+    pointer-events: none;
+  }
+
   .press {
     transition: background-color var(--dur-snappy) var(--ease-snappy);
   }

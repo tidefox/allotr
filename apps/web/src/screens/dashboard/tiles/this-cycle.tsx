@@ -68,6 +68,7 @@ export function ThisCycleTile() {
   const first = series[0];
   const last = series.at(-1);
   const todayLabel = t('dashboardTiles.thisCycle.today');
+  const forecastEnd = last?.forecast ?? undefined;
 
   const xTicks = cycleTicks(series.length, view.todayIndex).map((tick) => ({
     value: tick.index,
@@ -76,7 +77,11 @@ export function ThisCycleTile() {
       : formatTerminalDate(series[tick.index]?.date ?? figures.today, locale),
   }));
   // Axis positions, rounded; not amounts anyone is told they have.
-  const top = Math.max(budget.amountMinor, ...view.spentPoints.map((p) => p.y));
+  const top = Math.max(
+    budget.amountMinor,
+    ...view.spentPoints.map((p) => p.y),
+    ...view.forecastPoints.map((p) => p.y),
+  );
   const yTicks = niceTicks(0, top, 4).map((value) => ({
     value,
     label: formatMoneyShort(moneyOf(value, budget.currency), locale),
@@ -163,7 +168,41 @@ export function ThisCycleTile() {
                 points: view.spentPoints,
                 area: true,
                 ...(view.spent === null ? {} : { endLabel: money(view.spent) }),
+                // Each day's own figure, not a point on the smoothed line.
+                hoverLabels: series.flatMap((day) =>
+                  day.cumulativeSpent === null || day.spent === null
+                    ? []
+                    : [
+                        t('dashboardTiles.thisCycle.hoverSpent', {
+                          date: formatTerminalDate(day.date, locale),
+                          day: money(day.spent),
+                          total: money(day.cumulativeSpent),
+                        }),
+                      ],
+                ),
               },
+              ...(view.forecastPoints.length < 2 || forecastEnd === undefined
+                ? []
+                : [
+                    {
+                      id: 'forecast',
+                      label: t('dashboardTiles.thisCycle.legendForecast'),
+                      color: 'series-1' as const,
+                      points: view.forecastPoints,
+                      dashed: true,
+                      endLabel: money(forecastEnd),
+                      hoverLabels: series.flatMap((day) =>
+                        day.forecast === null
+                          ? []
+                          : [
+                              t('dashboardTiles.thisCycle.hoverForecast', {
+                                date: formatTerminalDate(day.date, locale),
+                                total: money(day.forecast),
+                              }),
+                            ],
+                      ),
+                    },
+                  ]),
             ]}
             yTicks={yTicks}
             xTicks={xTicks}
@@ -199,6 +238,15 @@ export function ThisCycleTile() {
                 mark: 'line',
                 color: 'bg-series-1',
               },
+              ...(view.forecastPoints.length < 2
+                ? []
+                : [
+                    {
+                      label: t('dashboardTiles.thisCycle.legendForecast'),
+                      mark: 'dash' as const,
+                      color: 'bg-series-1',
+                    },
+                  ]),
               {
                 label: t('dashboardTiles.thisCycle.legendPace'),
                 mark: 'dash',

@@ -40,6 +40,12 @@ export type CycleDay = Readonly<{
   availableEnd: Money | null;
   /** That day's allowance as of its start; null after today. */
   allowance: Money | null;
+  /**
+   * Where cumulative spending is heading if the recent daily rate holds
+   * (`FORECAST_WINDOW`); null before today. Today's row repeats
+   * `cumulativeSpent`, so the line starts on the real one.
+   */
+  forecast: Money | null;
 }>;
 
 export type CycleDays = Readonly<{
@@ -58,6 +64,23 @@ export type CycleDays = Readonly<{
 function floorDiv(total: bigint, n: bigint): bigint {
   const quotient = total / n;
   return total % n !== 0n && total < 0n ? quotient - 1n : quotient;
+}
+
+/** Days of recent spending the forecast averages. */
+export const FORECAST_WINDOW = 7;
+
+/**
+ * The daily spending rate the forecast carries forward, in minor units,
+ * rounded down and never below zero: the average over the last
+ * `FORECAST_WINDOW` full days (today's partial day only when it is the
+ * cycle's first).
+ */
+function forecastRate(cumulative: readonly bigint[]): bigint {
+  const upto = cumulative.length > 1 ? cumulative.length - 1 : 1;
+  const from = Math.max(0, upto - FORECAST_WINDOW);
+  const spent = (cumulative[upto - 1] ?? 0n) - (cumulative[from - 1] ?? 0n);
+  const rate = floorDiv(spent, BigInt(upto - from));
+  return rate < 0n ? 0n : rate;
 }
 
 /**
@@ -181,19 +204,33 @@ export function cycleDays(
       ? 0
       : latest.cumulativeSpent.amountMinor + latest.availableEnd.amountMinor,
   );
+  const rate = forecastRate(
+    past.map((row) => BigInt(row.cumulativeSpent.amountMinor)),
+  );
+  const anchor = latest?.cumulativeSpent.amountMinor ?? 0;
   const days = Array.from({ length: count }, (_, at): CycleDay => {
     const pace = money(Number(evenPace(budget, at, count)), currency);
     const row = past[at];
-    return row === undefined
-      ? {
-          date: addDays(cycle.openedOn, at),
-          spent: null,
-          cumulativeSpent: null,
-          pace,
-          availableEnd: null,
-          allowance: null,
-        }
-      : { ...row, pace };
+    if (row !== undefined) {
+      return {
+        ...row,
+        pace,
+        forecast: at === past.length - 1 ? row.cumulativeSpent : null,
+      };
+    }
+    return {
+      date: addDays(cycle.openedOn, at),
+      spent: null,
+      cumulativeSpent: null,
+      pace,
+      availableEnd: null,
+      allowance: null,
+      // Nothing to project from before the first day with figures.
+      forecast:
+        latest === undefined
+          ? null
+          : money(anchor + Number(rate) * (at - (past.length - 1)), currency),
+    };
   });
   return {
     days,

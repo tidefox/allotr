@@ -3,7 +3,9 @@ import {
   daysBetween,
   isoWeekday,
   localDate,
+  money,
   type LocalDate,
+  type Money,
 } from '@allotr/shared';
 
 /**
@@ -39,4 +41,19 @@ export function cycleDays(
   const length = Math.max(1, daysBetween(openedOn, payday));
   const day = Math.min(length, Math.max(1, daysBetween(openedOn, today) + 1));
   return { day, length };
+}
+
+/**
+ * Today's allowance against yesterday's, from the server's `allowanceChange`
+ * with its sign dropped, so the arrow carries the direction. Null when there
+ * is nothing to compare or nothing changed.
+ */
+export function yesterdayChange(
+  change: Money | null,
+): Readonly<{ up: boolean; amount: Money }> | null {
+  if (change === null || change.amountMinor === 0) return null;
+  return {
+    up: change.amountMinor > 0,
+    amount: money(Math.abs(change.amountMinor), change.currency),
+  };
 }
