@@ -60,7 +60,7 @@ export function TitleStrip() {
   return (
     <div
       data-slot="strip"
-      className="col-start-1 row-start-2 flex h-strip min-w-0 items-stretch border-b border-outline bg-canvas medium:col-start-2"
+      className="col-start-1 row-start-2 flex h-strip min-w-0 items-stretch border-b bg-canvas medium:col-start-2"
     >
       <div className="flex min-w-0 shrink items-center gap-[7px] border-r px-3 font-semibold">
         <Icon

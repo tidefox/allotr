@@ -54,7 +54,7 @@ export function Navigation() {
     <>
       <div
         data-slot="logo"
-        className="hidden flex-col items-center justify-center border-r border-b border-outline bg-chrome medium:col-start-1 medium:row-start-1 medium:flex wide:items-start wide:px-4"
+        className="hidden flex-col items-center justify-center border-r border-b bg-chrome medium:col-start-1 medium:row-start-1 medium:flex wide:items-start wide:px-4"
       >
         <Link
           to="/"
@@ -72,7 +72,7 @@ export function Navigation() {
         aria-label={t('nav.label')}
         data-slot="nav"
         className={cn(
-          'col-start-1 row-start-6 grid grid-cols-5 border-t border-outline bg-chrome',
+          'col-start-1 row-start-6 grid grid-cols-5 border-t bg-chrome',
           'medium:row-span-2 medium:row-start-2 medium:flex medium:flex-col medium:border-t-0 medium:border-r',
         )}
       >
@@ -99,7 +99,7 @@ export function Navigation() {
       </nav>
       <div
         data-slot="settings"
-        className="hidden border-t border-r border-outline bg-chrome medium:col-start-1 medium:row-start-4 medium:flex"
+        className="hidden border-t border-r bg-chrome medium:col-start-1 medium:row-start-4 medium:flex"
       >
         <Link
           to={settingsItem.to}

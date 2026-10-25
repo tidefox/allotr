@@ -75,7 +75,7 @@ export function UpdateBar() {
       className={
         waiting === null
           ? 'medium:hidden'
-          : 'col-start-1 row-start-5 flex min-h-hit items-center gap-2 border-t border-outline bg-chrome px-3 text-small text-primary medium:hidden'
+          : 'col-start-1 row-start-5 flex min-h-hit items-center gap-2 border-t bg-chrome px-3 text-small text-primary medium:hidden'
       }
     >
       {waiting === null ? null : <UpdateActions waiting={waiting} />}
@@ -104,7 +104,7 @@ export function StatusLine() {
     <footer
       aria-label={t('shell.slots.status')}
       data-slot="status"
-      className="hidden h-status items-stretch overflow-hidden border-t border-outline bg-chrome text-tiny whitespace-nowrap text-text-muted medium:col-span-full medium:row-start-5 medium:flex"
+      className="hidden h-status items-stretch overflow-hidden border-t bg-chrome text-tiny whitespace-nowrap text-text-muted medium:col-span-full medium:row-start-5 medium:flex"
     >
       <span
         className={cn(

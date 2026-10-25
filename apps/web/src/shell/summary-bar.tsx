@@ -219,7 +219,7 @@ export function SummaryBar() {
     <section
       aria-label={t('shell.slots.summary')}
       data-slot="summary"
-      className="flex min-w-0 flex-wrap gap-px border-b border-outline bg-outline medium:col-start-2 medium:row-start-1 medium:h-topbar medium:flex-nowrap"
+      className="flex min-w-0 flex-wrap gap-px border-b bg-outline-variant medium:col-start-2 medium:row-start-1 medium:h-topbar medium:flex-nowrap"
     >
       {today.isError ? (
         <div
