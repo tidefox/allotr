@@ -99,7 +99,7 @@ export function BudgetsTile() {
           ))}
           {pace === null ? null : (
             <ChartLegend
-              className="px-3"
+              className="px-3 pb-2 pt-1"
               items={[
                 {
                   label: t('dashboardTiles.budgets.pace', {
