@@ -64,7 +64,7 @@ function Sub({ children }: { children: ReactNode }) {
   );
 }
 
-/** `↑ $20.00 from yesterday`: today's allowance against yesterday's. */
+/** `↑ $20.00`: today's allowance against yesterday's; the title spells it out. */
 function Versus({ change }: { change: ReturnType<typeof yesterdayChange> }) {
   if (change === null) return null;
   const Arrow = change.up ? IconArrowUpLine : IconArrowDownLine;
@@ -78,7 +78,7 @@ function Versus({ change }: { change: ReturnType<typeof yesterdayChange> }) {
         { amount },
       )}
       className={cn(
-        'block truncate text-tiny leading-[1.45]',
+        'shrink-0 whitespace-nowrap text-tiny leading-[1.45]',
         change.up ? 'text-positive' : 'text-negative',
       )}
     >
@@ -86,7 +86,7 @@ function Versus({ change }: { change: ReturnType<typeof yesterdayChange> }) {
         aria-hidden="true"
         className="mr-0.5 inline size-[1.15em] align-[-0.22em]"
       />
-      {t('shell.summary.fromYesterday', { amount })}
+      {amount}
     </span>
   );
 }
@@ -249,10 +249,13 @@ export function SummaryBar() {
             })}
             className={cn(
               item,
-              'edge bg-canvas [--edge:var(--positive)] medium:flex-[1.3_1_0%]',
+              'edge [--edge:var(--positive)] medium:flex-[1.3_1_0%]',
             )}
           >
-            <Label icon={IconSunLine}>{t('shell.summary.leftToday')}</Label>
+            <div className="flex items-baseline justify-between gap-2">
+              <Label icon={IconSunLine}>{t('shell.summary.leftToday')}</Label>
+              <Versus change={yesterdayChange(data.allowanceChange)} />
+            </div>
             <Fit
               className={cn(
                 'max-h-[1.2em] text-hero leading-[1.2] font-semibold tracking-[-0.01em] wide:max-h-[1.1em] wide:leading-[1.1]',
@@ -280,7 +283,6 @@ export function SummaryBar() {
                 ? t('shell.summary.overdue')
                 : t('shell.summary.daysToPayday', { count: data.daysLeft })}
             </Sub>
-            <Versus change={yesterdayChange(data.allowanceChange)} />
             <LeftBar
               fraction={barFraction(
                 data.leftToday.amountMinor,
