@@ -37,12 +37,7 @@ export function Stats({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        'grid grid-cols-2 border-t border-l medium:grid-cols-4',
-        className,
-      )}
-    >
+    <div className={cn('grid grid-cols-2 medium:grid-cols-4', className)}>
       {stats.map(
         (
           { label, icon: Icon, figure, sub, bar, tone, figureTone, phone },
