@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SkeletonTile } from '@/components/bars';
 import { Brackets, bracketClass } from '@/components/buttons';
 import { Tile } from '@/components/layout';
@@ -20,6 +20,22 @@ export function BudgetsTile() {
   const categories = useQuery(categoriesQuery);
   // A phone shows left only, so the subtitle names only that column.
   const compact = useFrameWidth() < 600;
+  // Rows follow the frame, but the tile can be far narrower than it; below
+  // this width spent has no room beside left.
+  const body = useRef<HTMLDivElement>(null);
+  const [roomy, setRoomy] = useState(false);
+  const ready = budgets.data !== undefined;
+  useEffect(() => {
+    const el = body.current;
+    if (el === null) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setRoomy((entry?.contentRect.width ?? 0) >= 440);
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+    };
+  }, [ready]);
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
   const title = t('dashboardTiles.budgets.title');
   if (budgets.isError) {
@@ -53,7 +69,7 @@ export function BudgetsTile() {
       title={title}
       icon={IconPieChart2Line}
       subtitle={t(
-        compact
+        compact || !roomy
           ? 'dashboardTiles.budgets.subtitleCompact'
           : 'dashboardTiles.budgets.subtitle',
       )}
@@ -74,11 +90,13 @@ export function BudgetsTile() {
           hint={t('dashboardTiles.budgets.emptyHint')}
         />
       ) : (
-        <>
+        <div ref={body}>
           {shown.map((row) => (
             <BudgetLine
               key={row.id}
               row={row}
+              showSpent={roomy}
+              showLead={rows.some((r) => r.role !== 'flat')}
               pace={pace?.fraction}
               expanded={!folded.has(row.group)}
               onToggle={() => {
@@ -112,7 +130,7 @@ export function BudgetsTile() {
               ]}
             />
           )}
-        </>
+        </div>
       )}
     </Tile>
   );

@@ -37,6 +37,8 @@ export function BudgetLine({
   setAsideLabel,
   barLabel,
   columns = budgetLineColumns,
+  showSpent = true,
+  showLead = true,
   action,
   className,
 }: {
@@ -48,6 +50,10 @@ export function BudgetLine({
   setAsideLabel: string;
   barLabel: string;
   columns?: readonly RowColumn[];
+  /** False in a narrow tile, where spent has no room beside left. */
+  showSpent?: boolean;
+  /** False when no row folds or hangs off a parent: the icon then leads. */
+  showLead?: boolean;
   /** A trailing cell, when the columns have room for one. */
   action?: ReactNode;
   className?: string | undefined;
@@ -117,10 +123,13 @@ export function BudgetLine({
     </span>,
   ];
   if (action !== undefined) cells.push(action);
+  // Lead is column 0 and spent column 4.
+  const kept = <T,>(list: readonly T[]) =>
+    list.filter((_, i) => (showLead || i !== 0) && (showSpent || i !== 4));
   return (
     <Row
-      columns={columns}
-      cells={cells}
+      columns={kept(columns)}
+      cells={kept(cells)}
       // A parent row is bold throughout, as the locked design's `.r.parent`.
       className={cn(parent && 'font-semibold', className)}
     />
