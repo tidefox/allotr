@@ -45,6 +45,7 @@ export function GoalsTab() {
   const pools = useQuery(poolsQuery);
   const accounts = useQuery(accountsQuery);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<GoalView | null>(null);
   const list = goals.data?.goals;
   const add = () => {
     setAdding(true);
@@ -92,6 +93,9 @@ export function GoalsTab() {
         goal={goal}
         today={today.data?.today}
         where={where(goal)}
+        onEdit={() => {
+          setEditing(goal);
+        }}
         color={`series-${String((index % 8) + 1)}` as SeriesColor}
         // An odd last goal fills the row at two columns (`fill2`).
         fill={list.length % 2 === 1 && index === list.length - 1}
@@ -115,9 +119,11 @@ export function GoalsTab() {
       </StripControls>
       <Grid className="min-h-full">{body}</Grid>
       <GoalSheet
-        open={adding}
+        open={adding || editing !== null}
+        goal={editing ?? undefined}
         onClose={() => {
           setAdding(false);
+          setEditing(null);
         }}
       />
     </>
@@ -128,12 +134,14 @@ function GoalTile({
   goal,
   today,
   where,
+  onEdit,
   color,
   fill,
 }: {
   goal: GoalView;
   today: LocalDate | undefined;
   where: string;
+  onEdit: () => void;
   color: SeriesColor;
   fill: boolean;
 }) {
@@ -162,6 +170,11 @@ function GoalTile({
           label={t('budgetGoalsIous.goals.actionsOf', { name: goal.name })}
           title={goal.name}
         >
+          <MenuItem
+            id="edit"
+            label={t('budgetGoalsIous.goals.edit')}
+            onAction={onEdit}
+          />
           <MenuItem
             id="archive"
             label={t('budgetGoalsIous.goals.archive')}
