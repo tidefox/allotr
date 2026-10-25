@@ -206,7 +206,7 @@ export function Tile({
     <section
       aria-labelledby={id}
       className={cn(
-        'flex min-w-0 flex-col border-r border-b border-outline bg-canvas',
+        'flex min-w-0 flex-col border-r border-b border-seam bg-canvas',
         scrolls && 'min-h-0',
         tileSpanClass(span, rows),
         className,
@@ -250,7 +250,7 @@ export function TitleBar({
   return (
     <header
       className={cn(
-        'flex h-bar min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-outline bg-chrome pr-1.5 pl-3 text-title',
+        'flex h-bar min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-seam bg-chrome pr-1.5 pl-3 text-title',
         primary && 'edge',
       )}
     >

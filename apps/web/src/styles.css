@@ -150,6 +150,8 @@ html::-webkit-scrollbar {
   --color-on-danger-container: var(--on-danger-container);
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
+  /* Card separation: a step above the row seams, well below `outline`. */
+  --color-seam: color-mix(in srgb, var(--outline-variant) 70%, var(--outline));
   --color-ring: var(--ring);
   --color-hero-ok: var(--hero-ok);
   --color-hero-tight: var(--hero-tight);

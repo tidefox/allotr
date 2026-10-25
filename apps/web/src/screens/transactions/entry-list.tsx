@@ -332,7 +332,7 @@ export function EntryList({
           >
             {section.title === null ? null : (
               <h3 // A `chrome` band, so a day reads apart from its rows.
-                className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-chrome px-3 py-1.5 text-small text-text-muted"
+                className="sticky top-0 z-[1] flex items-center gap-2 border-b border-seam bg-chrome px-3 py-1.5 text-small text-text-muted"
               >
                 <span className="min-w-0 flex-1 truncate font-semibold text-text">
                   {section.heading ?? section.title}
