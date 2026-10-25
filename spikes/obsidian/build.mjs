@@ -195,7 +195,7 @@ cpSync(mainJs, join(out, 'main.js'));
 writeFileSync(
   join(out, 'manifest.json'),
   JSON.stringify({
-    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.11', minAppVersion: '1.5.0',
+    id: 'allotr', name: 'Allotr', version: '0.0.1-spike.12', minAppVersion: '1.5.0',
     description: 'Spike S1: the Allotr budget app running inside Obsidian. Not for real data.',
     author: 'Allotr contributors', isDesktopOnly: false,
   }, null, 2) + '\n',
