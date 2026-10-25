@@ -331,7 +331,9 @@ export function EntryList({
             className="[&>:last-child]:border-b-0 [&_[role=row]:last-child>:last-child]:border-b-0"
           >
             {section.title === null ? null : (
-              <h3 className="sticky top-0 z-[1] flex items-center gap-2 border-b border-outline bg-canvas px-3 pt-2.5 pb-1 text-small text-text-muted">
+              <h3 // A `chrome` band with a `primary` edge, so a day reads apart from its rows.
+                className="sticky top-0 z-[1] flex items-center gap-2 border-y border-l-[3px] border-outline border-l-primary bg-chrome py-1.5 pr-3 pl-[calc(0.75rem-3px)] text-small text-text-muted"
+              >
                 <span className="min-w-0 flex-1 truncate font-semibold text-text">
                   {section.heading ?? section.title}
                   {section.today === true ? (
