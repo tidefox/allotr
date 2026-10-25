@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { domainOf, lineGeometry, toPercent, toPlot } from './chart-model.ts';
+import {
+  bandPath,
+  domainOf,
+  lineGeometry,
+  toPercent,
+  toPlot,
+} from './chart-model.ts';
 
 describe('chart model', () => {
   it('widens the domain to include extra values', () => {
@@ -32,5 +38,22 @@ describe('chart model', () => {
 
   it('draws nothing for one point', () => {
     expect(lineGeometry([{ x: 1, y: 1 }], [0, 2], [0, 2]).line).toBe('');
+  });
+
+  it('draws a band along the highs and back along the lows', () => {
+    const band = [
+      { x: 0, low: 2, high: 4 },
+      { x: 10, low: 3, high: 8 },
+    ];
+    expect(bandPath(band, [0, 10], [0, 10])).toBe('M0 60L100 20L100 70L0 80Z');
+    expect(bandPath(band.slice(0, 1), [0, 10], [0, 10])).toBe('');
+  });
+
+  it('holds a band high past the top at the edge', () => {
+    const band = [
+      { x: 0, low: 0, high: 5 },
+      { x: 10, low: 5, high: 40 },
+    ];
+    expect(bandPath(band, [0, 10], [0, 10])).toContain('L100 0L');
   });
 });

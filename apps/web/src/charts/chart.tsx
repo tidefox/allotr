@@ -2,9 +2,11 @@ import { useState, type CSSProperties, type PointerEvent } from 'react';
 import { type SeriesColor } from '@/components/bars.tsx';
 import { cn } from '@/lib/utils';
 import {
+  bandPath,
   domainOf,
   lineGeometry,
   toPercent,
+  type BandPoint,
   type Domain,
 } from './chart-model.ts';
 import type { Point } from './math.ts';
@@ -41,9 +43,9 @@ const markerBg: Record<ChartColor, string> = {
   negative: 'bg-negative',
 };
 
-/** An opaque mix of the series colour into `canvas`, at 16 %. */
-export function areaFill(color: ChartColor): string {
-  return `color-mix(in srgb, var(--${color}) 16%, var(--canvas))`;
+/** An opaque mix of the series colour into `canvas`, at 16 % by default. */
+export function areaFill(color: ChartColor, percent = 16): string {
+  return `color-mix(in srgb, var(--${color}) ${String(percent)}%, var(--canvas))`;
 }
 
 export type ChartSeries = Readonly<{
@@ -60,6 +62,8 @@ export type ChartSeries = Readonly<{
   marker?: boolean;
   /** A dotted line, for a projection rather than a record. */
   dashed?: boolean;
+  /** A faint range drawn behind the line, such as a forecast's 80 % range. */
+  band?: readonly BandPoint[];
   /**
    * Text for the hover tooltip, one per point in `points` order. Hover snaps
    * to the nearest real point and reads this label, never a value read off
@@ -140,6 +144,9 @@ export function Chart({
     s,
     g: lineGeometry(s.points, x, y),
   }));
+  // An end whose label would sit on another line carrying on to its right.
+  const continued = (end: { x: number }) =>
+    geometry.some(({ g }) => g.end !== undefined && g.end.x > end.x);
   const referenceEnd =
     reference?.endLabel === undefined
       ? null
@@ -240,6 +247,15 @@ export function Chart({
               strokeWidth={1}
             />
           ) : null}
+          {geometry.map(({ s }) =>
+            s.band === undefined ? null : (
+              <path
+                key={`${s.id}-band`}
+                d={bandPath(s.band, x, y)}
+                fill={areaFill(s.color, 10)}
+              />
+            ),
+          )}
           {geometry.map(({ s, g }) => (
             <g key={s.id}>
               {s.area === true && g.area !== '' ? (
@@ -297,6 +313,7 @@ export function Chart({
               y={g.end.y}
               markClass={markerBg[s.color]}
               label={s.endLabel}
+              above={continued(g.end)}
             />
           ) : null,
         )}
@@ -351,7 +368,9 @@ export function Chart({
 
 /**
  * The 7 px end marker and its value: to the right of a point in the left
- * 70 % of the plot, above and to the left of one further right.
+ * 70 % of the plot, above and to the left of one further right. `above`
+ * lifts it off a line that carries on to the right: to the left when there
+ * is room, else to the right.
  */
 function EndMark({
   x,
@@ -359,6 +378,7 @@ function EndMark({
   markClass,
   label,
   raised = false,
+  above = false,
 }: {
   x: number;
   y: number;
@@ -366,6 +386,7 @@ function EndMark({
   label: string | undefined;
   /** The hover tooltip: above the end labels, with an outline. */
   raised?: boolean;
+  above?: boolean;
 }) {
   const at = { left: `${String(x)}%`, top: `${String(y)}%` };
   return (
@@ -379,9 +400,11 @@ function EndMark({
           className={cn(
             'absolute bg-canvas px-[3px] font-num text-tiny leading-[1.45] whitespace-nowrap text-text',
             raised && 'border border-outline',
-            x < 70
-              ? 'translate-x-1.5 -translate-y-1/2'
-              : '-translate-x-full -translate-y-[160%]',
+            x >= 70 || (above && x >= 15)
+              ? '-translate-x-full -translate-y-[160%]'
+              : above
+                ? 'translate-x-1.5 -translate-y-[160%]'
+                : 'translate-x-1.5 -translate-y-1/2',
           )}
           style={at}
         >
@@ -442,8 +465,11 @@ function hoverTarget(
 
 export type LegendItem = Readonly<{
   label: string;
-  /** A solid 2 px line, a dashed one, the 1 px pace tick, or just text. */
-  mark: 'line' | 'dash' | 'tick' | 'none';
+  /**
+   * A solid 2 px line, a dashed one, the 1 px pace tick, a filled range's
+   * swatch, or just text.
+   */
+  mark: 'line' | 'dash' | 'tick' | 'band' | 'none';
   /** The mark's background class, for example `bg-series-1`. */
   color?: string;
 }>;
@@ -475,7 +501,11 @@ export function ChartLegend({
               aria-hidden="true"
               className={cn(
                 'mr-[5px] inline-block',
-                item.mark === 'tick' ? 'h-2.5 w-px' : 'h-0.5 w-2.5',
+                item.mark === 'tick'
+                  ? 'h-2.5 w-px'
+                  : item.mark === 'band'
+                    ? 'h-2 w-2.5'
+                    : 'h-0.5 w-2.5',
                 item.mark === 'dash'
                   ? 'bg-[repeating-linear-gradient(90deg,currentColor_0_3px,var(--canvas)_3px_5px)]'
                   : item.color,

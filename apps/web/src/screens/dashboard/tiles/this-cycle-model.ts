@@ -4,6 +4,7 @@ import {
   type CycleDayView,
   type Money,
 } from '@allotr/shared';
+import type { BandPoint } from '@/charts/chart-model';
 import type { Point } from '@/charts/math';
 import { todayRow } from '@/features/today/state';
 
@@ -45,6 +46,8 @@ export interface CycleView {
    * last day (server figures); empty when the cycle has no days with figures.
    */
   forecastPoints: Point[];
+  /** The forecast's 80% range on the same days (server figures). */
+  forecastBand: BandPoint[];
   /** The even pace from the first day to the last. */
   reference: { from: Point; to: Point } | null;
   /** Index of today in `days`; -1 when the series has no figures yet. */
@@ -102,6 +105,17 @@ export function cycleView(days: readonly CycleDayView[]): CycleView {
     ),
     forecastPoints: days.flatMap((day, x) =>
       day.forecast === null ? [] : [{ x, y: day.forecast.amountMinor }],
+    ),
+    forecastBand: days.flatMap((day, x) =>
+      day.forecastLow === null || day.forecastHigh === null
+        ? []
+        : [
+            {
+              x,
+              low: day.forecastLow.amountMinor,
+              high: day.forecastHigh.amountMinor,
+            },
+          ],
     ),
     reference:
       first === undefined || last === undefined

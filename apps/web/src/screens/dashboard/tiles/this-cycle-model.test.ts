@@ -82,6 +82,19 @@ describe('cycleView', () => {
     expect(cycleView(days).forecastPoints).toEqual([]);
   });
 
+  it('carries the server 80% range on the forecast days', () => {
+    const withRange = days.map((d, i) => ({
+      ...d,
+      forecastLow: i < 2 ? null : usd(2200 + (i - 2) * 200),
+      forecastHigh: i < 2 ? null : usd(2200 + (i - 2) * 400),
+    }));
+    expect(cycleView(withRange).forecastBand).toEqual([
+      { x: 2, low: 2200, high: 2200 },
+      { x: 3, low: 2400, high: 2600 },
+    ]);
+    expect(cycleView(days).forecastBand).toEqual([]);
+  });
+
   it('copes with an empty cycle', () => {
     const view = cycleView([]);
     expect(view.reference).toBeNull();
