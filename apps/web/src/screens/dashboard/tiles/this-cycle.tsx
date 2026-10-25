@@ -76,9 +76,10 @@ export function ThisCycleTile() {
       ? todayLabel
       : formatTerminalDate(series[tick.index]?.date ?? figures.today, locale),
   }));
-  // Axis positions, rounded; not amounts anyone is told they have.
+  // Axis positions, rounded; not amounts anyone is told they have. Fit the
+  // drawn lines, not the budget, so a small spend is not squashed at the base.
   const top = Math.max(
-    budget.amountMinor,
+    last?.pace.amountMinor ?? 0,
     ...view.spentPoints.map((p) => p.y),
     ...view.forecastPoints.map((p) => p.y),
   );
