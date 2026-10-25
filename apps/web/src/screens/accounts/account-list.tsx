@@ -190,7 +190,7 @@ function AccountRow({
           onClick={() => {
             onSelect(account.id);
           }}
-          className="press flex h-full min-h-hit w-full min-w-0 items-center gap-2.5 text-left"
+          className="flex h-full min-h-hit w-full min-w-0 items-center gap-2.5 text-left"
         >
           <AccountIcon
             account={account}
