@@ -87,7 +87,13 @@ export function Allocation({
         {segments.map((s) => (
           <li
             key={s.id}
-            className="flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5"
+            className={cn(
+              'flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5',
+              // Text steps back toward `canvas` like the bar (no alpha).
+              active !== null &&
+                s.id !== active &&
+                '[&_*]:text-[color-mix(in_srgb,var(--text)_35%,var(--canvas))]',
+            )}
             onPointerEnter={() => {
               setActive(s.id);
             }}
