@@ -77,6 +77,21 @@ describe('cycleDays', () => {
     expect(row?.cumulativeSpent).toEqual(figures.paceSpent);
   });
 
+  it('carries the recent daily rate forward from today, none before it', () => {
+    const { days } = openCycleDays(v, '2026-04-10');
+    expect(days[8]?.forecast).toBeNull();
+    // Today's row starts on the real line; $30.00 over the 7 full days
+    // before today is 428 a day, rounded down.
+    expect(days[9]?.forecast).toEqual(days[9]?.cumulativeSpent);
+    expect(days[10]?.forecast).toEqual(usd(4428));
+    expect(days[29]?.forecast).toEqual(usd(4000 + 428 * 20));
+  });
+
+  it('forecasts nothing for a closed cycle', () => {
+    const { days } = openCycleDays(v, '2026-04-30');
+    expect(days.at(-1)?.forecast).toEqual(days.at(-1)?.cumulativeSpent);
+  });
+
   it('spreads the budget evenly, rounding down, ending at the budget', () => {
     const { days, budget } = openCycleDays(v, '2026-04-10');
     // Pace spent $40 plus $2,960 available.

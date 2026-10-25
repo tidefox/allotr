@@ -156,10 +156,16 @@ export function ShareBar({
   segments,
   label,
   className,
+  activeId,
+  onActive,
 }: {
   segments: readonly ShareSegment[];
   label: string;
   className?: string;
+  /** The segment to outline, for example the one its legend item is under. */
+  activeId?: string | null;
+  /** Called with a segment's id as the pointer enters it, `null` as it leaves. */
+  onActive?: (id: string | null) => void;
 }) {
   const summary = segments
     .map(
@@ -180,8 +186,24 @@ export function ShareBar({
       {segments.map((s) => (
         <div
           key={s.id}
-          className={cn('h-full min-w-px', fillBg[s.color])}
+          className={cn(
+            'h-full min-w-px',
+            fillBg[s.color],
+            s.id === activeId && 'outline-2 -outline-offset-2 outline-text',
+          )}
           style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
+          onPointerEnter={
+            onActive &&
+            (() => {
+              onActive(s.id);
+            })
+          }
+          onPointerLeave={
+            onActive &&
+            (() => {
+              onActive(null);
+            })
+          }
         />
       ))}
     </div>

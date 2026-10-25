@@ -177,6 +177,9 @@ function AccountRow({
       role={last ? 'last-child' : 'child'}
       label={account.name}
       selected={selected}
+      onRowClick={() => {
+        onSelect(account.id);
+      }}
       tall
       columns={columns}
       cells={[

@@ -1,6 +1,11 @@
-import { localDate } from '@allotr/shared';
+import { localDate, money } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { barFraction, cycleDays, isoWeek } from './summary-math.ts';
+import {
+  barFraction,
+  cycleDays,
+  isoWeek,
+  yesterdayChange,
+} from './summary-math.ts';
 
 describe('barFraction', () => {
   it('is the share of the whole', () => {
@@ -48,5 +53,23 @@ describe('cycleDays', () => {
         localDate('2026-10-23'),
       ),
     ).toEqual({ day: 28, length: 28 });
+  });
+});
+
+describe('yesterdayChange', () => {
+  it('drops the sign and keeps the direction', () => {
+    expect(yesterdayChange(money(2000, 'USD'))).toEqual({
+      up: true,
+      amount: money(2000, 'USD'),
+    });
+    expect(yesterdayChange(money(-350, 'USD'))).toEqual({
+      up: false,
+      amount: money(350, 'USD'),
+    });
+  });
+
+  it('says nothing without a comparison or a change', () => {
+    expect(yesterdayChange(null)).toBeNull();
+    expect(yesterdayChange(money(0, 'USD'))).toBeNull();
   });
 });

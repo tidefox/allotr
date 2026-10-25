@@ -24,6 +24,7 @@ function day(
     pace: usd(pace),
     availableEnd: null,
     allowance: allowance === null ? null : usd(allowance),
+    forecast: null,
   };
 }
 
@@ -65,6 +66,18 @@ describe('cycleView', () => {
       from: { x: 0, y: 1000 },
       to: { x: 3, y: 4000 },
     });
+  });
+
+  it('plots the server forecast from today to the last day', () => {
+    const withForecast = days.map((d, i) => ({
+      ...d,
+      forecast: i < 2 ? null : usd(2200 + (i - 2) * 300),
+    }));
+    expect(cycleView(withForecast).forecastPoints).toEqual([
+      { x: 2, y: 2200 },
+      { x: 3, y: 2500 },
+    ]);
+    expect(cycleView(days).forecastPoints).toEqual([]);
   });
 
   it('copes with an empty cycle', () => {

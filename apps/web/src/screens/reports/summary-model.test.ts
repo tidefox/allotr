@@ -302,6 +302,7 @@ describe('dayChart', () => {
     pace: money(0),
     availableEnd: null,
     allowance: allowance === null ? null : money(allowance),
+    forecast: null,
   });
 
   it('marks days over their allowance and skips days after today', () => {

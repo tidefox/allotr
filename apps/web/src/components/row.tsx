@@ -24,6 +24,13 @@ export type RowProps = {
   /** Tall lists (the mockup's `rows tall`) use the 46 px row. */
   tall?: boolean;
   onPress?: () => void;
+  /**
+   * Makes the whole row a click target for pointers while its cells keep
+   * their own controls (a row cannot be a button around a menu button). A
+   * click on a button or link inside is left to it; the keyboard goes
+   * through the cell that does the same thing.
+   */
+  onRowClick?: () => void;
   className?: string;
 };
 
@@ -34,6 +41,7 @@ export function Row({
   selected = false,
   tall = false,
   onPress,
+  onRowClick,
   className,
 }: RowProps) {
   const body = (
@@ -67,7 +75,21 @@ export function Row({
   const mark = selected || undefined;
   if (onPress === undefined)
     return (
-      <div className={classes} data-selected={mark}>
+      <div
+        className={cn(
+          classes,
+          onRowClick !== undefined && 'cursor-pointer hover:bg-card-raised',
+        )}
+        data-selected={mark}
+        onClick={
+          onRowClick &&
+          ((event) => {
+            if (!(event.target as Element).closest('button, a, [role=menu]')) {
+              onRowClick();
+            }
+          })
+        }
+      >
         {body}
       </div>
     );

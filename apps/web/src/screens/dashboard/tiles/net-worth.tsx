@@ -111,6 +111,10 @@ export function NetWorthTile() {
               color: 'series-1',
               points: chart.points,
               area: true,
+              hoverLabels: data.series.map(
+                (p) =>
+                  `${formatTerminalDate(p.date, locale)} · ${formatMoney(p.amount, 'symbol', locale)}`,
+              ),
             },
           ]}
           yTicks={yTicks}

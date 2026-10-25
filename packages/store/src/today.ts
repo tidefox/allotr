@@ -2,6 +2,7 @@ import {
   categoryId,
   cycleAllocation,
   dailyFigures,
+  dailyFiguresOn,
   paceDiff,
   reservedParts,
   transactionId,
@@ -10,6 +11,7 @@ import {
   type TransactionId,
 } from '@allotr/core';
 import {
+  addDays,
   localDateIn,
   money,
   type IncomeClass,
@@ -244,6 +246,15 @@ export async function todayFigures(
   const figures = dailyFigures(view, now, timeZone);
   const allocation = cycleAllocation(view, figures.today);
   const reservedSplit = reservedParts(view, figures.today);
+  const yesterday = addDays(figures.today, -1);
+  const allowanceChange =
+    yesterday < view.settings.startedOn
+      ? null
+      : money(
+          figures.todayAllowance.amountMinor -
+            dailyFiguresOn(view, yesterday).todayAllowance.amountMinor,
+          figures.todayAllowance.currency,
+        );
   return {
     today: figures.today,
     cycle: {
@@ -276,6 +287,7 @@ export async function todayFigures(
       paceSpent: figures.paceSpent,
       available: figures.available,
     }),
+    allowanceChange,
     allocation: {
       start: allocation.start,
       paycheck: allocation.paycheck,

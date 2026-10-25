@@ -7,6 +7,8 @@ import { LeftBar, Skeleton, seriesBg, seriesText } from '@/components/bars';
 import { BracketButton } from '@/components/buttons';
 import { formatTerminalDay } from '@/features/today/format';
 import {
+  IconArrowDownLine,
+  IconArrowUpLine,
   IconCalendarCheckLine,
   IconSafe2Line,
   IconSunLine,
@@ -21,7 +23,7 @@ import { useLedgerReady } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { poolRows } from '@/screens/dashboard/tiles/pools-model';
-import { barFraction, cycleDays } from './summary-math.ts';
+import { barFraction, cycleDays, yesterdayChange } from './summary-math.ts';
 
 // The summary bar (docs/ui.md §3). Priority order, left to right: left
 // today, the on-budget total, the pools, then the payday where there is
@@ -58,6 +60,33 @@ function Sub({ children }: { children: ReactNode }) {
   return (
     <span className="block truncate text-tiny leading-[1.45] text-text-muted">
       {children}
+    </span>
+  );
+}
+
+/** `↑ $20.00 from yesterday`: today's allowance against yesterday's. */
+function Versus({ change }: { change: ReturnType<typeof yesterdayChange> }) {
+  if (change === null) return null;
+  const Arrow = change.up ? IconArrowUpLine : IconArrowDownLine;
+  const amount = formatMoney(change.amount, 'symbol', locale);
+  return (
+    <span
+      title={t(
+        change.up
+          ? 'shell.summary.fromYesterdayUp'
+          : 'shell.summary.fromYesterdayDown',
+        { amount },
+      )}
+      className={cn(
+        'block truncate text-tiny leading-[1.45]',
+        change.up ? 'text-positive' : 'text-negative',
+      )}
+    >
+      <Arrow
+        aria-hidden="true"
+        className="mr-0.5 inline size-[1.15em] align-[-0.22em]"
+      />
+      {t('shell.summary.fromYesterday', { amount })}
     </span>
   );
 }
@@ -251,6 +280,7 @@ export function SummaryBar() {
                 ? t('shell.summary.overdue')
                 : t('shell.summary.daysToPayday', { count: data.daysLeft })}
             </Sub>
+            <Versus change={yesterdayChange(data.allowanceChange)} />
             <LeftBar
               fraction={barFraction(
                 data.leftToday.amountMinor,

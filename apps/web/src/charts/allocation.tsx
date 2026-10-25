@@ -1,4 +1,5 @@
 import type { Money } from '@allotr/shared';
+import { useState } from 'react';
 import { ShareBar, fillBg, type FillColor } from '@/components/bars';
 import { clampFraction } from '@/components/bars-math';
 import { shareText } from '@/lib/share-text';
@@ -49,6 +50,8 @@ export function Allocation({
   locale,
   className,
 }: AllocationProps) {
+  // The segment under the pointer, in the bar or in the list below it.
+  const [active, setActive] = useState<string | null>(null);
   const lead = segments.slice(0, -2);
   // One grid template for the bracket row, so it lines up with the bar's
   // segments; the widths are the server's fractions as `fr`.
@@ -57,7 +60,13 @@ export function Allocation({
     .join(' ');
   return (
     <div className={cn('grid', className)}>
-      <ShareBar segments={segments} label={label} className="h-[1.375rem]" />
+      <ShareBar
+        segments={segments}
+        label={label}
+        className="h-[1.375rem]"
+        activeId={active}
+        onActive={setActive}
+      />
       <div
         aria-hidden="true"
         className="mt-0.5 grid h-[7px] gap-px"
@@ -78,7 +87,16 @@ export function Allocation({
         {segments.map((s) => (
           <li
             key={s.id}
-            className="flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5"
+            className={cn(
+              'flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5',
+              s.id === active && 'bg-card-raised',
+            )}
+            onPointerEnter={() => {
+              setActive(s.id);
+            }}
+            onPointerLeave={() => {
+              setActive(null);
+            }}
           >
             <span className="flex items-center gap-1.5 truncate text-tiny leading-[1.45] text-text-muted compact:text-[0.625rem]">
               <span

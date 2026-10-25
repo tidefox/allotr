@@ -40,6 +40,11 @@ export interface CycleView {
   length: number;
   /** Cumulative pace spending per day with figures, x = day index. */
   spentPoints: Point[];
+  /**
+   * Where spending is heading at the recent daily rate, from today to the
+   * last day (server figures); empty when the cycle has no days with figures.
+   */
+  forecastPoints: Point[];
   /** The even pace from the first day to the last. */
   reference: { from: Point; to: Point } | null;
   /** Index of today in `days`; -1 when the series has no figures yet. */
@@ -94,6 +99,9 @@ export function cycleView(days: readonly CycleDayView[]): CycleView {
       day.cumulativeSpent === null
         ? []
         : [{ x, y: day.cumulativeSpent.amountMinor }],
+    ),
+    forecastPoints: days.flatMap((day, x) =>
+      day.forecast === null ? [] : [{ x, y: day.forecast.amountMinor }],
     ),
     reference:
       first === undefined || last === undefined
