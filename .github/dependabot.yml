@@ -35,6 +35,11 @@ updates:
       # it does.
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
+      # 4.14 adds label-content-name-mismatch, which calendar day cells, the
+      # category row actions and the contrast toggles fail; lift this once
+      # their accessible names include the visible text.
+      - dependency-name: "@axe-core/playwright"
+        versions: [">=4.14.0"]
 
   # Dockerfile arrives with the image work later in M0.
   - package-ecosystem: docker
