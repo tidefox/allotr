@@ -41,7 +41,7 @@ export const VIEW_TYPE = 'allotr-view';
 const ICON = 'allotr-wallet';
 /** A change to another device's files is checked this long after the last one, so a sync that delivers several files is read once. */
 const WATCH_DEBOUNCE_MS = 3000;
-const PLUGIN_VERSION = '0.0.1-spike.10';
+const PLUGIN_VERSION = '0.0.1-spike.11';
 
 declare const __BUNDLE_NOTE__: string;
 

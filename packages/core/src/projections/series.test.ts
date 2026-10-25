@@ -77,14 +77,37 @@ describe('cycleDays', () => {
     expect(row?.cumulativeSpent).toEqual(figures.paceSpent);
   });
 
-  it('carries the recent daily rate forward from today, none before it', () => {
+  it('forecasts from today on with a range, none before it', () => {
     const { days } = openCycleDays(v, '2026-04-10');
     expect(days[8]?.forecast).toBeNull();
-    // Today's row starts on the real line; $30.00 over the 7 full days
-    // before today is 428 a day, rounded down.
+    expect(days[8]?.forecastHigh).toBeNull();
+    // Today's row starts on the real line, range included.
     expect(days[9]?.forecast).toEqual(days[9]?.cumulativeSpent);
-    expect(days[10]?.forecast).toEqual(usd(4428));
-    expect(days[29]?.forecast).toEqual(usd(4000 + 428 * 20));
+    expect(days[9]?.forecastLow).toEqual(days[9]?.cumulativeSpent);
+    // $40.00 over the 9 full days, the recent ones weighing most: 433 a day.
+    expect(days[10]?.forecast).toEqual(usd(4433));
+    const end = days[29];
+    expect(end?.forecast).toEqual(usd(12664)); // 4000 + 20 × 433.2…
+    expect(end?.forecastLow?.amountMinor).toBeLessThan(
+      end?.forecast?.amountMinor ?? 0,
+    );
+    expect(end?.forecastHigh?.amountMinor).toBeGreaterThan(
+      end?.forecast?.amountMinor ?? 0,
+    );
+  });
+
+  it('learns from the previous cycle on the first day of a new one', () => {
+    const earlier = Array.from({ length: 20 }, (_, i) =>
+      spend(`2026-04-${String(i + 10)}`, 2000),
+    );
+    const withHistory = viewFrom('2026-04-01', [
+      ...ledger,
+      ...earlier,
+      paycheck('2026-05-01', 300000),
+    ]);
+    const { days } = openCycleDays(withHistory, '2026-05-01');
+    // Nothing spent yet today; the rate comes from April.
+    expect(days[1]?.forecast?.amountMinor).toBeGreaterThan(1500);
   });
 
   it('forecasts nothing for a closed cycle', () => {

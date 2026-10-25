@@ -192,12 +192,16 @@ export function ThisCycleTile() {
                       dashed: true,
                       endLabel: money(forecastEnd),
                       hoverLabels: series.flatMap((day) =>
-                        day.forecast === null
+                        day.forecast === null ||
+                        day.forecastLow === null ||
+                        day.forecastHigh === null
                           ? []
                           : [
                               t('dashboardTiles.thisCycle.hoverForecast', {
                                 date: formatTerminalDate(day.date, locale),
                                 total: money(day.forecast),
+                                low: money(day.forecastLow),
+                                high: money(day.forecastHigh),
                               }),
                             ],
                       ),
