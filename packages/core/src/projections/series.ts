@@ -8,7 +8,7 @@ import {
 } from '@allotr/shared';
 import { budgetView } from './withdrawal-links.ts';
 import { accountIn } from '../ledger/chart.ts';
-import type { AccountId, Transaction } from '../ledger/types.ts';
+import type { AccountId, Transaction, TransactionId } from '../ledger/types.ts';
 import { cycleEndOn, cyclesOf } from './cycles.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import {
@@ -23,6 +23,7 @@ import {
   type Sums,
 } from './daily.ts';
 import type { Cycle, LedgerView } from './types.ts';
+import { FORECAST_HISTORY, spendingForecast } from './forecast.ts';
 
 // Day-by-day series for charts (ADR 0020). Every figure comes from the same
 // functions as today's figures, so a chart and /v1/today never disagree:
@@ -41,11 +42,14 @@ export type CycleDay = Readonly<{
   /** That day's allowance as of its start; null after today. */
   allowance: Money | null;
   /**
-   * Where cumulative spending is heading if the recent daily rate holds
-   * (`FORECAST_WINDOW`); null before today. Today's row repeats
-   * `cumulativeSpent`, so the line starts on the real one.
+   * Where cumulative pace spending is heading (`spendingForecast`); null
+   * before today. Today's row repeats `cumulativeSpent`, so the line starts
+   * on the real one.
    */
   forecast: Money | null;
+  /** Lower and upper 80% bounds of `forecast`; null where it is. */
+  forecastLow: Money | null;
+  forecastHigh: Money | null;
 }>;
 
 export type CycleDays = Readonly<{
@@ -64,23 +68,6 @@ export type CycleDays = Readonly<{
 function floorDiv(total: bigint, n: bigint): bigint {
   const quotient = total / n;
   return total % n !== 0n && total < 0n ? quotient - 1n : quotient;
-}
-
-/** Days of recent spending the forecast averages. */
-export const FORECAST_WINDOW = 7;
-
-/**
- * The daily spending rate the forecast carries forward, in minor units,
- * rounded down and never below zero: the average over the last
- * `FORECAST_WINDOW` full days (today's partial day only when it is the
- * cycle's first).
- */
-function forecastRate(cumulative: readonly bigint[]): bigint {
-  const upto = cumulative.length > 1 ? cumulative.length - 1 : 1;
-  const from = Math.max(0, upto - FORECAST_WINDOW);
-  const spent = (cumulative[upto - 1] ?? 0n) - (cumulative[from - 1] ?? 0n);
-  const rate = floorDiv(spent, BigInt(upto - from));
-  return rate < 0n ? 0n : rate;
 }
 
 /**
@@ -204,20 +191,32 @@ export function cycleDays(
       ? 0
       : latest.cumulativeSpent.amountMinor + latest.availableEnd.amountMinor,
   );
-  const rate = forecastRate(
-    past.map((row) => BigInt(row.cumulativeSpent.amountMinor)),
-  );
   const anchor = latest?.cumulativeSpent.amountMinor ?? 0;
+  const forecast = spendingForecast(
+    spendingHistory(view, cycle, past, excluded),
+    Array.from({ length: count - past.length }, (_, i) =>
+      addDays(cycle.openedOn, past.length + i),
+    ),
+  );
   const days = Array.from({ length: count }, (_, at): CycleDay => {
     const pace = money(Number(evenPace(budget, at, count)), currency);
     const row = past[at];
     if (row !== undefined) {
+      const start = at === past.length - 1 ? row.cumulativeSpent : null;
       return {
         ...row,
         pace,
-        forecast: at === past.length - 1 ? row.cumulativeSpent : null,
+        forecast: start,
+        forecastLow: start,
+        forecastHigh: start,
       };
     }
+    const point = forecast[at - past.length];
+    const ahead = (offset: number | undefined) =>
+      // Nothing to project from before the first day with figures.
+      latest === undefined || offset === undefined
+        ? null
+        : money(anchor + offset, currency);
     return {
       date: addDays(cycle.openedOn, at),
       spent: null,
@@ -225,11 +224,9 @@ export function cycleDays(
       pace,
       availableEnd: null,
       allowance: null,
-      // Nothing to project from before the first day with figures.
-      forecast:
-        latest === undefined
-          ? null
-          : money(anchor + Number(rate) * (at - (past.length - 1)), currency),
+      forecast: ahead(point?.mid),
+      forecastLow: ahead(point?.low),
+      forecastHigh: ahead(point?.high),
     };
   });
   return {
@@ -237,6 +234,44 @@ export function cycleDays(
     budget: money(Number(budget), currency),
     missingRates: [...missing].sort(),
   };
+}
+
+/**
+ * Daily pace spending the forecast learns from: the `FORECAST_HISTORY` full
+ * days before the cycle's latest day with figures, reaching back into
+ * earlier cycles but not before the ledger's first entry. Today's partial
+ * day counts only when there is no full day yet.
+ */
+function spendingHistory(
+  view: LedgerView,
+  cycle: Cycle,
+  past: readonly { date: LocalDate; spent: Money }[],
+  excluded: ReadonlySet<TransactionId>,
+): { date: LocalDate; spent: number }[] {
+  const latest = past.at(-1);
+  if (latest === undefined) return [];
+  let first = latest.date;
+  for (const t of view.ledger) if (t.occurredOn < first) first = t.occurredOn;
+  const from = addDays(latest.date, -FORECAST_HISTORY);
+  const before: { date: LocalDate; spent: number }[] = [];
+  for (
+    let date = from > first ? from : first;
+    date < cycle.openedOn;
+    date = addDays(date, 1)
+  ) {
+    const { kept } = spentSums(view, date, date, excluded);
+    before.push({ date, spent: toFigure(view, kept, date).amount.amountMinor });
+  }
+  const full = [
+    ...before,
+    ...past.slice(0, -1).map((row) => ({
+      date: row.date,
+      spent: row.spent.amountMinor,
+    })),
+  ].slice(-FORECAST_HISTORY);
+  return full.length > 0
+    ? full
+    : [{ date: latest.date, spent: latest.spent.amountMinor }];
 }
 
 /**

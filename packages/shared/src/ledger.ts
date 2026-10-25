@@ -1185,10 +1185,15 @@ export const cycleDaySchema = z.object({
   /** That day's allowance as of its start; null after today. */
   allowance: moneySchema.nullable(),
   /**
-   * Cumulative pace spending if the last week's daily rate holds; null
-   * before today. Today's row equals `cumulativeSpent`.
+   * Expected cumulative pace spending: a smoothed, weekday-adjusted daily
+   * rate carried forward; null before today. Today's row equals
+   * `cumulativeSpent`.
    */
   forecast: moneySchema.nullable(),
+  /** Lower 80% bound of `forecast`; null where it is. */
+  forecastLow: moneySchema.nullable(),
+  /** Upper 80% bound of `forecast`; null where it is. */
+  forecastHigh: moneySchema.nullable(),
 });
 export type CycleDayView = z.infer<typeof cycleDaySchema>;
 

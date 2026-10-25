@@ -641,13 +641,31 @@ live_daily       = available(now) / days_left
   yesterday (`dailyFiguresOn` at yesterday's date): positive means today's
   number is higher. It is null on the first day of the ledger.
 - **Spending forecast.** Each row of `/v1/cycles/{openedOn}/days` carries
-  `forecast`: from today's row on, cumulative pace spending carried forward at
-  the recent daily rate, which is the pace spending of the last 7 full days
-  (fewer early in a cycle; today's partial day only on the cycle's first day)
-  divided by the days counted, rounded down and never below zero. Today's
-  row equals `cumulativeSpent` so the line starts on the real one; rows
-  before today are null. It reads only the user's own spending, not bills
-  still to come.
+  `forecast`, `forecastLow` and `forecastHigh`: from today's row on, where
+  cumulative pace spending is heading, with an 80% range. Today's row equals
+  `cumulativeSpent` in all three so the line starts on the real one; rows
+  before today are null. The model is the usual short-horizon cash-flow
+  forecast for daily outflows:
+  1. *History.* Daily pace spending over the 42 full days before today,
+     reaching back into earlier cycles but not before the ledger's first
+     entry. Today's partial day counts only when there is no full day yet.
+  2. *Winsorizing.* Days below the 5th or above the 95th percentile
+     (nearest rank) are clamped to it, so one large purchase does not set
+     the rate. With fewer than 20 days nothing is clamped.
+  3. *Weekday profile.* With at least 28 days, each weekday's mean over the
+     overall mean is a factor, pulled toward 1 by two pseudo-observations
+     and scaled to average 1. Otherwise every factor is 1.
+  4. *Level.* Simple exponential smoothing of the weekday-adjusted series
+     with a 7-day half-life (α = 1 − 2^(−1/7)), started from the mean of
+     its first week.
+  5. *Path.* Each later day adds `max(0, level × that weekday's factor)`;
+     `forecast` is the running total, rounded down.
+  6. *Range.* σ² is the mean squared one-day-ahead error. After h days the
+     total's variance is σ²·(h + h²·α/(2 − α)); the bounds are ±1.2816 σ
+     (80%, two-sided), the lower one rounded down, never below today's
+     figure or an earlier day's bound, the upper one rounded up.
+
+  It reads only the user's own spending, not bills still to come.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 

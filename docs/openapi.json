@@ -37744,6 +37744,44 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "forecastLow": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "forecastHigh": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
@@ -37753,7 +37791,9 @@
                           "pace",
                           "availableEnd",
                           "allowance",
-                          "forecast"
+                          "forecast",
+                          "forecastLow",
+                          "forecastHigh"
                         ]
                       }
                     },

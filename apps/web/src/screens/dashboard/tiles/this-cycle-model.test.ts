@@ -25,6 +25,8 @@ function day(
     availableEnd: null,
     allowance: allowance === null ? null : usd(allowance),
     forecast: null,
+    forecastLow: null,
+    forecastHigh: null,
   };
 }
 
