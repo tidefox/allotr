@@ -311,6 +311,7 @@ export const en = {
       legendSpent: 'spent this cycle',
       legendPace: 'even pace',
       legendForecast: 'forecast',
+      legendRange: '80% range',
       hoverSpent: '{date} · {day}/day · {total} so far',
       hoverForecast: '{date} · forecast {total} (80%: {low}–{high})',
       chartLabel: 'Spent day-to-day this cycle against an even pace',

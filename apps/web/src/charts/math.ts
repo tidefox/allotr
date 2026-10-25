@@ -169,7 +169,8 @@ export function monotoneSegments(points: readonly Point[]): CubicSegment[] {
   return segments;
 }
 
-function fmt(value: number): string {
+/** A plot coordinate for SVG path data, to three decimals. */
+export function fmt(value: number): string {
   return String(Math.round(value * 1000) / 1000);
 }
 

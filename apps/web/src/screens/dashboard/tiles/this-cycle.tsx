@@ -190,6 +190,7 @@ export function ThisCycleTile() {
                       label: t('dashboardTiles.thisCycle.legendForecast'),
                       color: 'series-1' as const,
                       points: view.forecastPoints,
+                      band: view.forecastBand,
                       dashed: true,
                       endLabel: money(forecastEnd),
                       hoverLabels: series.flatMap((day) =>
@@ -251,6 +252,16 @@ export function ThisCycleTile() {
                       mark: 'dash' as const,
                       color: 'bg-series-1',
                     },
+                    ...(view.forecastBand.length < 2
+                      ? []
+                      : [
+                          {
+                            label: t('dashboardTiles.thisCycle.legendRange'),
+                            mark: 'band' as const,
+                            color:
+                              'bg-[color-mix(in_srgb,var(--series-1)_10%,var(--canvas))]',
+                          },
+                        ]),
                   ]),
               {
                 label: t('dashboardTiles.thisCycle.legendPace'),
