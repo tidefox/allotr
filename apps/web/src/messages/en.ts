@@ -406,7 +406,6 @@ export const en = {
       spent: 'spent {amount}',
       fromYesterdayUp: '{amount} more than yesterday',
       fromYesterdayDown: '{amount} less than yesterday',
-      fromYesterday: '{amount} from yesterday',
       daysToPayday: '{count}d to payday',
       overdue: 'payday overdue',
       onBudget: 'on-budget total',
