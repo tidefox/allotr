@@ -73,7 +73,7 @@ export function CommandLine() {
     <section
       aria-label={t('shell.slots.command')}
       data-slot="command"
-      className="relative col-start-1 row-start-4 flex h-cmd items-stretch border-t bg-canvas medium:col-start-2"
+      className="relative col-start-1 row-start-4 flex h-cmd items-stretch border-t border-outline bg-canvas medium:col-start-2"
     >
       {logged === null ? null : (
         <div className="absolute inset-x-0 bottom-full">

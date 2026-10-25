@@ -47,7 +47,8 @@ The interface uses only existing roles, so the theme format does not change.
 | Title bars, top bar, sidebar, status line, menus, sheets                                            | `chrome`                                                                                 |
 | Hover, bar tracks, raised controls                                                                  | `card`                                                                                   |
 | Selected row                                                                                        | `card-raised` (`card` is the seam colour in the dark themes)                             |
-| Seams between tiles and rows (1 px)                                                                 | `outline-variant`                                                                        |
+| Seams between rows and sub items inside a tile (1 px)                                               | `outline-variant`                                                                        |
+| Card separation (1 px): tile and title-bar edges, stat cells, the shell's bars and strips           | `outline`                                                                                |
 | Strong lines: axes, chart borders, control borders, decorative glyphs (tree lines, `[ ]` brackets)  | `outline`                                                                                |
 | Primary text                                                                                        | `text`                                                                                   |
 | Secondary text, labels, axis labels, units                                                          | `text-muted`                                                                             |

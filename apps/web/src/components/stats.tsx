@@ -48,7 +48,7 @@ export function Stats({
             <div
               key={label}
               className={cn(
-                'flex min-w-0 flex-col justify-center border-r border-b px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
+                'flex min-w-0 flex-col justify-center border-r border-b border-outline px-3.5 py-2.5 compact:px-2.5 compact:py-[7px] wide:px-[1.125rem] wide:py-3.5',
                 phone === 'hide' && 'compact:hidden',
                 phone === 'wide' && 'compact:col-span-2',
                 highlight && 'edge',
