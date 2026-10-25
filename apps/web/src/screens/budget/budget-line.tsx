@@ -22,10 +22,10 @@ import type { BudgetRow } from '@/screens/dashboard/tiles/budgets';
 export const budgetLineColumns: readonly RowColumn[] = [
   { width: '1.5rem' },
   { width: '1.125rem' },
-  { width: 'minmax(0, 1fr)' },
-  { width: 'minmax(2.25rem, 2.4fr)' },
-  { width: '9ch', from: 'medium' },
-  { width: '9ch' },
+  { width: 'minmax(5rem, 1.6fr)' },
+  { width: 'minmax(2.25rem, 1.4fr)' },
+  { width: '11ch', from: 'medium' },
+  { width: '11ch' },
 ];
 
 export function BudgetLine({
@@ -37,6 +37,8 @@ export function BudgetLine({
   setAsideLabel,
   barLabel,
   columns = budgetLineColumns,
+  showSpent = true,
+  showLead = true,
   action,
   className,
 }: {
@@ -48,6 +50,10 @@ export function BudgetLine({
   setAsideLabel: string;
   barLabel: string;
   columns?: readonly RowColumn[];
+  /** False in a narrow tile, where spent has no room beside left. */
+  showSpent?: boolean;
+  /** False when no row folds or hangs off a parent: the icon then leads. */
+  showLead?: boolean;
   /** A trailing cell, when the columns have room for one. */
   action?: ReactNode;
   className?: string | undefined;
@@ -117,10 +123,13 @@ export function BudgetLine({
     </span>,
   ];
   if (action !== undefined) cells.push(action);
+  // Lead is column 0 and spent column 4.
+  const kept = <T,>(list: readonly T[]) =>
+    list.filter((_, i) => (showLead || i !== 0) && (showSpent || i !== 4));
   return (
     <Row
-      columns={columns}
-      cells={cells}
+      columns={kept(columns)}
+      cells={kept(cells)}
       // A parent row is bold throughout, as the locked design's `.r.parent`.
       className={cn(parent && 'font-semibold', className)}
     />
