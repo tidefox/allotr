@@ -130,6 +130,16 @@ export const fillBg: Record<FillColor, string> = {
   success: 'bg-success',
 };
 
+/**
+ * A fill stepped back toward `canvas` (an opaque mix, never alpha), for the
+ * marks that are not the one under the pointer.
+ */
+export function dimFill(color: FillColor): { backgroundColor: string } {
+  return {
+    backgroundColor: `color-mix(in srgb, var(--${color}) 30%, var(--canvas))`,
+  };
+}
+
 /** Series colours for icons and marks (never text: they are fitted 3:1). */
 export const seriesText: Record<SeriesColor, string> = {
   'series-1': 'text-series-1',
@@ -162,7 +172,7 @@ export function ShareBar({
   segments: readonly ShareSegment[];
   label: string;
   className?: string;
-  /** The segment to outline, for example the one its legend item is under. */
+  /** The segment to keep at full colour (the rest step back), e.g. the one its legend item is under. */
   activeId?: string | null;
   /** Called with a segment's id as the pointer enters it, `null` as it leaves. */
   onActive?: (id: string | null) => void;
@@ -186,12 +196,12 @@ export function ShareBar({
       {segments.map((s) => (
         <div
           key={s.id}
-          className={cn(
-            'h-full min-w-px',
-            fillBg[s.color],
-            s.id === activeId && 'outline-2 -outline-offset-2 outline-text',
-          )}
-          style={{ flexGrow: clampFraction(s.fraction), flexBasis: 0 }}
+          className={cn('h-full min-w-px', fillBg[s.color])}
+          style={{
+            flexGrow: clampFraction(s.fraction),
+            flexBasis: 0,
+            ...(activeId != null && s.id !== activeId ? dimFill(s.color) : {}),
+          }}
           onPointerEnter={
             onActive &&
             (() => {

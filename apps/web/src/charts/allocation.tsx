@@ -1,6 +1,6 @@
 import type { Money } from '@allotr/shared';
 import { useState } from 'react';
-import { ShareBar, fillBg, type FillColor } from '@/components/bars';
+import { ShareBar, dimFill, fillBg, type FillColor } from '@/components/bars';
 import { clampFraction } from '@/components/bars-math';
 import { shareText } from '@/lib/share-text';
 import { formatMoney, type CurrencyDisplay } from '@/lib/format-money';
@@ -87,10 +87,7 @@ export function Allocation({
         {segments.map((s) => (
           <li
             key={s.id}
-            className={cn(
-              'flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5',
-              s.id === active && 'bg-card-raised',
-            )}
+            className="flex min-w-0 flex-col border-r border-b px-3 py-2 compact:px-2.5 compact:py-1.5"
             onPointerEnter={() => {
               setActive(s.id);
             }}
@@ -102,6 +99,11 @@ export function Allocation({
               <span
                 aria-hidden="true"
                 className={cn('size-[9px] shrink-0', fillBg[s.color])}
+                style={
+                  active !== null && s.id !== active
+                    ? dimFill(s.color)
+                    : undefined
+                }
               />
               <span className="truncate">{s.label}</span>
             </span>
