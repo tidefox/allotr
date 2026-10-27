@@ -22,6 +22,7 @@ export const budgetGoalsIous = {
     reached: 'goal reached',
     progress: '{name} progress',
     missingRates: 'Some of what it holds has no rate to {currency}.',
+    edit: 'Edit',
     archive: 'Archive',
     chart: {
       summary:
@@ -34,6 +35,8 @@ export const budgetGoalsIous = {
     },
     form: {
       title: 'New goal',
+      editTitle: 'Edit goal',
+      save: 'Save goal',
       name: 'Name',
       where: 'Earmark on',
       wherePlaceholder: 'Pick a pool or account',

@@ -1,9 +1,19 @@
+import {
+  formatMoneyInput,
+  type CreateGoalBody,
+  type GoalView,
+} from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type SyntheticEvent } from 'react';
 import { BracketButton, PrimaryButton } from '@/components/buttons';
 import { Sheet } from '@/components/sheet';
 import { amountExample } from '@/features/quick-entry/draft';
-import { createGoal, goalsQuery, poolQueryKeys } from '@/lib/budgets';
+import {
+  createGoal,
+  goalsQuery,
+  poolQueryKeys,
+  updateGoal,
+} from '@/lib/budgets';
 import { accountsQuery, todayQuery } from '@/lib/ledger';
 import { describeProblem } from '@/lib/problem';
 import { t } from '@/messages/t';
@@ -16,12 +26,14 @@ import { toGoalBody, whereChoices, type GoalField } from './goals-model.ts';
 
 const locale = 'en';
 
-/** A new goal: an earmark on a savings pool or account. */
+/** A new goal (an earmark on a savings pool or account), or `goal` edited. */
 export function GoalSheet({
   open,
+  goal,
   onClose,
 }: {
   open: boolean;
+  goal?: GoalView | undefined;
   onClose: () => void;
 }) {
   const goals = useQuery(goalsQuery);
@@ -39,11 +51,17 @@ export function GoalSheet({
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
-      title={t('budgetGoalsIous.goals.form.title')}
+      title={t(
+        goal === undefined
+          ? 'budgetGoalsIous.goals.form.title'
+          : 'budgetGoalsIous.goals.form.editTitle',
+      )}
       closeLabel={t('budgetGoalsIous.close')}
     >
       {loaded ? (
         <GoalForm
+          key={goal?.id}
+          goal={goal}
           choices={whereChoices(
             goals.data.goals,
             pools.data.pools,
@@ -63,22 +81,33 @@ export function GoalSheet({
 }
 
 function GoalForm({
+  goal,
   choices,
   currency,
   onClose,
 }: {
+  goal: GoalView | undefined;
   choices: ReturnType<typeof whereChoices>;
   currency: string;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(goal?.name ?? '');
   const [where, setWhere] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState('');
+  const [amount, setAmount] = useState(
+    goal === undefined ? '' : formatMoneyInput(goal.target, locale),
+  );
+  const [date, setDate] = useState(goal?.targetOn ?? '');
   const [errors, setErrors] = useState<Partial<Record<GoalField, true>>>({});
   const add = useMutation({
-    mutationFn: createGoal,
+    mutationFn: (body: CreateGoalBody) =>
+      goal === undefined
+        ? createGoal(body)
+        : updateGoal(goal.id, {
+            name: body.name,
+            targetMinor: body.target.amountMinor,
+            targetOn: body.targetOn ?? null,
+          }),
     onSuccess: () => {
       for (const queryKey of poolQueryKeys)
         void queryClient.invalidateQueries({ queryKey });
@@ -87,14 +116,19 @@ function GoalForm({
   });
   const submit = (event: SyntheticEvent) => {
     event.preventDefault();
-    const result = toGoalBody({ name, where, amount, date }, currency, locale);
+    // An edit keeps its earmark, so the picker is skipped.
+    const result = toGoalBody(
+      { name, where: goal === undefined ? where : 'pool:-', amount, date },
+      goal?.target.currency ?? currency,
+      locale,
+    );
     setErrors(result.ok ? {} : result.errors);
     if (result.ok) add.mutate(result.body);
   };
   const error = (field: GoalField, key: string | undefined) =>
     errors[field] === true ? key : undefined;
 
-  if (choices.length === 0)
+  if (goal === undefined && choices.length === 0)
     return (
       <p className="px-3 py-4 font-sans text-small">
         {t('budgetGoalsIous.goals.form.none')}
@@ -110,14 +144,16 @@ function GoalForm({
         error={error('name', t('budgetGoalsIous.goals.form.errors.name'))}
         onChange={setName}
       />
-      <ChoiceField
-        label={t('budgetGoalsIous.goals.form.where')}
-        value={where}
-        choices={choices}
-        placeholder={t('budgetGoalsIous.goals.form.wherePlaceholder')}
-        error={error('where', t('budgetGoalsIous.goals.form.errors.where'))}
-        onChange={setWhere}
-      />
+      {goal === undefined ? (
+        <ChoiceField
+          label={t('budgetGoalsIous.goals.form.where')}
+          value={where}
+          choices={choices}
+          placeholder={t('budgetGoalsIous.goals.form.wherePlaceholder')}
+          error={error('where', t('budgetGoalsIous.goals.form.errors.where'))}
+          onChange={setWhere}
+        />
+      ) : null}
       <TextField
         label={t('budgetGoalsIous.goals.form.amount')}
         value={amount}
@@ -125,7 +161,7 @@ function GoalForm({
         error={error(
           'amount',
           t('budgetGoalsIous.goals.form.errors.amount', {
-            example: amountExample(currency, locale),
+            example: amountExample(goal?.target.currency ?? currency, locale),
           }),
         )}
         onChange={setAmount}
@@ -149,7 +185,11 @@ function GoalForm({
         <PrimaryButton type="submit" isDisabled={add.isPending}>
           {add.isPending
             ? t('budgetGoalsIous.saving')
-            : t('budgetGoalsIous.goals.form.submit')}
+            : t(
+                goal === undefined
+                  ? 'budgetGoalsIous.goals.form.submit'
+                  : 'budgetGoalsIous.goals.form.save',
+              )}
         </PrimaryButton>
       </div>
     </form>
