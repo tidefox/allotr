@@ -6,5 +6,5 @@ export { ChoiceField, TextField } from '@/components/form-fields';
 export type { Choice } from '@/components/form-fields';
 
 export function FormRow({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-2 gap-2">{children}</div>;
+  return <div className="grid grid-cols-2 items-end gap-2">{children}</div>;
 }

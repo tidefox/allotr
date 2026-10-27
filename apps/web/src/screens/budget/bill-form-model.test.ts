@@ -27,6 +27,9 @@ const draft: BillDraft = {
   amount: '120.50',
   dueDay: 5,
   categoryId: '',
+  priceCurrency: '',
+  price: '',
+  active: true,
 };
 
 describe('toBillBody', () => {
@@ -34,6 +37,7 @@ describe('toBillBody', () => {
     const result = toBillBody(draft, accounts, 'en');
     expect(result).toEqual({
       ok: true,
+      price: null,
       body: {
         name: 'Rent',
         accountId: 'main',
@@ -69,5 +73,23 @@ describe('defaultBillAccount', () => {
   });
   it('is empty without accounts', () => {
     expect(defaultBillAccount([])).toBe('');
+  });
+
+  it('prices a bill in another currency', () => {
+    const r = toBillBody(
+      { ...draft, priceCurrency: 'EUR', price: '9.99' },
+      accounts,
+      'en',
+    );
+    expect(r.ok && r.price).toMatchObject({ amountMinor: 999 });
+  });
+
+  it('rejects a price in the account currency', () => {
+    const r = toBillBody(
+      { ...draft, priceCurrency: 'USD', price: '9.99' },
+      accounts,
+      'en',
+    );
+    expect(!r.ok && r.errors.price).toBe('same');
   });
 });

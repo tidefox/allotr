@@ -265,7 +265,10 @@ export function MenuButton({
         : {})}
       className={cn(
         'min-w-48 py-1 outline-none',
-        presentation === 'sheet' && '[&_[role^=menuitem]]:min-h-[2.75rem]',
+        presentation === 'sheet'
+          ? '[&_[role^=menuitem]]:min-h-[2.75rem]'
+          : // The popover's own max-height is overridden by the position it computes.
+            'max-h-[20rem] overflow-auto',
       )}
     >
       {children}
@@ -299,7 +302,7 @@ export function MenuButton({
       </Button>
       <Popover
         placement={placement}
-        className="enter-pop max-h-[var(--visual-viewport-height)] min-w-[var(--trigger-width)] overflow-auto border border-outline bg-chrome text-text"
+        className="enter-pop max-h-[24rem] min-w-[var(--trigger-width)] overflow-auto border border-outline bg-chrome text-text"
       >
         {menu}
       </Popover>

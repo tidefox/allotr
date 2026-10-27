@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { type LocalDate } from '@allotr/shared';
+import { type BillView, type LocalDate } from '@allotr/shared';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
 import { BracketButton, Tag } from '@/components/buttons';
-import { Stack, Tile } from '@/components/layout';
+import { Split, Stack, Tile } from '@/components/layout';
 import { MenuButton, MenuItem } from '@/components/menu';
 import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
@@ -22,7 +23,7 @@ import { formatTerminalDate } from '@/features/today/format';
 import { formatMoney, formatMoneyShort } from '@/lib/format-money';
 import { accountsQuery, todayQuery } from '@/lib/ledger';
 import { openNewForm } from '@/shell/command/store.ts';
-import { billsQuery } from '@/lib/settings';
+import { billQueryKeys, billsQuery, payBill, unpayBill } from '@/lib/settings';
 import { t } from '@/messages/t';
 import {
   billsView,
@@ -30,6 +31,10 @@ import {
   dueStatus,
   type DueItem,
 } from './bills-model.ts';
+import { useFrameWidth } from '@/components/use-frame-width';
+import { useAutoSelectFirst, WIDE_FROM } from '@/lib/auto-select';
+import { BillDetail } from './bill-detail.tsx';
+import { BillSheet } from './bill-sheet.tsx';
 import { SumLine } from './sum-line.tsx';
 
 const locale = 'en';
@@ -78,18 +83,39 @@ function BillRow({
   item,
   today,
   account,
+  onEdit,
+  selected,
+  onSelect,
 }: {
   item: DueItem;
   today: LocalDate;
   account: string;
+  onEdit: (billId: string) => void;
+  selected: boolean;
+  onSelect: (billId: string) => void;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toggle = useMutation({
+    mutationFn: () =>
+      item.paidOn === null
+        ? payBill(item.billId, { dueOn: item.dueOn, paid: item.amount })
+        : unpayBill(item.billId, item.dueOn),
+    onSuccess: () => {
+      for (const queryKey of [...billQueryKeys, ['today']])
+        void queryClient.invalidateQueries({ queryKey });
+    },
+  });
   const name = item.name === '' ? t('budgetBills.timeline.unknown') : item.name;
   const paid = item.paidOn !== null;
   const entry = item.paymentEntryId;
   return (
     <Row
       columns={billColumns}
+      selected={selected}
+      onRowClick={() => {
+        onSelect(item.billId);
+      }}
       cells={[
         <span key="d" className="text-text-muted">
           {formatTerminalDate(item.dueOn, locale)}
@@ -115,7 +141,7 @@ function BillRow({
             dueTag(item.dueOn, today)
           )}
         </span>,
-        paid && entry !== null ? (
+        item.accountId === null ? null : (
           <span key="x" className="flex justify-end">
             <MenuButton
               variant="bracket"
@@ -124,21 +150,56 @@ function BillRow({
               title={name}
             >
               <MenuItem
-                id="show"
-                label={t('budgetBills.paid.show')}
+                id="edit"
+                label={t('billForm.edit')}
                 onAction={() => {
-                  void navigate({
-                    to: '/transactions',
-                    search: { entry },
-                  });
+                  onEdit(item.billId);
                 }}
               />
+              <MenuItem
+                id="pay"
+                label={paid ? t('billForm.undoPaid') : t('billForm.markPaid')}
+                onAction={() => {
+                  toggle.mutate();
+                }}
+              />
+              {paid && entry !== null ? (
+                <MenuItem
+                  id="show"
+                  label={t('budgetBills.paid.show')}
+                  onAction={() => {
+                    void navigate({
+                      to: '/transactions',
+                      search: { entry },
+                    });
+                  }}
+                />
+              ) : null}
             </MenuButton>
           </span>
-        ) : null,
+        ),
       ]}
     />
   );
+}
+
+/** Selects the first listed bill on a wide frame, like the other list panes. */
+function SelectFirst({
+  selected,
+  first,
+  select,
+}: {
+  selected: string | null;
+  first: string | undefined;
+  select: (id: string) => void;
+}) {
+  useAutoSelectFirst({
+    selected: selected ?? undefined,
+    first,
+    context: 'bills',
+    select,
+  });
+  return null;
 }
 
 // Budget · bills (docs/ui.md §6): the cycle's timeline with set aside, paid
@@ -148,6 +209,9 @@ export function BillsTab() {
   const today = useQuery(todayQuery);
   const bills = useQuery(billsQuery);
   const accounts = useQuery(accountsQuery);
+  const [editing, setEditing] = useState<BillView | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const wide = useFrameWidth() >= WIDE_FROM;
 
   if (today.isError || bills.isError) {
     return (
@@ -203,8 +267,216 @@ export function BillsTab() {
   const accountOf = (item: DueItem) =>
     item.accountId === null ? '' : (accountNames.get(item.accountId) ?? '');
 
+  const edit = (billId: string) => {
+    setEditing(bills.data.bills.find((b) => b.id === billId) ?? null);
+  };
+  // A wide frame shows the bill beside the list; a narrow one opens the editor.
+  const select = (billId: string) => {
+    if (wide) setSelectedId(billId);
+    else edit(billId);
+  };
+  const selected = bills.data.bills.find((b) => b.id === selectedId);
+
+  const firstBill = (
+    view.upcoming[0] ??
+    view.paid[0] ?? { billId: view.later[0]?.id }
+  ).billId;
+
+  const rest = (
+    <>
+      <Tile
+        title={t('budgetBills.upcoming.title')}
+        icon={IconBillLine}
+        subtitle={t('budgetBills.upcoming.subtitle', {
+          count: view.upcoming.length,
+        })}
+      >
+        {view.upcoming.length === 0 ? (
+          <EmptyState
+            title={t('budgetBills.upcoming.empty')}
+            hint={t('budgetBills.upcoming.emptyHint')}
+          />
+        ) : (
+          <>
+            <p className="num pb-1.5 text-tiny text-text-muted">
+              {t('budgetBills.upcoming.stillSetAside', {
+                amount: money(today.data.reservedBills),
+              })}
+            </p>
+            <ul className="-mx-3">
+              {view.upcoming.map((item) => (
+                <li key={item.id}>
+                  <BillRow
+                    item={item}
+                    today={day}
+                    account={accountOf(item)}
+                    onEdit={edit}
+                    selected={selectedId === item.billId}
+                    onSelect={select}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Tile>
+      <Tile
+        title={t('budgetBills.paid.title')}
+        icon={IconCalendarCheckLine}
+        subtitle={money(today.data.allocation.paidBills)}
+      >
+        {view.paid.length === 0 ? (
+          <EmptyState
+            title={t('budgetBills.paid.empty')}
+            hint={t('budgetBills.paid.emptyHint')}
+          />
+        ) : (
+          <ul className="-mx-3">
+            {view.paid.map((item) => (
+              <li key={item.id}>
+                <BillRow
+                  item={item}
+                  today={day}
+                  account={accountOf(item)}
+                  onEdit={edit}
+                  selected={selectedId === item.billId}
+                  onSelect={select}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Tile>
+      {bills.data.bills.some((b) => !b.active) ? (
+        <Tile
+          title={t('billForm.pausedTitle')}
+          icon={IconBillLine}
+          subtitle={t('billForm.pausedSubtitle')}
+        >
+          <ul className="-mx-3">
+            {bills.data.bills
+              .filter((b) => !b.active)
+              .map((bill) => (
+                <li key={bill.id}>
+                  <Row
+                    columns={billColumns}
+                    selected={selectedId === bill.id}
+                    onRowClick={() => {
+                      select(bill.id);
+                    }}
+                    cells={[
+                      <span key="d" className="text-text-muted">
+                        {t('budgetBills.later.day', { day: bill.dueDay })}
+                      </span>,
+                      <IconBillLine
+                        key="i"
+                        aria-hidden="true"
+                        className="size-4 text-text-muted"
+                      />,
+                      <span key="n" className="font-sans">
+                        {bill.name}
+                      </span>,
+                      <span key="a" className="font-sans text-text-muted">
+                        {accountNames.get(bill.accountId) ?? ''}
+                      </span>,
+                      <span key="m" className="block text-right">
+                        <Amount amount={bill.amount} locale={locale} />
+                      </span>,
+                      null,
+                      <span key="x" className="flex justify-end">
+                        <BracketButton
+                          onPress={() => {
+                            setEditing(bill);
+                          }}
+                        >
+                          {t('billForm.edit')}
+                        </BracketButton>
+                      </span>,
+                    ]}
+                  />
+                </li>
+              ))}
+          </ul>
+        </Tile>
+      ) : null}
+      {view.later.length === 0 ? null : (
+        <Tile
+          title={t('budgetBills.later.title')}
+          icon={IconCalendarLine}
+          subtitle={t('budgetBills.later.subtitle')}
+        >
+          <ul className="-mx-3">
+            {view.later.map((bill) => (
+              <li key={bill.id}>
+                <Row
+                  columns={billColumns}
+                  selected={selectedId === bill.id}
+                  onRowClick={() => {
+                    select(bill.id);
+                  }}
+                  cells={[
+                    <span key="d" className="text-text-muted">
+                      {t('budgetBills.later.day', { day: bill.dueDay })}
+                    </span>,
+                    <IconBillLine
+                      key="i"
+                      aria-hidden="true"
+                      className="size-4 text-text-muted"
+                    />,
+                    <span key="n" className="font-sans">
+                      {bill.name}
+                    </span>,
+                    <span key="a" className="font-sans text-text-muted">
+                      {accountNames.get(bill.accountId) ?? ''}
+                    </span>,
+                    <span key="m" className="block text-right">
+                      <Amount amount={bill.amount} locale={locale} />
+                    </span>,
+                    null,
+                    <span key="x" className="flex justify-end">
+                      <MenuButton
+                        variant="bracket"
+                        icon={IconMore2Line}
+                        label={t('budgetBills.paid.actionsOf', {
+                          name: bill.name,
+                        })}
+                        title={bill.name}
+                      >
+                        <MenuItem
+                          id="edit"
+                          label={t('billForm.edit')}
+                          onAction={() => {
+                            setEditing(bill);
+                          }}
+                        />
+                      </MenuButton>
+                    </span>,
+                  ]}
+                />
+              </li>
+            ))}
+          </ul>
+        </Tile>
+      )}
+    </>
+  );
   return (
     <Stack className="min-h-full">
+      {wide ? (
+        <SelectFirst
+          selected={selectedId}
+          first={firstBill}
+          select={setSelectedId}
+        />
+      ) : null}
+      {editing === null ? null : (
+        <BillSheet
+          bill={editing}
+          onClose={() => {
+            setEditing(null);
+          }}
+        />
+      )}
       <Tile
         title={t('budgetBills.timeline.title')}
         icon={IconCalendar2Line}
@@ -258,92 +530,35 @@ export function BillsTab() {
           className="pt-2"
         />
       </Tile>
-      <Tile
-        title={t('budgetBills.upcoming.title')}
-        icon={IconBillLine}
-        subtitle={t('budgetBills.upcoming.subtitle', {
-          count: view.upcoming.length,
-        })}
-      >
-        {view.upcoming.length === 0 ? (
-          <EmptyState
-            title={t('budgetBills.upcoming.empty')}
-            hint={t('budgetBills.upcoming.emptyHint')}
-          />
-        ) : (
-          <>
-            <p className="num pb-1.5 text-tiny text-text-muted">
-              {t('budgetBills.upcoming.stillSetAside', {
-                amount: money(today.data.reservedBills),
-              })}
-            </p>
-            <ul className="-mx-3">
-              {view.upcoming.map((item) => (
-                <li key={item.id}>
-                  <BillRow item={item} today={day} account={accountOf(item)} />
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </Tile>
-      <Tile
-        title={t('budgetBills.paid.title')}
-        icon={IconCalendarCheckLine}
-        subtitle={money(today.data.allocation.paidBills)}
-      >
-        {view.paid.length === 0 ? (
-          <EmptyState
-            title={t('budgetBills.paid.empty')}
-            hint={t('budgetBills.paid.emptyHint')}
-          />
-        ) : (
-          <ul className="-mx-3">
-            {view.paid.map((item) => (
-              <li key={item.id}>
-                <BillRow item={item} today={day} account={accountOf(item)} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Tile>
-      {view.later.length === 0 ? null : (
-        <Tile
-          title={t('budgetBills.later.title')}
-          icon={IconCalendarLine}
-          subtitle={t('budgetBills.later.subtitle')}
-        >
-          <ul className="-mx-3">
-            {view.later.map((bill) => (
-              <li key={bill.id}>
-                <Row
-                  columns={billColumns}
-                  cells={[
-                    <span key="d" className="text-text-muted">
-                      {t('budgetBills.later.day', { day: bill.dueDay })}
-                    </span>,
-                    <IconBillLine
-                      key="i"
-                      aria-hidden="true"
-                      className="size-4 text-text-muted"
-                    />,
-                    <span key="n" className="font-sans">
-                      {bill.name}
-                    </span>,
-                    <span key="a" className="font-sans text-text-muted">
-                      {accountNames.get(bill.accountId) ?? ''}
-                    </span>,
-                    <span key="m" className="block text-right">
-                      <Amount amount={bill.amount} locale={locale} />
-                    </span>,
-                    null,
-                    null,
-                  ]}
+      {wide ? (
+        <Split
+          list={<Stack className="h-full">{rest}</Stack>}
+          detail={
+            <div className="h-full">
+              {selected === undefined ? (
+                <Tile
+                  title={t('billForm.edit')}
+                  icon={IconBillLine}
+                  className="h-full"
+                >
+                  <EmptyState
+                    title={t('billDetail.pick')}
+                    hint={t('billDetail.pickHint')}
+                  />
+                </Tile>
+              ) : (
+                <BillDetail
+                  bill={selected}
+                  onEdit={() => {
+                    setEditing(selected);
+                  }}
                 />
-              </li>
-            ))}
-          </ul>
-        </Tile>
+              )}
+            </div>
+          }
+        />
+      ) : (
+        rest
       )}
     </Stack>
   );

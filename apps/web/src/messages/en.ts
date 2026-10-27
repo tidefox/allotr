@@ -3,7 +3,7 @@
 import { accountsScreen } from './accounts-screen.ts';
 import { accountDetail } from './account-detail.ts';
 import { budgetBills, budgetPools } from './budget-pools-bills.ts';
-import { billForm } from './bill-form.ts';
+import { billDetail, billForm } from './bill-form.ts';
 import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
 import { withdrawalLinks } from './withdrawal-links.ts';
@@ -31,6 +31,7 @@ export const en = {
   budgetPools,
   budgetBills,
   billForm,
+  billDetail,
   budgetGoalsIous,
   budgetBudgets,
   reportsShell,
