@@ -140,6 +140,9 @@ export function Chart({
     s,
     g: lineGeometry(s.points, x, y),
   }));
+  // An end whose label would sit on another line carrying on to its right.
+  const continued = (end: { x: number }) =>
+    geometry.some(({ g }) => g.end !== undefined && g.end.x > end.x);
   const referenceEnd =
     reference?.endLabel === undefined
       ? null
@@ -297,6 +300,7 @@ export function Chart({
               y={g.end.y}
               markClass={markerBg[s.color]}
               label={s.endLabel}
+              above={continued(g.end)}
             />
           ) : null,
         )}
@@ -351,7 +355,9 @@ export function Chart({
 
 /**
  * The 7 px end marker and its value: to the right of a point in the left
- * 70 % of the plot, above and to the left of one further right.
+ * 70 % of the plot, above and to the left of one further right. `above`
+ * lifts it off a line that carries on to the right: to the left when there
+ * is room, else to the right.
  */
 function EndMark({
   x,
@@ -359,6 +365,7 @@ function EndMark({
   markClass,
   label,
   raised = false,
+  above = false,
 }: {
   x: number;
   y: number;
@@ -366,6 +373,7 @@ function EndMark({
   label: string | undefined;
   /** The hover tooltip: above the end labels, with an outline. */
   raised?: boolean;
+  above?: boolean;
 }) {
   const at = { left: `${String(x)}%`, top: `${String(y)}%` };
   return (
@@ -379,9 +387,11 @@ function EndMark({
           className={cn(
             'absolute bg-canvas px-[3px] font-num text-tiny leading-[1.45] whitespace-nowrap text-text',
             raised && 'border border-outline',
-            x < 70
-              ? 'translate-x-1.5 -translate-y-1/2'
-              : '-translate-x-full -translate-y-[160%]',
+            x >= 70 || (above && x >= 15)
+              ? '-translate-x-full -translate-y-[160%]'
+              : above
+                ? 'translate-x-1.5 -translate-y-[160%]'
+                : 'translate-x-1.5 -translate-y-1/2',
           )}
           style={at}
         >
