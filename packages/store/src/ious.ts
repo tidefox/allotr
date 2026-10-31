@@ -3,6 +3,8 @@ import {
   baseSystemRoles,
   borrow,
   categoryId,
+  expense,
+  income,
   iouId,
   iouStatus,
   iouStatuses,
@@ -691,13 +693,33 @@ export async function recordRepaymentIn(
     total += line.amount.amountMinor;
   }
   if (direction === undefined) throw problem(400, 'no_iou', 'Name an IOU.');
+  const extra = (body.paid?.amountMinor ?? total) - total;
+  if (
+    extra < 0 ||
+    (body.paid !== undefined && body.paid.currency !== currency)
+  ) {
+    throw problem(
+      400,
+      'paid_too_little',
+      `The payment must be in ${currency} and at least what the IOUs take.`,
+    );
+  }
   const chart = await ensureSystemAccounts(
     trx,
     userId,
     view.chart,
     [currency],
     now,
-    systemRolesFor(direction, false),
+    [
+      ...systemRolesFor(direction, false),
+      ...(body.paid === undefined
+        ? []
+        : [
+            direction === 'owed-to-me'
+              ? ('income' as const)
+              : ('expenses' as const),
+          ]),
+    ],
   );
   const tagIds = await checkTags(trx, userId, body.tagIds ?? []);
   const transaction = repayment(chart, newEntry(now, date, body.note), {
@@ -706,6 +728,27 @@ export async function recordRepaymentIn(
     amount: money(total, currency),
   });
   await storeTransaction(trx, userId, transaction, tagIds, null, source);
+  if (extra > 0 && body.surplusCategoryId !== undefined) {
+    // The surplus is its own entry: a plain income or expense, so undoing the
+    // repayment leaves it, and it can be deleted like any entry.
+    const toMe = direction === 'owed-to-me';
+    const category = await resolveCategory(
+      trx,
+      userId,
+      body.surplusCategoryId,
+      toMe ? 'income' : 'expense',
+    );
+    const spare = (toMe ? income : expense)(
+      chart,
+      newEntry(now, date, body.note),
+      {
+        accountId: account,
+        amount: money(extra, currency),
+        categoryId: categoryId(category),
+      },
+    );
+    await storeTransaction(trx, userId, spare, tagIds, null, source);
+  }
   await trx
     .insertInto('iou_settlements')
     .values(

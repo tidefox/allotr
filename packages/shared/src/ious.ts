@@ -173,8 +173,23 @@ export const repaymentBodySchema = z
     amount: positiveMoney.optional(),
     /** With `person`: which way the money goes; owed to the user by default. */
     direction: iouDirectionSchema.default('owed-to-me'),
+    /**
+     * The whole payment, when it is more than the IOUs take (a round-up or a
+     * tip). The surplus is recorded as income, or as an expense when the user
+     * paid, in `surplusCategoryId`.
+     */
+    paid: positiveMoney.optional(),
+    surplusCategoryId: idSchema.optional(),
     ...entryFields,
   })
+  .refine(
+    (body) =>
+      (body.paid === undefined) === (body.surplusCategoryId === undefined),
+    {
+      error: 'Give paid and surplusCategoryId together',
+      path: ['paid'],
+    },
+  )
   .refine(
     (body) =>
       body.settles !== undefined

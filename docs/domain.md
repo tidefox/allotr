@@ -434,6 +434,13 @@ with autocomplete from earlier ones, not contacts.
   brings its people back as new IOUs; restoring an undone repayment or
   write-off settles the same IOUs again, and is refused if one has since been
   undone or paid.
+- **Overpaying.** A round-up or a tip can make a payment more than the IOUs
+  take. The request then gives the whole payment (`paid`) and a category
+  (`surplusCategoryId`); the IOUs are settled as above and the surplus is its
+  own entry on the same day: income from a person who pays the user, an
+  expense when the user pays. It is not a repayment, so it never refills
+  budgets, and undoing the repayment leaves it (delete it like any entry).
+  `paid` below what the IOUs take, or without a category, is refused.
 - **Entries.** Every lend, borrow, repayment and write-off is an entry of its
   own, dated today unless another day is chosen; a repayment or write-off
   cannot be dated before the IOU it settles. Each can be undone right after it is saved and deleted later like any

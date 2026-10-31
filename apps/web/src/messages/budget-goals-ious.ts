@@ -123,6 +123,10 @@ export const budgetGoalsIous = {
       hasPayments: 'It has payments. Delete them first.',
       confirmDelete: 'Delete it',
       stillOwed: 'Still owed: {amount}.',
+      surplusIncome:
+        'More than is owed: the rest is income. Choose its category.',
+      surplusSpending:
+        'More than is owed: the rest is spending. Choose its category.',
       stillOwedAcross:
         'Still owed across {count} IOUs: {amount}. The oldest is settled first.',
       writeOffBody:

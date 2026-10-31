@@ -5,6 +5,7 @@ import {
   isLocalDate,
   localDate,
   type AccountView,
+  type CategoryView,
   type IouDirectionView,
   type IouView,
   type LocalDate,
@@ -140,6 +141,7 @@ function Forms({
           key={flow.iou.id}
           iou={flow.iou}
           accounts={accounts}
+          categories={categories}
           today={today}
           onClose={onClose}
         />
@@ -375,11 +377,13 @@ function LoanForm({
 function RepayForm({
   iou,
   accounts,
+  categories,
   today,
   onClose,
 }: {
   iou: IouView;
   accounts: readonly AccountView[];
+  categories: readonly CategoryView[];
   today: LocalDate;
   onClose: () => void;
 }) {
@@ -398,7 +402,16 @@ function RepayForm({
   const [date, setDate] = useState<string>(today);
   const [amountBad, setAmountBad] = useState(false);
   const [dateIssue, setDateIssue] = useState<DateError>();
+  const surplusChoices = categoryChoicesFor(
+    categories,
+    toMe ? 'income' : 'expense',
+  );
+  const [surplusId, setSurplusId] = useState(surplusChoices[0]?.id ?? '');
   const repay = useIouChange(repayIous, onClose);
+  // More than is owed (a round-up or a tip): the server settles what is owed
+  // and records the rest, so the browser only compares.
+  const parsedNow = positive(amount, currency, locale);
+  const over = parsedNow !== null && parsedNow.amountMinor > owed.amountMinor;
 
   const submit = () => {
     const parsed = positive(amount, currency, locale);
@@ -406,20 +419,24 @@ function RepayForm({
     setAmountBad(parsed === null);
     setDateIssue(on.ok ? undefined : on.error);
     if (parsed === null || !on.ok) return;
+    const settled = over ? owed : parsed;
+    const surplus = over ? { paid: parsed, surplusCategoryId: surplusId } : {};
     repay.mutate(
       byPerson
         ? {
             accountId,
             person: iou.person,
-            amount: parsed,
+            amount: settled,
             direction: iou.direction,
             occurredOn: on.date,
+            ...surplus,
           }
         : {
             accountId,
-            settles: [{ iouId: iou.id, amount: parsed }],
+            settles: [{ iouId: iou.id, amount: settled }],
             direction: iou.direction,
             occurredOn: on.date,
+            ...surplus,
           },
     );
   };
@@ -434,7 +451,7 @@ function RepayForm({
           ? t('budgetGoalsIous.ious.form.recordRepayment')
           : t('budgetGoalsIous.ious.form.recordPayBack')
       }
-      disabled={accountId === ''}
+      disabled={accountId === '' || (over && surplusId === '')}
       onClose={onClose}
     >
       <ChoiceField
@@ -472,6 +489,22 @@ function RepayForm({
               amount: formatMoney(owed, 'symbol', locale),
             })}
       </p>
+      {over ? (
+        <>
+          <p className="font-sans text-small text-text-muted">
+            {toMe
+              ? t('budgetGoalsIous.ious.form.surplusIncome')
+              : t('budgetGoalsIous.ious.form.surplusSpending')}
+          </p>
+          <ChoiceField
+            label={t('budgetGoalsIous.ious.form.category')}
+            value={surplusId}
+            choices={surplusChoices}
+            placeholder={t('budgetGoalsIous.ious.form.category')}
+            onChange={setSurplusId}
+          />
+        </>
+      ) : null}
       <TextField
         label={t('budgetGoalsIous.ious.form.date')}
         value={date}
