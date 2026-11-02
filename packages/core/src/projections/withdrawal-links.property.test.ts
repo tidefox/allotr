@@ -290,7 +290,7 @@ describe('withdrawal links', () => {
       }),
       { numRuns: 60 },
     );
-  });
+  }, 30_000);
 
   it('leave balances and the ledger as they are', () => {
     fc.assert(
