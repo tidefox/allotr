@@ -182,7 +182,7 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - IOUs (ADR 0024) are served under `/v1/ious`: `GET` lists them with
   totals, `POST` lends, borrows or splits a bill (one entry, one IOU per
   person), `POST /v1/ious/repayments` records a payment that names the IOUs it
-  settles, `POST /v1/ious/{id}/write-off` writes off what is left (any time the
+  settles (with `paid` and `surplusCategoryId`, a round-up or tip becomes its own income or expense entry), `POST /v1/ious/{id}/write-off` writes off what is left (any time the
   user asks; `iouWriteOffAfterDays` sets when it is offered), `PATCH /v1/ious/{id}` corrects a name
   or due date (each IOU carries `personOpen`, the open count and total for its
   person, direction and currency, which is the most a payment to the person

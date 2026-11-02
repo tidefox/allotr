@@ -621,3 +621,67 @@ describe('requests', () => {
     expect(anonymous.status).toBe(401);
   });
 });
+
+describe('paying more than is owed', () => {
+  const repay = async (body: object) =>
+    h.alice.post('/v1/ious/repayments', { accountId: everyday, ...body });
+  const lend = async (person: string, direction: string) =>
+    (
+      (
+        await h.alice.post('/v1/ious', {
+          direction,
+          accountId: everyday,
+          people: [{ person, amount: usd(1_000) }],
+        })
+      ).body as { ious: Iou[] }
+    ).ious[0]?.id ?? '';
+  const categoryOf = async (kind: string) =>
+    (
+      (await h.alice.get('/v1/categories')).body as {
+        categories: { id: string; kind: string }[];
+      }
+    ).categories.find((c) => c.kind === kind)?.id ?? '';
+
+  it('records the surplus of a payment from a person as income', async () => {
+    const id = await lend('Tip Example', 'owed-to-me');
+    const salary = await categoryOf('income');
+    const before = await today();
+    const paid = await repay({
+      settles: [{ iouId: id, amount: usd(1_000) }],
+      paid: usd(1_250),
+      surplusCategoryId: salary,
+    });
+    expect(paid.status, JSON.stringify(paid.body)).toBe(201);
+    const after = await today();
+    expect(after.onBudget.amountMinor - before.onBudget.amountMinor).toBe(
+      1_250,
+    );
+    expect((await open()).ious.some((i) => i.id === id)).toBe(false);
+  });
+
+  it('records the surplus of a payment to a person as spending', async () => {
+    const id = await lend('Tip Example', 'owed-by-me');
+    const before = await today();
+    const paid = await repay({
+      settles: [{ iouId: id, amount: usd(1_000) }],
+      direction: 'owed-by-me',
+      paid: usd(1_100),
+      surplusCategoryId: other,
+    });
+    expect(paid.status, JSON.stringify(paid.body)).toBe(201);
+    const after = await today();
+    expect(after.spentToday.amountMinor - before.spentToday.amountMinor).toBe(
+      100,
+    );
+  });
+
+  it('refuses a payment of less than the IOUs take, or a surplus without a category', async () => {
+    const id = await lend('Tip Example', 'owed-to-me');
+    const settles = [{ iouId: id, amount: usd(1_000) }];
+    expect(
+      (await repay({ settles, paid: usd(900), surplusCategoryId: other }))
+        .status,
+    ).toBe(400);
+    expect((await repay({ settles, paid: usd(1_100) })).status).toBe(400);
+  });
+});
