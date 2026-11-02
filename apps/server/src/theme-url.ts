@@ -108,7 +108,7 @@ export type FetchDeps = Readonly<{
 
 export const defaultFetchDeps: FetchDeps = {
   resolve: async (hostname) =>
-    (await dnsLookup(hostname, { all: true, verbatim: true })).map(
+    (await dnsLookup(hostname, { all: true, order: 'verbatim' })).map(
       ({ address, family }) => ({ address, family: family === 6 ? 6 : 4 }),
     ),
   allow: isPublicAddress,
