@@ -25,7 +25,7 @@ const longDay = new Intl.DateTimeFormat('en', {
 
 function dayCell(page: Page, date: string) {
   const label = longDay.format(new Date(`${date}T00:00:00Z`));
-  return page.getByRole('button', { name: new RegExp(`^${label}`) });
+  return page.getByRole('button', { name: new RegExp(`^${label}(,|$)`) });
 }
 
 async function smallTargets(page: Page) {
