@@ -21,9 +21,9 @@
     "@allotr/store": "workspace:*",
     "@hono/node-server": "2.1.5",
     "@hono/zod-openapi": "1.6.3",
-    "better-auth": "1.7.12",
+    "better-auth": "1.7.14",
     "better-sqlite3": "13.0.3",
-    "hono": "4.13.13",
+    "hono": "4.13.14",
     "kysely": "0.29.7",
     "pino": "10.4.0",
     "zod": "catalog:"
