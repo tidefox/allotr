@@ -51,3 +51,4 @@ kept in `docs/drafts/`, which git ignores.
 - [0036 Encryption of local-mode data](0036-local-data-encryption.md)
 - [0037 In-process runtime: restating "the server is the only writer" and ADR 0030](0037-in-process-runtime.md)
 - [0038 Savings withdrawals linked to the purchase they paid for](0038-withdrawal-links.md)
+- [0039 A cycle opens at its paycheck, not at the start of its day](0039-cycle-cut-at-paycheck.md)
