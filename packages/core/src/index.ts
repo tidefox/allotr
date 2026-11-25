@@ -96,7 +96,12 @@ export {
   type LedgerSettings,
   type LedgerView,
 } from './projections/types.ts';
-export { cycleOn, cyclesOf } from './projections/cycles.ts';
+export {
+  cycleOn,
+  cycleSpan,
+  cyclesOf,
+  type CycleSpan,
+} from './projections/cycles.ts';
 export {
   cycleAllocation,
   reservedParts,

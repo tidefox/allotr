@@ -23,6 +23,7 @@ describe('cyclesOf', () => {
       {
         openedOn: '2026-02-18',
         openedBy: null,
+        cut: null,
         payday: '2026-03-01',
         closedOn: null,
       },
@@ -42,6 +43,8 @@ describe('cyclesOf', () => {
       {
         openedOn: '2026-01-01',
         openedBy: pay.id,
+        // The first cycle has nothing before it to cut.
+        cut: null,
         payday: '2026-02-01',
         closedOn: null,
       },
@@ -68,12 +71,19 @@ describe('cyclesOf', () => {
       {
         openedOn: '2026-02-18',
         openedBy: null,
+        cut: null,
         payday: '2026-03-01',
         closedOn: '2026-03-01',
       },
       {
         openedOn: '2026-03-01',
         openedBy: pay.id,
+        cut: {
+          id: pay.id,
+          occurredOn: pay.occurredOn,
+          sortRank: pay.sortRank,
+          createdAt: pay.createdAt,
+        },
         payday: '2026-04-01',
         closedOn: null,
       },

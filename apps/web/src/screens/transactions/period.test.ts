@@ -1,6 +1,6 @@
 import type { LocalDate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { monthRange, periodRange } from './period.ts';
+import { monthRange, periodEntries, periodRange } from './period.ts';
 
 const d = (s: string) => s as LocalDate;
 const cycles = [
@@ -40,5 +40,28 @@ describe('periodRange', () => {
     expect(periodRange('last-cycle', d('2026-10-09'), cycles.slice(0, 1))).toBe(
       null,
     );
+  });
+});
+
+describe('periodEntries', () => {
+  const withPaychecks = [
+    { openedOn: d('2026-09-25'), lastDay: d('2026-10-09'), openedBy: 'pay-2' },
+    { openedOn: d('2026-08-25'), lastDay: d('2026-09-24'), openedBy: 'pay-1' },
+  ];
+
+  it('starts a cycle at its paycheck and ends the last one at the next', () => {
+    expect(periodEntries('cycle', withPaychecks)).toEqual({
+      fromEntry: 'pay-2',
+    });
+    expect(periodEntries('last-cycle', withPaychecks)).toEqual({
+      fromEntry: 'pay-1',
+      beforeEntry: 'pay-2',
+    });
+  });
+
+  it('adds nothing for other periods or a first cycle without a paycheck', () => {
+    expect(periodEntries('month', withPaychecks)).toEqual({});
+    const first = { openedOn: d('2026-09-25'), lastDay: d('2026-10-09') };
+    expect(periodEntries('cycle', [{ ...first, openedBy: null }])).toEqual({});
   });
 });

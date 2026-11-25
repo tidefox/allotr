@@ -129,7 +129,7 @@ describe('cycles', () => {
       openedOn: '2026-03-15',
       openedBy: null,
       closedOn: '2026-04-01',
-      lastDay: '2026-03-31',
+      lastDay: '2026-04-01',
       payday: '2026-04-01',
       income: usd(0),
       otherInflows: usd(0),

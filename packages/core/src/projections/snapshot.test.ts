@@ -49,7 +49,7 @@ describe('cycleSnapshot', () => {
       openedOn: '2026-03-01',
       closedOn: '2026-04-01',
     });
-    expect(snapshot.lastDay).toBe('2026-03-31');
+    expect(snapshot.lastDay).toBe('2026-04-01');
     expect(snapshot.opening.on.get(usd(0).currency)).toEqual(usd(50000));
     expect(snapshot.closing.on.get(usd(0).currency)).toEqual(usd(288500));
     expect(snapshot.income).toEqual([

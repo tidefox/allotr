@@ -4,7 +4,7 @@ import type {
   Transaction,
   TransactionId,
 } from '../ledger/types.ts';
-import { cyclesOf } from './cycles.ts';
+import { cycleSpan, cyclesOf } from './cycles.ts';
 import { isEarnings } from './income-class.ts';
 import { totalOn } from './rates.ts';
 import { cycleSnapshot, type CategoryTotal } from './snapshot.ts';
@@ -72,8 +72,13 @@ function isPaycheck(view: LedgerView, entry: Transaction): boolean {
  * hides an amendment; a paycheck undone and logged again counts from the
  * first one.
  */
-export function amendmentsOf(view: LedgerView, cycle: Cycle): Amendment[] {
-  const { openedOn, closedOn } = cycle;
+export function amendmentsOf(
+  view: LedgerView,
+  cycles: readonly Cycle[],
+  cycle: Cycle,
+  today: LocalDate,
+): Amendment[] {
+  const { closedOn } = cycle;
   if (closedOn === null) return [];
   const closedAt = Math.min(
     ...view.ledger
@@ -81,12 +86,20 @@ export function amendmentsOf(view: LedgerView, cycle: Cycle): Amendment[] {
       .map((t) => Date.parse(t.createdAt)),
   );
   if (!Number.isFinite(closedAt)) return [];
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
+  // A paycheck dated the closing day that is ordered before the cut (an
+  // undone one, replaced by the one that closed the cycle) is not an edit
+  // of the cycle.
+  const paychecks = new Set(
+    view.ledger.filter((t) => isPaycheck(view, t)).map((t) => t.id),
+  );
+  const isCut = (t: Transaction) =>
+    t.occurredOn === closedOn &&
+    (paychecks.has(t.id) ||
+      (t.reversesId !== null && paychecks.has(t.reversesId)));
   return view.ledger
     .filter(
-      (t) =>
-        t.occurredOn >= openedOn &&
-        t.occurredOn < closedOn &&
-        Date.parse(t.createdAt) > closedAt,
+      (t) => span.has(t) && !isCut(t) && Date.parse(t.createdAt) > closedAt,
     )
     .map((t) => ({
       transactionId: t.id,
@@ -174,7 +187,7 @@ export function cycleReports(
       outsideByCategory: byCategory(snapshot.outsideSpending),
       leftover: figure(snapshot.leftover.map((entry) => entry.leftover)),
       savingsNetChange: figure(snapshot.savingsNetChange),
-      amendments: amendmentsOf(view, cycle),
+      amendments: amendmentsOf(view, cycles, cycle, today),
       missingRates: [...missing].sort(),
     };
   });

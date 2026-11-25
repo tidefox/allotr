@@ -368,8 +368,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   Its `spendingTop` is what the category chart draws: the six largest
   spending categories and the rest summed into one `other` (count and
   amount), so the client adds nothing up. Each summary also has `offBudgetClosing`, the off-budget total at the end
-  of its last day. `GET /v1/cycles/{openedOn}/days` gives the cycle day by
-  day for charts: pace spending, cumulative pace spending, an even pace
+  of its last day (just before the closing paycheck, for a closed cycle: a
+  paycheck cuts its day, ADR 0039). `GET /v1/cycles/{openedOn}/days` gives the cycle day by
+  day for charts (a closed cycle ends with a row for the day it closed): pace spending, cumulative pace spending, an even pace
   line, available at the end of the day and that day's allowance, from the
   same projection as `/v1/today` (ADR 0020). All are computed on every
   request, like today's figures.

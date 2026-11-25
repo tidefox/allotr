@@ -562,14 +562,24 @@ describe('export and import', () => {
     });
     const figures = async (client: TestClient) => {
       const t = await get<Today>(client, '/v1/today');
-      return {
-        available: t.available,
-        startOfDay: t.startOfDay,
-        spentToday: t.spentToday,
-        cycleSpent: t.cycleSpent,
-      };
+      // Only what the links change. Cycle figures follow where the paycheck
+      // falls in its day, and an import starts its own first cycle (ADR 0039).
+      return { available: t.available };
     };
     expect(await figures(h.bob)).toEqual(await figures(h.alice));
+    // The links themselves, as the imported expenses carry them.
+    const listed = await get<{
+      transactions: { kind: string; withdrawalLinks: Link[] }[];
+    }>(h.bob, '/v1/transactions?limit=200');
+    const amounts = (links: readonly { amount: Money }[]) =>
+      links.map((l) => l.amount.amountMinor).sort((a, b) => a - b);
+    expect(
+      amounts(
+        listed.transactions
+          .filter((t) => t.kind === 'expense')
+          .flatMap((t) => t.withdrawalLinks),
+      ),
+    ).toEqual(amounts(bundle.withdrawalLinks));
   });
 
   it('refuses a link that does not fit, pointing at it', async () => {

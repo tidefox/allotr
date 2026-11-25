@@ -8,7 +8,7 @@ import {
 import { budgetView } from './withdrawal-links.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
-import { cycleOn, cyclesOf } from './cycles.ts';
+import { cycleOn, cycleSpan, cyclesOf, type CycleSpan } from './cycles.ts';
 import { defaultPoolSetup, poolCounts, poolsOn, type PoolId } from './pools.ts';
 import type { LedgerView } from './types.ts';
 
@@ -43,20 +43,19 @@ function perCurrency(
     .map(([currency, sum]) => money(Number(sum), currency));
 }
 
-// The entries `start` reads: the ledger as it stood at the end of the day
-// before the cycle opened, plus the income recorded since, as the cycle
+// The entries `start` reads: the ledger as it stood just before the cycle's
+// first entry (its paycheck, on a day it cut), plus the income recorded since, as the cycle
 // allocation's start counts it. An account opened during the cycle brings
 // money that was already there, so its opening entry (and any undo of it)
 // is moved onto that day, as in the cycle snapshot. An income entry keeps
 // its date; an undo of one is income too, so the pair nets to nothing.
 function startLedger(
   view: LedgerView,
+  span: CycleSpan,
   openedOn: LocalDate,
-  today: LocalDate,
 ): Transaction[] {
   const day = addDays(openedOn, -1);
-  const inCycle = (t: Transaction) =>
-    t.occurredOn >= openedOn && t.occurredOn <= today;
+  const inCycle = span.has;
   const openings = new Set(
     view.ledger
       .filter((t) => t.kind === 'opening' && inCycle(t))
@@ -67,7 +66,7 @@ function startLedger(
       (p) => view.chart.get(p.accountId)?.systemRole === 'income',
     );
   return view.ledger.flatMap((t) => {
-    if (t.occurredOn < openedOn) return [t];
+    if (span.before(t)) return [t];
     if (!inCycle(t)) return [];
     const opens =
       openings.has(t.id) ||
@@ -95,9 +94,11 @@ export function poolCycleFigures(
 ): ReadonlyMap<PoolId, PoolCycleFigure> {
   const view = budgetView(input);
   const setup = view.pools ?? defaultPoolSetup;
-  const cycle = cycleOn(cyclesOf(view, today), today);
+  const cycles = cyclesOf(view, today);
+  const cycle = cycleOn(cycles, today);
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
   const startBalances = accountBalances(
-    startLedger(view, cycle.openedOn, today),
+    startLedger(view, span, cycle.openedOn),
   );
   const nowBalances = accountBalances(view.ledger, today);
   const members = new Map<PoolId, string[]>();

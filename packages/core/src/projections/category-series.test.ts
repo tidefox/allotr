@@ -42,24 +42,27 @@ describe('cyclePeriods', () => {
   const today = day('2026-05-10');
   const cycles = cyclesOf(view(ledger), today);
 
-  it('ends the open cycle today and closed ones the day before the next', () => {
+  it('ends the open cycle today and closed ones the day the next opened', () => {
     const periods = cyclePeriods(
+      ledger,
       cycles,
       cycles.at(-1)?.openedOn ?? today,
       2,
       today,
     );
-    expect(periods).toEqual([
-      { from: '2026-04-01', to: '2026-04-30' },
+    expect(periods).toMatchObject([
+      { from: '2026-04-01', to: '2026-05-01' },
       { from: '2026-05-01', to: '2026-05-10' },
     ]);
   });
 
   it('returns fewer when history is short and nothing for an unknown cycle', () => {
     expect(
-      cyclePeriods(cycles, cycles[0]?.openedOn ?? today, 5, today),
+      cyclePeriods(ledger, cycles, cycles[0]?.openedOn ?? today, 5, today),
     ).toHaveLength(1);
-    expect(cyclePeriods(cycles, day('2020-01-01'), 3, today)).toEqual([]);
+    expect(cyclePeriods(ledger, cycles, day('2020-01-01'), 3, today)).toEqual(
+      [],
+    );
   });
 });
 
@@ -119,12 +122,18 @@ describe('categorySeries', () => {
         const v = view(ledger);
         const cycles = cyclesOf(v, today);
         const open = cycles.at(-1)?.openedOn ?? today;
-        const periods = cyclePeriods(cycles, open, cycles.length, today);
-        // Contiguous, ordered, no overlap.
+        const periods = cyclePeriods(
+          ledger,
+          cycles,
+          open,
+          cycles.length,
+          today,
+        );
+        // Ordered; a closed cycle's last day is the day the next one opened.
         periods.forEach((p, i) => {
           expect(p.from <= p.to).toBe(true);
           const next = periods[i + 1];
-          if (next !== undefined) expect(addDays(p.to, 1)).toBe(next.from);
+          if (next !== undefined) expect(p.to).toBe(next.from);
         });
         const series = categorySeries(v, periods, parents);
         series.periods.forEach((period, i) => {

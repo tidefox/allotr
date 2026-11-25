@@ -1,10 +1,10 @@
-import { cyclesOf, type LedgerView } from '@allotr/core';
 import {
-  addDays,
-  lastDayOfMonth,
-  localDate,
-  type LocalDate,
-} from '@allotr/shared';
+  cycleSpan,
+  cyclesOf,
+  type CycleSpan,
+  type LedgerView,
+} from '@allotr/core';
+import { lastDayOfMonth, localDate, type LocalDate } from '@allotr/shared';
 import { RequestProblem } from './domain-errors.ts';
 
 // The period a report covers, resolved the same way for every report: a
@@ -24,6 +24,8 @@ export type ReportPeriod = Readonly<{
   from: LocalDate;
   /** Last day, inclusive. */
   to: LocalDate;
+  /** A cycle's entries: a paycheck cuts its day (ADR 0039). */
+  span?: CycleSpan | undefined;
 }> &
   (
     | Readonly<{ kind: 'month'; month: string }>
@@ -57,6 +59,7 @@ export function resolveReportPeriod(
     cycle,
     cycles,
     from: cycle.openedOn,
-    to: cycle.closedOn === null ? today : addDays(cycle.closedOn, -1),
+    to: cycle.closedOn ?? today,
+    span: cycleSpan(view.ledger, cycles, cycle, today),
   };
 }

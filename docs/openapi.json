@@ -27735,6 +27735,26 @@
           },
           {
             "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "fromEntry",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "beforeEntry",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": false,
@@ -37626,7 +37646,7 @@
           "Cycles"
         ],
         "summary": "One cycle's figures day by day",
-        "description": "One row per day from the day the cycle opened to the day before payday (through today while payday is overdue, or to the day before it closed). Figures use the same projection as `/v1/today`, so today's row matches it. `spent` and `cumulativeSpent` leave out what pace leaves out; rows after today are null except `pace`, which spreads `budget` (pace spending so far plus what is available) evenly over the cycle, rounded down. Amounts are in the default currency at each day's rate.",
+        "description": "One row per day from the day the cycle opened to the day before payday (through today while payday is overdue). A closed cycle has one more row, for the day it closed: only what was ordered before the paycheck that closed it, with the whole budget as its pace. Figures use the same projection as `/v1/today`, so today's row matches it. `spent` and `cumulativeSpent` leave out what pace leaves out; rows after today are null except `pace`, which spreads `budget` (pace spending so far plus what is available) evenly over the cycle, rounded down. Amounts are in the default currency at each day's rate.",
         "parameters": [
           {
             "schema": {

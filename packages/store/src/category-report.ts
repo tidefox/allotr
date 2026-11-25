@@ -99,11 +99,13 @@ export async function categorySummary(
     }));
   const today = localDateIn(now, loaded.timeZone);
   const range = resolveReportPeriod(loaded.view, today, query);
-  const { from, to } = range;
+  const { from, to, span } = range;
+  const within = span?.has;
   const periods: SeriesPeriod[] =
     range.kind === 'month'
       ? monthPeriods(range.month, query.series ?? 0)
       : cyclePeriods(
+          loaded.view.ledger,
           range.cycles,
           range.cycle.openedOn,
           query.series ?? 0,
@@ -117,20 +119,20 @@ export async function categorySummary(
   );
   const spending = categoryTotalsBetween(
     loaded.view,
-    { from, to },
+    { from, to, within },
     'expenses',
     merged,
   );
   const outside = categoryTotalsBetween(
     loaded.view,
-    { from, to },
+    { from, to, within },
     'expenses',
     merged,
     'outside',
   );
   const income = categoryTotalsBetween(
     loaded.view,
-    { from, to },
+    { from, to, within },
     'income',
     merged,
   );
@@ -150,7 +152,7 @@ export async function categorySummary(
   const incomeTotal = categoryGroupsTotal(incomeGroups, currency);
   const otherInflowsTotal = categoryGroupsTotal(otherGroups, currency);
   const { days, average } = dailyAverage(spendingTotal, { from, to }, today);
-  const savings = savedBetween(loaded.view, { from, to });
+  const savings = savedBetween(loaded.view, { from, to }, span);
   return {
     period: query.period,
     from,

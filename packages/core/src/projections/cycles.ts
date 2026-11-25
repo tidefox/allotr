@@ -4,7 +4,7 @@ import type { Transaction } from '../ledger/types.ts';
 import { compareEntries } from '../ledger/order.ts';
 import { nextPayday } from './payday.ts';
 import type { DateWindow } from './policies.ts';
-import type { Cycle, LedgerView } from './types.ts';
+import type { Cycle, EntryKey, LedgerView } from './types.ts';
 
 // Cycles run from one paycheck to the next (docs/domain.md "Cycles",
 // FR-C1, FR-C2). They are derived from the ledger as of `today`, so a
@@ -51,6 +51,7 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
   let open: Cycle = {
     openedOn: first,
     openedBy: null,
+    cut: null,
     payday: nextPayday(paydayRule, paydayDay, first),
     closedOn: null,
   };
@@ -70,6 +71,12 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
       open = {
         openedOn: date,
         openedBy: paycheck.id,
+        cut: {
+          id: paycheck.id,
+          occurredOn: paycheck.occurredOn,
+          sortRank: paycheck.sortRank,
+          createdAt: paycheck.createdAt,
+        },
         payday: nextPayday(paydayRule, paydayDay, after),
         closedOn: null,
       };
@@ -82,6 +89,54 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
   }
   cycles.push(open);
   return cycles;
+}
+
+/**
+ * Where a cycle's entries start and stop (ADR 0039). The paycheck that
+ * opens a cycle cuts its day: entries ordered before it belong to the
+ * cycle it closed. An undo goes with the entry it undoes, so a pair never
+ * splits across a cut.
+ */
+export type CycleSpan = Readonly<{
+  /** The entry is ordered before the cycle's first entry. */
+  before: (t: Transaction) => boolean;
+  /** The entry belongs to the cycle (open cycles run through `today`). */
+  has: (t: Transaction) => boolean;
+  /** The entry is not after the cycle: it is in it or before it. */
+  notAfter: (t: Transaction) => boolean;
+}>;
+
+// Spans are built many times for one ledger in a request, so the lookup is
+// kept per ledger array (loaded ledgers are frozen and shared).
+const byIdOf = new WeakMap<readonly Transaction[], Map<string, Transaction>>();
+
+export function cycleSpan(
+  ledger: readonly Transaction[],
+  cycles: readonly Cycle[],
+  cycle: Cycle,
+  today: LocalDate,
+): CycleSpan {
+  let byId = byIdOf.get(ledger);
+  if (byId === undefined) {
+    byId = new Map(ledger.map((t) => [t.id, t]));
+    byIdOf.set(ledger, byId);
+  }
+  const originals = byId;
+  const keyOf = (t: Transaction): EntryKey =>
+    (t.reversesId === null ? undefined : originals.get(t.reversesId)) ?? t;
+  const beforeCycle =
+    (c: Cycle) =>
+    (t: Transaction): boolean =>
+      c.cut === null
+        ? t.occurredOn < c.openedOn
+        : compareEntries(keyOf(t), c.cut) < 0;
+  const before = beforeCycle(cycle);
+  const next = cycles.find((c) => c.openedOn > cycle.openedOn);
+  const notAfter =
+    next === undefined
+      ? (t: Transaction) => t.occurredOn <= today
+      : beforeCycle(next);
+  return { before, has: (t) => !before(t) && notAfter(t), notAfter };
 }
 
 /** The cycle a day belongs to; days before the first go to the first. */

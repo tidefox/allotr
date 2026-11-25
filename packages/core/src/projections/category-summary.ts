@@ -5,7 +5,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { AccountId, CategoryId } from '../ledger/types.ts';
+import type { AccountId, CategoryId, Transaction } from '../ledger/types.ts';
 import { perDay } from './daily.ts';
 import { outsideEntries } from './funding.ts';
 import { totalOn } from './rates.ts';
@@ -76,7 +76,12 @@ export function rollUpCategories(
  */
 export function categoryTotalsBetween(
   view: LedgerView,
-  range: Readonly<{ from: LocalDate; to: LocalDate }>,
+  range: Readonly<{
+    from: LocalDate;
+    to: LocalDate;
+    /** Only entries it accepts count: a cycle cut mid-day (ADR 0039). */
+    within?: ((t: Transaction) => boolean) | undefined;
+  }>,
   role: 'expenses' | 'income',
   mergedInto: ReadonlyMap<CategoryId, CategoryId> = new Map(),
   funding: 'own' | 'outside' = 'own',
@@ -90,6 +95,7 @@ export function categoryTotalsBetween(
         (t) =>
           t.occurredOn >= range.from &&
           t.occurredOn <= range.to &&
+          (range.within?.(t) ?? true) &&
           outside.has(t.id) === (funding === 'outside'),
       )
       .flatMap((t) =>

@@ -7,7 +7,8 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { CategoryId } from '../ledger/types.ts';
+import type { CategoryId, Transaction } from '../ledger/types.ts';
+import { cycleSpan } from './cycles.ts';
 import { categoryTotalsBetween, rollUpCategories } from './category-summary.ts';
 import type { Cycle, LedgerView } from './types.ts';
 
@@ -17,8 +18,15 @@ import type { Cycle, LedgerView } from './types.ts';
 // the one it merged into, converted at the rate of the period's last day), so
 // the series never disagrees with the summary. Computed, never stored.
 
-/** An inclusive run of days. */
-export type SeriesPeriod = Readonly<{ from: LocalDate; to: LocalDate }>;
+/**
+ * An inclusive run of days; `within` narrows it to part of its first and
+ * last days, as a cycle cut at its paycheck is (ADR 0039).
+ */
+export type SeriesPeriod = Readonly<{
+  from: LocalDate;
+  to: LocalDate;
+  within?: ((t: Transaction) => boolean) | undefined;
+}>;
 
 /** One top-level category (or null: no category) across the periods. */
 export type SeriesGroup = Readonly<{
@@ -49,9 +57,11 @@ export type CategorySeries = Readonly<{
 /**
  * The `count` cycles up to and including the one opened on `endingOn`,
  * oldest first. The open cycle runs through `today`; a closed one through the
- * day before the next opened. Fewer are returned if history is shorter.
+ * day the next opened, up to that paycheck. Fewer are returned if history is
+ * shorter.
  */
 export function cyclePeriods(
+  ledger: readonly Transaction[],
   cycles: readonly Cycle[],
   endingOn: LocalDate,
   count: number,
@@ -61,7 +71,8 @@ export function cyclePeriods(
   if (end < 0) return [];
   return cycles.slice(Math.max(0, end + 1 - count), end + 1).map((c) => ({
     from: c.openedOn,
-    to: c.closedOn === null ? today : addDays(c.closedOn, -1),
+    to: c.closedOn ?? today,
+    within: cycleSpan(ledger, cycles, c, today).has,
   }));
 }
 

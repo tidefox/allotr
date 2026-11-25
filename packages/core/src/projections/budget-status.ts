@@ -11,6 +11,8 @@ import type {
 } from '../ledger/types.ts';
 import {
   budgetPeriodOn,
+  budgetPeriodOfEntry,
+  periodHas,
   heldBy,
   leftOf,
   type Budget,
@@ -218,9 +220,9 @@ export function budgetStatus(view: LedgerView, today: LocalDate): BudgetStatus {
   const fold = budgetFold(view, today);
   const daily = dailyFiguresOn(view, today);
   const m = (amount: bigint) => money(Number(amount), currency);
+  const has = periodHas(view, today);
   const inPeriod = (fold?.spend ?? []).filter(
-    (l) =>
-      fold !== null && l.date >= fold.period.from && l.date < fold.period.to,
+    (l) => fold !== null && has(fold.period, l.entryId, l.date),
   );
   const lines = (fold?.lines ?? []).map((line): BudgetLineStatus => ({
     budget: line.budget,
@@ -310,8 +312,7 @@ export function budgetCovers(
   return fold.spend
     .filter(
       (l) =>
-        l.date >= fold.period.from &&
-        l.date < fold.period.to &&
+        periodHas(view, today)(fold.period, l.entryId, l.date) &&
         l.amount > l.own,
     )
     .map((l) => ({
@@ -365,7 +366,7 @@ export function entryBudgetLines(
     .filter((l) => l.entryId === entryId)
     .map((l) => ({
       budgetId: l.budgetId,
-      period: budgetPeriodOn(view, l.date, today),
+      period: budgetPeriodOfEntry(view, l.entryId, l.date, today),
       loan: l.loan,
       amount: m(l.amount),
       own: m(l.own),

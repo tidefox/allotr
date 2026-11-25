@@ -122,6 +122,9 @@ export interface LedgerFilter {
   tagId?: string | undefined;
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
+  /** From this entry on / before this entry, in the order of the day. */
+  fromEntry?: string | undefined;
+  beforeEntry?: string | undefined;
   q?: string | undefined;
   /** One payee, by the key the payee report ranks by. */
   payee?: string | undefined;
