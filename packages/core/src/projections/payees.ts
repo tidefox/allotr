@@ -4,7 +4,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { TransactionId } from '../ledger/types.ts';
+import type { Transaction, TransactionId } from '../ledger/types.ts';
 import type { LedgerView } from './types.ts';
 
 // Top payees: what a period spent per payee, in each currency on its own.
@@ -88,7 +88,12 @@ const byCode = (a: CurrencyCode, b: CurrencyCode) =>
  */
 export function topPayees(
   view: LedgerView,
-  range: Readonly<{ from: LocalDate; to: LocalDate }>,
+  range: Readonly<{
+    from: LocalDate;
+    to: LocalDate;
+    /** Only entries it accepts count (ADR 0039). */
+    within?: ((t: Transaction) => boolean) | undefined;
+  }>,
   limit: number,
 ): CurrencyPayees[] {
   const undone = new Set<TransactionId>();
@@ -104,6 +109,7 @@ export function topPayees(
   const groups = new Map<CurrencyCode, Group>();
   for (const t of view.ledger) {
     if (t.occurredOn < range.from || t.occurredOn > range.to) continue;
+    if (range.within?.(t) === false) continue;
     if (undone.has(t.id) || adjustments.has(t.id)) continue;
     const key = payeeKey(t.note);
     const spent = new Map<CurrencyCode, number>();

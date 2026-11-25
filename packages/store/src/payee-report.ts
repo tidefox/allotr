@@ -27,12 +27,17 @@ export async function payeeReport(
 ): Promise<PayeeReportView> {
   const loaded = await db.transaction().execute((trx) => loadView(trx, userId));
   const today = localDateIn(now, loaded.timeZone);
-  const { from, to } = resolveReportPeriod(loaded.view, today, query);
+  const range = resolveReportPeriod(loaded.view, today, query);
+  const { from, to } = range;
   return {
     period: query.period,
     from,
     to,
-    currencies: topPayees(loaded.view, { from, to }, query.limit).map((g) => ({
+    currencies: topPayees(
+      loaded.view,
+      { from, to, within: range.span?.has },
+      query.limit,
+    ).map((g) => ({
       currency: g.currency,
       total: g.total,
       payees: g.payees.map((p) => ({

@@ -1096,7 +1096,10 @@ export const cycleSummarySchema = z.object({
   openedBy: idSchema.nullable(),
   /** The day the next cycle opened; null for the current cycle. */
   closedOn: localDateSchema.nullable(),
-  /** The last day it covers: the day before it closed, or today. */
+  /**
+   * The last day it covers: the day it closed (up to the paycheck that
+   * closed it, ADR 0039), or today.
+   */
   lastDay: localDateSchema,
   payday: localDateSchema,
   /** Earnings: `earned` and `passive` income. */
@@ -1110,7 +1113,7 @@ export const cycleSummarySchema = z.object({
   spending: moneySchema,
   /** Expenses paid with outside money, apart from `spending`. */
   outsideSpending: moneySchema,
-  /** Available budget at the end of `lastDay`. */
+  /** Available budget just before the closing paycheck, or at the end of today. */
   leftover: moneySchema,
   /** Change in the off-budget total over the cycle. */
   savingsNetChange: moneySchema,
@@ -1119,7 +1122,7 @@ export const cycleSummarySchema = z.object({
    * half to even; null when the cycle had no income.
    */
   savingsRate: z.int().nullable(),
-  /** The off-budget total at the end of `lastDay`. */
+  /** The off-budget total just before the closing paycheck, or at the end of today. */
   offBudgetClosing: moneySchema,
   /** An entry dated in it was recorded after it closed. */
   amended: z.boolean(),
@@ -1141,9 +1144,9 @@ const categoryTotalSchema = z.object({
 });
 
 export const cycleDetailSchema = cycleSummarySchema.extend({
-  /** At the end of the day before it opened, plus accounts opened during it. */
+  /** Just before its opening paycheck, plus accounts opened during it. */
   opening: groupTotalsSchema,
-  /** At the end of `lastDay`. */
+  /** Just before its closing paycheck, or at the end of today. */
   closing: groupTotalsSchema,
   /** Largest first. */
   incomeByCategory: z.array(categoryTotalSchema),

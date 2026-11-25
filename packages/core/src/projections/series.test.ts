@@ -185,15 +185,15 @@ describe('cycleDays', () => {
     expect(days).toHaveLength(33);
   });
 
-  it('ends a closed cycle the day before it closed', () => {
+  it('ends a closed cycle on the day it closed, at full pace', () => {
     const next = view([...ledger, paycheck('2026-04-28', 300000)], {
       settings: v.settings,
     });
     const [first] = cyclesOf(next, day('2026-05-02'));
     if (first === undefined) throw new Error('fixture');
     const { days, budget } = cycleDays(next, first, day('2026-05-02'));
-    expect(days).toHaveLength(27);
-    expect(days.at(-1)?.date).toBe('2026-04-27');
+    expect(days).toHaveLength(28);
+    expect(days.at(-1)?.date).toBe('2026-04-28');
     expect(days.every((row) => row.spent !== null)).toBe(true);
     expect(days.at(-1)?.pace).toEqual(budget);
   });

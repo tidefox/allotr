@@ -11,7 +11,7 @@ import { accountBalances } from '../ledger/balances.ts';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
 import { budgetStatus } from './budget-status.ts';
 import { countedSpendLines, type BudgetId, type TagId } from './budgets.ts';
-import { cycleOn, cyclesOf } from './cycles.ts';
+import { cycleOn, cycleSpan, cyclesOf } from './cycles.ts';
 import { dailyFiguresOn, paceExclusions } from './daily.ts';
 import { groupsOn } from './pools.ts';
 import { cycleSnapshot } from './snapshot.ts';
@@ -139,6 +139,10 @@ export function paydayPlan(view: LedgerView, today: LocalDate): PaydayPlan {
   const currency = view.settings.defaultCurrency;
   const cycles = cyclesOf(view, today);
   const cycle = cycles.at(-1);
+  const span =
+    cycle === undefined
+      ? undefined
+      : cycleSpan(view.ledger, cycles, cycle, today);
   const m = (amount: bigint) => money(Number(amount), currency);
   const paychecks = new Set(view.paycheckCategories);
   const reversed = reversedIds(view.ledger);
@@ -147,11 +151,7 @@ export function paydayPlan(view: LedgerView, today: LocalDate): PaydayPlan {
     view.ledger
       .filter(
         (t) =>
-          t.kind === 'income' &&
-          !reversed.has(t.id) &&
-          cycle !== undefined &&
-          t.occurredOn >= cycle.openedOn &&
-          t.occurredOn <= today,
+          t.kind === 'income' && !reversed.has(t.id) && span?.has(t) === true,
       )
       .flatMap((t) =>
         t.postings
@@ -264,8 +264,13 @@ export function emergencyFund(
   const average = averageSpending(view, today);
   const months = view.settings.emergencyMonths ?? 3;
   const saved = savedOn(view, today);
-  const opened = cycleOn(cyclesOf(view, today), today).openedOn;
-  const before = savedOn(view, addDays(opened, -1));
+  const cycles = cyclesOf(view, today);
+  const cycle = cycleOn(cycles, today);
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
+  const before = savedOn(
+    { ...view, ledger: view.ledger.filter(span.before) },
+    cycle.openedOn,
+  );
   const added =
     BigInt(saved.amount.amountMinor) - BigInt(before.amount.amountMinor);
   const monthly = average.total;

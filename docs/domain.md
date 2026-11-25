@@ -239,8 +239,7 @@ Users may add more, such as *Emergency*.
 - A pool holding accounts cannot be archived; the default pools cannot be
   archived at all.
 - **Cycle figures.** For a pool that counts today, the API gives `start`
-  (what its open accounts held at the end of the day before the open cycle
-  began, accounts opened during the cycle included, as in a cycle snapshot's
+  (what its open accounts held just before the open cycle's first entry, accounts opened during the cycle included, as in a cycle snapshot's
   opening balances, plus the income they have received since, as the cycle
   allocation's start counts it) and `left` (what they hold now, ignoring
   entries dated after today). Both read the accounts in the pool today, so
@@ -689,6 +688,31 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 - A paycheck up to three days before payday opens the next cycle early, and
   that cycle runs to the payday after the one it came early for; one
   earlier in the cycle adds to it. Undoing a paycheck merges its cycle back.
+- **A paycheck opens its cycle at its place in the day** ([ADR
+  0039](adr/0039-cycle-cut-at-paycheck.md)). On the day a paycheck opens a
+  cycle, entries ordered before it (the order in "Order within a day")
+  belong to the cycle it closes; the paycheck and every entry after it
+  belong to the new one. Every other day stays whole. Consequences:
+  - The closed cycle's last day is the paycheck day (covered only up to the
+    paycheck), and `lastDay` says so. Payday appears in both cycles' day
+    rows, each with its own part; the closed cycle's row has the whole
+    budget as its pace.
+  - Opening balances of the new cycle, and the closed cycle's closing
+    balances and leftover, are the balances just before the paycheck.
+  - On payday, today's spending, cycle spending and the start of the day
+    count only entries from the paycheck on, so the start of the day is
+    free money just before the paycheck plus the paycheck.
+  - An undo goes with the entry it undoes, so a pair never splits across the
+    cut. Budget periods that follow the cycle, category and payee reports
+    and the pool and allocation start figures split the same way.
+  - Only the paycheck that *opens* a cycle cuts it. A second paycheck that
+    adds to the open cycle, and undoing a paycheck, keep their rules. The
+    first cycle has nothing before it to cut.
+  - Moving an entry across the paycheck changes both cycles' figures but is
+    not an amendment (a move records nothing in the ledger).
+  - The transactions list filters by whole days, so on a paycheck day the
+    lists for the two cycles overlap; their totals there are by date, not by
+    the cut.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.
 - Until a paycheck opens a cycle, Today offers to record the first one (an
@@ -710,8 +734,8 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   An opening balance is money that was already there, so it is never
   counted as income or as savings.
 - Snapshot figures are in the default currency at the rate on the cycle's
-  last day. Spending by category counts every expense, whichever account
-  paid it.
+  last day (the day it closed, for a closed cycle). Spending by category
+  counts every expense, whichever account paid it.
 
 ## Income classes
 
@@ -833,7 +857,7 @@ allocation bar. Computed on every request from the ledger (`cycleAllocation`
 in `core`), per currency and converted once to the default currency.
 
 ```
-start     = on_budget(day before the cycle opened) + income since it opened
+start     = on_budget(just before the opening paycheck) + income since it opened
 paycheck   = income since the cycle opened (any category, any account)
 carried    = start − paycheck                              # what the cycle opened with
 paid_bills = linked bill payments this cycle, less their undos

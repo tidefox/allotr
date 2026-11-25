@@ -7,7 +7,7 @@ import {
 } from '@allotr/shared';
 import { budgetView } from './withdrawal-links.ts';
 import { accountBalances } from '../ledger/balances.ts';
-import { cycleOn, cyclesOf } from './cycles.ts';
+import { cycleOn, cycleSpan, cyclesOf, type CycleSpan } from './cycles.ts';
 import {
   add,
   availableSums,
@@ -96,15 +96,14 @@ export type AllocationShares = Readonly<
 function movedToSavings(
   view: LedgerView,
   cycle: Cycle,
+  span: CycleSpan,
   today: LocalDate,
 ): Sums {
   const moved: Sums = new Map();
-  const balances = new Map(
-    accountBalances(view.ledger, addDays(cycle.openedOn, -1)),
-  );
+  const balances = new Map(accountBalances(view.ledger.filter(span.before)));
   const byDay = new Map<LocalDate, (typeof view.ledger)[number][]>();
   for (const t of view.ledger) {
-    if (t.occurredOn < cycle.openedOn || t.occurredOn > today) continue;
+    if (!span.has(t)) continue;
     byDay.set(t.occurredOn, [...(byDay.get(t.occurredOn) ?? []), t]);
   }
   let before = groupsOn(view, addDays(cycle.openedOn, -1));
@@ -210,18 +209,20 @@ export function cycleAllocation(
   const reserved: Sums = new Map(onBudget);
   for (const [currency, amount] of free) add(reserved, currency, -amount);
 
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
   const { spent: all, kept: spent } = spentSums(
     view,
     cycle.openedOn,
     today,
     billPaymentEntries(view),
+    span.has,
   );
   const paid: Sums = new Map(all);
   for (const [currency, amount] of spent) add(paid, currency, -amount);
 
   // Whatever the other parts do not explain is `other`, so the parts add up
   // per currency by construction.
-  const savings = movedToSavings(view, cycle, today);
+  const savings = movedToSavings(view, cycle, span, today);
   const other: Sums = new Map(startNative);
   for (const parts of [paid, savings, spent, reserved, free]) {
     for (const [currency, amount] of parts) add(other, currency, -amount);

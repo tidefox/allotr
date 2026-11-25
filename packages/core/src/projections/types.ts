@@ -139,6 +139,12 @@ export type LedgerView = Readonly<{
   policies?: Partial<Policies>;
 }>;
 
+/** What `compareEntries` reads: an entry's place in the ledger's order. */
+export type EntryKey = Pick<
+  Transaction,
+  'id' | 'occurredOn' | 'sortRank' | 'createdAt'
+>;
+
 /**
  * One period from a paycheck to the next. The first cycle opens when the
  * user started, or with an earlier paycheck from imported history.
@@ -147,6 +153,11 @@ export type Cycle = Readonly<{
   openedOn: LocalDate;
   /** The paycheck that opened it; null for the first cycle. */
   openedBy: TransactionId | null;
+  /**
+   * Where the opening paycheck sits in its day (ADR 0039): entries ordered
+   * before it belong to the cycle it closed. Null for the first cycle.
+   */
+  cut: EntryKey | null;
   /** The payday it runs to: the override or the predicted day. */
   payday: LocalDate;
   /** The day the next cycle opened; null for the open cycle. */

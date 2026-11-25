@@ -9,7 +9,7 @@ import {
 import { budgetView } from './withdrawal-links.ts';
 import { accountIn } from '../ledger/chart.ts';
 import type { AccountId, Transaction, TransactionId } from '../ledger/types.ts';
-import { cycleEndOn, cyclesOf } from './cycles.ts';
+import { cycleEndOn, cycleSpan, cyclesOf } from './cycles.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import {
   add,
@@ -109,9 +109,10 @@ export function paceDiff(
 
 /**
  * One row per day of `cycle`, from the day it opened to the day before
- * payday (through today while payday is overdue, or the day before it
- * closed once it has). Figures are in the default currency at each day's
- * rate.
+ * payday (through today while payday is overdue). A closed cycle has one
+ * more row, for the day its closing paycheck opened the next: only what was
+ * ordered before that paycheck, and the day's pace is the whole budget
+ * (ADR 0039). Figures are in the default currency at each day's rate.
  */
 export function cycleDays(
   input: LedgerView,
@@ -121,9 +122,12 @@ export function cycleDays(
   const view = budgetView(input);
   const cycles = cyclesOf(view, today);
   const end = cycle.closedOn ?? cycleEndOn(cycle, today);
-  const lastDay = addDays(end, -1);
+  const closed = cycle.closedOn !== null;
+  const lastDay = closed ? end : addDays(end, -1);
   const asOf = today < lastDay ? today : lastDay;
   const count = Math.max(1, daysBetween(cycle.openedOn, end));
+  const rows = closed ? count + 1 : count;
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
   const excluded = paceExclusions(view);
   const currency = view.settings.defaultCurrency;
   const missing = new Set<CurrencyCode>();
@@ -142,15 +146,13 @@ export function cycleDays(
   }[] = [];
   const cumulative: Sums = new Map();
   // Balances are folded once: to the day before the cycle, then day by day.
-  const balances = new Map(
-    accountBalances(view.ledger, addDays(cycle.openedOn, -1)),
-  );
+  const balances = new Map(accountBalances(view.ledger.filter(span.before)));
   const byDay = new Map<LocalDate, Transaction[]>();
   for (const t of view.ledger) {
-    if (t.occurredOn < cycle.openedOn || t.occurredOn > asOf) continue;
+    if (!span.has(t) || t.occurredOn > asOf) continue;
     byDay.set(t.occurredOn, [...(byDay.get(t.occurredOn) ?? []), t]);
   }
-  for (let at = 0; at < count; at += 1) {
+  for (let at = 0; at < rows; at += 1) {
     const date = addDays(cycle.openedOn, at);
     if (date > asOf) break;
     for (const t of byDay.get(date) ?? []) {
@@ -162,14 +164,16 @@ export function cycleDays(
         );
       }
     }
-    const { spent, kept } = spentSums(view, date, date, excluded);
+    const { spent, kept } = spentSums(view, date, date, excluded, span.has);
     for (const [code, amount] of kept) add(cumulative, code, amount);
     const available = lessReserved(
       view,
       cycles,
-      date,
+      // A bill paid on the closing paycheck's day is the next cycle's.
+      closed && at === rows - 1 ? addDays(date, -1) : date,
       onBudgetSums(view, date, balances),
       owedSums(view, date, balances),
+      cycle,
     );
     // The start of the day counts everything dated that day but spending,
     // as today's allowance does.
@@ -194,12 +198,16 @@ export function cycleDays(
   const anchor = latest?.cumulativeSpent.amountMinor ?? 0;
   const forecast = spendingForecast(
     spendingHistory(view, cycle, past, excluded),
-    Array.from({ length: count - past.length }, (_, i) =>
+    Array.from({ length: rows - past.length }, (_, i) =>
       addDays(cycle.openedOn, past.length + i),
     ),
   );
-  const days = Array.from({ length: count }, (_, at): CycleDay => {
-    const pace = money(Number(evenPace(budget, at, count)), currency);
+  const days = Array.from({ length: rows }, (_, at): CycleDay => {
+    // The closing paycheck's row has the whole budget, as the last day does.
+    const pace = money(
+      Number(evenPace(budget, Math.min(at, count - 1), count)),
+      currency,
+    );
     const row = past[at];
     if (row !== undefined) {
       const start = at === past.length - 1 ? row.cumulativeSpent : null;

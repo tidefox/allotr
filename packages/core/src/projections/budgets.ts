@@ -10,7 +10,7 @@ import {
   type Money,
 } from '@allotr/shared';
 import type { CategoryId, TransactionId } from '../ledger/types.ts';
-import { cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
+import { cycleEndOn, cycleOn, cycleSpan, cyclesOf } from './cycles.ts';
 import { iouReturns, loanKey } from './ious.ts';
 import { groupsOn } from './pools.ts';
 import { convertOn } from './rates.ts';
@@ -158,6 +158,34 @@ export function budgetPeriods(
   });
 }
 
+/**
+ * Whether an entry dated `date` counts in `period`. A period that follows
+ * the cycle ends at its closing paycheck, not at the start of its day, so
+ * what came before the paycheck belongs to the period it closes (ADR 0039).
+ */
+export function periodHas(
+  view: LedgerView,
+  today: LocalDate,
+): (period: BudgetPeriod, entryId: TransactionId, date: LocalDate) => boolean {
+  const byDate = (p: BudgetPeriod, date: LocalDate) =>
+    date >= p.from && date < p.to;
+  if (view.settings.budgetPeriod === 'month') {
+    return (p, _id, date) => byDate(p, date);
+  }
+  const cycles = cyclesOf(view, today);
+  const byId = new Map(view.ledger.map((t) => [t.id, t]));
+  const spans = new Map(
+    cycles.map((c) => [c.openedOn, cycleSpan(view.ledger, cycles, c, today)]),
+  );
+  return (p, id, date) => {
+    const entry = byId.get(id);
+    const span = spans.get(p.from);
+    return entry === undefined || span === undefined
+      ? byDate(p, date)
+      : span.has(entry);
+  };
+}
+
 /** The period that holds `date` (as seen from `today`). */
 export function budgetPeriodOn(
   view: LedgerView,
@@ -167,6 +195,21 @@ export function budgetPeriodOn(
   if (view.settings.budgetPeriod === 'month') return monthOf(date);
   const cycle = cycleOn(cyclesOf(view, today), date);
   return { from: cycle.openedOn, to: cycleEndOn(cycle, today) };
+}
+
+/** The period an entry counts in, which a paycheck's cut can put before its date's period. */
+export function budgetPeriodOfEntry(
+  view: LedgerView,
+  entryId: TransactionId,
+  date: LocalDate,
+  today: LocalDate,
+): BudgetPeriod {
+  const has = periodHas(view, today);
+  return (
+    budgetPeriods(view, addDays(date, -1), today).find((p) =>
+      has(p, entryId, date),
+    ) ?? budgetPeriodOn(view, date, today)
+  );
 }
 
 /** One expense line, in the default currency, with the budget it counts for. */
@@ -572,6 +615,7 @@ export function foldBudgets(
     missing,
   );
   const periods = budgetPeriods(view, since, today);
+  const has = periodHas(view, today);
   // Repayments of loans refill what the loan's cover took (ADR 0024).
   const returns = [...(setup.returns ?? []), ...iouReturns(view)]
     .filter((r) => r.on <= today)
@@ -635,7 +679,7 @@ export function foldBudgets(
       | { kind: 'return'; date: LocalDate; at: string; ret: BudgetReturn };
     const events: Event[] = [
       ...raw
-        .filter((l) => l.date >= period.from && l.date < period.to)
+        .filter((l) => has(period, l.entryId, l.date))
         .map((line): Event => ({
           kind: 'spend',
           date: line.date,
@@ -643,7 +687,7 @@ export function foldBudgets(
           line,
         })),
       ...returns
-        .filter((r) => r.on >= period.from && r.on < period.to)
+        .filter((r) => has(period, r.against, r.on))
         .map((ret): Event => ({
           kind: 'return',
           date: ret.on,

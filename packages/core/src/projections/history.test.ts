@@ -75,7 +75,7 @@ describe('cycleReports', () => {
     });
     expect(closed).toMatchObject({
       cycle: { openedOn: '2026-03-01', closedOn: '2026-04-01' },
-      lastDay: '2026-03-31',
+      lastDay: '2026-04-01',
       opening: { on: usd(50000), off: usd(400000) },
       closing: { on: usd(338500), off: usd(400000) },
       income: usd(300000),

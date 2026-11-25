@@ -10,7 +10,13 @@ import {
 import type { AccountId, TransactionId } from '../ledger/types.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
-import { billWindow, cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
+import {
+  billWindow,
+  cycleEndOn,
+  cycleOn,
+  cycleSpan,
+  cyclesOf,
+} from './cycles.ts';
 import {
   billAmount,
   defaultPolicies,
@@ -99,12 +105,14 @@ export function lessReserved(
   date: LocalDate,
   onBudget: Sums,
   owed: Sums = owedSums(view, date),
+  /** The cycle whose bills are reserved; the one holding `date` by default. */
+  cycle: Cycle = cycleOn(cycles, date),
 ): Sums {
   const sums: Sums = new Map(onBudget);
   for (const [currency, amount] of owed) add(sums, currency, -amount);
   const reserved = policiesOf(view).bills.reserved(
     view.bills,
-    billWindow(cycleOn(cycles, date)),
+    billWindow(cycle),
     date,
   );
   for (const [currency, amount] of reserved) add(sums, currency, -amount);
@@ -190,6 +198,8 @@ export function spentSums(
   from: LocalDate,
   to: LocalDate,
   excluded: ReadonlySet<TransactionId> = new Set(),
+  /** Only entries it accepts count: a cycle's part of its paycheck's day. */
+  within: (t: Transaction) => boolean = () => true,
 ): { spent: Sums; kept: Sums } {
   const view = budgetView(input);
   const groupsByDay = new Map<LocalDate, ReturnType<typeof groupsOn>>();
@@ -214,7 +224,7 @@ export function spentSums(
   const spent: Sums = new Map();
   const kept: Sums = new Map();
   for (const t of view.ledger) {
-    if (t.occurredOn < from || t.occurredOn > to) continue;
+    if (t.occurredOn < from || t.occurredOn > to || !within(t)) continue;
     if (!t.postings.some((p) => expenseAccounts.has(p.accountId))) continue;
     const groups = groupsByDate(t.occurredOn);
     const keep = !excluded.has(t.id);
@@ -446,6 +456,8 @@ function dailyBase(
     startOfDay: Money;
     spentToday: Money;
     fold: BudgetFold | null;
+    /** The entries dated today that belong to the cycle (ADR 0039). */
+    todaysEntries: ReadonlySet<TransactionId>;
   }>,
 ): DailyBase {
   const { fold } = figures;
@@ -457,7 +469,10 @@ function dailyBase(
   // A loan lowers the day's start like a transfer to savings (ADR 0024); it
   // is not spending, so it never counts against the day.
   const todays = (fold?.spend ?? []).filter(
-    (line) => line.date === today && !line.loan,
+    (line) =>
+      line.date === today &&
+      !line.loan &&
+      figures.todaysEntries.has(line.entryId),
   );
   const fromHolds = todays.reduce((sum, line) => sum + line.fromHold, 0n);
   const common = { mode, fold, held: money(Number(held), currency), free };
@@ -530,15 +545,19 @@ export function dailyFiguresOn(
   // Linked bill payments and their undos are left out of today's spending
   // as they are of pace: the bill's reserve already left the budget, so
   // paying it moves neither the allowance nor what is left today.
-  const spentNative = spentSums(view, today, today, excluded).kept;
+  // On the day a paycheck opens the cycle, only entries from the paycheck on
+  // are the cycle's (ADR 0039).
+  const span = cycleSpan(view.ledger, cycles, cycle, today);
+  const spentNative = spentSums(view, today, today, excluded, span.has).kept;
   const { spent: cycleSpentNative, kept: paceSpentNative } = spentSums(
     view,
     cycle.openedOn,
     today,
     excluded,
+    span.has,
   );
-  // The start of the day counts everything dated today except spending,
-  // so a paycheck that lands today is in today's allowance.
+  // The start of the day counts everything the cycle has dated today except
+  // spending, so a paycheck that lands today is in today's allowance.
   const startNative: Sums = new Map(availableNative);
   for (const [currency, amount] of spentNative) {
     add(startNative, currency, amount);
@@ -555,6 +574,11 @@ export function dailyFiguresOn(
     startOfDay: startOfDay.amount,
     spentToday: spentToday.amount,
     fold: budgetFold(view, today),
+    todaysEntries: new Set(
+      view.ledger
+        .filter((t) => t.occurredOn === today && span.has(t))
+        .map((t) => t.id),
+    ),
   });
   const todayAllowance = perDay(base.startOfDay, daysLeft);
 
