@@ -277,6 +277,8 @@ export async function getTransaction(
 export type ListFilter = Readonly<{
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
+  fromEntry?: string | undefined;
+  beforeEntry?: string | undefined;
   accountId?: readonly string[] | undefined;
   categoryId?: readonly string[] | undefined;
   tagId?: string | undefined;
@@ -387,6 +389,23 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
   }
   if (filter.to !== undefined)
     query = query.where('transactions.occurred_on', '<=', filter.to);
+  // A paycheck cuts its day (ADR 0039): bound by an entry's place in its day.
+  for (const [id, op] of [
+    [filter.fromEntry, '>='],
+    [filter.beforeEntry, '<'],
+  ] as const) {
+    if (id === undefined) continue;
+    const place = await db
+      .selectFrom('transaction_ranks')
+      .select(['occurred_on', 'sort_rank'])
+      .where('user_id', '=', userId)
+      .where('transaction_id', '=', id)
+      .executeTakeFirst();
+    if (place === undefined) throw notFound();
+    query = query.where(
+      sql<boolean>`(transactions.occurred_on, transaction_ranks.sort_rank) ${sql.raw(op)} (${place.occurred_on}, ${place.sort_rank})`,
+    );
+  }
   if (filter.accountId !== undefined) {
     const accounts = filter.accountId;
     query = query.where((eb) =>

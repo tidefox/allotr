@@ -710,9 +710,10 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
     first cycle has nothing before it to cut.
   - Moving an entry across the paycheck changes both cycles' figures but is
     not an amendment (a move records nothing in the ledger).
-  - The transactions list filters by whole days, so on a paycheck day the
-    lists for the two cycles overlap; their totals there are by date, not by
-    the cut.
+  - The transactions list takes `fromEntry` and `beforeEntry` (a
+    paycheck's id) beside `from` and `to`, so a cycle's list starts at its
+    paycheck and the one before it ends there. An undo is ordered by its
+    own place in the day, not the entry it undoes.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.
 - Until a paycheck opens a cycle, Today offers to record the first one (an

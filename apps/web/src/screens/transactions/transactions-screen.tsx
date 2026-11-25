@@ -28,7 +28,7 @@ import {
   type FilterChip,
 } from './filter-model.ts';
 import { sections, summaryParts } from './list-model.ts';
-import { periodRange } from './period.ts';
+import { periodEntries, periodRange } from './period.ts';
 import { reorderBlocked, reorderableDays, stepsFor } from './reorder-model.ts';
 import {
   searchOf,
@@ -84,6 +84,9 @@ export function TransactionsScreen() {
 
   const filter: LedgerFilter = {
     ...range,
+    ...(cycles.data === undefined
+      ? {}
+      : periodEntries(view.period, cycles.data.cycles)),
     q: view.q,
     payee: view.payee,
     type: view.type,

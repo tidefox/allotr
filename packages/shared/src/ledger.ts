@@ -554,6 +554,14 @@ export const listTransactionsQuerySchema = z.object({
   sort: transactionSortSchema.default('date-desc'),
   from: localDateSchema.optional(),
   to: localDateSchema.optional(),
+  /**
+   * Only entries from this one on, in the order of the day (a paycheck's id
+   * starts the cycle it opens, ADR 0039). With `from`/`to` it narrows the
+   * days those pick.
+   */
+  fromEntry: idSchema.optional(),
+  /** Only entries ordered before this one; the paycheck that closes a cycle. */
+  beforeEntry: idSchema.optional(),
   /** Entries touching any of these accounts (comma-separated). */
   accountId: idListSchema.optional(),
   /**

@@ -13,6 +13,35 @@ export interface DateRange {
 export interface CycleBounds {
   openedOn: LocalDate;
   lastDay: LocalDate;
+  /** The paycheck that opened it; null for the first cycle. */
+  openedBy?: string | null;
+}
+
+/**
+ * Where a cycle period starts and stops within its paycheck days: a paycheck
+ * cuts its day, so the dates alone would list entries from before it in the
+ * new cycle (ADR 0039).
+ */
+export function periodEntries(
+  period: Period,
+  cycles: readonly CycleBounds[],
+): { fromEntry?: string; beforeEntry?: string } {
+  const [open, last] = cycles;
+  const cut = (c: CycleBounds | undefined) => c?.openedBy ?? undefined;
+  if (period === 'cycle') return withDefined({ fromEntry: cut(open) });
+  if (period === 'last-cycle') {
+    return withDefined({ fromEntry: cut(last), beforeEntry: cut(open) });
+  }
+  return {};
+}
+
+function withDefined(bounds: {
+  fromEntry?: string | undefined;
+  beforeEntry?: string | undefined;
+}): { fromEntry?: string; beforeEntry?: string } {
+  return Object.fromEntries(
+    Object.entries(bounds).filter(([, v]) => v !== undefined),
+  );
 }
 
 function daysIn(year: number, month: number): number {
