@@ -14,8 +14,8 @@ peerDependencyRules:
     kysely-codegen>better-sqlite3: '13'
 
 catalog:
-  fast-check: 4.10.2
+  fast-check: 4.10.3
   zod: 4.6.7
   '@types/node': 24.19.2
   typescript: 6.0.3
-  vitest: 5.0.5
+  vitest: 5.1.1
